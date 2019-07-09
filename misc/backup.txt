@@ -1,0 +1,18 @@
+#myobject[0].set_height(10)
+myobject=leg._legend_handle_box.get_children()[0].get_children()[flowend].get_children()
+marker=myobject[0]
+text=myobject[1]
+print(renderer)
+print(text.get_extent(renderer)[2:4])
+print(text._text.get_position())
+print(marker.get_extent(renderer)[2:4])
+text.set_offset(marker.get_extent(renderer)[2:4])
+text.set_width( marker.get_extent(renderer)[0] + text.get_extent(renderer)[0] )
+ 
+
+ 
+ 
+                 #polyakov_real.append(tmp[:,1])
+                #EE_numerator_real.append(tmp[:,2:int((2+int(nt)/2))])
+                #if (conftype != "s064t16_b0687361"):
+                #else:
