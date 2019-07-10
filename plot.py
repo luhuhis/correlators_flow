@@ -5,13 +5,9 @@ from matplotlib import pyplot as plt
 import matplotlib.cm as cm
 from os import listdir
 import sys
-#----------------
-#import own stuff
-#----------------
-import functions
 
-sys.path.insert(0, '../../code/analysistoolbox/latqcdtools/')
-import scales_quenched
+#sys.path.insert(0, '../../code/analysistoolbox/latqcdtools/')
+from latqcdtools import scales_quenched
 
 
 try:
@@ -44,7 +40,7 @@ EE_ML_2015_err = numpy.loadtxt(inputfolder+"EE_ML_2015_"+conftype+".dat")[:int(n
 EE_cont = []
 for flowradius in flow_radius:
     for datafile in listdir("../data_merged/quenched/continuum_limit/"):
-            if str(flowradius)+".dat_cont" in datafile: 
+            if str(flowradius)+"_cont" in datafile: 
                 path = "../data_merged/quenched/continuum_limit/"+datafile
                 tmp = numpy.loadtxt(path) 
                 EE_cont.append(tmp)

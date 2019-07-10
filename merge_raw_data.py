@@ -4,8 +4,7 @@ import numpy
 from os import listdir
 #import own stuff
 import sys
-sys.path.insert(0, '../../code/analysistoolbox/latqcdtools/')
-import jackknife
+from latqcdtools import jackknife
 
 #---------
 #functions
@@ -65,7 +64,7 @@ except IndexError:
 
 print(qcdtype, conftype, beta, ns, nt)
 outputfolder="../data_merged/"+qcdtype+"/"+conftype+"/"
-inputfolder="/home/luis/data_raw/"+qcdtype+"/"+conftype+"/"
+inputfolder="../../data_raw/"+qcdtype+"/"+conftype+"/"
 
 #---------
 #load data
@@ -122,7 +121,9 @@ numpy.savetxt(outputfolder+"flowradius_"+conftype+".dat", flow_radius)
 for i in range(0,len(flow_radius)):
     EE_singleflowradius = numpy.empty((nt_half,3))
     for j in range(0, nt_half):
-        EE_singleflowradius[j,0] = tauT_imp[nt][j]
-        EE_singleflowradius[j,1] = EE[i,j]
-        EE_singleflowradius[j,2] = EE_err[i,j]
+        #TODO: only put in tauT's for which the flowtime is smaller than tauT*numpy.sqrt(8*0.014)=flowlimit 
+        if (tauT_imp[nt][j]*numpy.sqrt(8*0.014)*0.5 >= flow_radius[i]) and (EE_err[i,j] < 0.1):
+            EE_singleflowradius[j,0] = tauT_imp[nt][j]
+            EE_singleflowradius[j,1] = EE[i,j]
+            EE_singleflowradius[j,2] = EE_err[i,j]
     numpy.savetxt(outputfolder+"/continuum_limit/EE_"+str(flow_radius[i])+"_Nt"+str(nt_half)+".dat", EE_singleflowradius)
