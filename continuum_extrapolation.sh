@@ -1,17 +1,50 @@
 #!/bin/bash
+# rm -rf ../data_merged/quenched/continuum_limit/
+mkdir -p ../data_merged/quenched/continuum_limit/
+mkdir -p ../data_merged/quenched/continuum_limit/logs/
+extrapolate="srun -n 1 -N 1 --exclusive python -u /home/altenkort/code/analysistoolbox/bin/extrapolate.py"
+path1=/home/altenkort/master/work/data_analysis/data_merged/quenched
+args="--nknots 1 2 3 --order 2 --constraints 0 2 0 0.5 1 0 --randomization-factor 0 --nsamples 1000 --base-point=0.31 --xmax=0.5 --data-input sample --method from_sample  --no-tex --plot-xmin 0.134 --plot-xmax 0.5 --folder=$path1/continuum_limit/ --log-level INFO"
+#--nknots 3
+chi_dof_file=../data_merged/quenched/continuum_limit/logs/chi_dof.txt
+
+sbatchscript=$(cat <<EOF
+#!/bin/bash
 #SBATCH --job-name=EE_continuum_extrapolation
-#SBATCH --output=../data_merged/quenched/continuum_limit/logs/%x_%A_%a.out
-#SBATCH --error=../data_merged/quenched/continuum_limit/logs/%x_%A_%a.err
-#SBATCH --mail-type=FAIL
-#SBATCH --mail-user=altenkort@physik.uni-bielefeld.de
+#SBATCH --open-mode=append
+#SBATCH --output=../data_merged/quenched/continuum_limit/logs/%x_.out
+#SBATCH --error=../data_merged/quenched/continuum_limit/logs/%x_.err
+#SBATCH --mail-type=NONE
+#SBATCH --mail-user=luis.a@hotmail.de
+
 
 #SBATCH --partition=volta
-#SBATCH --array=0-15
-#SBATCH --ntasks=1
-echo "${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID} ${SLURM_JOB_NAME}"; date; hostname; pwd;
-mkdir -p ../data_merged/quenched/continuum_limit/logs/
-flowradii=(0.0 0.005 0.01 0.015 0.02 0.025 0.03 0.035 0.04 0.045 0.05 0.055 0.06 0.065 0.07 0.075) #0.08 0.085 0.09 0.095 0.1 0.125 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 ; do --xmin 0.045 --xmax 0.47
-srun python -u ~/code/analysistoolbox/bin/extrapolate.py --data-input direct --method gauss_btstr --nknots 1 --order 2 --randomization-factor 0 --nsamples 1000 --no-tex --outname=EE_${flowradii[$SLURM_ARRAY_TASK_ID]} --folder=../data_merged/quenched/continuum_limit/ ../data_merged/quenched/s*t*_b*/continuum_limit/EE_${flowradii[$SLURM_ARRAY_TASK_ID]}_Nt*.dat --xmin=`bc <<< "scale=5; 1*${flowradii[$SLURM_ARRAY_TASK_ID]}"` --xmax=`bc <<< "scale=5; 0.5-(1*(0.075-${flowradii[$SLURM_ARRAY_TASK_ID]}))"`
-date
+#SBATCH --nodes=2
+#SBATCH --tasks-per-node=12
 
-# --constraints 0 1 0 0.5 1 0
+echo "\${SLURM_JOB_ID} \${SLURM_JOB_NAME} \`date\` \`hostname\` \`pwd\`"
+
+flowradii=(0.0500 0.0550 0.0600 0.0650 0.0700 0.0750 0.0800 0.0850 0.0900 0.0950 0.1000)
+
+for i in "\${flowradii[@]}" ; do  
+$extrapolate --xmin=\`bc <<< "scale=5; \${i}/sqrt(8*0.014)+0.02"\` $args --outname=EE_\${i} $path1/s*t*_b*/single_flow/EE_\${i}_Nt*_btstrp_samples.dat >> $path1/continuum_limit/logs/\${SLURM_JOB_NAME}_\${i}.out &
+done
+wait
+
+#save chi_dofs
+rm -f $chi_dof_file
+echo "#flowradius chi2_dof \`date\`" >> $chi_dof_file
+for i in "\${flowradii[@]}" ; do   
+    echo "\$i \`tail -n 3 /home/altenkort/master/work/data_analysis/data_merged/quenched/continuum_limit/logs/EE_continuum_extrapolation_\${i}.out | grep 'Chi^2/d.o.f. of first full fit:' | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | tail -n 1\`" >> $chi_dof_file
+done
+
+srun -n 1 -N 1 --exclusive python -u /home/altenkort/master/work/data_analysis/scripts/av_chi_dof.py
+# nlines=\`cat /home/altenkort/master/work/data_analysis/data_merged/quenched/continuum_limit/EE_0.0700_cont.txt | wc -l\`
+# if [[ ( \$nlines -eq 16 ) ]] ; then
+#     mv /home/altenkort/master/work/data_analysis/data_merged/quenched/continuum_limit/EE_*_cont.txt /home/altenkort/master/work/data_analysis/data_merged/quenched/continuum_limit/cont_at_imp_tauT_30/
+# fi
+
+echo "done \${SLURM_JOB_ID} \`date\`"
+EOF
+)
+sbatch <(cat <<< "$sbatchscript")

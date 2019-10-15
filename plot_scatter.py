@@ -4,10 +4,7 @@ import numpy
 from os import listdir
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
-#import own stuff
-import sys
-sys.path.insert(0, '../../code/analysistoolbox/latqcdtools/')
-import jackknife
+from latqcdtools import jackknife
 
 def get_color(myarray, i, start, end):
     return cm.gnuplot((myarray[i]-myarray[start])/(myarray[end-1]-myarray[start]))
