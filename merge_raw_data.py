@@ -75,7 +75,7 @@ except IndexError:
 
 print("merging", conftype)
 outputfolder="../data_merged/"+qcdtype+"/"+conftype+"/"
-inputfolder="../../data_raw/"+qcdtype+"/"+conftype+"/"
+inputfolder="../data_raw/"+qcdtype+"/"+conftype+"/"
 
 #---------
 #load data

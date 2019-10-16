@@ -3,7 +3,7 @@ import math
 import numpy
 from os import listdir 
 
-chi_dofs = numpy.loadtxt("/home/altenkort/master/work/data_analysis/data_merged/quenched/continuum_limit/logs/chi_dof.txt")
+chi_dofs = numpy.loadtxt("../data_merged/quenched/continuum_limit/logs/chi_dof.txt")
 
 n = chi_dofs.shape[0]
 av_chi_dof=0

@@ -21,7 +21,7 @@ except IndexError:
 
 print(qcdtype, conftype, beta, ns, nt)
 outputfolder="../data_merged/"+qcdtype+"/"+conftype+"/"
-inputfolder="/home/luis/data_raw/"+qcdtype+"/"+conftype+"/"
+inputfolder="../data_raw/"+qcdtype+"/"+conftype+"/"
 
 #---------
 #load data

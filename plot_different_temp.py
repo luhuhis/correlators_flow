@@ -9,8 +9,8 @@ import sys
 from latqcdtools import scales_quenched
 
 qcdtype="quenched"
-outputfolder="/home/altenkort/master/work/data_analysis/plots/"+qcdtype+"/"
-inputfolder="/home/altenkort/master/work/data_analysis/data_merged/"+qcdtype+"/"
+outputfolder="/home/altenkort/master/work/plots/"+qcdtype+"/"
+inputfolder="/home/altenkort/master/work/data_merged/"+qcdtype+"/"
 
 EE_16 = numpy.loadtxt(inputfolder+"/s096t16_b0719200/EE_s096t16_b0719200.dat")
 EE_24 = numpy.loadtxt(inputfolder+"/s096t24_b0719200/EE_s096t24_b0719200.dat")
@@ -121,9 +121,9 @@ remove_negatives(EE_32)
 
 
 #PLOT LATTICE EFFECTS FOR ANIMATION
-#for i in range(0,len(flow_times)):
+for i in range(0,len(flow_times)):
 #for i in range(0,20):
-for i in (0,6,14,19):
+#for i in (0,6,14,19):
     ax.set_title(r'$\tau_F =$ '+'{0:.3f}'.format(flow_times[i]), x=0.5, y=0.9, bbox=labelboxstyle, zorder=999999)
     plots.append(ax.errorbar(tauTc_32[:16], EE_32[i,:], EE_err_32[i,:], label=r'$T=1.11 T_C$', **plotstyle_points, color=cm.gnuplot(0.90), zorder=0))
     plots.append(ax.errorbar(tauTc_32[:14], EE_28[i,:], EE_err_28[i,:], label=r'$T=1.27 T_C$', **plotstyle_points, color=cm.gnuplot(0.65), zorder=-1))

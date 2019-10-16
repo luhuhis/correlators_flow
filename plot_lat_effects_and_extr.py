@@ -12,8 +12,8 @@ def get_color(myarray, i, start, end):
     return cm.gnuplot((myarray[i]-myarray[start])/(myarray[end-1]-myarray[start]))
 
 qcdtype="quenched"
-outputfolder="/home/altenkort/master/work/data_analysis/plots/"+qcdtype+"/"
-inputfolder="/home/altenkort/master/work/data_analysis/data_merged/"+qcdtype+"/"
+outputfolder="../plots/"+qcdtype+"/"
+inputfolder="../data_merged/"+qcdtype+"/"
 
 EE_16 = numpy.loadtxt(inputfolder+"/s064t16_b0687361/EE_s064t16_b0687361.dat")
 EE_20 = numpy.loadtxt(inputfolder+"/s080t20_b0703500/EE_s080t20_b0703500.dat")
@@ -23,7 +23,7 @@ EE_err_16 = numpy.loadtxt(inputfolder+"/s064t16_b0687361/EE_err_s064t16_b0687361
 EE_err_20 = numpy.loadtxt(inputfolder+"/s080t20_b0703500/EE_err_s080t20_b0703500.dat")
 EE_err_24 = numpy.loadtxt(inputfolder+"/s096t24_b0719200/EE_err_s096t24_b0719200.dat")
 EE_err_30 = numpy.loadtxt(inputfolder+"/s120t30_b0739400/EE_err_s120t30_b0739400.dat")
-EE_cont_2015 = numpy.loadtxt("/home/altenkort/master/work/data_analysis/data_merged/quenched/multi-level_2015/cont_thomas.dat")
+EE_cont_2015 = numpy.loadtxt("/home/altenkort/master/work/data_merged/quenched/multi-level_2015/cont_thomas.dat")
 EE_cont_2015_new = numpy.loadtxt(inputfolder+"/multi-level_2015/EE_2015_cont.txt")
 EE_zero_flow_16 = numpy.loadtxt(inputfolder+"/s064t16_b0687361/EE_s064t16_b0687361_zero_flow_extr.dat")
 EE_zero_flow_20 = numpy.loadtxt(inputfolder+"/s080t20_b0703500/EE_s080t20_b0703500_zero_flow_extr.dat")
@@ -81,8 +81,8 @@ plots = []
 ax.set_ylabel(r'$\displaystyle \frac{G_{r_F}(\tau T)}{G_{\mathrm{norm}}(\tau T)}$', **ylabelstyle)
 ax.set_xlabel(r'$\tau T$', **xlabelstyle)
 ax.get_xaxis().set_visible(False)
-#for i in range(0,len(flow_radius)):
-for i in (0,10,20,22):
+for i in range(0,len(flow_radius)):
+#for i in (0,10,20,22):
     #ax.set_title(r'quenched $|$ $T\approx 1.5 T_C$ $|$ imp. dist. $|$ $\sqrt{\tilde{\tau_F}} =$ '+'{0:.4f}'.format(flow_radius[i]))
     #ax.set_title(r'$r_F =$ '+'{0:.3f}'.format(flow_radius[i]), x=0.5, y=0.925, bbox=labelboxstyle, zorder=999999)
     ax.set_title(r'$r_F =$ '+'{0:.2f}'.format(flow_radius[i]), **titlestyle)

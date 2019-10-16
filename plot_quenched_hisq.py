@@ -13,8 +13,8 @@ a_quenched = 0.0176
 a_hisq = 0.0716
 
 qcdtype="quenched"
-outputfolder="/home/altenkort/master/work/data_analysis/plots/"+qcdtype+"/"
-inputfolder="/home/altenkort/master/work/data_analysis/data_merged/"+qcdtype+"/"
+outputfolder="../plots/"+qcdtype+"/"
+inputfolder="../data_merged/"+qcdtype+"/"
 
 EE_quenched = numpy.loadtxt(inputfolder+"/s096t32_b0719200/EE_s096t32_b0719200.dat")
 EE_err_quenched = numpy.loadtxt(inputfolder+"/s096t32_b0719200/EE_err_s096t32_b0719200.dat")
@@ -24,8 +24,8 @@ tauT_32 = list(numpy.around(numpy.loadtxt(inputfolder+"/s096t32_b0719200/tauT_im
 tau_32 = [i* 32 * a_quenched for i in tauT_32]
 
 qcdtype="hisq"
-outputfolder="/home/altenkort/master/work/data_analysis/plots/"+qcdtype+"/"
-inputfolder="/home/altenkort/master/work/data_analysis/data_merged/"+qcdtype+"/"
+outputfolder="../plots/"+qcdtype+"/"
+inputfolder="../data_merged/"+qcdtype+"/"
 
 EE_hisq = numpy.loadtxt(inputfolder+"/s064t16_b07188_m00113_m0306/EE_s064t16_b07188_m00113_m0306.dat")
 EE_err_hisq = numpy.loadtxt(inputfolder+"/s064t16_b07188_m00113_m0306/EE_err_s064t16_b07188_m00113_m0306.dat")

@@ -1,5 +1,5 @@
 #!/bin/bash
-for file in /home/altenkort/master/work/data_analysis/plots/quenched/s*t*_b*/*.pdf ; do
+for file in ../plots/quenched/s*t*_b*/*.pdf ; do
     pngfolder=${file%/*}/png
     rm -rf $pngfolder
     mkdir -p $pngfolder
