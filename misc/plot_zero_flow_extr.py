@@ -11,8 +11,8 @@ def get_color(myarray, i, start, end):
     return cm.gnuplot((myarray[i]-myarray[start])/(myarray[end-1]-myarray[start]))
 
 qcdtype="quenched"
-outputfolder="../plots/"+qcdtype+"/"
-inputfolder="../data_merged/"+qcdtype+"/"
+outputfolder="../../plots/"+qcdtype+"/"
+inputfolder="../../data_merged/"+qcdtype+"/"
 
 EE_16 = numpy.loadtxt(inputfolder+"/s064t16_b0687361/EE_s064t16_b0687361_zero_flow_extr.dat")
 EE_20 = numpy.loadtxt(inputfolder+"/s080t20_b0703500/EE_s080t20_b0703500_zero_flow_extr.dat")
@@ -47,8 +47,6 @@ ax.xaxis.set_label_coords(0.975,0.050)
 ax.yaxis.set_label_coords(0.025,0.975)
 ax.set_xlabel(r'$\tau T$', **xlabelstyle)
 ax.set_ylabel(r'$\displaystyle \frac{G_{r_F \rightarrow 0}(\tau T)}{G_\mathrm{norm}(\tau T)}$', **ylabelstyle)
-#legendstyle["title"]=r"$N_\tau$"
-
 
 ax.set_xlim([0.1,0.49]); 
 ax.set_ylim([2,3.99])

@@ -77,7 +77,7 @@ flowend=21
 
 ax.set_title(r'$r_F =0.075$', x=0.5, y=0.9, bbox=labelboxstyle, zorder=999999)
 
-
+#flow radii that are the same:
 #hisq 15
 #quenched 20
 #or
@@ -85,28 +85,9 @@ ax.set_title(r'$r_F =0.075$', x=0.5, y=0.9, bbox=labelboxstyle, zorder=999999)
 #quenched 23
 
 #PLOT LATTICE EFFECTS FOR ANIMATION
-#for i in range(0,len(flow_times)):
-#for i in range(0,20):
-#plots.append(ax.errorbar(tau_16, EE_hisq[15,:], EE_err_hisq[15,:], label=r'hisq', **plotstyle_points, color=cm.gnuplot(0.90), zorder=-3))
 plots.append(ax.errorbar(tau_16, EE_hisq[15,:], EE_err_hisq[15,:], label=r'$1.10 \,T_C$, HISQ', **plotstyle_points, color=cm.gnuplot(0.80), zorder=-4))
 plots.append(ax.errorbar(tau_32, EE_quenched[20,:], EE_err_quenched[20,:], label=r'$1.11 \,T_C$, quenched', **plotstyle_points, color=cm.gnuplot(0.4), zorder=-6))
 b = ax.axvline(x=(flow_radius_hisq[15]/numpy.sqrt(8*0.014)+offset)*16*a_hisq, ymin=0, ymax=1, color=cm.gnuplot(0.8), alpha=0.8, zorder=-5, dashes=(4,4), lw=0.5)
 a = ax.axvline(x=(flow_radius_quenched[20]/numpy.sqrt(8*0.014)+offset)*32*a_quenched, ymin=0, ymax=1, color=cm.gnuplot(0.4), alpha=0.8, zorder=-6, dashes=(4,4), lw=0.5)
 ax.legend(handles=plots, **legendstyle, handler_map={type(plots[0]): HandlerErrorbar(xerr_size=0.4)}, handlelength=1.5)
 fig.savefig(outputfolder+"/EE_hisq_quenched_1.1Tc.pdf", **figurestyle) 
-
-
-ax.lines.clear() ; ax.collections.clear() ; plots.clear()
-
-
-
-#ax.set_xlim([0,30])
-#ax.set_ylim([0,12])
-
-#flow_time_phys_quenched = [i*a_quenched**2 for i in flow_times_quenched]
-#flow_time_phys_hisq = [i*a_hisq**2 for i in flow_times_hisq]
-
-#plots.append(ax.plot(range(0,30), flow_time_phys_hisq), label='hisq')
-#plots.append(ax.plot(range(0,30), flow_time_phys_quenched), label='quenched')
-#ax.legend(handles=plots, **legendstyle, handler_map={type(plots[0]): HandlerErrorbar(xerr_size=0.4)}, handlelength=1.5)
-#fig.savefig(outputfolder+"/EE_flowtimes.pdf", **figurestyle) 

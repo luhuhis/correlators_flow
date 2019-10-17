@@ -20,8 +20,8 @@ except IndexError:
     exit("Invalid Arguments: merge_raw_data.py <qcdtype> <conftype> <beta> <ns> <nt>")
 
 print(qcdtype, conftype, beta, ns, nt)
-outputfolder="../data_merged/"+qcdtype+"/"+conftype+"/"
-inputfolder="../data_raw/"+qcdtype+"/"+conftype+"/"
+outputfolder="../../data_merged/"+qcdtype+"/"+conftype+"/"
+inputfolder="../../data_raw/"+qcdtype+"/"+conftype+"/"
 
 #---------
 #load data

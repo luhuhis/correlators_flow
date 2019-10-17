@@ -139,6 +139,8 @@ EE_28 = EE_28_bak
 EE_32 = EE_32_bak
 
 
+#PLOT THE TWO INTEGRAL TERMS IN ONE PLOT
+
 plt.rc('text', usetex=True)
 plt.rc('text.latex')
 plt.rc('font', family='serif', size=16)
@@ -148,17 +150,11 @@ ax = fig.add_subplot(1,1,1)
 ax.xaxis.set_label_coords(0.975,0.025)
 ax.yaxis.set_label_coords(0.01,0.97)
 ax.set_xlabel(r'$\tau T_C$', **xlabelstyle)
-#ax.set_ylabel(r'$\displaystyle \frac{ \left(G_{\tau_F}^{2.23\,T_C} - G_{\tau_F}^{1.12\,T_C}\right) (\tau T_C)}{T_C^4} $', **ylabelstyle)
 ax.set_ylabel(r'')
 ax.set_ylim([0,150])
-#ax.set_yscale('log')
-#ax.set_ylim([-1000,-2000])
 for j in (0,6,14,19):
     ax.set_title(r'$\tau_F =$ '+'{0:.3f}'.format(flow_times[j]), x=0.98, y=0.955, bbox=labelboxstyle, horizontalalignment='right', verticalalignment='top', zorder=999999)
     plots.append(ax.errorbar(tauTc_32[:8], EE_16[j,:8]-EE_32[j,:8], (EE_err_16[j,:8]+EE_err_32[j,:8]), **plotstyle_points, zorder=-10, color='black'))
-    #plots.append(ax.errorbar(tauTc_32[:8], EE_16[j,:8], EE_err_16[j,:8], **plotstyle_points, zorder=-10, color='black'))
-    #plots.append(ax.errorbar(tauTc_32[:8], EE_32[j,:8], EE_err_32[j,:8], **plotstyle_points, zorder=-10, color='blue'))
-    #ax.axvline(x=(0.5*1/T_Tc(16)), ymin=0, ymax=1, color='grey', alpha=0.8, zorder=-100, dashes=(4,4), lw=0.5)
     plots.append(ax.errorbar(tauTc_32[8:16]-tauTc_32[8]+tauTc_32[0], EE_32[j,8:16], EE_err_32[j,8:16], **plotstyle_points, zorder=-10, color='red'))
     ax.legend(handles=plots, labels=[r'$T_C^{-4} G_\Delta(\tau T_C)$', r'$T_C^{-4} G_1(\tau T_C+\Delta \tau T_C)$'], loc="upper left", bbox_to_anchor=(0.005,0.985), frameon=True, framealpha=0.5, edgecolor='none', fancybox=False, facecolor="w", title="", labelspacing=0.1, borderpad=0.1, handletextpad=0.4, handler_map={type(plots[0]): HandlerErrorbar(xerr_size=0.4)})
     fig.savefig(outputfolder+"/temp/EE_flow_mass_shift_diff_"+'{0:.4f}'.format(flow_times[j])+".pdf", **figurestyle) 
@@ -169,24 +165,9 @@ for j in (14,19): #the two flowtimes
     #Gdelta=tauTc_32[0] * (EE_16[j,0] - EE_32[j,0])
     Gdelta=0
     G1=0
-    Gdelta_sum=0
-    G1_sum=0
     for i in (0,1,2,3,4,5,6):
-    #for i in (0,1,2,3,4,5,6,7):
-        #Gdelta_sum+=(EE_16[j,i] - EE_32[j,i]) #* (tauTc_32[1]-tauTc_32[0])
-        #G1_sum += EE_32[j,8+i] #* (tauTc_32[1]-tauTc_32[0])
         Gdelta += (tauTc_32[  i+1]-tauTc_32[  i]) * (EE_16[j,  i]-EE_32[j,  i  ] + EE_16[j,i+1]-EE_32[j,i+1]) / 2
         G1 +=     (tauTc_32[8+i+1]-tauTc_32[8+i]) * (EE_32[j,8+i]+EE_32[j,8+i+1])                             / 2
     #print("flow time = ", flow_times[j])
     #print("Gdelta = ", Gdelta, "G1 = ", G1)
     print("integral over -2*Gdelta + integral over 2*G1 = ", -2*Gdelta+2*G1)
-    #print(Gdelta_sum, G1_sum)
-    #print("naive = ", -2*Gdelta_sum+2*G1_sum)
-#ax.set_xlim([0])
-#ax.set_yscale('log')
-#plots.append(ax.errorbar(flow_times, EE_16[:,i]-EE_32[:,i], (EE_err_16[:, i] + EE_err_32[:,i]), **plotstyle_points))
-#print("tauTc=", tauT_16[i]/T_Tc(16))
-#print("t_F      G(tauTc, t_F)             rel. err in %")
-#for i in range(0,4):
-    #print('{0:.4f}'.format(tauT_16[i]), EE_16[j, :] - EE_32[j,:], (EE_err_16[j, :] + EE_err_32[j,:])/(EE_16[j, i] - EE_32[j,i])*100)
-#print("\n")

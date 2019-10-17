@@ -7,29 +7,6 @@ import sys
 from latqcdtools import jackknife
 from latqcdtools import bootstr
 
-#---------
-#functions
-#---------
-#def free_corr_flow( tauT, flowtime, Nt ):
-    #result = 0
-    #for n in range(-50,50):
-        #x = tauT*Nt + n*Nt
-        #xi_sq = x**2 / (8 * flowtime)
-        #result += 1/x**4  * ((xi_sq**2 + xi_sq + 1)*math.exp(-xi_sq) - 1)
-    #result *= - 1 / math.pi**2 * Nt**4
-    #return result
-
-#def normalize_EE_flow( data, data_err, tauT_imp, flowtimes ):
-    #datashape = data.shape
-    #Ntau = datashape[1]*2    
-    #for i in range(0, datashape[0]):
-        #for j in range(0, datashape[1]):
-            #if i == 0 :
-                #data[i,j] = data[i,j] / free_corr(tauT_imp[j]) * Ntau**4
-                #data_err[i,j] = data_err[i,j] / free_corr(tauT_imp[j]) * Ntau**4
-            #else:
-                #data[i,j] = data[i,j] / free_corr_flow(tauT_imp[j], flowtimes[i], Ntau ) * Ntau**4 
-                #data_err[i,j] = data_err[i,j] / free_corr_flow(tauT_imp[j], flowtimes[i], Ntau ) * Ntau**4 
 
 def compute_EE_mean(EE_data): #mean function for Haukes jackknife routine
     mean_EE_numerator_real = numpy.mean(EE_data[0], axis=0)
@@ -136,17 +113,12 @@ if qcdtype == "hisq":
 #EE, EE_err = jackknife_EE(EE_numerator_real, polyakov_real, n_streams) #old way via my own jackknife_EE function
 
 normalize_EE(EE, EE_err, tauT_imp[nt]) 
-#EE_flow = numpy.copy(EE); EE_flow_err = numpy.copy(EE_err)
 
 numpy.savetxt(outputfolder+"EE_"+conftype+".dat", EE) 
 numpy.savetxt(outputfolder+"EE_err_"+conftype+".dat", EE_err)
 numpy.savetxt(outputfolder+"tauT_imp"+conftype+".dat", numpy.array(tauT_imp[nt]))
 numpy.savetxt(outputfolder+"n_datafiles_"+conftype+".dat", numpy.array(n_datafiles).reshape(1,))
 numpy.savetxt(outputfolder+"flowradius_"+conftype+".dat", flow_radius)
-
-#normalize_EE_flow(EE_flow, EE_flow_err, tauT_imp[nt], flow_times) 
-#numpy.savetxt(outputfolder+"EE_flow_"+conftype+".dat", EE_flow) 
-#numpy.savetxt(outputfolder+"EE_flow_err_"+conftype+".dat", EE_flow_err)
 
 #----------------
 #generate bootstrap samples, which are used in the cont extr

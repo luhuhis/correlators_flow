@@ -4,7 +4,7 @@ mkdir -p ../data_merged/quenched/continuum_limit/
 mkdir -p ../data_merged/quenched/continuum_limit/logs/
 extrapolate="srun -n 1 -N 1 --exclusive python -u /home/altenkort/code/analysistoolbox/bin/extrapolate.py"
 path1=../data_merged/quenched
-args="--nknots 1 2 3 --order 2 --constraints 0 2 0 0.5 1 0 --randomization-factor 0 --nsamples 1000 --base-point=0.31 --xmax=0.5 --data-input sample --method from_sample  --no-tex --plot-xmin 0.134 --plot-xmax 0.5 --folder=$path1/continuum_limit/ --log-level INFO"
+args="--nknots 1 2 3 --order 2 --constraints 0 2 0 0.5 1 0 --randomization-factor 0 --nsamples 100 --base-point=0.31 --xmax=0.5 --data-input sample --method from_sample  --no-tex --plot-xmin 0.134 --plot-xmax 0.5 --folder=$path1/continuum_limit/ --log-level INFO"
 #--nknots 3
 chi_dof_file=../data_merged/quenched/continuum_limit/logs/chi_dof.txt
 
@@ -35,14 +35,10 @@ wait
 rm -f $chi_dof_file
 echo "#flowradius chi2_dof \`date\`" >> $chi_dof_file
 for i in "\${flowradii[@]}" ; do   
-    echo "\$i \`tail -n 3 /home/altenkort/master/work/data_merged/quenched/continuum_limit/logs/EE_continuum_extrapolation_\${i}.out | grep 'Chi^2/d.o.f. of first full fit:' | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | tail -n 1\`" >> $chi_dof_file
+    echo "\$i \`tail -n 3 ../data_merged/quenched/continuum_limit/logs/EE_continuum_extrapolation_\${i}.out | grep 'Chi^2/d.o.f. of first full fit:' | grep -Eo '[+-]?[0-9]+([.][0-9]+)?' | tail -n 1\`" >> $chi_dof_file
 done
 
-srun -n 1 -N 1 --exclusive python -u /home/altenkort/master/work/scripts/av_chi_dof.py
-# nlines=\`cat /home/altenkort/master/work/data_merged/quenched/continuum_limit/EE_0.0700_cont.txt | wc -l\`
-# if [[ ( \$nlines -eq 16 ) ]] ; then
-#     mv /home/altenkort/master/work/data_merged/quenched/continuum_limit/EE_*_cont.txt /home/altenkort/master/work/data_merged/quenched/continuum_limit/cont_at_imp_tauT_30/
-# fi
+srun -n 1 -N 1 --exclusive python -u ./misc/av_chi_dof.py
 
 echo "done \${SLURM_JOB_ID} \`date\`"
 EOF
