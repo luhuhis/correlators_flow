@@ -38,8 +38,8 @@ tauT_20 = list(numpy.around(numpy.loadtxt(inputfolder+"/s080t20_b0703500/tauT_im
 tauT_24 = list(numpy.around(numpy.loadtxt(inputfolder+"/s096t24_b0719200/tauT_imps096t24_b0719200.dat"), 4))
 tauT_30 = list(numpy.around(numpy.loadtxt(inputfolder+"/s120t30_b0739400/tauT_imps120t30_b0739400.dat"), 4))
 
-tauT_30_ext = (*tauT_30,0.5)
-#tauT_30_ext = (0.229167, 0.250000, 0.270833, 0.291667, 0.312500, 0.333333, 0.354167, 0.375000, 0.395833, 0.416667, 0.437500, 0.458333, 0.479167, 0.500000)
+#tauT_30_ext = (*tauT_30,0.5)
+tauT_30_ext = (0.229167, 0.250000, 0.270833, 0.291667, 0.312500, 0.333333, 0.354167, 0.375000, 0.395833, 0.416667, 0.437500, 0.458333, 0.479167, 0.500000)
 
 #-------------------
 #set plot parameters
@@ -57,8 +57,8 @@ titlestyle         = dict(x=0.5, y=0.9, bbox=labelboxstyle, verticalalignment='t
 
 plt.rc('text', usetex=True)
 plt.rc('text.latex')
-plt.rc('font', family='serif', size=8)
-aspect=1/3.8
+plt.rc('font', family='serif', size=12)
+#aspect=1/3.8
 fig = plt.figure() 
 ax = fig.add_subplot(1,1,1) 
 ax.xaxis.set_label_coords(0.99,0.01)
@@ -70,23 +70,23 @@ flowend=21
 
 
 #PLOT LATTICE EFFECTS FOR ANIMATION
-ax.set_xlim([0,0.51])
+ax.set_xlim([0,0.5])
 ax.set_ylim([0.75,4.25])
-ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
+#ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
 plots = []
 ax.set_ylabel(r'$\displaystyle \frac{G_{r_F}(\tau T)}{G_{\mathrm{norm}}(\tau T)}$', **ylabelstyle)
 ax.set_xlabel(r'$\tau T$', **xlabelstyle)
-ax.get_xaxis().set_visible(False)
-#for i in range(0,len(flow_radius)):
+#ax.get_xaxis().set_visible(False)
+for i in range(0,len(flow_radius)):
 #for i in (0,10,20,22):
-for i in (0,):
-    ax.set_title(r'$r_F =$ '+'{0:.2f}'.format(flow_radius[i]), **titlestyle)
+#for i in (0,):
+    ax.set_title(r'$r_F =$ '+'{0:.3f}'.format(flow_radius[i]), x=0.5, y=0.96, bbox=labelboxstyle, verticalalignment='top', zorder=999999)
     plots.append(ax.errorbar(tauT_16, EE_16[i,:], EE_err_16[i,:], label=r'$N_\tau = 16$', **plotstyle_points, color=cm.gnuplot(0.03), zorder=-3))
     plots.append(ax.errorbar(tauT_20, EE_20[i,:], EE_err_20[i,:], label=r'$N_\tau = 20$', **plotstyle_points, color=cm.gnuplot(0.40), zorder=-2))
     plots.append(ax.errorbar(tauT_24, EE_24[i,:], EE_err_24[i,:], label=r'$N_\tau = 24$', **plotstyle_points, color=cm.gnuplot(0.65), zorder=-1))
     plots.append(ax.errorbar(tauT_30, EE_30[i,:], EE_err_30[i,:], label=r'$N_\tau = 30$', **plotstyle_points, color=cm.gnuplot(0.90), zorder=0))
     try:
-        EE_cont = numpy.loadtxt(inputfolder+"/continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_cont.txt", skiprows=14)
+        EE_cont = numpy.loadtxt(inputfolder+"/continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_cont.txt", skiprows=15)
         for j in range(0,len(EE_cont)):
             if EE_cont[j,0] < flow_radius[i]/numpy.sqrt(8*0.014)+offset:
                 EE_cont[j,:] = None
@@ -104,9 +104,10 @@ for i in (0,):
     ax.lines.clear() ; ax.collections.clear() ; plots.clear();
     ax.set_title(r'')
 legendstyle['borderpad']=0.1
+print("done with lattice effects plot")
 
 #PLOT all continuum extr. in one plot
-plt.rc('font', family='serif', size=10)
+plt.rc('font', family='serif', size=12)
 fig = plt.figure() 
 ax = fig.add_subplot(1,1,1) 
 ax.xaxis.set_label_coords(0.99,0.01)
@@ -116,33 +117,56 @@ ax.set_xlabel(r'$\tau T$', **xlabelstyle)
 aspect=1/2
 ax.set_ylim([2,4])
 ax.set_xlim([0.15,0.5])
-ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
-legendstyle['loc']='upper left'
-legendstyle['bbox_to_anchor']=(1,1)
+#ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
+legendstyle['loc']='center right'
+legendstyle['bbox_to_anchor']=(1,0.5)
+legendstyle['prop']={'size': 12}
 
 for i in range(0,len(flow_radius)):
     flow_radius[i] = round(flow_radius[i],4)
-for i in range(flowstart,flowend):
+flow_index_range = range(flowstart,flowend)
+for i in flow_index_range:
     EE_cont = numpy.loadtxt(inputfolder+"/continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_cont.txt")
     for j in range(0,len(EE_cont)):
         if EE_cont[j,0] < flow_radius[i]/numpy.sqrt(8*0.014)+offset:
             EE_cont[j,:] = None
-    plots.append(ax.fill_between(EE_cont[:,0], EE_cont[:,1]-EE_cont[:,2], EE_cont[:,1]+EE_cont[:,2], label='{0:.3f}'.format(flow_radius[i]), facecolor=get_color(flow_radius, i, flowstart, flowend), zorder=i))
+    plots.append(ax.fill_between(EE_cont[:,0], EE_cont[:,1]-EE_cont[:,2], EE_cont[:,1]+EE_cont[:,2], label='{0:.3f}'.format(flow_radius[i]), facecolor=get_color(flow_radius, i, flowstart, flowend), zorder=-2*len(flow_index_range)+i))
 legendstyle["title"]=r"$r_F$"
 ax.legend(handles=plots, labels=['{0:.3f}'.format(i) for i in flow_radius[flowstart:flowend]], **legendstyle)
+
+#plot zoomed plot
+zoom_plots=[]
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+axins = zoomed_inset_axes(parent_axes=ax, zoom=2.5, loc='lower center')
+axins.set_xlim(0.36,0.39)
+axins.set_ylim(3.2, 3.45)
+axins.xaxis.set_visible(False)
+axins.yaxis.set_visible(False)
+for i in flow_index_range:
+    EE_cont = numpy.loadtxt(inputfolder+"/continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_cont.txt")
+    for j in range(0,len(EE_cont)):
+        if EE_cont[j,0] < flow_radius[i]/numpy.sqrt(8*0.014)+offset:
+            EE_cont[j,:] = None
+    #plot zoom
+    zoom_plots.append(axins.fill_between(EE_cont[:,0], EE_cont[:,1]-EE_cont[:,2], EE_cont[:,1]+EE_cont[:,2], label='{0:.3f}'.format(flow_radius[i]), facecolor=get_color(flow_radius, i, flowstart, flowend), zorder=-2*len(flow_index_range)+i))
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+mark_inset(parent_axes=ax, inset_axes=axins, linewidth=1, alpha=0.5, loc1=2, loc2=4, zorder=1000)
+
 fig.savefig(outputfolder+"/EE_aeq0_tneq0.pdf", **figurestyle) 
 ax.lines.clear() ; ax.collections.clear() ; plots.clear()
+axins.remove()
+print("done with continuum extr plots")
 
 
 #PLOT CONT LIMITS AXES FLIPPED WITH t->0 EXTRAPOLATIONS
-start=6
-end=15
-legendstyle['prop']={'size': 10}
+start=2
+end=14
+legendstyle['prop']={'size': 12}
 ax.set_ylabel(r'$\displaystyle \frac{G_{\tau T, \mathrm{cont}}(r_F)}{G_{\tau T, \mathrm{norm}}}$')
 ax.set_xlabel(r'$r_F$')
 ax.set_xlim([-0.005,0.1025])
-ax.set_ylim([2.45,4.105])
-ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
+ax.set_ylim([2.7,4])
+#ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
 EE_cont_arr= []
 EE_cont_arr_backup= []
 
@@ -182,13 +206,15 @@ zero_flow_extr = []
 for i in range(start,end):
     plots.append(ax.errorbar(flow_radius[flowstart:flowend], [j[i,1] for j in EE_cont_arr], [j[i,2] for j in EE_cont_arr], **plotstyle_points, zorder=-i, color=get_color(tauT_30_ext, i, start, end)))
     func = lambda x,a,b:a*x+b
-    func_err = lambda x,da,db:numpy.sqrt((da*x)**2+db**2)
+    #func_err = lambda x,da,db:numpy.sqrt((da*x)**2+db**2)
     fitter = fit.Fitter(func, xdata = flow_radius[flowstart:flowend], ydata = [j[i,1] for j in EE_cont_arr_backup], edata = [j[i,2] for j in EE_cont_arr_backup])
     res, res_err, chi_dof = fitter.do_fit(start_params = [-0.1, 3], xmin=0.049, xmax=(tauT_30_ext[i]-0.02)*numpy.sqrt(8*0.014))
     zero_flow_extr.append([tauT_30_ext[i], res[1], res_err[1]])
     x = numpy.linspace(0,0.1,1000)
     #ax.errorbar((tauT_30_ext[i]-0.02)*numpy.sqrt(8*0.014), 2.3+tauT_30_ext[i], color=get_color(tauT_30_ext, i, start, end), **plotstyle_points)
-    ax.fill_between(x, func(x, *res)-func_err(x, *res_err), func(x, *res)+func_err(x, *res_err), facecolor=get_color(tauT_30_ext, i, start, end), alpha=0.6, zorder=-2*i)
+    #ax.fill_between(x, func(x, *res)-func_err(x, *res_err), func(x, *res)+func_err(x, *res_err), facecolor=get_color(tauT_30_ext, i, start, end), alpha=0.6, zorder=-2*i)
+    ax.errorbar(x, func(x, *res), color=get_color(tauT_30_ext, i, start, end), alpha=0.6, fmt='--', lw=0.75, zorder=(-2*end+start+i))
+    ax.errorbar(0, res[1], res_err[1], color=get_color(tauT_30_ext, i, start, end), alpha=0.6, zorder=(-2*end+start+i), **plotstyle_points)
     
 legendstyle["title"]=r"$\tau T$"
 legendstyle["loc"]="upper left"
@@ -196,22 +222,25 @@ legendstyle["bbox_to_anchor"]=(1,1)
 ax.legend(handles=plots, labels=['{0:.3f}'.format(i) for i in tauT_30_ext[start:end]], **legendstyle, handler_map={type(plots[0]): HandlerErrorbar(xerr_size=0.4)}, handlelength=1.5)
 fig.savefig(outputfolder+"/EE_aeq0_t_extr.pdf", **figurestyle) 
 ax.lines.clear() ; ax.collections.clear() ; plots.clear()
+print("done with flowtime extr plots")
 
-
+ 
 finalresult=[[k[0],k[1],k[2]] for k in zero_flow_extr]
 numpy.savetxt(inputfolder+"EE_final_cont_gradient_flow.txt", finalresult)
 
 #PLOT FINAL RESULT
-plt.rc('font', family='serif', size=9)
+plt.rc('font', family='serif', size=12)
 fig = plt.figure() 
 ax = fig.add_subplot(1,1,1) 
 ax.xaxis.set_label_coords(0.99,0.01)
 ax.yaxis.set_label_coords(0.01,0.97)
 ax.set_ylabel(r'$\displaystyle \frac{G_\mathrm{cont}(\tau T)}{G_{\mathrm{norm}}(\tau T)}$', **ylabelstyle)
 ax.set_xlabel(r'$\tau T$', **xlabelstyle)
-ax.set_xlim([0,0.505])
+#ax.set_xlim([0.05,0.505])
+#ax.set_ylim([1.5,4])
+ax.set_xlim([0,0.5])
 ax.set_ylim([1,4])
-ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
+#ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
 plots.append(ax.errorbar(tauT_30_ext[start:end], [k[1] for k in zero_flow_extr], [k[2] for k in zero_flow_extr], 
                          **plotstyle_points, label="Gradient Flow", color=cm.gnuplot(0.8)))
 plots.append(ax.errorbar(EE_cont_2015_new[:,0], EE_cont_2015_new[:,1], EE_cont_2015_new[:,2], 
@@ -221,3 +250,4 @@ plots.append(ax.errorbar(EE_cont_2015[:,0], EE_cont_2015[:,1], EE_cont_2015[:,2]
 ax.legend(handles=plots, loc="upper right", frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, 
           facecolor="w", title="", labelspacing=0.4, borderpad=0.1, handletextpad=0.4, bbox_to_anchor=(1,0.5))
 fig.savefig(outputfolder+"/EE_aeq0_teq0.pdf", **figurestyle) 
+print("done with final plot")

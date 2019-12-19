@@ -124,6 +124,7 @@ numpy.savetxt(outputfolder+"flowradius_"+conftype+".dat", flow_radius)
 #generate bootstrap samples, which are used in the cont extr
 nsamples=1000
 EE_samples, EE_bootstrap, EE_err_bootstrap = bootstr.bootstr(func=compute_EE_mean, data=EE_data, numb_samples=nsamples, sample_size=10000, same_rand_for_obs = True, conf_axis=1, return_sample = True)
+print(EE_samples[0])
 normalize_EE_samples(EE_samples, tauT_imp[nt])
 
 if conftype in ("s064t16_b0687361", "s080t20_b0703500", "s096t24_b0719200", "s120t30_b0739400"):
