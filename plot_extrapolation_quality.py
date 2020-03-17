@@ -19,10 +19,10 @@ flow_radius = numpy.loadtxt(inputfolder+"s064t16_b0687361/flowradius_s064t16_b06
 
 
 figurestyle        = dict(bbox_inches="tight")
-plotstyle_points   = dict(fmt='D', linewidth=1, markersize=5, capsize=2, mew=0.5, fillstyle='none')
+plotstyle_points   = dict(fmt='D', linewidth=1, markersize=4, capsize=2, mew=0.5, fillstyle='none')
 labelboxstyle      = dict(boxstyle="square", fc="w", ec='none', alpha=0.7, pad=0.15, zorder=999999)
-legendstyle        = dict(loc="center left", frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, 
-                          facecolor="w", title="", labelspacing=0.1, borderpad=0.1, handletextpad=0.4, prop={'size': 9})
+legendstyle        = dict(loc="center right", frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, facecolor="w", title="", labelspacing=0.1, borderpad=0.1, handletextpad=0.4)#,
+#legendstyle        = dict(loc="center left", frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, facecolor="w", title="", labelspacing=0.1, borderpad=0.1, handletextpad=0.4, prop={'size': 9})
                           #, handlelength=1)#, prop={'size': 9})
 figurestyle        = dict(bbox_inches="tight", pad_inches=0)
 plotstyle_fill     = dict(linewidth=0.5)
@@ -34,31 +34,36 @@ titlestyle         = dict(x=0.5, y=0.95, bbox=labelboxstyle, verticalalignment='
 
 plt.rc('text', usetex=True)
 plt.rc('text.latex')
-plt.rc('font', family='serif', size='12')
+plt.rc('font', family='serif', size='14')
 
 fig = plt.figure() 
 ax = fig.add_subplot(1,1,1) 
 ax.xaxis.set_label_coords(0.99,0.01)
 ax.yaxis.set_label_coords(0.01,0.97)
 
-ax.set_xlim([-0.0001,1/15**2])
+ax.set_xlim([-0.0001,1/15**2+0.001])
 #ax.set_ylim([1.9,4])
-ax.set_ylim([2.7,3.8])
+ax.set_ylim([2.9,3.8])
 
 plots = []
-ax.set_ylabel(r'$\displaystyle \frac{G_{r_F, \tau T} }{G_{\mathrm{norm }, \tau T} }$', **ylabelstyle)
+ax.set_ylabel(r'$\displaystyle \frac{G_{\tau,\tau_F} }{G^{\mathrm{free}}_{\tau,\tau_F=0} }$', **ylabelstyle)
 ax.set_xlabel(r'$N_\tau^{-2}$', **xlabelstyle)
 
+start=6
+end=14
+#be careful with the 
 
+flowstart=20
+flowend=21
 
-for i in range(10,21):
-    for tauT_index in (0,100,200,300,400,500,600,700,800,900,999):
-        EE_16 = numpy.loadtxt(inputfolder+"continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_interpolation_16.txt")
-        EE_20 = numpy.loadtxt(inputfolder+"continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_interpolation_20.txt")
-        EE_24 = numpy.loadtxt(inputfolder+"continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_interpolation_24.txt")
-        EE_30 = numpy.loadtxt(inputfolder+"continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_interpolation_30.txt")
+for i in range(flowstart,flowend):
+    for tauT_index in range(start,end):
+        EE_16 = numpy.loadtxt(inputfolder+"continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_interpolation_16.txt", max_rows=14)
+        EE_20 = numpy.loadtxt(inputfolder+"continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_interpolation_20.txt", max_rows=14)
+        EE_24 = numpy.loadtxt(inputfolder+"continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_interpolation_24.txt", max_rows=14)
+        EE_30 = numpy.loadtxt(inputfolder+"continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_interpolation_30.txt", max_rows=14)
         EE_cont = numpy.loadtxt(inputfolder+"continuum_limit/EE_"+'{0:.4f}'.format(flow_radius[i])+"_cont.txt")
-        ax.set_title(r'$r_F=$'+'{0:.3f}'.format(flow_radius[i]),**titlestyle) #r'$ \tau T = $' + '{0:.2f}'.format(EE_cont[tauT_index,1]) +
+        ax.set_title(r'$\sqrt{8\tau_F}T=$'+'{0:.2f}'.format(flow_radius[i]),**titlestyle) #r'$ \tau T = $' + '{0:.2f}'.format(EE_cont[tauT_index,1]) +
         
         data = []
         Nts = [16, 20, 24, 30]
@@ -73,7 +78,7 @@ for i in range(10,21):
         _edata = [j[2] for j in data[:]]
         
         plots.append(ax.errorbar(_xdata, _ydata, _edata, **plotstyle_points, color=get_color(EE_cont[:,0], 
-                                 tauT_index,0,999), zorder=-tauT_index-1000, label='{0:.2f}'.format(EE_cont[tauT_index,0])))
+                                 tauT_index,start,end), zorder=-tauT_index-1000, label='{0:.3f}'.format(EE_cont[tauT_index,0])))
         
         #fit
         func = lambda x,a,b:a*x+b
@@ -81,8 +86,7 @@ for i in range(10,21):
         res, res_err, chi_dof = fitter.do_fit(start_params = [0, 3])
         x = numpy.linspace(0,0.1,1000)
         ax.errorbar(x, func(x, *res), color='grey', alpha=0.8, fmt='--', lw=0.75, zorder=-100)
-    ax.legend(handles=plots, loc="center left", frameon=True, framealpha=0, edgecolor='none', fancybox=False, facecolor="w", title=r'$\tau T$', bbox_to_anchor=(0.98,0.5),               
-              labelspacing=0.25, borderpad=0, handletextpad=0)
+    ax.legend(handles=plots, loc="center right", frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, facecolor="w", labelspacing=0.25, borderpad=0, handletextpad=0, title=r'$\tau T$')
     fig.savefig(inputfolder+"continuum_limit/EE_rF"+'{0:.4f}'.format(flow_radius[i])+"_interpolation.pdf", **figurestyle) 
     #"_tauT"+'{0:.4f}'.format(EE_cont[tauT_index,1])+
     ax.lines.clear() ; ax.collections.clear() ; plots.clear();

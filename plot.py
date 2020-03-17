@@ -105,7 +105,7 @@ plotstyle_points   = dict(fmt='D-', linewidth=mylinewidth, markersize=0.5)
 plotstyle_2015     = dict(fmt='D-', linewidth=1, color='#7CFC00', markersize=2, capsize=5, mew=0.5)
 #plotstyle_2019     = dict(fmt='D-', linewidth=1, color='#458e00', markersize=2, capsize=5, mew=0.5)
 flowlimitplotstyle = dict(fmt='|', mew=0.7, markersize=15)
-legendstyle        = dict(bbox_to_anchor=(1,1), loc="upper left", frameon=True, framealpha=0, title="", labelspacing=0.1, borderpad=0.1, handletextpad=0.4, prop={'size': 9})
+legendstyle        = dict(loc="center right", frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, facecolor="w", title="", labelspacing=0.1, borderpad=0.1, handletextpad=0.4)#bbox_to_anchor=(1,1), 
 figurestyle        = dict(bbox_inches="tight",  pad_inches=0)#, pad_inches=0.05)
 labelboxstyle      = dict(boxstyle="square", fc="w", ec='none', alpha=0.7, pad=0.15, zorder=999999)
 xlabelstyle        = dict(horizontalalignment='right', verticalalignment='bottom',  bbox=labelboxstyle, zorder=999998)
@@ -114,8 +114,8 @@ titlestyle         = dict(zorder=999999)#bbox=labelboxstyle, #verticalalignment=
 
 plt.rc('text', usetex=True)
 plt.rc('text.latex')
-plt.rc('font', family='serif', size=10)
-aspect=1/2
+plt.rc('font', family='serif', size=14)
+#aspect=1/2
 
 fig = plt.figure() 
 ax = fig.add_subplot(1,1,1) 
@@ -127,8 +127,8 @@ ax = fig.add_subplot(1,1,1)
     #ax.set_title(r'$T\approx 1.07\, T_C$, $'+str(ns)+'^3 \\times $'+str(nt)+', $\#_\mathrm{conf.}=\,$'+n_datafiles+'', **titlestyle)#x=0.975, y=0.95, horizontalalignment='right', 
     
 ax.xaxis.set_label_coords(0.99,0.01)
-ax.yaxis.set_label_coords(0.015,0.97)
-ax.set_ylabel(r'$\displaystyle \frac{G_{r_F}(\tau T)}{G_{\mathrm{norm}}(\tau T)}$', 
+ax.yaxis.set_label_coords(0.01,0.99)
+ax.set_ylabel(r'$\displaystyle \frac{G_{\sqrt{8\tau_F}T}(\tau T)}{G_{\mathrm{free}}(\tau T)}$', 
               bbox=labelboxstyle, horizontalalignment='left', verticalalignment='top', rotation=0, zorder=999999)
 
 #-----------------------------------
@@ -140,15 +140,15 @@ flowstart=0;
 ax.set_xlim([0,0.5]); 
 if qcdtype == "quenched":
     flowend=16
-    ax.set_ylim([1,4])
+    ax.set_ylim([0.7,3.8])
 if qcdtype == "hisq":
     flowstart=5
     flowend=21
     ax.set_ylim([0,12])
     
-ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
+#ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
 ax.set_xlabel(r'$\tau T$', horizontalalignment='right', verticalalignment='bottom', bbox=labelboxstyle, zorder=999999)
-legendstyle["title"]=r"$\displaystyle r_F$"
+legendstyle["title"]=r"$\displaystyle \sqrt{8\tau_F}T$"
 
 #for i in range(flowstart,flowend):
     #plots.append(ax.errorbar(tauT[start:end], EE[i,start:end], EE_err[i,start:end], color=get_color(flow_radius, i, flowstart, flowend), **plotstyle))
@@ -194,16 +194,21 @@ ax.lines.clear() ; ax.collections.clear() ; plots.clear()
 #------------------------------------
 #skip_large_errors(EE, EE_err, EE_backup, EE_err_backup, 10000)
 flowstart=0; flowend=24
-ax.set_xlim([0,0.16]); 
+ax.set_xlim([-0.00001,0.003])
 if qcdtype == "quenched":
     ax.set_ylim([0.7,3.8])
 if qcdtype == "hisq":
     ax.set_ylim([0,12])
-ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
-ax.set_xlabel(r'$\displaystyle r_F $')
-ax.set_ylabel(r'$\displaystyle \frac{G_{\tau T}(r_F)}{G_{\tau T,\mathrm{norm}}}$', 
+#ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
+#ax.set_xlabel(r'$\displaystyle \sqrt{8\tau_F} $')
+ax.set_xlabel(r'$\displaystyle \tau_F T^2 $')
+#ax.set_xlabel(r'$\displaystyle t_F/N_\tau^2 $')
+#ax.set_ylabel(r'$\displaystyle \frac{G_{\tau T}(\sqrt{8\tau_F})}{G_{\tau T,\mathrm{free}}}$', 
+ax.set_ylabel(r'$\displaystyle \frac{G_{\tau}(\tau_F)}{G_{\tau,\tau_F=0}^{\mathrm{free}}}$', 
               bbox=labelboxstyle, horizontalalignment='left', verticalalignment='top', rotation=0, zorder=999999)
 legendstyle["title"]=r"$\tau T$"
+
+
 
 #for i in range(start,end):
     #plots.append(ax.errorbar(flow_radius[flowstart:flowend], EE[flowstart:flowend,i], EE_err[flowstart:flowend,i], color=get_color(tauT, i, start, end), zorder=(-i), **plotstyle))
@@ -214,36 +219,50 @@ legendstyle["title"]=r"$\tau T$"
 #ax.lines.clear() ; ax.collections.clear() ; plots.clear()
 
 for i in range(start,end):
-    plots.append(ax.fill_between(flow_radius[flowstart:flowend], EE[flowstart:flowend,i]-EE_err[flowstart:flowend,i], 
+    plots.append(ax.fill_between(flow_radius[flowstart:flowend]**2/8, EE[flowstart:flowend,i]-EE_err[flowstart:flowend,i], 
                                  EE[flowstart:flowend,i]+EE_err[flowstart:flowend,i], facecolor=get_color(tauT, i, start, end), zorder=(-(20+i)), linewidth=mylinewidth))
-    ax.errorbar(flow_radius[flowstart:flowend], EE[flowstart:flowend,i], color=get_color(tauT, i, start, end), zorder=(-i), **plotstyle_add_point)
-    ax.errorbar(flow_limit[i], interpolation_value[i], color=get_color(tauT, i, start, end), **flowlimitplotstyle)
+    ax.errorbar(flow_radius[flowstart:flowend]**2/8, EE[flowstart:flowend,i], color=get_color(tauT, i, start, end), zorder=(-i), **plotstyle_add_point)
+    ax.errorbar(flow_limit[i]**2/8, interpolation_value[i], color=get_color(tauT, i, start, end), **flowlimitplotstyle)
+    
+ax2=ax.twiny()
+new_tick_locations = numpy.array([0,0.05**2/8,0.075**2/8,0.1**2/8,0.125**2/8,0.15**2/8])
+def tick_function(X):
+    V = numpy.sqrt(X*8)
+    return ["%.3f" % z for z in V]
+
+ax2.set_xlim(ax.get_xlim())
+ax2.set_xticks(new_tick_locations)
+ax2.set_xticklabels(tick_function(new_tick_locations))
+ax2.set_xlabel(r'$\sqrt{8\tau_F}T$', horizontalalignment='right', verticalalignment='top', bbox=labelboxstyle, zorder=999999)
+ax2.xaxis.set_label_coords(0.99,0.98)
+
+    
 ax.legend(handles=plots, labels=['{0:.3f}'.format(j) for j in tauT[start:end]], **legendstyle)
 fig.savefig(outputfolder+"/"+conftype+"_EE_flowlim_fill.pdf", **figurestyle) 
 ax.lines.clear() ; ax.collections.clear() ; plots.clear()
 
 
-ax.set_ylim([0.7,4.2])
-ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
-skip_large_errors(EE, EE_err, 0.1)
-zero_flow_extr = []
-for i in range(start,end):
-    plots.append(ax.fill_between(flow_radius[flowstart:flowend], EE[flowstart:flowend,i]-EE_err[flowstart:flowend,i], 
-                                 EE[flowstart:flowend,i]+EE_err[flowstart:flowend,i], facecolor=get_color(tauT, i, start, end), zorder=(-i), linewidth=mylinewidth))
-    if i > 2:
-        func = lambda x,a,b:a*x+b
-        func_err = lambda x,da,db:numpy.sqrt((da*x)**2+db**2)
-        fitter = fit.Fitter(func, xdata = flow_radius, ydata = EE_backup[:,i], edata = EE_err_backup[:,i])
-        res, res_err, chi_dof = fitter.do_fit(start_params = [-0.1, 3], xmin=flow_limit[i]/3, xmax=flow_limit[i])
-        zero_flow_extr.append([res[1], res_err[1]])
-        x = numpy.linspace(0,flow_limit[i],1000)
-        ax.fill_between(x, func(x, *res)-func_err(x, *res_err), func(x, *res)+func_err(x, *res_err), facecolor=get_color(tauT, i, start, end), alpha=0.4)
-    ax.errorbar(flow_limit_lo[i], interpolation_value_lo[i], color=get_color(tauT, i, start, end), **flowlimitplotstyle)
-    ax.errorbar(flow_limit[i], interpolation_value[i], color=get_color(tauT, i, start, end), **flowlimitplotstyle)
-numpy.savetxt("../data_merged/"+qcdtype+"/"+conftype+"/EE_"+conftype+"_zero_flow_extr.dat", zero_flow_extr)
-ax.legend(handles=plots, labels=[str(j) for j in tauT[start:end]], **legendstyle)
-fig.savefig(outputfolder+"/"+conftype+"_EE_flowlim_fill_w_0flow_extr.pdf", **figurestyle) 
-ax.lines.clear() ; ax.collections.clear() ; plots.clear()
+#ax.set_ylim([0.7,4.2])
+##ax.set_aspect(1.0/ax.get_data_ratio()*aspect)
+#skip_large_errors(EE, EE_err, 0.1)
+#zero_flow_extr = []
+#for i in range(start,end):
+    #plots.append(ax.fill_between(flow_radius[flowstart:flowend]**2/8, EE[flowstart:flowend,i]-EE_err[flowstart:flowend,i], 
+                                 #EE[flowstart:flowend,i]+EE_err[flowstart:flowend,i], facecolor=get_color(tauT, i, start, end), zorder=(-i), linewidth=mylinewidth))
+    #if i > 2:
+        #func = lambda x,a,b:a*x+b
+        #func_err = lambda x,da,db:numpy.sqrt((da*x)**2+db**2)
+        #fitter = fit.Fitter(func, xdata = flow_radius, ydata = EE_backup[:,i], edata = EE_err_backup[:,i])
+        #res, res_err, chi_dof = fitter.do_fit(start_params = [-0.1, 3], xmin=flow_limit[i]/3, xmax=flow_limit[i])
+        #zero_flow_extr.append([res[1], res_err[1]])
+        #x = numpy.linspace(0,flow_limit[i],1000)
+        #ax.fill_between(x, func(x, *res)-func_err(x, *res_err), func(x, *res)+func_err(x, *res_err), facecolor=get_color(tauT, i, start, end), alpha=0.4)
+    #ax.errorbar(flow_limit_lo[i], interpolation_value_lo[i], color=get_color(tauT, i, start, end), **flowlimitplotstyle)
+    #ax.errorbar(flow_limit[i], interpolation_value[i], color=get_color(tauT, i, start, end), **flowlimitplotstyle)
+#numpy.savetxt("../data_merged/"+qcdtype+"/"+conftype+"/EE_"+conftype+"_zero_flow_extr.dat", zero_flow_extr)
+#ax.legend(handles=plots, labels=[str(j) for j in tauT[start:end]], **legendstyle)
+#fig.savefig(outputfolder+"/"+conftype+"_EE_flowlim_fill_w_0flow_extr.pdf", **figurestyle) 
+#ax.lines.clear() ; ax.collections.clear() ; plots.clear()
 
 #--------------------
 #PLOT: relative error
@@ -263,8 +282,8 @@ ax.set_yscale('log')
 ax.set_xlim([-0.0025,flow_radius[flowend-1]+0.0025]); #ax.autoscale(enable=True, axis='y')
 ax.set_ylim([0.01,1000])
 #ax.set_title(r'$'+str(ns)+'^3 \\times $'+str(nt), **titlestyle)
-ax.set_xlabel(r'$\displaystyle r_F $', **xlabelstyle)
-ax.set_ylabel(r'$\displaystyle \frac{\delta G_{\tau T}(r_F)}{\left| G_{\tau T}(r_F)\right|}$ in \%', **ylabelstyle)
+ax.set_xlabel(r'$\displaystyle \sqrt{8\tau_F}T $', **xlabelstyle)
+ax.set_ylabel(r'$\displaystyle \frac{\delta G_{\tau T}(\sqrt{8\tau_F}T)}{\left| G_{\tau T}(\sqrt{8\tau_F}T)\right|}$ in \%', **ylabelstyle)
 for i in range(start,end):
     for j in range(flowstart, flowend):
         if flow_radius[j] > flow_limit[i]:
