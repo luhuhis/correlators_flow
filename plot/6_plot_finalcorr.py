@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 import numpy
 import matplotlib
-import plotlib as pl
+import lib_plot as pl
 
 fig, ax, plots = pl.create_figure(xlims=[0,0.5], ylims=[1,4], xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G^\mathrm{ cont }(\tau)}{G^{\mathrm{norm } }(\tau)}$')
 pl.legendstyle.update(dict(loc='upper right', bbox_to_anchor=(1,0.45), labelspacing=0.4, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=0.5)} ))

@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 import numpy
 import matplotlib
-import plotlib as pl
+import lib_plot as pl
 
 fig, ax, plots = pl.create_figure(xlims=[0.15,0.5], ylims=[2,4], xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G_{\tau_F}^\mathrm{cont } (\tau)}{G^\mathrm{free }_{\tau_F=0} (\tau)}$')
 pl.legendstyle.update(dict(loc='center right', bbox_to_anchor=(1,0.4) ))

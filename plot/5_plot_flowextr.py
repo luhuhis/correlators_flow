@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 import numpy
 import matplotlib
-import plotlib as pl
+import lib_plot as pl
 from latqcdtools import fitting as fit
 #from latqcdtools import bootstr
 

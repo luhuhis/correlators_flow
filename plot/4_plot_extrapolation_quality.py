@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 import numpy
 import matplotlib
-import plotlib as pl
+import lib_plot as pl
 from latqcdtools import fitting as fit
 
 fig, ax, plots = pl.create_figure(xlims=[-0.0001,1/15**2+0.001], ylims=[2.9,3.8], xlabel=r'$N_\tau^{-2}$', ylabel=r'$\displaystyle \frac{G_{\tau,\tau_F} }{G^{\mathrm{free}}_{\tau,\tau_F=0} }$')

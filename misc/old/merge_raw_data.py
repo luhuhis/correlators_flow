@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python
 import math
 import numpy
 from os import listdir

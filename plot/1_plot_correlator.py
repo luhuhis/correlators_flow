@@ -3,7 +3,7 @@ import numpy
 import re
 import sys
 import matplotlib
-import plotlib as pl
+import lib_plot as pl
 
 def skip_large_errors(EE, EE_err, boundary):
     for i in range(0,EE.shape[0]):
