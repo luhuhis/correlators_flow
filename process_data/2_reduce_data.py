@@ -6,18 +6,13 @@ import lib_process_data as lpd
 
 from latqcdtools import jackknife
 
-def free_corr( tauT ):
-    norm = math.pi**2 * ( math.cos(math.pi*tauT)**2 / math.sin(math.pi*tauT)**4 + 1/(3*math.sin(math.pi*tauT)**2))
-    return norm
-
-
 def normalize_EE( data, data_err, tauT_imp):
     datashape = data.shape
     Ntau = datashape[1]*2
     for i in range(0, datashape[0]):
         for j in range(0, datashape[1]):
-            data[i,j] = data[i,j] / free_corr(tauT_imp[j]) * Ntau**4
-            data_err[i,j] = data_err[i,j] / free_corr(tauT_imp[j]) * Ntau**4
+            data[i,j] = data[i,j] / lpd.norm_corr(tauT_imp[j]) * Ntau**4
+            data_err[i,j] = data_err[i,j] / lpd.norm_corr(tauT_imp[j]) * Ntau**4
 
 qcdtype, conftype, beta, ns, nt, nt_half = lpd.read_args()
  
@@ -26,6 +21,7 @@ outputfolder=inputfolder
 
 flow_times, n_flow, n_datafiles, n_streams, EE_data = lpd.load_merged_data(qcdtype, conftype)
 
+"""perform a jackknife analysis of the data where one stream is a block or a bootstrap analysis with 1000 samples. This gives the mean and error of the data"""
 if qcdtype == "quenched":
     EE, EE_err = jackknife.jackknife(lpd.compute_EE_mean, EE_data, n_streams, conf_axis=1) 
 if qcdtype == "hisq":

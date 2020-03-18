@@ -1,8 +1,7 @@
 #!/usr/local/bin/python
 import numpy
 from os import listdir 
-import sys
-import re
+import lib_process_data as lpd
 
 qcdtype, conftype, beta, ns, nt, nt_half = lpd.read_args()
 
@@ -43,7 +42,7 @@ with open(outputfolder+'EE_real_'+conftype+'_merged.dat', 'w') as outfile:
     outfile.write('# real part of numerator of EE correlator '+qcdtype+' '+conftype+'\n')
     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
     outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
-    write_flow_times(outfile, flow_times)
+    lpd.write_flow_times(outfile, flow_times)
     for conf in EE_numerator_real: 
         numpy.savetxt(outfile, conf)
         outfile.write('# \n')
@@ -51,7 +50,7 @@ with open(outputfolder+'EE_imag_'+conftype+'_merged.dat', 'w') as outfile:
     outfile.write('# imag part of numerator of EE correlator '+qcdtype+' '+conftype+'\n')
     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
     outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
-    write_flow_times(outfile, flow_times)
+    lpd.write_flow_times(outfile, flow_times)
     for conf in EE_numerator_imag: 
         numpy.savetxt(outfile, conf)
         outfile.write('# \n')
@@ -59,7 +58,7 @@ with open(outputfolder+'polyakov_real_'+conftype+'_merged.dat', 'w') as outfile:
     outfile.write('# real part of polyakov loop '+qcdtype+' '+conftype+'\n')
     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
     outfile.write('# rows correspond to flow times\n')
-    write_flow_times(outfile, flow_times)
+    lpd.write_flow_times(outfile, flow_times)
     for conf in polyakov_real: 
         numpy.savetxt(outfile, conf)
         outfile.write('# \n')
@@ -67,7 +66,7 @@ with open(outputfolder+'polyakov_imag_'+conftype+'_merged.dat', 'w') as outfile:
     outfile.write('# imag part of polyakov loop '+qcdtype+' '+conftype+'\n')
     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
     outfile.write('# rows correspond to flow times\n')
-    write_flow_times(outfile, flow_times)
+    lpd.write_flow_times(outfile, flow_times)
     for conf in polyakov_imag: 
         numpy.savetxt(outfile, conf)
         outfile.write('# \n')

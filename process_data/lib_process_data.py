@@ -1,6 +1,7 @@
 import numpy
 import sys
 import re
+import math
 
 def read_args():
     try:
@@ -14,6 +15,10 @@ def read_args():
         return qcdtype, conftype, beta, ns, nt, nt_half
     except IndexError:
         exit("Invalid Arguments: script.py <qcdtype> <conftype>, e.g. script.py quenched s064t16_b0687361")
+
+def norm_corr( tauT ):
+    norm = math.pi**2 * ( math.cos(math.pi*tauT)**2 / math.sin(math.pi*tauT)**4 + 1/(3*math.sin(math.pi*tauT)**2))
+    return norm
 
 def compute_EE_mean(EE_data): #mean function for Haukes jackknife routine
     mean_EE_numerator_real = numpy.mean(EE_data[0], axis=0)

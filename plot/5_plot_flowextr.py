@@ -6,6 +6,7 @@ from latqcdtools import fitting as fit
 #from latqcdtools import bootstr
 
 fig, ax, plots = pl.create_figure(xlims=[-0.00002,0.0016], ylims=[2.7,3.9], xlabel=r'$\tau_F T^2$', ylabel=r'$\displaystyle \frac{G_{\tau}^\mathrm{ cont } (\tau_F)}{G_{\tau,\tau_F=0}^\mathrm{norm } } $')
+
 pl.legendstyle.update(dict(loc='center right', bbox_to_anchor=(1,0.5), handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=0.4)}, handlelength=1.5 ))
 
 flowstart=10
@@ -81,5 +82,5 @@ fig.savefig(pl.outputfolder+"/EE_aeq0_t_extr.pdf", **pl.figurestyle)
 #save extrapolations to file
 finalresult=[[k[0],k[1],k[2]] for k in zero_flow_extr]
 numpy.savetxt(pl.inputfolder+"EE_final_cont_gradient_flow.txt", finalresult) 
-print("saved flowtime extr plot", pl.inputfolder+"EE_final_cont_gradient_flow.txt")
-
+print("saved final correlator data", pl.inputfolder+"EE_final_cont_gradient_flow.txt")
+print("saved flowtime extr plot "+pl.outputfolder+"/EE_aeq0_t_extr.pdf")

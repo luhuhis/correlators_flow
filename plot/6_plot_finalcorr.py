@@ -3,6 +3,8 @@ import numpy
 import matplotlib
 import lib_plot as pl
 
+pl.ylabelstyle.update(dict(ha='left', va='top'))
+pl.xlabelstyle.update(dict(ha='right', va='bottom'))
 fig, ax, plots = pl.create_figure(xlims=[0,0.5], ylims=[1,4], xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G^\mathrm{ cont }(\tau)}{G^{\mathrm{norm } }(\tau)}$')
 pl.legendstyle.update(dict(loc='upper right', bbox_to_anchor=(1,0.45), labelspacing=0.4, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=0.5)} ))
 ax.xaxis.set_label_coords(0.99,0.01)

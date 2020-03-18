@@ -1,14 +1,17 @@
 #!/usr/local/bin/python
 import numpy
 import matplotlib
-import plotlib as pl
+from pathlib import Path
+import lib_plot as pl
+
+Path(pl.outputfolder+"/lattice_effects/").mkdir(parents=True, exist_ok=True)
 
 fig, ax, plots = pl.create_figure(xlims=[0,0.5], ylims=[0.75,4.25], xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G_{\tau_F}(\tau)}{G_{\tau_F = 0}^{\mathrm{ norm } }(\tau)}$')
 
 pl.titlestyle.update(dict(y=0.96))
 pl.legendstyle.update(dict(loc="upper left", framealpha=0.5, bbox_to_anchor=(0,0.65), handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=0.4)}))
-ax.xaxis.set_label_coords(0.99,0.01)
-ax.yaxis.set_label_coords(0.01,0.97)
+#ax.xaxis.set_label_coords(0.99,0.01)
+#ax.yaxis.set_label_coords(0.01,0.97)
 
 #for i in range(0,len(flow_radius)):
 #for i in (0,):
@@ -32,8 +35,8 @@ for i in (0,5,10,15,20,22):
         #pass
     if i != 0:
         ax.axvline(x=(pl.flow_radius[i]/numpy.sqrt(8*0.014)+pl.offset), **pl.verticallinestyle)
-    fig.savefig(pl.outputfolder+"/single_flow/EE_flow_"+'{0:.4f}'.format(pl.flow_radius[i])+".pdf", **pl.figurestyle) 
-    print("saved lattice effects plot", pl.outputfolder+"/single_flow/EE_flow_"+'{0:.4f}'.format(pl.flow_radius[i])+".pdf") 
+    fig.savefig(pl.outputfolder+"/lattice_effects/EE_flow_"+'{0:.4f}'.format(pl.flow_radius[i])+".pdf", **pl.figurestyle) 
+    print("saved lattice effects plot", pl.outputfolder+"/lattice_effects/EE_flow_"+'{0:.4f}'.format(pl.flow_radius[i])+".pdf") 
     ax.lines.clear() ; ax.collections.clear() ; plots.clear();
     ax.set_title(r'')
 

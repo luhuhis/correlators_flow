@@ -4,6 +4,7 @@ import re
 import sys
 import matplotlib
 import lib_plot as pl
+import lib_process_data as lpd
 
 def skip_large_errors(EE, EE_err, boundary):
     for i in range(0,EE.shape[0]):
@@ -11,29 +12,19 @@ def skip_large_errors(EE, EE_err, boundary):
             if EE_err[i,j] > boundary :
                 EE[i,j] = None
 
-try:
-    qcdtype = sys.argv[1]
-    conftype = sys.argv[2]
+qcdtype, conftype, beta, ns, nt, nt_half = lpd.read_args()
 
-    beta=re.sub(r'(^.*?)_b', '', conftype) ; beta=float(beta)/100000
-    ns=re.sub(r'(^.*?)s', '', conftype) ; ns=int(re.sub(r'(^.*?)t(.*)', r'\1', ns))
-    nt=re.sub(r'(^.*?)t', '', conftype) ; nt=int(re.sub(r'(^.*?)_b(.*)', r'\1', nt))
-
-except IndexError:
-    exit("Invalid Arguments: plot.py <qcdtype> <conftype>, e.g. plot.py quenched s064t16_b0687361")
- 
  
 """load data"""
 inputfolder=pl.inputfolder+conftype+"/"
 outputfolder=pl.outputfolder+conftype+"/"
-flow_radius = numpy.loadtxt(inputfolder+"flowradius_"+conftype+".dat")
+flow_radius = numpy.loadtxt(inputfolder+"flowradii_"+conftype+".dat")
 EE        = numpy.loadtxt(inputfolder+"EE_"+conftype+".dat")
 EE_backup = numpy.loadtxt(inputfolder+"EE_"+conftype+".dat")
 EE_err = numpy.loadtxt(inputfolder+"EE_err_"+conftype+".dat")
 EE_err_backup = numpy.loadtxt(inputfolder+"EE_err_"+conftype+".dat")
-n_datafiles = str(int(numpy.loadtxt(inputfolder+"n_datafiles_"+conftype+".dat")))
-tauT = list(numpy.loadtxt(inputfolder+"tauT_imp"+conftype+".dat")) 
-
+n_datafiles, n_streams=[int(i) for i in numpy.loadtxt(inputfolder+"n_datafiles_"+conftype+".dat")]
+tauT = lpd.tauT_imp[nt]
  
  
 """PLOT: x-axis tauT, flowtimes legend"""
