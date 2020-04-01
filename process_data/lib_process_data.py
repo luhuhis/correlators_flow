@@ -2,6 +2,7 @@ import numpy
 import sys
 import re
 import math
+from latqcdtools import statistics
 
 def read_args():
     try:
@@ -22,10 +23,19 @@ def norm_corr( tauT ):
 
 def compute_EE_mean(EE_data): #mean function for Haukes jackknife routine
     mean_EE_numerator_real = numpy.mean(EE_data[0], axis=0)
-    mean_polyakov_real      = numpy.mean(EE_data[1], axis=0)
-    for k in range(0,mean_polyakov_real.shape[0]):
-            mean_EE_numerator_real[k,:] /= -6*mean_polyakov_real[k][0]
-    return mean_EE_numerator_real
+    mean_polyakov_real = numpy.mean(EE_data[1], axis=0)
+    correlator_sample = numpy.zeros(mean_EE_numerator_real.shape)
+    nflowtimes = mean_polyakov_real.shape[0]
+    nconf = len(EE_data[0])
+    #single_flow_corr = numpy.zeros(correlator_sample[0].shape)
+    for k in range(nflowtimes):
+        correlator_sample[k,:] = mean_EE_numerator_real[k,:] / (-6*mean_polyakov_real[k][0])
+        
+        
+        #statistics.calc_cov(data)
+    #here also compute covariance matrix and return it!
+    #maybe us latqcdtools covariance matrix implementation? from latqcdtools import statistics
+    return correlator_sample
 
 tauT_imp = {16:(6.883194e-02, 1.085070e-01, 1.616768e-01, 2.247303e-01, 2.914720e-01, 3.571978e-01, 4.178695e-01, 4.527297e-01), 
             20:(5.506555e-02, 8.680590e-02, 1.293465e-01, 1.798279e-01, 2.334154e-01, 2.867992e-01, 3.389318e-01, 3.894339e-01, 4.362603e-01, 4.632426e-01), 
