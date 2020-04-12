@@ -3,7 +3,7 @@ conftypes_quenched=${1:-s064t16_b0687361 s080t20_b0703500 s096t24_b0719200} #s12
 
 for conftype in $conftypes_quenched ; do
     mkdir -p ../data_merged/quenched/$conftype
-    python3 1_merge_data.py quenched $conftype &
+    python3 2_reduce_data.py quenched $conftype &
 done
 
 

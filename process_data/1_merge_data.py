@@ -71,3 +71,4 @@ with open(outputfolder+'polyakov_imag_'+conftype+'_merged.dat', 'w') as outfile:
         numpy.savetxt(outfile, conf)
         outfile.write('# \n')
         
+print("done with "+conftype)

@@ -75,7 +75,7 @@ def load_merged_data(qcdtype, conftype):
     polyakov_real = []
     for i in range(n_datafiles):
         polyakov_real.append(polyakov_real_tmp[i*n_flow:(i+1)*n_flow])
-    polyakov_real = [ [ nt_half*[j] for j in i ] for i in polyakov_real]
+    polyakov_real = [ [ nt_half*[j] for j in i ] for i in polyakov_real] #copy the polyakov into every cell in order to match shapes for atb bootstrap 
     EE_data=[EE_numerator_real, polyakov_real] 
     return flow_times, n_flow, n_datafiles, n_streams, EE_data 
 
