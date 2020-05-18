@@ -18,6 +18,7 @@ qcdtype, conftype, beta, ns, nt, nt_half = lpd.read_args()
 """load data"""
 inputfolder=pl.inputfolder+conftype+"/"
 outputfolder=pl.outputfolder+conftype+"/"
+lpd.create_folder(outputfolder) 
 flow_radius = numpy.loadtxt(inputfolder+"flowradii_"+conftype+".dat")
 EE        = numpy.loadtxt(inputfolder+"EE_"+conftype+".dat")
 EE_backup = numpy.loadtxt(inputfolder+"EE_"+conftype+".dat")
@@ -37,18 +38,20 @@ start=0; end=int(nt/2);
 flowstart=0; 
 if qcdtype == "quenched":
     flowend=16
-    ax.set_ylim([0.7,4])
+    #ax.set_ylim([0.7,4])
+    ax.set_ylim([-1,4])
 if qcdtype == "hisq":
     flowstart=5
     flowend=21
     ax.set_ylim([0,12])
       
+flow_selection = range(0,150,1)
 
-for i in range(flowstart,flowend):
-    plots.append(ax.fill_between(list(tauT), EE[i,:]-EE_err[i,:], EE[i,:]+EE_err[i,:], facecolor=pl.get_color(flow_radius, i, flowstart, flowend), linewidth=pl.mylinewidth))
-    ax.errorbar(list(tauT), EE[i,:], color=pl.get_color(flow_radius, i, flowstart, flowend), **pl.plotstyle_add_point)
+for i in flow_selection:
+    plots.append(ax.fill_between(list(tauT), EE[i,:]-EE_err[i,:], EE[i,:]+EE_err[i,:], facecolor=pl.get_color(flow_radius, i, flow_selection[0], flow_selection[-1]), linewidth=pl.mylinewidth))
+    ax.errorbar(list(tauT), EE[i,:], color=pl.get_color(flow_radius, i, flow_selection[0], flow_selection[-1]), **pl.plotstyle_lines)
 
-leg = ax.legend(handles=plots, labels=['{0:.3f}'.format(j) for j in flow_radius[flowstart:flowend]], title=r"$ \sqrt{8\tau_F}T$", **pl.legendstyle)
+leg = ax.legend(handles=plots, labels=['{0:.3f}'.format(j) for i,j in enumerate(flow_radius) if i in flow_selection], title=r"$ \sqrt{8\tau_F}T$", **pl.legendstyle)
 fig.savefig(outputfolder+conftype+"_EE_fill.pdf", **pl.figurestyle) 
 print("saved correlator plot", outputfolder+conftype+"_EE_fill.pdf")
 ax.lines.clear() ; ax.collections.clear() ; plots.clear()
@@ -79,7 +82,6 @@ for i in range(0,len(tauT)):
     interpolation_value_lo[i] = EE[index+offset2,i]-abs(EE[index,i]-EE[index+offset,i])/abs(flow_radius[index]-flow_radius[index+offset])*abs(flow_limit_lo[i]-flow_radius[index+offset2])
 
 
-flowstart=0; flowend=24
 ax.set_xlim([0,0.003])
 if qcdtype == "quenched":
     ax.set_ylim([0.5,4])
@@ -89,9 +91,9 @@ ax.set_xlabel(r'$ \tau_F T^2 $')
 ax.set_ylabel(r'$\displaystyle\frac{G_{\tau}(\tau_F)}{G_{\tau,{\tau}_{ F }=0}^{\mathrm{ norm } } }$')
 
 for i in range(start,end):
-    plots.append(ax.fill_between(flow_radius[flowstart:flowend]**2/8, EE[flowstart:flowend,i]-EE_err[flowstart:flowend,i], 
-                                 EE[flowstart:flowend,i]+EE_err[flowstart:flowend,i], facecolor=pl.get_color(tauT, i, start, end), zorder=(-(20+i)), linewidth=pl.mylinewidth))
-    ax.errorbar(flow_radius[flowstart:flowend]**2/8, EE[flowstart:flowend,i], color=pl.get_color(tauT, i, start, end), zorder=(-i), **pl.plotstyle_add_point)
+    plots.append(ax.fill_between(flow_radius**2/8, EE[:,i]-EE_err[:,i], 
+                                 EE[:,i]+EE_err[:,i], facecolor=pl.get_color(tauT, i, start, end), zorder=(-(20+i)), linewidth=pl.mylinewidth))
+    ax.errorbar(flow_radius**2/8, EE[:,i], color=pl.get_color(tauT, i, start, end), zorder=(-i), **pl.plotstyle_add_point)
     ax.errorbar(flow_limit[i]**2/8, interpolation_value[i], color=pl.get_color(tauT, i, start, end), **pl.flowlimitplotstyle)
     
 ax2=ax.twiny()

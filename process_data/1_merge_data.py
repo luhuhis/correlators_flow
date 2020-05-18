@@ -7,7 +7,7 @@ qcdtype, conftype, beta, ns, nt, nt_half = lpd.read_args()
 
 outputfolder="../../data_merged/"+qcdtype+"/"+conftype+"/"
 inputfolder="../../data_raw/"+qcdtype+"/"+conftype+"/"
-
+lpd.create_folder(outputfolder)
 
 EE_numerator_real, EE_numerator_imag, polyakov_real, polyakov_imag, flow_times = ([] for i in range(5))
 n_datafiles, n_streams = (0,0)
