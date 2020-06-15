@@ -21,9 +21,14 @@ outputfolder=pl.outputfolder+conftype+"/"
 lpd.create_folder(outputfolder) 
 flow_radius = numpy.loadtxt(inputfolder+"flowradii_"+conftype+".dat")
 EE        = numpy.loadtxt(inputfolder+"EE_"+conftype+".dat")
-EE_backup = numpy.loadtxt(inputfolder+"EE_"+conftype+".dat")
 EE_err = numpy.loadtxt(inputfolder+"EE_err_"+conftype+".dat")
-EE_err_backup = numpy.loadtxt(inputfolder+"EE_err_"+conftype+".dat")
+for i in range(151):
+    for j in range(nt_half):
+        #print(nt_half, i, j, i*nt_half+j)
+        EE[i,j] = EE[i,j] / lpd.norm_corr(lpd.tauT_imp[nt][j]) * nt**4 * lpd.EE_imp_factor[nt][j][2]
+        EE_err[i,j] = EE_err[i,j] / lpd.norm_corr(lpd.tauT_imp[nt][j]) * nt**4 * lpd.EE_imp_factor[nt][j][2]
+#EE_backup = numpy.loadtxt(inputfolder+"EE_"+conftype+".dat")
+#EE_err_backup = numpy.loadtxt(inputfolder+"EE_err_"+conftype+".dat")
 n_datafiles, n_streams=[int(i) for i in numpy.loadtxt(inputfolder+"n_datafiles_"+conftype+".dat")]
 tauT = lpd.tauT_imp[nt]
  
@@ -45,7 +50,7 @@ if qcdtype == "hisq":
     flowend=21
     ax.set_ylim([0,12])
       
-flow_selection = range(0,150,1)
+flow_selection = range(0,150,10)
 
 for i in flow_selection:
     plots.append(ax.fill_between(list(tauT), EE[i,:]-EE_err[i,:], EE[i,:]+EE_err[i,:], facecolor=pl.get_color(flow_radius, i, flow_selection[0], flow_selection[-1]), linewidth=pl.mylinewidth))
