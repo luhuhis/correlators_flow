@@ -3,8 +3,9 @@ import matplotlib
 from matplotlib import pyplot, cm, container, legend_handler
 import lib_process_data as lpd
 
-def get_color(myarray, i, start, end):
-    return matplotlib.cm.gnuplot((myarray[i]-myarray[start])/(myarray[end-1]-myarray[start]))
+def get_color(myarray, i, start = 0, end = 0):
+    i = end-1-i+start
+    return matplotlib.cm.gnuplot((myarray[i]-myarray[start])/(myarray[end-1]-myarray[start])*0.9)
 
 #styles
 mylinewidth        = 0.5
@@ -12,16 +13,19 @@ figurestyle        = dict(bbox_inches="tight", pad_inches=0)
 plotstyle_points   = dict(fmt='D-', linewidth=1, markersize=4, capsize=2, mew=0.5, fillstyle='none')
 plotstyle_lines    = dict(fmt='-', linewidth=0.5, mew=0.25, mec='grey', markersize=2, capsize=3)
 #plotstyle_add_point= dict(fmt='D-', linewidth=0.5, mew=0.25, mec='grey', markersize=2, capsize=3)
-plotstyle_add_point= dict(fmt='D-', fillstyle='none', markersize = 2, mew=0.25, lw=0.5, elinewidth=0.25, capsize=1.2)
-plotstyle_add_point_single= dict(fmt='D', fillstyle='none', markersize = 2, mew=0.25, lw=0, elinewidth=0.25, capsize=1.2)
+plotstyle_add_point= dict(fmt='D-', fillstyle='none', markersize = 5, mew=0.25, lw=0.5, elinewidth=0.25, capsize=1.2)
+plotstyle_add_point_single = plotstyle_add_point
+plotstyle_add_point_single.update(dict(fmt='D'))
 labelboxstyle      = dict(boxstyle="Round", fc="w", ec="None", alpha=0.8, pad=0.1, zorder=99)
-legendstyle        = dict(loc="center left", bbox_to_anchor=(1,0.5), frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, facecolor="w", labelspacing=0.1, borderpad=0.1, handletextpad=0.4, handlelength=1, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=1)})
+legendstyle        = dict(loc="center left", bbox_to_anchor=(1,0.5), frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, facecolor="w", columnspacing=0.1, labelspacing=0.1, borderpad=0.1, handletextpad=0.4, handlelength=1, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=1,yerr_size=0.3)})
 plotstyle_fill     = dict(linewidth=0.5)
 xlabelstyle        = dict(bbox=labelboxstyle, zorder=99)#horizontalalignment='right', verticalalignment='bottom', bbox=labelboxstyle)
-ylabelstyle        = dict(bbox=labelboxstyle, horizontalalignment='right', rotation=0, zorder=99)#horizontalalignment='right', verticalalignment='top', rotation=0, bbox=labelboxstyle)
-titlestyle         = dict(x=0.5, y=0.9, bbox=labelboxstyle, verticalalignment='top', zorder=99)
-verticallinestyle  = dict(ymin=0, ymax=1, color='grey', alpha=0.8, zorder=-100, dashes=(4,4), lw=0.5)
-flowlimitplotstyle = dict(fmt='|', mew=0.7, markersize=15)
+ylabelstyle        = dict(bbox=labelboxstyle, horizontalalignment='left', verticalalignment='top', rotation=0, zorder=99)#horizontalalignment='right', , rotation=0, bbox=labelboxstyle)
+titlestyle         = dict(x=0.5, y=0.9, bbox=labelboxstyle, verticalalignment='top', zorder=99, fontsize=10)
+verticallinestyle  = dict(ymin=0, ymax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4,4), lw=0.5)
+flowlimitplotstyle = dict(fmt='|', mew=0.7, markersize=5)
+
+markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
 
 """some parameters"""
 n_skiprows=15 #skip the discrete points at the start of the continuum limit file
@@ -33,14 +37,19 @@ end=14
 flowstart=10
 flowend=21
 
-def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", UseTex = True):
+def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,0.01), ylabelpos=(0.01,0.97), tickpad=2, figsize=(3+3/8,3+3/8-1/2.54), UseTex=True):
     if UseTex == True:
         matplotlib.pyplot.rc('text', usetex=True)
-        matplotlib.pyplot.rc('font', family='serif', size=14)
-    fig = matplotlib.pyplot.figure() 
+        matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
+    matplotlib.pyplot.rc('font', family='serif', size=10)
+    linewidth = 0.5
+    matplotlib.rcParams['axes.linewidth'] = linewidth
+    fig = matplotlib.pyplot.figure(figsize=figsize) 
     ax = fig.add_subplot(1,1,1) 
-    #ax.xaxis.set_label_coords(0.99,0.01)
-    #ax.yaxis.set_label_coords(0.01,0.97)
+    ax.xaxis.set_label_coords(*xlabelpos)
+    ax.yaxis.set_label_coords(*ylabelpos)
+    ax.minorticks_off()
+    ax.tick_params(direction='in', pad=tickpad, width=linewidth)
     if xlims is not None:
         ax.set_xlim(xlims)
     if ylims is not None:
@@ -48,13 +57,17 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", UseTex = True):
     ax.set_xlabel(xlabel, **xlabelstyle)
     ax.set_ylabel(ylabel, **ylabelstyle)
     plots = []
+    matplotlib.rc('image', cmap='Set1')
     return fig, ax, plots
 
 
 """load data"""
-qcdtype="quenched"
-outputfolder="../../plots/"+qcdtype+"/"
-inputfolder="../../data_merged/"+qcdtype+"/"
+def get_inputfolder(qcdtype="quenched"):
+    return "/home/altenkort/work/EE_correlator/data_merged/"+qcdtype+"/"
+def get_outputfolder(qcdtype="quenched"):
+    return "/home/altenkort/work/EE_correlator/plots/"+qcdtype+"/"
+inputfolder=get_inputfolder()
+outputfolder=get_outputfolder()
 
 EE_16 = numpy.loadtxt(inputfolder+"/s064t16_b0687361/EE_s064t16_b0687361.dat")
 EE_20 = numpy.loadtxt(inputfolder+"/s080t20_b0703500/EE_s080t20_b0703500.dat")

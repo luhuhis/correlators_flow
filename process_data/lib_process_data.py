@@ -59,7 +59,8 @@ tauT_unimproved = {16:list(numpy.arange(1/16, 0.501, 1/16)),
             20:list(numpy.arange(1/20, 0.501, 1/20)), 
             24:list(numpy.arange(1/24, 0.501, 1/24)), 
             30:list(numpy.arange(1/30, 0.501, 1/30)),
-            36:list(numpy.arange(1/36, 0.501, 1/36))}
+            36:list(numpy.arange(1/36, 0.501, 1/36)),
+            48:list(numpy.arange(1/48, 0.501, 1/48))}
 
 #only this called in the other scripts
 #tauT_imp = {}
@@ -67,17 +68,32 @@ tauT_unimproved = {16:list(numpy.arange(1/16, 0.501, 1/16)),
     #tauT_imp[key] = [*tauT_improved[key][0:5], *tauT_unimproved[key][5:]]
 tauT_imp = tauT_unimproved
 
-EE_imp_factor = {}
+#EE_imp_factor = {}
 EE_norm_latt_flow = {}
-for Ntau in (16,20,24,30,36):
-    EE_imp_factor[Ntau] = numpy.loadtxt('../../data_merged/quenched/pert_corr/EE_imp_factor_'+str(Ntau)+'.txt')
-    EE_norm_latt_flow[Ntau] = numpy.loadtxt('../../data_merged/quenched/pert_corr/EE_latt_flow_'+str(Ntau)+'.dat')
+for Ntau in (16,20,24,30,36,48):
+    #EE_imp_factor[Ntau] = numpy.loadtxt('/home/altenkort/work/EE_correlator/data_merged/quenched/pert_corr/EE_imp_factor_'+str(Ntau)+'.txt')
+    EE_norm_latt_flow[Ntau] = numpy.loadtxt('/home/altenkort/work/EE_correlator/data_merged/quenched/pert_corr/EE_latt_flow_'+str(Ntau)+'.dat')
 
-def improve_corr_factor(tauTindex, nt, flowindex):
-    return  nt**4 / EE_norm_latt_flow[nt][tauTindex][2] 
+def improve_corr_factor(tauTindex, nt, flowindex, improve=True, improve_with_flow=False):
+    nt_half = int(nt/2)
+    if improve:
+        if improve_with_flow:
+            return nt**4 / EE_norm_latt_flow[nt][tauTindex+nt_half*flowindex][2] #here, "G_norm" is pert latt corr at zero flow time
+        else:
+            return nt**4 / EE_norm_latt_flow[nt][tauTindex][2] #here, "G_norm" is pert latt corr at zero flow time
+    else:
+        return nt**4 / norm_corr(tauT_imp[nt][tauTindex]) #here, "G_norm" is pert cont corr at zero flow time
+
+def lower_tauT_limit(flowradius):
+    return flowradius/numpy.sqrt(8*0.014)+1/20
+def upper_flow_limit(tauT):
+    return (tauT-1/20)*numpy.sqrt(8*0.014)
 
 def inputfolder(qcdtype,conftype):
-    return "../../data_merged/"+str(qcdtype)+"/"+str(conftype)+"/"
+    return "/home/altenkort/work/EE_correlator/data_merged/"+str(qcdtype)+"/"+str(conftype)+"/"
+
+def outputfolder(qcdtype,conftype):
+    return "/home/altenkort/work/EE_correlator/plots/"+str(qcdtype)+"/"+str(conftype)+"/"
 
 def create_folder(*paths):
     from pathlib import Path
@@ -91,7 +107,7 @@ EE_numerator_real and polyakov_real: first index = different measurements, secon
 EE_data: first index [0]=EE_numerator_real, [1]=polyakov_real, second index = different measurements (-> pairs of the form (EE_numerator_real[x], EE_polyakov_real[x]))
 the jackknife leaves out pairs of (EE_numerator, Polyakov), this is done by the last argument (1), which specifies the axis on which the data pairs lie."""
 def load_merged_data(qcdtype, conftype):
-    inputfolder="../../data_merged/"+qcdtype+"/"+conftype+"/"
+    inputfolder="/home/altenkort/work/EE_correlator/data_merged/"+qcdtype+"/"+conftype+"/"
     nt=re.sub(r'(^.*?)t', '', conftype) ; nt=int(re.sub(r'(^.*?)_b(.*)', r'\1', nt))
     nt_half=int(nt/2)
         
@@ -118,4 +134,5 @@ def write_flow_times(outfile, flow_times):
     
 ToverTc = {16:1.510424, 20:1.473469, 24:1.484769, 30:1.511761, 36: 1.504171}   
 
-
+def get_flow_start_indices():
+    return [-1, -1, -1, -1, -1, -1, -1, 50, 53, 57, 61, 65, 68, 71, 74, 77, 82, 83] 

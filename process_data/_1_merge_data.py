@@ -5,6 +5,7 @@ import lib_process_data as lpd
 
 qcdtype, conftype, beta, ns, nt, nt_half = lpd.read_args()
 
+flowtype = "wilsonFlow" #"zeuthenFlow" 
 outputfolder="../../data_merged/"+qcdtype+"/"+conftype+"/"
 inputfolder="../../data_raw/"+qcdtype+"/"+conftype+"/"
 lpd.create_folder(outputfolder)
@@ -17,7 +18,7 @@ for stream_folder in listdir(inputfolder):
     if stream_folder.startswith(conftype+"_"):
         n_streams += 1
         for datafile in listdir(inputfolder+"/"+stream_folder):
-            if datafile.startswith("zeuthenFlow"): 
+            if datafile.startswith(flowtype): 
                 path = inputfolder+"/"+stream_folder+"/"+datafile
                 tmp = numpy.loadtxt(path) 
                 if n_datafiles == 0:

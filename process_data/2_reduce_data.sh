@@ -1,10 +1,11 @@
 #!/bin/bash
-conftypes_quenched="s064t16_b0687361 s080t20_b0703500 s096t24_b0719200 s144t36_b0754400" #s144t36_b0754400 s064t16_b0687361 s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s096t16_b0719200 s096t28_b0719200 s096t32_b0719200 
+conftypes_quenched="s064t16_b0687361 s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400" #s144t36_b0754400 s064t16_b0687361 s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s096t16_b0719200 s096t28_b0719200 s096t32_b0719200 
 
 for conftype in $conftypes_quenched ; do
     mkdir -p ../../data_merged/quenched/$conftype
     mkdir -p ../../data_merged/quenched/$conftype/btstrp_samples/
-	python3 2_reduce_data.py quenched $conftype &
+    rm -f ../../data_merged/quenched/$conftype/btstrp_samples/*cov.dat
+	python _2_reduce_data.py quenched $conftype &
 done
 
 
