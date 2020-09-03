@@ -1,18 +1,23 @@
 #!/usr/local/bin/python
 import numpy
-import matplotlib
 import lib_plot as pl
 
-#pl.ylabelstyle.update(dict(ha='left', va='top'))
-#pl.xlabelstyle.update(dict(ha='right', va='bottom'))
-fig, ax, plots = pl.create_figure(xlims=[0.05,0.51], ylims=[1.5,3.8], xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G^\mathrm{cont }(\tau) }{G^{\substack{ \text{\tiny  norm} \\[-0.5ex] \text{\tiny cont } } } (\tau) }$ ', xlabelpos=(0.95,0.07), ylabelpos=(0.03,0.98)) # 
-pl.legendstyle.update(dict(loc='lower right', bbox_to_anchor=(1,0.1), labelspacing=0.4, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=0.5)} ))
-
+#input
 EE_final_old = numpy.loadtxt(pl.inputfolder+"EE_final_cont_gradient_flow_old.txt")
 EE_final = numpy.loadtxt(pl.inputfolder+"EE_final.txt", unpack=True)
 EE_final_btstrp = numpy.loadtxt(pl.inputfolder+"EE_final_btstrp.txt", unpack=True)
 EE_cont_2015 = numpy.loadtxt("../../data_merged/quenched/multi-level_2015/cont_thomas.dat")
 EE_cont_2015_new = numpy.loadtxt(pl.inputfolder+"/multi-level_2015/EE_2015_new.txt")
+
+#output
+#   pl.outputfolder+"/EE_aeq0_teq0.pdf"
+
+
+import matplotlib
+#pl.ylabelstyle.update(dict(ha='left', va='top'))
+#pl.xlabelstyle.update(dict(ha='right', va='bottom'))
+fig, ax, plots = pl.create_figure(xlims=[0.05,0.51], ylims=[1.5,3.8], xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G^\mathrm{cont }(\tau) }{G^{\substack{ \text{\tiny  norm} \\[-0.5ex] \text{\tiny cont } } } (\tau) }$ ', xlabelpos=(0.95,0.07), ylabelpos=(0.03,0.98)) # 
+pl.legendstyle.update(dict(loc='lower right', bbox_to_anchor=(1,0.1), labelspacing=0.4, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=0.5)} ))
 
 pl.plotstyle_add_point.update(dict(fmt='s-'))
 plots.append(ax.errorbar(EE_final[0], EE_final[1], EE_final[2], **pl.plotstyle_add_point, label="Gradient flow method")) #color=matplotlib.cm.gnuplot(0.5)

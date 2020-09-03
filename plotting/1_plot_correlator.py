@@ -1,10 +1,26 @@
 #!/usr/local/bin/python
+
+import lib_plot as pl
+import lib_process_data as lpd
+qcdtype, conftype, beta, ns, nt, nt_half = lpd.read_args()
+
+#input
+inputfolder=pl.get_inputfolder(qcdtype)+conftype+"/"
+#   inputfolder+"flowradii_"+conftype+".dat"
+#   inputfolder+"EE_"+conftype+".dat"
+#   inputfolder+"EE_err_"+conftype+".dat"
+#   lpd.tauT_imp
+
+#output
+outputfolder=pl.get_outputfolder(qcdtype)+conftype+"/"
+#   outputfolder+conftype+"_EE_fill.pdf"
+#   outputfolder+"/"+conftype+"_EE_flowlim_fill.pdf"
+
+
 import numpy
 import re
 import sys
 import matplotlib
-import lib_plot as pl
-import lib_process_data as lpd
 
 def skip_large_errors(EE, EE_err, boundary):
     for i in range(0,EE.shape[0]):
@@ -12,12 +28,9 @@ def skip_large_errors(EE, EE_err, boundary):
             if EE_err[i,j] > boundary :
                 EE[i,j] = None
 
-qcdtype, conftype, beta, ns, nt, nt_half = lpd.read_args()
 
  
 """load data"""
-inputfolder=pl.get_inputfolder(qcdtype)+conftype+"/"
-outputfolder=pl.get_outputfolder(qcdtype)+conftype+"/"
 lpd.create_folder(outputfolder) 
 flow_radius = numpy.loadtxt(inputfolder+"flowradii_"+conftype+".dat")
 EE        = numpy.loadtxt(inputfolder+"EE_"+conftype+".dat")
@@ -30,33 +43,38 @@ for i in range(len(flow_radius)):
 tauT = lpd.tauT_imp[nt]
  
  
-#"""PLOT: x-axis tauT, flowtimes legend"""
-#fig, ax, plots = pl.create_figure(xlims=[0,0.5], xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G_{\tau_F} (\tau)}{G^\mathrm{ norm } (\tau)}$')
-##pl.legendstyle.update(dict(loc="upper right"))
-##ax.yaxis.set_label_coords(0.01,0.99)
+"""PLOT: x-axis tauT, flowtimes legend"""
+fig, ax, plots = pl.create_figure(xlims=[0,0.505], 
+                                  ylims=[1,4],
+                                  xlabel=r'$\tau T$', 
+                                  xlabelpos=(0.95,0.06),
+                                  ylabel=r'$\displaystyle\frac{G^\mathrm{latt }_{\tau_F}(\tau)}{G_{\tau_F=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}  (\tau)    }$')
+#pl.legendstyle.update(dict(loc="upper right"))
+#ax.yaxis.set_label_coords(0.01,0.99)
 
-##skip_large_errors(EE, EE_err, EE_backup, EE_err_backup, 10000) 
-#flowstart=0; 
-#if qcdtype == "quenched":
-    #flowend=16
-    ##ax.set_ylim([0.7,4])
-    #ax.set_ylim([-1,4])
-#if qcdtype == "hisq":
-    #flowstart=5
-    #flowend=21
-    #ax.set_ylim([0,12])
+#skip_large_errors(EE, EE_err, EE_backup, EE_err_backup, 10000) 
+
       
-#flow_selection = range(0,150,10)
+flow_selection = range(0,131,10)
 
-#for i in flow_selection:
-    #plots.append(ax.fill_between(list(tauT), EE[i,:]-EE_err[i,:], EE[i,:]+EE_err[i,:], facecolor=pl.get_color(flow_radius, i, flow_selection[0], flow_selection[-1]), linewidth=pl.mylinewidth))
-    #ax.errorbar(list(tauT), EE[i,:], color=pl.get_color(flow_radius, i, flow_selection[0], flow_selection[-1]), **pl.plotstyle_lines)
+for i in flow_selection:
+    mycolor = pl.get_color(flow_radius, i, flow_selection[0], flow_selection[-1]+1)
+    plots.append(ax.fill_between(list(tauT), EE[i,:]-EE_err[i,:], EE[i,:]+EE_err[i,:], facecolor=mycolor, linewidth=pl.mylinewidth, zorder=-flow_selection[-1]+i))
+    ax.errorbar(list(tauT), EE[i,:], color=mycolor, **pl.plotstyle_lines, zorder=-flow_selection[-1]+i+1)
+    ax.errorbar(list(tauT), EE[i,:], color=mycolor, fmt='D', linewidth=0.5, mew=0.25, mec='grey', markersize=1.5, capsize=3, zorder=-flow_selection[-1]+i+2)
+    
 
-#leg = ax.legend(handles=plots, labels=['{0:.3f}'.format(j) for i,j in enumerate(flow_radius) if i in flow_selection], title=r"$ \sqrt{8\tau_F}T$", **pl.legendstyle)
-#matplotlib.pyplot.tight_layout(0)
-#fig.savefig(outputfolder+conftype+"_EE_fill.pdf") 
-#print("saved correlator plot", outputfolder+conftype+"_EE_fill.pdf")
-#ax.lines.clear() ; ax.collections.clear() ; plots.clear()
+leg = ax.legend(handles=plots, labels=['{0:.3f}'.format(j) for i,j in enumerate(flow_radius) if i in flow_selection], title=r"$ \sqrt{8\tau_F}T$", **pl.legendstyle)
+matplotlib.pyplot.tight_layout(0)
+### change first xtick label
+fig.canvas.draw()
+ticks=ax.get_xticks().tolist()
+ticks = ['{0:.1f}'.format(x) for x in ticks]
+ticks[0]='0'
+ax.set_xticklabels(ticks)
+fig.savefig(outputfolder+conftype+"_EE_fill.pdf") 
+print("saved correlator plot", outputfolder+conftype+"_EE_fill.pdf")
+ax.lines.clear() ; ax.collections.clear() ; plots.clear()
 
 
 """PLOT: x-axis flowtimes, tautT legend"""

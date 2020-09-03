@@ -23,8 +23,8 @@ def main():
     ymin=2.5
     ymax=3.8
     lp.labelboxstyle.update(dict(alpha=0.8))
-    fig, ax, plots = lp.create_figure(xlims=[-0.0001,0.0023], ylims=[ymin,ymax], xlabel=r'$\tau_F$', ylabel=r'$'+displaystyle+r'\frac{G^\mathrm{cont }_\tau (\tau_F)}{G_{\tau,\tau_F=0}^{\substack{ \text{\tiny  norm} \\[-0.5ex] \text{\tiny cont } } } } $', 
-                                      xlabelpos=(0.96,0.05), ylabelpos=(0.08,0.96), UseTex = UseTex)
+    fig, ax, plots = lp.create_figure(xlims=[-0.0001,0.0023], ylims=[ymin,ymax], xlabel=r'$\tau_F T^2$', ylabel=r'$'+displaystyle+r'\frac{G^\mathrm{cont }_\tau (\tau_F)}{G_{\tau,\tau_F=0}^{\substack{ \text{\tiny  norm} \\[-0.5ex] \text{\tiny cont } } } } $', 
+                                      xlabelpos=(0.94,0.05), ylabelpos=(0.08,0.96), UseTex = UseTex)
 
     nflow = len(lp.flow_radius)
     ntauT = len(lpd.tauT_imp[36])
@@ -143,36 +143,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-            #if not numpy.isnan(row[1]):
-                #tmp_valid.append(row)
-        #EE_conts.append(tmp_valid)
-        #indices = []
-        #for j,tauT in enumerate(tmp[:,0]):
-            #if tauT in lpd.tauT_imp[36]:
-                #indices.append(j)
-        #indices = numpy.asarray(indices)
-        #### if any of the values in a row (tauT corr corr_err) is not a number, append None instead
-        #if numpy.isnan(tmp[indices]).any():
-            #EE_conts.append(None)
-        #else:
-            #EE_conts.append(tmp[indices])       
-        ##except:
-            ##EE_conts.append(None)
-
-    #print(EE_conts)
-    #### rearrange data and put in nans where data is missing
-    #EE = numpy.empty((ntauT,nflow,2))
-    #EE[:] = numpy.nan
-
-    #for j in range(nflow):
-        #if EE_conts[j] is not None:
-            #this_ntauT = len(EE_conts[j])
-            #offset = ntauT-this_ntauT
-            #print(offset)
-            #for k in range(this_ntauT):
-                #EE[offset+k][j] = EE_conts[j][k][1:]
-        #else:
-            #for k in range(ntauT):
-                #EE[k][j] = [numpy.nan, numpy.nan]

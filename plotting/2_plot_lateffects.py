@@ -1,18 +1,31 @@
 #!/usr/local/bin/python
-import numpy
-import matplotlib
-import sys
-import itertools
-import lib_plot as lp
-import lib_process_data as lpd
-from matplotlib import cm
 
+import sys
+import lib_plot as lp
 try:
     flowindex = sys.argv[1]
     i = int(flowindex) #create alias
     flowradius = lp.flow_radius[i]
 except IndexError:
     exit("Invalid Arguments. Usage: script.py <flowindex>, e.g. script.py 100")
+
+
+#input
+#   lp.inputfolder+"s080t20_b0703500/interpolations/EE_"+'{0:.3f}'.format(lp.flow_radius[i])+"_interpolation.txt"
+#   lp.inputfolder+"s096t24_b0719200/interpolations/EE_"+'{0:.3f}'.format(lp.flow_radius[i])+"_interpolation.txt"
+#   lp.inputfolder+"s120t30_b0739400/interpolations/EE_"+'{0:.3f}'.format(lp.flow_radius[i])+"_interpolation.txt"
+#   lp.inputfolder+"s144t36_b0754400/interpolations/EE_"+'{0:.3f}'.format(lp.flow_radius[i])+"_interpolation.txt"
+#   lp.inputfolder+"/cont_extr/EE_"+'{0:.3f}'.format(lp.flow_radius[i])+"_cont.txt"
+
+#output
+#   lp.outputfolder+"/lattice_effects/EE_flow_"+'{0:.3f}'.format(lp.flow_radius[i])+".pdf"
+
+import numpy
+import matplotlib
+import itertools
+import lib_process_data as lpd
+from matplotlib import cm
+
 
 use_imp = True
 
@@ -110,5 +123,3 @@ fig.savefig(lp.outputfolder+"/lattice_effects/EE_flow_"+'{0:.3f}'.format(lp.flow
 print("saved lattice effects plot", lp.outputfolder+"/lattice_effects/EE_flow_"+'{0:.3f}'.format(lp.flow_radius[i])+".pdf") 
 #ax.lines.clear() ; ax.collections.clear() ; plots.clear();
 #ax.set_title(r'')
-
-print("done with lattice effects plot") 

@@ -1,11 +1,24 @@
 #!/usr/local/bin/python
+
+import lib_plot as lp
+import lib_process_data as lpd
+
+#input
+#   lp.EE_36[i]
+#   lpd.tauT_imp[36]
+#   lp.inputfolder+"/"+conftype+"/interpolations/EE_"+flowradius_str+"_interpolation.txt", for each conftype and flowradius
+
+#output
+#   lp.inputfolder+"/cont_extr_quality/EE_"+flowradius_str+"_cont_quality.txt"
+#   lp.outputfolder+"/cont_extr_quality/EE_"+flowradius_str+"_cont_quality.pdf"
+#   lp.inputfolder+"/cont_extr/EE_"+flowradius_str+"_cont.txt"
+#   lp.outputfolder+"/cont_extr/EE_"+flowradius_str+"_cont.pdf"
+
 import numpy
 import matplotlib
 import sys
 from latqcdtools import fitting
 from latqcdtools import bootstr
-import lib_plot as lp
-import lib_process_data as lpd
 import _3_spline_interpolate
 
 def extrapolation_ansatz(x, m, b):
