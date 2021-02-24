@@ -37,7 +37,6 @@ titlestyle         = dict(x=0.5, y=0.9, bbox=labelboxstyle, verticalalignment='t
 flowlimitplotstyle = dict(fmt='|', mew=0.75, markersize=25)
 
 plt.rc('text', usetex=True)
-plt.rc('text.latex')
 plt.rc('font', family='serif', size=10)
 
 fig = plt.figure(figsize=(3+3/8,3+3/8-1/2.54) )
@@ -53,9 +52,9 @@ contCorrResolution = 10;
 
 nflowtimes=len(numpy.arange(0,maxflowradius+flowresolution/2,flowresolution))
 
-ax.xaxis.set_label_coords(0.98,0.02)
+ax.xaxis.set_label_coords(0.98,0.024)
 ax.yaxis.set_label_coords(0.01,0.98)
-ax.set_ylabel(r'$\displaystyle G^\mathrm{norm}_{\tau_F}(\tau)$', **ylabelstyle)
+ax.set_ylabel(r'$\displaystyle \frac{G^\mathrm{norm}_{\tau_\mathrm{F}}(\tau)}{T^4}$', **ylabelstyle)
 ax.set_xlabel(r'$\tau T$', **xlabelstyle)
 ax.set_ylim([1,50000])
 ax.set_xlim([0,0.52])
@@ -73,16 +72,14 @@ for i,fmtlat,fmtcont,color in zip((0,50,100), ('D','x','+'), ('-','--',':'), ('o
     j1=int((i+1)*ntauTcont)
     flow_radius=EE_latt[i0][1]
     
-    flowstr = '{:.2f}'.format(flow_radius) #r'$\sqrt{8\tau_F} T=$ '+
+    flowstr = '{:.2f}'.format(flow_radius) 
     plots.append(ax.errorbar([row[0] for row in EE_cont[j0:j1]], [row[2] for row in EE_cont[j0:j1]], fmt=fmtcont, color=color, **plotstyle_points, label=flowstr+r', cont', zorder=-1))
     plots.append(ax.errorbar([row[0] for row in EE_latt[i0:i1]], [row[2] for row in EE_latt[i0:i1]], fmt=fmtlat, color=color, **plotstyle_points, label=flowstr+r', latt', zorder=-2))
     xval = numpy.abs(flow_radius/numpy.sqrt(8*0.014) - EE_cont[j0:j1,0]).argmin()
     
     if i != 0:
         ax.errorbar(EE_cont[j0+xval][0], EE_cont[j0+xval][2], **flowlimitplotstyle, color=color, alpha=0.5, zorder=-1000)
-        #ax.axvline(x=(), ymin=, ymax=EE_cont[xval][1]+0.1, color=color, alpha=0.5, ls=fmtcont, lw=0.75, zorder=-10000)
-ax.legend(handles=plots, title=r'$\sqrt{8\tau_F} T=$', **legendstyle)
-#fig.savefig(outputfolder+"Ntau_"+str(Ntau)+"/EE_free_contvslatt_flow_"+'{0:.4f}'.format(flow_radius)+".png", dpi=300, **figurestyle) 
+ax.legend(handles=plots, title=r'$\sqrt{8\tau_\mathrm{F}} T=$', **legendstyle)
 plt.tight_layout(0)
 fig.savefig(outputfolder+"/EE_pert_contvslatt_flow.pdf")#, **figurestyle) 
 print("saved pert corr plot", outputfolder+"/EE_pert_contvslatt_flow.pdf")
@@ -96,7 +93,7 @@ ax.lines.clear() ; ax.collections.clear() ; plots.clear()
     #j1=int((i+1)*ntauTcont)
     #flow_radius=EE_latt[i0][1]
     
-    #ax.set_title(r'$\sqrt{8\tau_F} T=$ '+'{0:.3f}'.format(flow_radius), x=0.5, y=0.96, bbox=labelboxstyle, verticalalignment='top', zorder=999999)
+    #ax.set_title(r'$\sqrt{8\tau_\mathrm{F}} T=$ '+'{0:.3f}'.format(flow_radius), x=0.5, y=0.96, bbox=labelboxstyle, verticalalignment='top', zorder=999999)
     #plots.append(ax.errorbar([row[0] for row in EE_cont[j0:j1]], [row[2] for row in EE_cont[j0:j1]], fmt='-', **plotstyle_points, color="orange", label="LO cont.", zorder=-1))
     #plots.append(ax.errorbar([row[0] for row in EE_latt[i0:i1]], [row[2] for row in EE_latt[i0:i1]], fmt='x', **plotstyle_points, color="blue", label=r'LO latt. $N_\tau=$'+str(Ntau), zorder=-2))
     #if i != 0:
@@ -118,7 +115,7 @@ ax.lines.clear() ; ax.collections.clear() ; plots.clear()
     #ax.set_ylim([-1,4])
     #ax.set_xlim([-0.01,0.51])
     
-    #ax.set_title(r'$\sqrt{8\tau_F} T=$ '+'{0:.3f}'.format(flow_radius), x=0.5, y=0.96, bbox=labelboxstyle, verticalalignment='top', zorder=999999)
+    #ax.set_title(r'$\sqrt{8\tau_\mathrm{F}} T=$ '+'{0:.3f}'.format(flow_radius), x=0.5, y=0.96, bbox=labelboxstyle, verticalalignment='top', zorder=999999)
     #xdata_lat = [row[0] for row in EE_latt[i0:i1]]
     #ydata_lat = [row[2] for row in EE_latt[i0:i1]]
     #xdata_cont = [row[0] for row in EE_cont[j0:j1]]

@@ -14,7 +14,7 @@ flowend=21
     #pl.flow_radius[i] = round(pl.flow_radius[i],4)
 flow_index_range = range(flowstart,flowend)
 for i in flow_index_range:
-    EE_cont = numpy.loadtxt(pl.inputfolder+"/continuum_limit/EE_"+'{0:.4f}'.format(pl.flow_radius[i])+"_cont.txt", skiprows=pl.n_skiprows)
+    EE_cont = numpy.loadtxt(pl.inputfolder+"/cont_extr/EE_"+'{0:.4f}'.format(pl.flow_radius[i])+"_cont.txt", skiprows=pl.n_skiprows)
     for j in range(0,len(EE_cont)):
         if EE_cont[j,0] < pl.flow_radius[i]/numpy.sqrt(8*0.014)+pl.offset:
             EE_cont[j,:] = None
@@ -31,7 +31,7 @@ axins.xaxis.set_visible(False)
 axins.yaxis.set_visible(False)
 #plot zoom
 for i in flow_index_range:
-    EE_cont = numpy.loadtxt(pl.inputfolder+"/continuum_limit/EE_"+'{0:.4f}'.format(pl.flow_radius[i])+"_cont.txt", skiprows=pl.n_skiprows)
+    EE_cont = numpy.loadtxt(pl.inputfolder+"/cont_extr/EE_"+'{0:.4f}'.format(pl.flow_radius[i])+"_cont.txt", skiprows=pl.n_skiprows)
     for j in range(0,len(EE_cont)):
         if EE_cont[j,0] < pl.flow_radius[i]/numpy.sqrt(8*0.014)+pl.offset:
             EE_cont[j,:] = None
