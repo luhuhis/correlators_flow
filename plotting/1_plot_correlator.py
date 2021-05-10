@@ -29,6 +29,9 @@ def skip_large_errors(XX, XX_err, boundary):
 def main():
     
     conftype, beta, ns, nt, nt_half, qcdtype, fermions, temp, flowtype, corr, add_params = lpd.read_args()
+    flowend = 200
+    if add_params[0] is not None:
+        flowend = int(add_params[0])
     inputfolder=lpd.get_merged_data_path(qcdtype,corr,conftype)
     outputfolder=lpd.get_plot_path(qcdtype,corr,conftype)
            
@@ -39,12 +42,12 @@ def main():
     XX_err = numpy.loadtxt(inputfolder+corr+"_err_"+conftype+".dat")
     
     normalization_factor = 1
-    if corr == "EE_clover":
-        normalization_factor = 2 #FIXME FIXME FIXME remove this for new measurements (there its already included in parallelgpucode!)
-    if corr == "BB_clover":
-        normalization_factor = -1.5
-    if corr == "BB":
-        normalization_factor = 1
+    #if corr == "EE_clover":
+        #normalization_factor = 2 #FIXME FIXME FIXME remove this for new measurements (there its already included in parallelgpucode!)
+    #if corr == "BB_clover":
+        #normalization_factor = -1.5
+    #if corr == "BB":
+        #normalization_factor = 1
 
 
     for i in range(len(flow_radius)):
@@ -75,7 +78,7 @@ def main():
     #skip_large_errors(XX, XX_err, XX_backup, XX_err_backup, 10) 
 
         
-    flow_selection = range(0,142,10)
+    flow_selection = range(0,flowend)
 
     for i in flow_selection:
         mycolor = lpd.get_color(flow_radius, i, flow_selection[0], flow_selection[-1]+1)
@@ -129,7 +132,7 @@ def main():
     error_factor = 0.025 #FIXME change this back to 0.0075 
     minimum_trusted_flowtime_index = 0 #FIXME change this back to 50. Set this to the index where the flow radius is larger than one lattice spacing of the coarsest lattice used in cont extr
 
-    max_flow_index = 142 #this is the max because of the coarsest lattice (too few data points to put a spline through at this flow time)
+    max_flow_index = flowend #this is the max because of the coarsest lattice (too few data points to put a spline through at this flow time)
     for i in range(nt_half):
         if True: #i%2 == 0: #FIXME only use half because of large lattice
             flow_extr_filter_high = 0 #determines up to which index the discrete error bars should be plotted for this tauT
@@ -156,7 +159,7 @@ def main():
             #FIXME temporarily overwrite settings for hisq for testing purposes
             if fermions == "hisq":
                 #flow_extr_filter_low = 40
-                flow_extr_filter_high = -1
+                flow_extr_filter_high = flowend
                 flow_extr_filter_low_grey = 1
                 
             xdata = flow_radius[flow_extr_filter_low:flow_extr_filter_high]**2/8
