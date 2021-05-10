@@ -8,20 +8,20 @@ def main():
 
     conftype, beta, ns, nt, nt_half, qcdtype, fermions, temp, flowtype, corr, add_params = lpd.read_args()
 
-    accuracy_and_stepsize = "acc0.000010_sts0.000010_"
+    accuracy_and_stepsize = "acc0.000010_sts0.000010"
     if add_params is not None:
         accuracy_and_stepsize = add_params[0]
 
     if corr == "EE": 
-        XX_label = "ColElecCorrTimeSlices_s"
+        XX_label = "ColElecCorrTimeSlices_naive_s"
     elif corr == "BB":
-        XX_label = "ColMagCorrTimeSlices_s"
+        XX_label = "ColMagnCorrTimeSlices_naive_s"
     elif corr == "EE_clover":
         XX_label = "ColElecCorrTimeSlices_clover_s"
     elif corr == "BB_clover":
-        XX_label = "ColMagCorrTimeSlices_clover_s"
+        XX_label = "ColMagnCorrTimeSlices_clover_s"
 
-    flow_prefix = flowtype+"_"+accuracy_and_stepsize
+    flow_prefix = flowtype+"_"+accuracy_and_stepsize+"_"
     
     inputfolder = lpd.get_raw_data_path(qcdtype, conftype)
     outputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype)
@@ -34,6 +34,7 @@ def main():
     print("searching for files named "+inputfolder+full_prefix+"*")
 
     """read in data from many files"""
+    shape = (0,0)
     for stream_folder in listdir(inputfolder):
         print(stream_folder)
         if stream_folder.startswith(conftype+"_"):
@@ -43,14 +44,20 @@ def main():
             for datafile in datafiles:
                 if datafile.startswith(full_prefix): 
                     path = inputfolder+"/"+stream_folder+"/"+datafile
+                    print("reading "+datafile)
                     tmp = numpy.loadtxt(path) 
+                    if shape == (0,0):
+                        shape = tmp.shape
+                    if shape != tmp.shape:
+                        print("error! shapes of input files don't match")
+                        print(shape, " (previous) vs ", tmp.shape, " (current file)")
+                        exit()
                     if n_datafiles == 0:
                         flow_times = tmp[:,0]
                     polyakov_real.append(tmp[:,1])
                     polyakov_imag.append(tmp[:,2])
                     XX_numerator_real.append(tmp[:,3:int((3 + nt_half))])
                     XX_numerator_imag.append(tmp[:,int((3 + nt_half)):])
-                    print("read "+datafile)
                     n_datafiles += 1                
     if n_datafiles == 0:
         print("Didn't find any files! Are the input parameters correct?", conftype, beta, ns, nt, nt_half, qcdtype, fermions, temp, flowtype, corr, accuracy_and_stepsize)
