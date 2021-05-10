@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3
 
 #input: 
-inputfolder="../../data_merged/quenched/pert_corr/"
+inputfolder="../../data/merged/quenched_pertLO_wilsonFlow/EE/"
 #   inputfolder+"EE_latt_flow_"+str(Ntau)+".dat"
 #   inputfolder+"EE_cont_flow_"+str(Ntau)+".dat"
 
