@@ -45,18 +45,17 @@ def load_merged_data(qcdtype, corr, conftype):
 """
 function for bootstrap routine that computes an XX correlator (with XX=EE or BB) normalized by the polyakov loop. numerator data (i.e. --X--X--) is first index, polyakov loop is second index of data.
 """
-#TODO FIX THE NORMALIZATION FACTORS ONCE THE CODE IS UPDATED!
-def compute_XX_corr(data, corr="EE"):
+def compute_XX_corr(data):
     normalization_factor = 1 # the multiplicities are now correctly taken care of inside of the ParallelGPUCode
     numerator_mean = numpy.mean(data[0], axis=0)
     denominator_mean = numpy.mean(data[1], axis=0)
     XX = numerator_mean/normalization_factor / denominator_mean
     numerator_std_dev = numpy.std(data[0], axis=0)
     denominator_std_dev = numpy.std(data[1], axis=0)
-    XX_err = numpy.sqrt((numerator_std_dev/(normalization_factor*denominator_mean))**2+(numerator_mean*denominator_std_dev/(normalization_factor*denominator_mean**2))**2)
-    Ntau_half = XX.shape[1]
-    Ntau = Ntau_half*2
-    nflow = XX.shape[0]
+    XX_std_dev = numpy.sqrt((numerator_std_dev/(normalization_factor*denominator_mean))**2+(numerator_mean*denominator_std_dev/(normalization_factor*denominator_mean**2))**2)
+    #Ntau_half = XX.shape[1]
+    #Ntau = Ntau_half*2
+    #nflow = XX.shape[0]
     #compute time slice covariance matrix for every flowtime
     #nt_cov = numpy.zeros((nflow,Ntau_half,Ntau_half))
     #for i in range(nflow):
@@ -66,28 +65,54 @@ def compute_XX_corr(data, corr="EE"):
                     #XXj = data[0,l,i,j] / (-6 * data[1,l,i,j]) 
                     #XXk = data[0,l,i,k] / (-6 * data[1,l,i,k]) 
                     #nt_cov[i,j,k] += 1/len(data) * (XXj - XX[i,j]) * (XXk - XX[i,k])
-    return XX, XX_err
+    return XX, XX_std_dev
+
+def compute_only_numerator(data):
+    return numpy.mean(data[0], axis=0), numpy.std(data[0], axis=0)
+
+def compute_only_denominator(data):
+    return numpy.mean(data[1], axis=0), numpy.std(data[1], axis=0)
 
 def main():
-
-    conftype, beta, ns, nt, nt_half, qcdtype, fermions, temp, flowtype, corr = lpd.read_args()[:-1]
-    inputfolder = lpd.get_merged_data_path(qcdtype,corr,conftype)
+    
+    #parse cmd line arguments
+    parser, requiredNamed = lpd.get_parser()
+    parser.add_argument('--part_obs', help="only compute part of the observable", choices=['numerator','polyakovloop'])
+    parser.add_argument('--n_samples', help='number of bootstrap samples', type=int, default='200')
+    args = parser.parse_args()
+   
+    beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
+    fermions, temp, flowtype = lpd.parse_qcdtype(args.qcdtype)
+    
+     
+    inputfolder = lpd.get_merged_data_path(args.qcdtype,args.corr,args.conftype)
     outputfolder = inputfolder
     
     lpd.create_folder(outputfolder+"/btstrp_samples/")
-    flow_times, n_flow, n_datafiles, n_streams, XX_data = load_merged_data(qcdtype, corr, conftype)
+    flow_times, n_flow, n_datafiles, n_streams, XX_data = load_merged_data(args.qcdtype, args.corr, args.conftype)
     XX_data = numpy.asarray(XX_data)
     tauTs = numpy.arange(1/nt, 0.501, 1/nt)
-    n_samples = 1000
+    n_samples = args.n_samples
 
     ### do separate bootstrap because only then we can get the covariance matrices for a single sample
     #numerator_samples, numerator, numerator_err = bootstr.bootstr(calc_mean, XX_data[0], numb_samples=n_samples_1, sample_size=n_datafiles, conf_axis=0, return_sample=True, same_rand_for_obs=True)
     #polyakov_samples, polyakov, polyakov_err = bootstr.bootstr(calc_mean, XX_data[1], numb_samples=n_samples_1, sample_size=n_datafiles, conf_axis=0, return_sample=True, same_rand_for_obs=True)
     #combined_samples = numpy.asarray([numerator_samples, polyakov_samples])
 
-    #Use same_rand_for_obs=False in order to break up correlations between the observables
-    XX_samples, XX, XX_err = bootstr.bootstr(compute_XX_corr, XX_data, numb_samples=n_samples, sample_size=n_datafiles, conf_axis=1, return_sample=True, same_rand_for_obs=False)
 
+    reduce_function = compute_XX_corr
+    file_prefix = args.corr
+    if args.part_obs:
+        if args.part_obs == "numerator":
+            reduce_function = compute_only_numerator
+            file_prefix += "_numerator"
+        if args.part_obs == "polyakovloop":
+            reduce_function = compute_only_denominator
+            file_prefix += "_polyakovloop"
+    #Use same_rand_for_obs=False in order to break up correlations between the observables
+    XX_samples, XX, XX_err = bootstr.bootstr(reduce_function, XX_data, numb_samples=n_samples, sample_size=n_datafiles, conf_axis=1, return_sample=True, same_rand_for_obs=False)
+
+        
     #from the samples and the mean now compute the covariance matrix
 
     ### extract the right data
@@ -107,31 +132,34 @@ def main():
 
 
     #write XX_mean and XX_err to file
-    print("write "+outputfolder+corr+"_"+conftype+".dat")
-    with open(outputfolder+corr+"_"+conftype+".dat", 'w') as outfile:
-        outfile.write('# bootstrap mean of '+str(n_datafiles)+' measurements of '+corr+' correlator for '+qcdtype+' '+conftype+'\n')
+    filename = outputfolder+file_prefix+"_"+args.conftype+".dat"
+    print("write "+filename)
+    with open(filename, 'w') as outfile:
+        outfile.write('# bootstrap mean of '+str(n_datafiles)+' measurements of '+args.corr+' correlator for '+args.qcdtype+' '+args.conftype+'\n')
         outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
         lpd.write_flow_times(outfile, flow_times)
         numpy.savetxt(outfile, XX_mean)
-    #with open(outputfolder+"XX_cov_"+conftype+".dat", 'w') as outfile:
-        #outfile.write('# reduced covariance matrix of '+str(n_datafiles)+' measurements of '+corr+' correlator for '+qcdtype+' '+conftype+'\n')
+    #with open(outputfolder+"XX_cov_"+args.conftype+".dat", 'w') as outfile:
+        #outfile.write('# reduced covariance matrix of '+str(n_datafiles)+' measurements of '+args.corr+' correlator for '+args.qcdtype+' '+args.conftype+'\n')
         #outfile.write('# covariance matrix of the time slices for each flow time, rows and columns correspond to dt = {1, ... , Ntau/2}\n')
         #lpd.write_flow_times(outfile, flow_times)
         #for i in range(n_flow):
             #numpy.savetxt(outfile, XX_cov[i])
             #outfile.write('#\n')
-    print("write "+outputfolder+corr+"_err_"+conftype+".dat")
-    with open(outputfolder+corr+"_err_"+conftype+".dat", 'w') as outfile:
-        outfile.write('# bootstrap mean err of '+str(n_datafiles)+' measurements of '+corr+' correlator '+qcdtype+' '+conftype+'\n')
+    filename = outputfolder+file_prefix+"_err_"+args.conftype+".dat"
+    print("write "+filename)
+    with open(filename, 'w') as outfile:
+        outfile.write('# bootstrap mean err of '+str(n_datafiles)+' measurements of '+args.corr+' correlator '+args.qcdtype+' '+args.conftype+'\n')
         outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
         lpd.write_flow_times(outfile, flow_times)
         numpy.savetxt(outfile, XX_err)
 
     #write bootstrap samples in files for each flowtime separately 
     for i in range(n_flow):
-        print("write "+outputfolder+"/btstrp_samples/"+corr+"_"+'{0:.4f}'.format(numpy.sqrt(flow_times[i]*8)/nt)+"_Nt"+str(nt)+"_btstrp_samples.dat")
-        with open(outputfolder+"/btstrp_samples/"+corr+"_"+'{0:.4f}'.format(numpy.sqrt(flow_times[i]*8)/nt)+"_Nt"+str(nt)+"_btstrp_samples.dat", 'w') as outfile:
-            outfile.write("# "+str(n_samples)+" bootstrap samples for "+corr+" correlator "+qcdtype+" "+conftype+"\n# one sample consists of "+str(n_datafiles)+" draws(measurements), which are then reduced\n")
+        filename = outputfolder+"/btstrp_samples/"+file_prefix+"_"+'{0:.4f}'.format(numpy.sqrt(flow_times[i]*8)/nt)+"_Nt"+str(nt)+"_btstrp_samples.dat"
+        print("write "+filename)
+        with open(filename, 'w') as outfile:
+            outfile.write("# "+str(n_samples)+" bootstrap samples for "+args.corr+" correlator "+args.qcdtype+" "+args.conftype+"\n# one sample consists of "+str(n_datafiles)+" draws(measurements), which are then reduced\n")
             outfile.write("# flowtime="+str(flow_times[i])+" or flowradius="+str(numpy.sqrt(flow_times[i]*8)/nt)+'\n')
             outfile.write("# first column: \\tau_T, second column: G(tauT), third column: std_dev\n")
             for k in range(n_samples):
@@ -143,8 +171,8 @@ def main():
                 numpy.savetxt(outfile, XX_sample_single_flowtime)
                 outfile.write('#\n')
     #for i in range(n_flow):
-        #with open(outputfolder+"/btstrp_samples/"+corr+"_"+'{0:.4f}'.format(numpy.sqrt(flow_times[i]*8)/nt)+"_Nt"+str(nt)+"_btstrp_samples_cov.dat", 'w') as outfile:
-            #outfile.write("# covariance matrices for the "+str(n_samples)+" bootstrap samples for "+corr+" correlator "+qcdtype+" "+conftype+"\n# one sample consists of "+str(n_datafiles)+" draws(measurements), which are then reduced\n")
+        #with open(outputfolder+"/btstrp_samples/"+args.corr+"_"+'{0:.4f}'.format(numpy.sqrt(flow_times[i]*8)/nt)+"_Nt"+str(nt)+"_btstrp_samples_cov.dat", 'w') as outfile:
+            #outfile.write("# covariance matrices for the "+str(n_samples)+" bootstrap samples for "+args.corr+" correlator "+args.qcdtype+" "+args.conftype+"\n# one sample consists of "+str(n_datafiles)+" draws(measurements), which are then reduced\n")
             #outfile.write("# flowtime="+str(flow_times[i])+" or flowradius="+str(numpy.sqrt(flow_times[i]*8)/nt)+'\n')
             #outfile.write("# rows/columns: \\tau_T \n")
             #for k in range(n_samples):
@@ -155,7 +183,7 @@ def main():
                 #numpy.savetxt(outfile, XX_sample_single_flowtime)
                 #outfile.write('#\n')
 
-    print("done reducing data for "+conftype+" "+corr)
+    print("done reducing data for "+args.conftype+" "+args.corr)
 
 if __name__ == '__main__':
     main()

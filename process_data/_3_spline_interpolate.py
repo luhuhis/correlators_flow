@@ -8,7 +8,6 @@ import itertools
 import math
 import matplotlib
 from matplotlib import pyplot
-import lib_plot as lp
 import lib_process_data as lpd
 import scipy.interpolate 
 
@@ -45,46 +44,55 @@ def interpolate_XX_flow(xdata, ydata, output_xdata):
 
 
 def main():
-    use_imp = True
     
-    conftype, beta, ns, nt, nt_half, qcdtype, fermions, temp, flowtype, corr, add_params = lpd.read_args()
-    try:
-        flowindex = int(add_params[0])
-        flowradius = flow_radii[flowindex]
-        flowradiusstr = '{0:.4f}'.format(flow_radii[flowindex])
-    except:
-        exit("Need to give flow time index as last argument!")
+    #parse cmd line arguments
+    parser, requiredNamed = lpd.get_parser()
+    #parser.add_argument('--part_obs', help="only compute part of the observable", choices=['numerator','polyakovloop'])
+    parser.add_argument('--use_imp', help='whether to use tree-level improvement', type=bool, default=True)
+    parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=1000)
+    parser.add_argument('--int_Nt', help='use tauT of this Nt as xdata for the interpolation output', type=int, default=36)
+    parser.add_argument('--min_Nt', help="only perform intepolation if sqrt(8tF)T>1/min_Nt", default=16)
+    requiredNamed.add_argument('--flow_index', help='which flow time to interpolate', type=int, required=True)
     
-    merged_data_path = lpd.get_merged_data_path(qcdtype,corr,conftype)
+    
+    args = parser.parse_args()
+   
+    beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
+    fermions, temp, flowtype = lpd.parse_qcdtype(args.qcdtype)
+    
+    merged_data_path = lpd.get_merged_data_path(args.qcdtype,args.corr,args.conftype)
     outputfolder_data = merged_data_path+"/interpolations/"
-    outputfolder_plot = lpd.get_plot_path(qcdtype,conftype,corr)+"/interpolations/"
+    outputfolder_plot = lpd.get_plot_path(args.qcdtype,args.corr,args.conftype)+"/interpolations/"
     lpd.create_folder(outputfolder_plot, outputfolder_data)
 
     ### load and set flowradius
-    flow_radii = numpy.loadtxt(merged_data_path+"/flowradii_"+conftype+".dat")
+    flow_radii = numpy.loadtxt(merged_data_path+"/flowradii_"+args.conftype+".dat")
     nflow = len(flow_radii)
     
+    flowindex = int(args.flow_index)
+    flowradius = flow_radii[flowindex]
+    flowradiusstr = '{0:.4f}'.format(flow_radii[flowindex])
+    
     ### load data
-    XX_samples=numpy.loadtxt(merged_data_path+"/btstrp_samples/"+corr+"_"+flowradiusstr+"_Nt"+str(nt)+"_btstrp_samples.dat")
-    nsamples = 10000
-    ### nsamples = int(len(XX_samples)/nt_half)
+    XX_samples=numpy.loadtxt(merged_data_path+"/btstrp_samples/"+args.corr+"_"+flowradiusstr+"_Nt"+str(nt)+"_btstrp_samples.dat")
+    ### args.nsamples = int(len(XX_samples)/nt_half)
 
     #order = 3 #order of the spline polynomials when using fit
 
     ### result variables
-    #thefitparams = [[None, None, None] for dummy in range(nsamples)]
+    #thefitparams = [[None, None, None] for dummy in range(args.nsamples)]
     theoutputdata = []
-    xdata, dummy = filter_tauTs(flowradius, lpd.tauT[nt])
+    xdata, dummy = filter_tauTs(flowradius, lpd.get_tauTs(nt))
     #theknots = get_knots(xdata)
     interpolation_points = numpy.arange(0,0.5,0.001)
-    xpoints = numpy.asarray([x for x in numpy.sort(numpy.unique([*interpolation_points, *lpd.tauT[36], 0.5, lpd.lower_tauT_limit(flowradius)])) if x >= lpd.lower_tauT_limit(flowradius) ]) #xdata[0]
+    xpoints = numpy.asarray([x for x in numpy.sort(numpy.unique([*interpolation_points, *lpd.get_tauTs(args.int_Nt), 0.5, lpd.lower_tauT_limit(flowradius)])) if x >= lpd.lower_tauT_limit(flowradius, args.min_Nt) ]) #xdata[0]
     
     ### perform spline fits for each sample
-    for m in range(nsamples):
+    for m in range(args.nsamples):
         ydata = numpy.asarray(XX_samples[m*nt_half:(m+1)*nt_half,1])
         for a in range(nt_half):
-            ydata[a] = ydata[a] * lpd.improve_corr_factor(a,nt,flowindex,use_imp)
-        xdata, ydata, edata = filter_corr_data(flowradius, nt_half, lpd.tauT[nt], ydata)
+            ydata[a] = ydata[a] * lpd.improve_corr_factor(a,nt,flowindex,args.use_imp)
+        xdata, ydata, edata = filter_corr_data(flowradius, nt_half, lpd.get_tauTs(nt), ydata)
         #constraints = numpy.asarray([[xdata[0],2,0],[0.5,1,0]])        
         #thefitparams[m] = interpolate_XX_flow(xdata, ydata, edata, theknots, order, constraints, output_xdata = None, return_params = True)
         #theoutputdata.append(fit_interpolate_XX_flow(xdata, ydata, edata, theknots, order, constraints, output_xdata=xpoints, return_params =False))
@@ -96,7 +104,7 @@ def main():
     ypoints = numpy.mean(theoutputdata, axis=0)
     epoints = numpy.std(theoutputdata, axis=0)
     #ypoints, epoints = average_spline(xpoints, thefitparams, theknots, order, constraints)
-    numpy.savetxt(outputfolder_data+corr+"_"+'{0:.3f}'.format(flowradius)+"_interpolation.txt", numpy.stack((xpoints, ypoints, epoints), axis=-1), header="tauT     G_tauF(tau)/Gnorm      err")
+    numpy.savetxt(outputfolder_data+args.corr+"_"+'{0:.4f}'.format(flowradius)+"_interpolation.txt", numpy.stack((xpoints, ypoints, epoints), axis=-1), header="tauT     G_tauF(tau)/Gnorm      err")
 
 
     ### plot interpolations and underlying data points
@@ -107,25 +115,27 @@ def main():
     else:
         ylabel = 'G'
         displaystyle = ''
-    fig, ax, plots = lp.create_figure(xlims=[0,0.51], ylims=[1.4, 4], xlabel=r'$\tau T$', ylabel=ylabel, xlabelpos=(0.95,0.05), UseTex=UseTex) 
+    fig, ax, plots = lpd.create_figure(xlims=[0,0.51], ylims=[1.4, 4], xlabel=r'$\tau T$', ylabel=ylabel, xlabelpos=(0.95,0.05), UseTex=UseTex) 
     nknot_str = ""
     #for knots in theknots:
         #if knots != [None]:
             #nknot_str = nknot_str+str(len(knots))+","    
     ax.set_title(r'$ \sqrt{8\tau_F}T = $'+'{0:.3f}'.format(flowradius))#+", nknots = "+nknot_str)
-    ax.axvline(x=lpd.lower_tauT_limit(flowradius), **lp.verticallinestyle)
+    ax.axvline(x=lpd.lower_tauT_limit(flowradius), **lpd.verticallinestyle)
     ax.fill_between(xpoints, ypoints-epoints, ypoints+epoints, alpha=0.5)
     ax.errorbar(xpoints, ypoints, fmt = '-', lw = 0.5, mew=0)
-    XX=numpy.loadtxt(merged_data_path+"/"+corr+"_"+conftype+".dat")
-    XX_err=numpy.loadtxt(merged_data_path+"/"+corr+"_err_"+conftype+".dat")
+    XX=numpy.loadtxt(merged_data_path+"/"+args.corr+"_"+args.conftype+".dat")
+    XX_err=numpy.loadtxt(merged_data_path+"/"+args.corr+"_err_"+args.conftype+".dat")
     for a in range(len(XX[flowindex])):
-            XX[flowindex,a] = XX[flowindex,a] * lpd.improve_corr_factor(a,nt,flowindex,use_imp) 
-            XX_err[flowindex,a] = XX_err[flowindex,a] * lpd.improve_corr_factor(a,nt,flowindex, use_imp)  
-    ax.errorbar(lpd.tauT[nt], XX[flowindex], XX_err[flowindex], **lp.plotstyle_add_point_single)
+            XX[flowindex,a] = XX[flowindex,a] * lpd.improve_corr_factor(a,nt,flowindex,args.use_imp) 
+            XX_err[flowindex,a] = XX_err[flowindex,a] * lpd.improve_corr_factor(a,nt,flowindex, args.use_imp)  
+    ax.errorbar(lpd.get_tauTs(nt), XX[flowindex], XX_err[flowindex], **lpd.plotstyle_add_point_single)
     matplotlib.pyplot.tight_layout(0.2)
-    fig.savefig(outputfolder_plot+"/"+corr+"_"+'{0:.3f}'.format(flowradius)+"_interpolation.pdf")#"_"+str(nknots)+ 
+    filepath=outputfolder_plot+"/"+args.corr+"_"+'{0:.4f}'.format(flowradius)+"_interpolation.pdf"
+    print("saving ", filepath)
+    fig.savefig(filepath)#"_"+str(nknots)+ 
 
-    print("done ", nt, flowradius)
+    #print("done ", nt, '{0:.3f}'.format(flowradius))
 
 if __name__ == '__main__':
     main()
@@ -158,7 +168,7 @@ def get_knots(xdata):
         raise Exception("skip, too few datapoints")
     return knots
 
-def fit_interpolate_XX_flow(xdata, ydata, edata, knots, order, constraints, output_xdata=None, return_params=False)
+def fit_interpolate_XX_flow(xdata, ydata, edata, knots, order, constraints, output_xdata=None, return_params=False):
     ### result variables
     fitparams = len(knots)*[None]
     ### if number of parameters is gr/eq the number of datapoints, then skip, because we want atleast one degree of freedom in the fit
@@ -181,7 +191,7 @@ def fit_interpolate_XX_flow(xdata, ydata, edata, knots, order, constraints, outp
 compute average of all splines with different nknots in one sample. then compute average and std_dev of all samples if there are more than one.
 """
 def average_spline(x, all_fitparams, theknots, order, constraints):
-    nsamples = len(all_fitparams)
+    args.nsamples = len(all_fitparams)
     values = []
     for i,fitparams in enumerate(all_fitparams):
         counter = 0

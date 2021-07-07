@@ -2,6 +2,7 @@ import numpy
 import sys
 import re
 import math
+import argparse
 from latqcdtools import statistics
 
 #remove everything to the left of (and including) the first delimiter: 
@@ -44,36 +45,19 @@ def parse_qcdtype(qcdtype):
 """
 read and parse cmd line arguments
 """
-def read_args(skip_conftype=False):
-    args = sys.argv
-    if skip_conftype:
-        args.insert(2,"dummy_conftype")
-    try:
-        qcdtype = args[1]
-        conftype = args[2]
-        corr = args[3]
-        if corr not in ("EE", "BB", "EE_clover", "BB_clover"):
-                exit("Error: corr not supported")
-        if len(args) > 4:
-            add_params = args[4:]
-        else:
-            add_params = None
-    except IndexError:
-        print("Invalid Arguments. Usage: script.py <qcdtype> ", end='')
-        if not skip_conftype:
-            print("<conftype> ", end='')
-        print("<corr>, e.g. script.py quenched_1.50Tc_zeuthenFlow ",end='')
-        if not skip_conftype:
-            print("s064t16_b0687361 ", end='')
-        print("EE")
-        exit()
-    beta, ns, nt, nt_half = (0, 0, 0, 0)
-    if not skip_conftype:
-        beta, ns, nt, nt_half = parse_conftype(conftype)
-    fermions, temp, flowtype = parse_qcdtype(qcdtype)
-    if skip_conftype:
-        return qcdtype, fermions, temp, flowtype, corr, add_params
-    return conftype, beta, ns, nt, nt_half, qcdtype, fermions, temp, flowtype, corr, add_params
+def get_parser():
+    
+    parser = argparse.ArgumentParser(description="test")
+    requiredNamed = parser.add_argument_group('required named arguments')
+    requiredNamed.add_argument('--qcdtype', help="format doesnt matter, only used for finding data. example: quenched_1.50Tc_zeuthenFlow", required=True)
+    requiredNamed.add_argument('--corr', choices=['EE','EE_clover', 'BB', 'BB_clover'], help="choose from EE, EE_clover, BB, BB_clover", required=True)
+    
+    #optional
+    parser.add_argument('--conftype', help="format: s064t64_b0824900_m002022_m01011")
+    
+    #return qcdtype, fermions, temp, flowtype, corr, add_params
+    #return onftype, beta, ns, nt, nt_half, qcdtype, fermions, temp, flowtype, corr, add_params
+    return parser, requiredNamed
 
 def get_merged_data_path(qcdtype,corr,conftype):
     return "../../data/merged/"+qcdtype+"/"+corr+"/"+conftype+"/"
@@ -101,7 +85,7 @@ def write_flow_times(outfile, flow_times):
 functions related to the EE correlator
 """
 
-def lower_tauT_limit(flowradius, Ntau_coarsest=20):
+def lower_tauT_limit(flowradius, Ntau_coarsest):
     return flowradius/numpy.sqrt(8*0.014)+1/Ntau_coarsest  #r_F T < tauT/3 - 1/20, the last term is to shift the flow limit one point of the coarsest lattice that we have.
 
 
@@ -200,7 +184,7 @@ plotstyle_lines    = dict(fmt='-', linewidth=0.5, mew=0.25, mec='grey', markersi
 plotstyle_add_point= dict(fmt='D-', fillstyle='none', markersize = 5, mew=0.25, lw=0.5, elinewidth=0.25, capsize=1.2)
 plotstyle_add_point_single = plotstyle_add_point
 plotstyle_add_point_single.update(dict(fmt='D'))
-labelboxstyle      = dict(boxstyle="Round", fc="w", ec="None", alpha=0.8, pad=0.1, zorder=99)
+labelboxstyle      = dict(boxstyle="Round", fc="w", ec="None", alpha=0.9, pad=0.1, zorder=99)
 legendstyle        = dict(loc="center left", bbox_to_anchor=(1,0.5), frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, facecolor="w", columnspacing=0.1, labelspacing=0.1, borderpad=0.1, handletextpad=0.4, handlelength=1, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=1,yerr_size=0.3)})
 plotstyle_fill     = dict(linewidth=0.5)
 xlabelstyle        = dict(bbox=labelboxstyle, zorder=99)#horizontalalignment='right', verticalalignment='bottom', bbox=labelboxstyle)
