@@ -131,9 +131,6 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_nor
     if args.reconstruct:
         ylabel = r'$\displaystyle\frac{G^\mathrm{rec }_{\tau_\mathrm{F}}(\tau)}{G_{\tau_\mathrm{F}=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}  (\tau)    }$'
 
-    if args.plot_for_peter:
-        ylabelpos = [0.025, 0.95]
-
     fig, ax, plots = lpd.create_figure(xlims=xlims, ylims=ylims, xlabel=xlabel, xlabelpos=xlabelpos,
                                        ylabelpos=ylabelpos,
                                        ylabel=ylabel,
@@ -141,39 +138,19 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_nor
 
     # skip_large_errors(XX, XX_err, XX_backup, XX_err_backup, 10)
 
-    if args.plot_for_peter:
-        global BB
-        global BB_err
-        fmts = ['s', 'o', 'D', 'v']
-        for i in flow_selection:
-            mycolor = lpd.get_color(flow_var, i, flow_selection[0], flow_selection[-1] + 1)
-            ax.errorbar(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half], XX_err[i, :nt_norm_half], color=mycolor,
-                        fmt=fmts[i], linewidth=0.5, mew=0.4, mec=mycolor, markersize=4, capsize=3,
-                        zorder=-flow_selection[-1] + i + 2, label='{0:.2f}'.format(flow_var[i]) + r', \text{EE}',
-                        fillstyle='full')
-        for i in flow_selection:
-            mycolor = lpd.get_color(flow_var, i, flow_selection[0], flow_selection[-1] + 1)
-            ax.errorbar(list(xdata_plot[:nt_norm_half]), BB[i, :nt_norm_half], BB_err[i, :nt_norm_half], color=mycolor,
-                        fmt=fmts[i], linewidth=0.5, mew=0.4, mec=mycolor, markersize=4, capsize=3,
-                        zorder=-flow_selection[-1] + i + 2, label='{0:.2f}'.format(flow_var[i]) + r', \text{BB}',
-                        fillstyle='none')
-
-        leg = ax.legend(title=flow_str, **lpd.legendstyle)
-
-    else:
-        for i in flow_selection:
-            mycolor = lpd.get_color(flow_var, i, flow_selection[0], flow_selection[-1] + 1)
-            plots.append(
-                ax.fill_between(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half] - XX_err[i, :nt_norm_half],
-                                XX[i, :nt_norm_half] + XX_err[i, :nt_norm_half], facecolor=mycolor,
-                                linewidth=lpd.mylinewidth, zorder=-flow_selection[-1] + i))
-            ax.errorbar(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half], color=mycolor, **lpd.plotstyle_lines,
-                        zorder=-flow_selection[-1] + i + 1)
-            ax.errorbar(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half], color=mycolor, fmt='D', linewidth=0.5,
-                        mew=0.25, mec='grey', markersize=1.5, capsize=3, zorder=-flow_selection[-1] + i + 2)
-        leg = ax.legend(handles=plots,
-                        labels=['{0:.3f}'.format(j) for i, j in enumerate(flow_var) if i in flow_selection],
-                        title=flow_str, **lpd.legendstyle)
+    for i in flow_selection:
+        mycolor = lpd.get_color(flow_var, i, flow_selection[0], flow_selection[-1] + 1)
+        plots.append(
+            ax.fill_between(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half] - XX_err[i, :nt_norm_half],
+                            XX[i, :nt_norm_half] + XX_err[i, :nt_norm_half], facecolor=mycolor,
+                            linewidth=lpd.mylinewidth, zorder=-flow_selection[-1] + i))
+        ax.errorbar(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half], color=mycolor, **lpd.plotstyle_lines,
+                    zorder=-flow_selection[-1] + i + 1)
+        ax.errorbar(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half], color=mycolor, fmt='D', linewidth=0.5,
+                    mew=0.25, mec='grey', markersize=1.5, capsize=3, zorder=-flow_selection[-1] + i + 2)
+    leg = ax.legend(handles=plots,
+                    labels=['{0:.3f}'.format(j) for i, j in enumerate(flow_var) if i in flow_selection],
+                    title=flow_str, **lpd.legendstyle)
 
     matplotlib.pyplot.tight_layout(0)
     ### change first xtick label
@@ -427,7 +404,6 @@ def get_args():
 
     parser.add_argument('--show_flowtime_instead_of_flowradii', action="store_true")
     parser.add_argument('--show_TauByA', help="show tau/a instead of tau*T", action="store_true")
-    parser.add_argument('--plot_for_peter', action="store_true", help="temporary option for incite proposal")
 
     parser.add_argument('--wideaspect', action="store_true",
                         help="use a wide aspect ratio (basically make the plots larger)")
@@ -466,17 +442,6 @@ def load_data(args, inputfolder: str, prefix_load: str, nt: int):
         flow_radius = numpy.delete(flow_radius, delete_indices, 0)
         XX = numpy.delete(XX, delete_indices, 0)
         XX_err = numpy.delete(XX_err, delete_indices, 0)
-
-    if args.plot_for_peter:
-        global BB
-        global BB_err
-        BB = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, "BB",
-                                                    args.conftype) + "BB" + prefix_load + "_" + args.conftype + ".dat")
-        BB_err = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, "BB",
-                                                        args.conftype) + "BB" + prefix_load + "_err_" + args.conftype + ".dat")
-        if args.flowselectionfile:
-            BB = numpy.delete(BB, delete_indices, 0)
-            BB_err = numpy.delete(BB_err, delete_indices, 0)
 
     return flow_radius, flow_times, XX, XX_err, tauT, valid_flowtimes
 
@@ -573,9 +538,6 @@ def main():
         for j in range(nt_half):
             XX[i, j] *= nt_norm ** 4 * multiplicity_correction
             XX_err[i, j] *= nt_norm ** 4 * multiplicity_correction
-            if args.plot_for_peter:
-                BB[i, j] *= nt_norm ** 4 * multiplicity_correction
-                BB_err[i, j] *= nt_norm ** 4 * multiplicity_correction
 
     # TODO fix the third plot!!
 
@@ -597,9 +559,6 @@ def main():
             for j in range(nt_half):
                 XX[i, j] *= lpd.improve_corr_factor(j, nt_norm, i) / nt_norm ** 4
                 XX_err[i, j] *= lpd.improve_corr_factor(j, nt_norm, i) / nt_norm ** 4
-                if args.plot_for_peter:
-                    BB[i, j] *= lpd.improve_corr_factor(j, nt_norm, i) / nt_norm ** 4
-                    BB_err[i, j] *= lpd.improve_corr_factor(j, nt_norm, i) / nt_norm ** 4
 
     if 2 in args.only_plot_no:
         plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_norm_half, flow_str, outputfolder,
