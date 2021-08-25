@@ -47,13 +47,13 @@ read and parse cmd line arguments
 """
 def get_parser():
     
-    parser = argparse.ArgumentParser(description="test")
+    parser = argparse.ArgumentParser()
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument('--qcdtype', help="format doesnt matter, only used for finding data. example: quenched_1.50Tc_zeuthenFlow", required=True)
     requiredNamed.add_argument('--corr', choices=['EE','EE_clover', 'BB', 'BB_clover'], help="choose from EE, EE_clover, BB, BB_clover", required=True)
     
     #optional
-    parser.add_argument('--conftype', help="format: s064t64_b0824900_m002022_m01011")
+    #parser.add_argument('--conftype', help="format: s064t64_b0824900_m002022_m01011")
     
     #return qcdtype, fermions, temp, flowtype, corr, add_params
     #return onftype, beta, ns, nt, nt_half, qcdtype, fermions, temp, flowtype, corr, add_params
@@ -79,6 +79,11 @@ def write_flow_times(outfile, flow_times):
     for i in flow_times:
         outfile.write(str(i)+" ")
     outfile.write('\n')
+
+from collections import ChainMap
+def chmap(mydict, **kwargs):
+    c = ChainMap(kwargs, mydict)
+    return c
 
 
 """ 
