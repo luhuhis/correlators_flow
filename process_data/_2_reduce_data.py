@@ -77,6 +77,7 @@ def main():
     
     #parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
+    requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     parser.add_argument('--part_obs', help="only compute part of the observable", choices=['numerator','polyakovloop'])
     parser.add_argument('--n_samples', help='number of bootstrap samples', type=int, default='200')
     args = parser.parse_args()
