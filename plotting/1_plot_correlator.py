@@ -1,23 +1,22 @@
 #!/usr/local/bin/python
 
 import lib_process_data as lpd
-
-# input
-
-#   inputfolder+"flowradii_"+conftype+".dat"
-#   inputfolder+"XX_"+conftype+".dat"
-#   inputfolder+"XX_err_"+conftype+".dat"
-
-# output
-
-#   outputfolder+conftype+"_XX_fill.pdf"
-#   outputfolder+"/"+conftype+"_XX_flowlim_fill.pdf"
-
-
 import numpy
 import sys
 import matplotlib
 from matplotlib import pyplot, legend_handler, container
+
+# Global variables for this script
+figsize = None
+corr_label = ""
+
+# input
+#   inputfolder+"flowradii_"+conftype+".dat"
+#   inputfolder+"XX_"+conftype+".dat"
+#   inputfolder+"XX_err_"+conftype+".dat"
+# output
+#   outputfolder+conftype+"_XX_fill.pdf"
+#   outputfolder+"/"+conftype+"_XX_flowlim_fill.pdf"
 
 
 def skip_large_errors(XX, XX_err, boundary):
@@ -27,7 +26,7 @@ def skip_large_errors(XX, XX_err, boundary):
                 XX[i, j] = None
 
 
-def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_norm_half, flow_str, outputfolder):
+def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_half, flow_str, outputfolder):
 
     # default options for all plots
     global corr_label
@@ -43,7 +42,7 @@ def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_nor
 
     # special options from user input
     if args.show_TauByA:
-        xlims = [0, nt_norm_half * 1.01]
+        xlims = [0, nt_half * 1.01]
         xlabel = r'$\tau/a$'
     if prefix == "_numerator":
         ylims = [-50, 17]
@@ -73,8 +72,8 @@ def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_nor
     # draw the data
     for i in flow_selection:
         mycolor = lpd.get_color(flow_var, i, flow_selection[0], flow_selection[-1] + 1)
-        ax.errorbar(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half], color=mycolor, **lpd.plotstyle_lines, zorder=-flow_selection[-1] + i + 1)
-        plots.append(ax.errorbar(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half], XX_err[i, :nt_norm_half], color=mycolor, fmt='D', linewidth=0.5,
+        ax.errorbar(list(xdata_plot[:nt_half]), XX[i, :nt_half], color=mycolor, **lpd.plotstyle_lines, zorder=-flow_selection[-1] + i + 1)
+        plots.append(ax.errorbar(list(xdata_plot[:nt_half]), XX[i, :nt_half], XX_err[i, :nt_half], color=mycolor, fmt='D', linewidth=0.5,
                                  mew=0.25, mec='grey', markersize=1.5, capsize=3, zorder=-flow_selection[-1] + i + 2))
 
     # draw the legend
@@ -82,6 +81,8 @@ def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_nor
 
     if not args.notightlayout:
         matplotlib.pyplot.tight_layout(0)
+
+    ax.set_title(r'$N_\tau=' + str(int(nt_half * 2)) + '$', x=0.5, y=0.9)
 
     # change first xtick label from '0.0' to '0'
     fig.canvas.draw()
@@ -101,7 +102,7 @@ def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_nor
     plots.clear()
 
 
-def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_norm_half, flow_str, outputfolder,
+def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_half, flow_str, outputfolder,
           fermions):
 
     # default options for all plots
@@ -113,18 +114,20 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_nor
     xlabelpos = (0.95, 0.06)
     ylabelpos = (0.01, 0.97)
     xlims = [0, 0.505]
+    ylims = ([-1, 20])
     ylabel = r'$\displaystyle\frac{G^\mathrm{latt }_{\tau_\mathrm{F}}(\tau)}{G_{\tau_\mathrm{F}=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}  (\tau)    }$'
+    num_format = '{0:.3f}'
 
     # special options from user input
     if args.show_TauByA:
-        xlims = [0, nt_norm_half * 1.01]
+        xlims = [0, nt_half * 1.01]
         xlabel = r'$\tau/a$'
+    if args.show_flowtime_instead_of_flowradii:
+        num_format = '{0:.1f}'
     if fermions == "hisq":
         ylims = ([-0.5, 10])
         # if corr == "BB_clover" or corr == "BB":
         # ylims = ([-0.5,6])
-    elif fermions == "quenched":
-        ylims = ([0, 4])
     if prefix == "_numerator":
         ylims = [-50, 17]
         ylabel = r'$\displaystyle  \langle ' + corr_label + corr_label + r' \rangle_{\tau_\mathrm{F}}(\tau)$'
@@ -147,17 +150,22 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_nor
                                        ylabel=ylabel,
                                        UseTex=True, figsize=figsize)
 
+    if args.conftype_2:
+        ax.set_yscale('log', nonposy='mask')
+
     # draw the data
     for i in flow_selection:
         mycolor = lpd.get_color(flow_var, i, flow_selection[0], flow_selection[-1] + 1)
-        plots.append(ax.fill_between(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half] - XX_err[i, :nt_norm_half],
-                                     XX[i, :nt_norm_half] + XX_err[i, :nt_norm_half], facecolor=mycolor, lw=lpd.mylinewidth, zorder=-flow_selection[-1] + i))
-        ax.errorbar(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half], color=mycolor, **lpd.plotstyle_lines, zorder=-flow_selection[-1] + i + 1)
-        ax.errorbar(list(xdata_plot[:nt_norm_half]), XX[i, :nt_norm_half], color=mycolor, fmt='D', linewidth=0.5, mew=0.25, mec='grey', markersize=1.5,
+        plots.append(ax.fill_between(list(xdata_plot[:nt_half]), XX[i, :nt_half] - XX_err[i, :nt_half],
+                                     XX[i, :nt_half] + XX_err[i, :nt_half], facecolor=mycolor, lw=lpd.mylinewidth, zorder=-flow_selection[-1] + i))
+        ax.errorbar(list(xdata_plot[:nt_half]), XX[i, :nt_half], color=mycolor, **lpd.plotstyle_lines, zorder=-flow_selection[-1] + i + 1)
+        ax.errorbar(list(xdata_plot[:nt_half]), XX[i, :nt_half], color=mycolor, fmt='D', linewidth=0.5, mew=0.25, mec='grey', markersize=1.5,
                     capsize=3, zorder=-flow_selection[-1] + i + 2)
 
     # draw the legend
-    leg = ax.legend(handles=plots, labels=['{0:.3f}'.format(j) for i, j in enumerate(flow_var) if i in flow_selection], title=flow_str, **lpd.legendstyle)
+    leg = ax.legend(handles=plots, labels=[num_format.format(j) for i, j in enumerate(flow_var) if i in flow_selection], title=flow_str, **lpd.legendstyle)
+
+    ax.set_title(r'$N_\tau=' + str(int(nt_half * 2)) + '$', x=0.5, y=0.9)
 
     if not args.notightlayout:
         matplotlib.pyplot.tight_layout(0)
@@ -180,8 +188,7 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_nor
     plots.clear()
 
 
-def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_norm_half: int, flow_str: str, outputfolder: str, fermions: str, nt_half: int,
-          valid_flowtimes, tauT, flow_radius, flowend: int, flow_selection):
+def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfolder: str, fermions: str, valid_flowtimes, tauT, flow_radius, flowend: int):
 
     # default options for all plots
     global corr_label
@@ -193,9 +200,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_norm_half: int, flo
     xlabel = r'$ \tau_\mathrm{F} T^2 $'
     xlabel2 = r'$\sqrt{8\tau_\mathrm{F}}T$'
     legend_title = r"$\tau T=$"
-    # xlims=[-0.0001,(flow_var[flow_selection[-1]])*2/8 *1.01] #0.0028125+0.00015
-    # xlims=[-0.0001,0.0028125+0.00015]
-    xlims = [-0.0001, 0.02 + 0.00015]
+    xlims = [-0.0001, flow_var[-1]**2/8*1.01]
     xlabel2_format = "%.2f"
     tau_format = '{0:.3f}'
     ylabel = r'$\displaystyle\frac{G^\mathrm{latt }_{\tau}(\tau_\mathrm{F})}{G_{\tau,{\tau_\mathrm{F}}=0}^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } } }$'
@@ -204,27 +209,18 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_norm_half: int, flo
     if args.wideaspect:
         ylabelpos = (-0.2, 0.95)
         xlabelpos = (0.5, -0.06)
-    if fermions == "quenched":
-        new_tick_locations = numpy.array([0, 0.05, 0.1, 0.13]) ** 2 / 8
-        error_factor = 0.05  # 0.0075
-        minimum_trusted_flowtime_index = 20
-    elif fermions == "hisq":
-        new_tick_locations = numpy.array([0, 0.1, 0.15]) ** 2 / 8
+    if fermions == "hisq":
         ylims = (-0.5, 12)
         ylabelpos = (0.05, 0.97)
         xlabelpos = (0.94, 0.1)
-        error_factor = 0.5
-        minimum_trusted_flowtime_index = 0  # Set this to the index where the flow radius is larger than one lattice spacing of the coarsest lattice used in cont extr
     if args.show_flowtime_instead_of_flowradii:
         xlabel = r'$ \tau_\mathrm{F} /a^2 $'
         xlabel2 = r'$\sqrt{8\tau_\mathrm{F}}/a$'
-        legend_title = r"$\tau/a =$"
         if valid_flowtimes is not None:
             xlims = [-0.05, valid_flowtimes[-1] * 1.01]
-        tau_format = '{0:.0f}'
-        new_tick_locations = numpy.array([0, 3, 4, 5, 6, 7, 8, 9]) ** 2 / 8
         xlabel2_format = "%.1f"
     if args.show_TauByA:
+        legend_title = r"$\tau/a =$"
         tau_format = '{0:.0f}'
     if args.reconstruct:
         ylabel = r'$\displaystyle\frac{G^\mathrm{rec }_{\tau_\mathrm{F}}(\tau)}{G_{\tau_\mathrm{F}=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}  (\tau)    }$'
@@ -249,69 +245,78 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_norm_half: int, flo
                                        figsize=figsize)
 
     # modify axes if necessary
-    if prefix == "_polyakovloop":
+    if prefix == "_polyakovloop" or args.conftype_2:
         ax.set_yscale('log', nonposy='mask')
 
-    # calculate flow limits
-    flow_limit = numpy.zeros(len(tauT))
-    interpolation_value = numpy.zeros(len(tauT))
-    length = nt_norm_half if args.conftype_2 or args.reconstruct else len(tauT)
-    for i in range(length):
-        flow_limit[i] = lpd.upper_flow_limit(tauT[i])
-        index = (numpy.abs(flow_radius[:] - flow_limit[i])).argmin()
-        offset = 1 if flow_limit[i] - flow_radius[index] > 0 else -1
-        offset2 = -1 if offset == -1 else 0
-        interpolation_value[i] = XX[index + offset2, i] - abs(XX[index, i] - XX[index + offset, i]) / abs(
-            flow_radius[index] - flow_radius[index + offset]) * abs(flow_limit[i] - flow_radius[index + offset2])
-    max_flow_index = flowend  # this is the max because of the coarsest lattice (too few data points to put a spline through at this flow time)
+    # calculate positions on the curves for perturbative flow limits
+    if not args.ignore_pert_lims:
+        flow_limit = numpy.zeros(len(tauT))
+        interpolation_value = numpy.zeros(len(tauT))
+        for i in range(nt_half):
+            flow_limit[i] = lpd.upper_flow_limit(tauT[i])
+            index = (numpy.abs(flow_radius[:] - flow_limit[i])).argmin()
+            offset = 1 if flow_limit[i] - flow_radius[index] > 0 else -1
+            if (index+offset) >= len(flow_radius):
+                interpolation_value[i] = numpy.nan
+                continue
+            offset2 = -1 if offset == -1 else 0
+            interpolation_value[i] = XX[index + offset2, i] - abs(XX[index, i] - XX[index + offset, i]) / abs(
+                flow_radius[index] - flow_radius[index + offset]) * abs(flow_limit[i] - flow_radius[index + offset2])
 
-    # draw data
-    tauT_selection = range(nt_half)
-    if args.reconstruct:
-        tauT_selection = range(int(nt_half/2))
-    if args.tauT_selection:
-        tauT_selection = args.tauT_selection
-    max_tau = tauT_selection[-1] # only used to determine plot colors and zorders
+    tau_selection = numpy.arange(nt_half)
+    if args.tau_selection:
+        tau_selection = tau_selection[args.tau_selection]
 
-    for i in tauT_selection:
+    for idx, i in enumerate(tau_selection):
         flow_extr_filter_high = 0  # determines up to which index the discrete error bars should be plotted for this tauT
         flow_extr_filter_low = -1  # determines from which index on the discrete error bars should be plotted
         flow_extr_filter_low_grey = -1  # determines from which index on the grey band should be plotted
-        flow_extr_filter_low_greyline = -1  # determines from which index on the grey line should be plotted
+        flow_extr_filter_low_greyline = -1  # determines from which index on the grey line should be plotted. this is serves as a "minimum line width" or as an indicator if the errors are too large.
 
         rel_err = numpy.fabs(XX_err[:, i] / XX[:, i])
         for j, val in enumerate(rel_err):
-            if flow_extr_filter_high == 0:
-                if flow_limit[i] < flow_radius[j]:
-                    flow_extr_filter_high = j
+
+            # only show discrete error bars up to the perturbative flow limits
+            if not args.ignore_pert_lims:
+                if flow_extr_filter_high == 0:
+                    if flow_limit[i] < flow_radius[j]:
+                        flow_extr_filter_high = j
+
+            # only show discrete error bars from here on
             if flow_extr_filter_low == -1:
-                if fermions == "hisq" and val <= error_factor or fermions == "quenched" and val <= error_factor * \
-                        tauT[i]:
-                    flow_extr_filter_low = max(j, minimum_trusted_flowtime_index)
+                if fermions == "hisq" and val <= args.rel_err_limit or fermions == "quenched" and val <= args.rel_err_limit * tauT[i]:
+                    flow_extr_filter_low = max(j, args.min_trusted_flow_idx)
+
+            # only show grey line with fixed width from here on
             if flow_extr_filter_low_greyline == -1:
-                if fermions == "hisq" and val <= 1 or fermions == "quenched" and val <= error_factor * tauT[i]:
-                    flow_extr_filter_low_greyline = max(j, minimum_trusted_flowtime_index)
+                if fermions == "hisq" and val <= 1 or fermions == "quenched" and val <= args.rel_err_limit * tauT[i]:
+                    flow_extr_filter_low_greyline = max(j, args.min_trusted_flow_idx)
+
+            # only show grey error band from here on
             if flow_extr_filter_low_grey == -1:
                 if val <= 0.10:
                     flow_extr_filter_low_grey = j
-        flow_extr_filter_high = min(flow_extr_filter_high, max_flow_index)
 
-        # FIXME temporarily overwrite settings for hisq for testing purposes
-        if fermions == "hisq":
-            # flow_extr_filter_low = 0
+        if args.ignore_pert_lims:
             flow_extr_filter_high = flowend
-            flow_extr_filter_low_grey = 1
+        else:
+            flow_extr_filter_high = min(flow_extr_filter_high, flowend)
+
+        if args.flowend:
+            flow_extr_filter_high = args.flowend
+        if args.flowstart:
+            flow_extr_filter_low = args.flowstart
 
         xdata = flow_var[flow_extr_filter_low:flow_extr_filter_high] ** 2 / 8
         ydata = XX[flow_extr_filter_low:flow_extr_filter_high, i]
         edata = XX_err[flow_extr_filter_low:flow_extr_filter_high, i]
 
-        # --- explicit colorful datapoints for low error points ---
-        ax.errorbar(xdata, ydata, edata, color=lpd.get_color(xdata_plot, i, 0, max_tau), zorder=(-max_tau + i),
+        # --- explicit colorful datapoints ---
+        ax.errorbar(xdata, ydata, edata, color=lpd.get_color(tau_selection, idx, 0, -1), zorder=(-len(tau_selection) + i),
                     **lpd.chmap(lpd.plotstyle_add_point, fmt='x', markersize=1.25, capsize=0.6))
         # , label=tau_format.format(xdata_plot[i])))
 
-        zorder = 100 * (-max_tau + i)
+        zorder = 100 * (-len(tau_selection) + i)
 
         # --- light grey lines and error bands ---
         if fermions == "quenched":
@@ -327,15 +332,15 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_norm_half: int, flo
             ax.errorbar(xdata, ydata, color='lightgrey', zorder=zorder, fmt='-', lw=0.5, markersize=0.5)
 
             # dark grey lines (0.7,0.7,0.7,1)
-            ax.errorbar(flow_var ** 2 / 8, XX[:, i], linewidth=0.5, color=lpd.get_color(xdata_plot, i, 0, max_tau),
+            ax.errorbar(flow_var ** 2 / 8, XX[:, i], linewidth=0.5, color=lpd.get_color(tau_selection, idx, 0, -1),
                         zorder=zorder / 100 + 1, fmt='-')  # , label=tau_format.format(xdata_plot[i]))
             # perturbative flow limit markers
             plots.append(ax.errorbar(flow_limit[i] ** 2 / 8, interpolation_value[i],
                                      marker=lpd.markers[i % len(lpd.markers)], fillstyle='none', markersize=4,
-                                     mew=0.25, color=lpd.get_color(tauT, i), label=tau_format.format(tauT[i]),
+                                     mew=0.25, color=lpd.get_color(tauT, idx), label=tau_format.format(tauT[i]),
                                      capsize=0, lw=0))
             ax.errorbar(flow_limit[i] ** 2 / 8, interpolation_value[i], marker='|', fillstyle='none', markersize=4,
-                        mew=0.25, color=lpd.get_color(tauT, i, 0, max_tau), capsize=0)
+                        mew=0.25, color=lpd.get_color(tau_selection, idx, 0, -1), capsize=0)
 
         # dark grey lines that are cut off, may break perturbative flow limit markes (?)
         if fermions == "hisq":
@@ -344,21 +349,24 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_norm_half: int, flo
             edata = XX_err[flow_extr_filter_low:, i]  # FIXME reset to flow_extr_filter_low_greyline
 
             # colored lines
-            plots.append(ax.errorbar(xdata, ydata, linewidth=0.5, color=lpd.get_color(xdata_plot, i, 0, max_tau), label=tau_format.format(xdata_plot[i]),
+            plots.append(ax.errorbar(xdata, ydata, linewidth=0.5, color=lpd.get_color(tau_selection, idx, 0, -1), label=tau_format.format(xdata_plot[i]),
                                      zorder=zorder / 100 + 1))
 
         # vertical dashed line
-        ax.axvline(x=flow_var[minimum_trusted_flowtime_index] ** 2 / 8, **lpd.verticallinestyle)
-
+        if args.min_trusted_flow_idx > 0:
+            ax.axvline(x=flow_var[args.min_trusted_flow_idx] ** 2 / 8, **lpd.verticallinestyle)
 
     # draw second axes
     ax2 = ax.twiny()
+
     def tick_function(X):
         V = numpy.sqrt(X * 8)
         return ["%.1f" % z if z == 0 else xlabel2_format % z for z in V]
     ax2.tick_params(direction='in', pad=0, width=0.5)
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticks(new_tick_locations)
+    nticks = len(ax.xaxis.get_ticklabels())
+    new_tick_locations = numpy.linspace(0, xlims[1], nticks)
+    ax2.set_xticks(new_tick_locations)  # TODO make this a cmd line input
     ax2.set_xticklabels(tick_function(new_tick_locations))
     ax2.set_xlabel(xlabel2)  # , horizontalalignment='right', verticalalignment='top', bbox=lpd.labelboxstyle, zorder=99)
     ax2.xaxis.set_label_coords(0.92, 0.92)
@@ -372,6 +380,8 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_norm_half: int, flo
                                 handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=xerr_size)}))
     # for line in leg.get_lines():
     # line.set_linewidth(4.0)
+
+    ax.set_title(r'$N_\tau='+str(int(nt_half*2))+'$', x=0.5, y=0.9)
 
     if not args.notightlayout:
         matplotlib.pyplot.tight_layout(0)
@@ -391,7 +401,7 @@ def get_args():
     """ parse cmd line arguments """
     parser, requiredNamed = lpd.get_parser()
 
-    parser.add_argument('--tauT_selection', type=int, nargs='*',
+    parser.add_argument('--tau_selection', type=int, nargs='*',
                         help='list of indices which tauT to plot in third flow plot')
 
     parser.add_argument('--flowselectionfile', help="only consider the flowtimes given in this file")
@@ -401,10 +411,11 @@ def get_args():
 
     parser.add_argument('--part_obs', help='choose to only show numerator or denominator (polyakovloop) of corr',
                         choices=['numerator', 'polyakovloop'])
+
     parser.add_argument('--reconstruct', action="store_true",
-                        help="instead of plotting the actual correlator at T_1, use the data to plot the reconstructed correlator at T_2")
+                        help="instead of plotting the actual correlator data of <conftype> at <nt>, use that data to plot the reconstructed correlator corresponding to 2x<nt>")
     parser.add_argument('--conftype_2',
-                        help="if reconstruct, load data from this conftype and subtract the reconstructed corr from it and plot the result.")
+                        help="<conftype_2> should have half the <nt> of <conftype>. if --reconstruct is given: load data from this <conftype_2> and plot the ratio (<conftype_2>/<conftype>) of the numerators WITH errors and normalize it with the ratio of the polyakovloops WITHOUT errors.")
 
     parser.add_argument('--show_flowtime_instead_of_flowradii', action="store_true")
     parser.add_argument('--show_TauByA', help="show tau/a instead of tau*T", action="store_true")
@@ -415,26 +426,31 @@ def get_args():
     parser.add_argument('--custom_ylims', nargs=2, type=float, help="overwrite any default ylims")
     parser.add_argument('--custom_xlims', nargs=2, type=float, help="overwrite any default xlims")
 
-    parser.add_argument('--error_factor', type=float, default='1.0', help="reduce errors of all data by this factor")
+    parser.add_argument('--error_reduce_factor', type=float, default='1.0', help="reduce errors of all data by this factor")
+    parser.add_argument('--rel_err_limit', type=float, default=0.05, help="float in [0,inf]. for plot no3: only show error bars if relative error is less than this value. default value is 0.05 (5% relative error)")
 
-    parser.add_argument('--only_plot_no', type=int, nargs='*', default=[1, 2, 3])
+    parser.add_argument('--ignore_pert_lims', action="store_true", help="for third plot ignore the perturbative flow limits for deciding the plot range")
+
+    parser.add_argument('--min_trusted_flow_idx', type=int, default=0, help="minimum trusted flowtime index. Set this to the index where the flow radius is larger than one lattice spacing of the coarsest lattice used in cont extr. only data for flow times after this are plotted.")
+
+    parser.add_argument('--only_plot_no', type=int, nargs='*', default=[1, 3])
 
     requiredNamed.add_argument('--conftype', help="format: s064t64_b0824900_m002022_m01011", required=True)
 
     args = parser.parse_args()
 
-    if 'conftype_2' in vars(args) and 'reconstruct' not in vars(args):
+    if args.conftype_2 is not None and not args.reconstruct:
         parser.error('The --conftype_2 argument requires the --reconstruct argument!')
 
     return args
 
 
-def load_data(args, inputfolder: str, prefix_load: str, nt: int):
-
-    flow_radius = numpy.loadtxt(inputfolder + "flowradii_" + args.conftype + ".dat")
-    flow_times = numpy.loadtxt(inputfolder + "flowtimes_" + args.conftype + ".dat")
-    XX = numpy.loadtxt(inputfolder + args.corr + prefix_load + "_" + args.conftype + ".dat")
-    XX_err = numpy.loadtxt(inputfolder + args.corr + prefix_load + "_err_" + args.conftype + ".dat")
+def load_data(args, conftype: str, inputfolder: str, prefix_load: str, nt: int):
+    """load the reduced data (means and error)"""
+    flow_radius = numpy.loadtxt(inputfolder + "flowradii_" + conftype + ".dat")
+    flow_times = numpy.loadtxt(inputfolder + "flowtimes_" + conftype + ".dat")
+    XX = numpy.loadtxt(inputfolder + args.corr + prefix_load + "_" + conftype + ".dat")
+    XX_err = numpy.loadtxt(inputfolder + args.corr + prefix_load + "_err_" + conftype + ".dat")
 
     tauT = lpd.get_tauTs(nt)
 
@@ -464,21 +480,20 @@ def main():
         sys.exit("couldn't parse fermion type (either fermions=hisq or fermions=quenched) from qcdtype. use this syntax for qcdtype: <fermions>_<other_stuff>")
 
     prefix = "_" + args.part_obs if args.part_obs else ""  # file path prefix for loading different observables
-    prefix_load = "" if args.reconstruct else prefix  # need a second variable for reconstruct option
+    prefix_load = prefix
+    if args.conftype_2:
+        prefix_load = "_numerator"  # why? see --help
     outputfolder = lpd.get_plot_path(args.qcdtype, args.corr, args.conftype)
     lpd.create_folder(outputfolder)
     inputfolder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype)
 
     # load data
-    flow_radius, flow_times, XX, XX_err, tauT, valid_flowtimes = load_data(args, inputfolder, prefix_load, nt)
+    flow_radius, flow_times, XX, XX_err, tauT, valid_flowtimes = load_data(args, args.conftype, inputfolder, prefix_load, nt)
     XX_bak = numpy.copy(XX)
     XX_err_bak = numpy.copy(XX_err)
 
-    # decision between tauT and tau/a for plots
-    xdata_plot = tauT * nt if args.show_TauByA else tauT
-
-    # decision between sqrt(8tauF)/a and sqrt(8tauF)T for plots
-    flow_var = flow_radius * nt if args.show_flowtime_instead_of_flowradii else flow_radius
+    # decision between sqrt(8tauF)/a and sqrt(8tauF)T for plot labels
+    flow_var = flow_radius * nt if args.show_flowtime_instead_of_flowradii else numpy.copy(flow_radius)
     flow_str = r"$ \sqrt{8\tau_\mathrm{F}}/a$" if args.show_flowtime_instead_of_flowradii else \
         r"$ \sqrt{8\tau_\mathrm{F}}T$"
 
@@ -512,79 +527,96 @@ def main():
     # ===================== PLOT: corr normalized to temperature, x-axis tauT, flowtimes fixed =========================
     # ==================================================================================================================
 
-    nt_norm = int(nt/2) if args.reconstruct else nt
-    nt_norm_half = int(nt_norm / 2)
+    # nt_norm = int(nt/2) if args.reconstruct else nt
+    # nt_half = int(nt_norm / 2)
 
     # create reconstructed correlator
     if args.reconstruct:
+        nt = int(nt/2)
+        nt_half = int(nt/2)
+        tauT = tauT[1:nt:2]
         for i in range(len(flow_var)):
-            for j in range(nt_norm_half):  # from 0 to 16 for a reconstructed Nt=32 correlator based on Nt=64
-                new_index = ((nt-1) - (j + nt_norm))
-                XX[i, j] += XX_bak[i, new_index]
+            for j in range(nt_half):  # from 0 to 16 for a reconstructed Nt=32 correlator based on Nt=64
+                new_index = (j + nt_half)  # e.g. ((64-1) - (0 + 32-1)) = 32, which is the first index of the second half of the Nt64 data.
                 XX_err[i, j] = numpy.sqrt(XX_err_bak[i, j] ** 2 + XX_err_bak[i, new_index] ** 2)
-        # load finite temp corr. then <finite temp corr> - <reconstructed corr>
+                XX[i, j] += XX_bak[i, new_index]
+        # load finite temp corr.
         if args.conftype_2:
-            flow_times_2 = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype_2) + "flowtimes_" + args.conftype_2 + ".dat")
-            XX_2 = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype_2) + args.corr + prefix_load + "_" + args.conftype_2 + ".dat")
-            XX_2_err = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype_2) + args.corr + prefix_load + "_err_" + args.conftype_2
-                                     + ".dat")
+            inputfolder_2 = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype_2)
+            XX_2, XX_2_err = load_data(args, args.conftype_2, inputfolder_2, prefix_load, nt)[2:4]
 
-            # filter out flowtimes based on file
-            delete_indices = []
-            if args.flowselectionfile:
-                valid_flowtimes = numpy.loadtxt(args.flowselectionfile)
-                for i, val in enumerate(flow_times_2):
-                    if val not in valid_flowtimes:
-                        delete_indices.append(i)
-                flow_times_2 = numpy.delete(flow_times_2, delete_indices, 0)
-                XX_2 = numpy.delete(XX_2, delete_indices, 0)
-                XX_2_err = numpy.delete(XX_2_err, delete_indices, 0)
+            # load polyakovloop data as well
+            ploop1, ploop_err1 = load_data(args, args.conftype, inputfolder, "_polyakovloop", int(nt*2))[2:4]  # nt*2 because this is the original one
+            ploop2, ploop_err2 = load_data(args, args.conftype_2, inputfolder_2, "_polyakovloop", nt)[2:4]
+
+            # TODO reconstruct polakovloop ????
+            # for i in range(len(flow_var)):
+            #     for j in range(nt_half):
+            #         new_index = (j + nt_half)
+            #         ploop_err1[i, j] = numpy.sqrt(ploop_err1[i, j] ** 2 + ploop_err1[i, new_index] ** 2)
+            #         ploop1[i, j] += ploop1[i, new_index]
 
             for i in range(len(flow_var)):
-                for j in range(nt_norm_half):  # from 0 to 16
-                    XX[i, j] = XX_2[i, j] - XX[i, j]
-                    XX_err[i, j] += XX_2[i, j]
+                for j in range(nt_half):
+                    ploop1[i, j] = ploop2[i, j] # ploop1[i, j] / ploop2[i, j]
+                    # print(XX_2[i, j], XX[i, j])
+                    XX[i, j] = (XX_2[i, j] / XX[i, j]) / ploop1[i, j]
+                    XX_err[i, j] = XX[i, j] * numpy.sqrt((XX_err[i, j] / XX[i, j]) ** 2 + (XX_2_err[i, j] / XX_2[i, j]) ** 2) / numpy.fabs(ploop1[i, j])
 
-    # normalize to temperature
+    # decision between tauT and tau/a for plot labels
+    xdata_plot = numpy.copy(tauT)
+    if args.show_TauByA:
+        xdata_plot = tauT * nt
+
+    # normalize to temperature (as long as were not computing this special ratio with two conftypes)
+    if not args.conftype_2:
+        for i in range(len(flow_var)):
+            for j in range(nt_half):
+                XX[i, j] *= nt ** 4 * multiplicity_correction
+                XX_err[i, j] *= nt ** 4 * multiplicity_correction
+
+    # DEBUG OPTION: reduce errors for plotting. default is to not do this. (args.error_reduce_factor=1)
     for i in range(len(flow_var)):
         for j in range(nt_half):
-            XX[i, j] *= nt_norm ** 4 * multiplicity_correction
-            XX_err[i, j] *= nt_norm ** 4 * multiplicity_correction
+            XX_err[i, j] /= args.error_reduce_factor
 
-    # reduce errors for plotting. default is to not do this. (args.error_factor=1)
-    for i in range(len(flow_var)):
-        for j in range(nt_half):
-            XX_err[i, j] /= args.error_factor
+    # append "_rec" to output folder name if reconstruct
+    if args.reconstruct:
+        args.conftype += "_rec"
+        if args.conftype_2:
+            args.conftype += "_ratio"
 
+    # plot the first figure
     if 1 in args.only_plot_no:
-        plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_norm_half, flow_str, outputfolder)
+        plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_half, flow_str, outputfolder)
 
     # ==================================================================================================================
     # ==================== PLOT: corr normalized to LO pert corr, x-axis tauT, flowtimes fixed =========================
     # ==================================================================================================================
 
     # normalize data to perturbative lattice correlators
-    if not prefix == "_polyakovloop" and not prefix == "_numerator":
+    if not prefix == "_polyakovloop" and not prefix == "_numerator" and not args.conftype_2:
         for i in range(len(flow_var)):
             for j in range(nt_half):
-                XX[i, j] *= lpd.improve_corr_factor(j, nt_norm, i) / nt_norm ** 4
-                XX_err[i, j] *= lpd.improve_corr_factor(j, nt_norm, i) / nt_norm ** 4
+                XX[i, j] *= lpd.improve_corr_factor(j, nt, i) / nt ** 4
+                XX_err[i, j] *= lpd.improve_corr_factor(j, nt, i) / nt ** 4
 
+    # plot the second figure
     if 2 in args.only_plot_no:
-        plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_norm_half, flow_str, outputfolder,
+        plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_half, flow_str, outputfolder,
               fermions)
 
     # ==================================================================================================================
     # ========================= PLOT: x-axis flowtimes, tauT fixed =====================================================
     # ==================================================================================================================
 
+    # plot the third figure
     if 3 in args.only_plot_no:
-        plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_norm_half, flow_str, outputfolder, fermions, nt_half,
-              valid_flowtimes, tauT, flow_radius, flowend, flow_selection)
+        plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half, outputfolder, fermions, valid_flowtimes, tauT, flow_radius, flowend)
 
     # ==================================================================================================================
 
-    lpd.save_script_call()
+    lpd.save_script_call(outputfolder)
 
 
 if __name__ == '__main__':

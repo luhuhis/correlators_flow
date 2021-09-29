@@ -5,6 +5,23 @@ import argparse
 from collections import ChainMap
 import matplotlib
 from matplotlib import pyplot, cm, container, legend_handler
+import sys
+
+
+def save_script_call(add_folder=None):
+    """ save full script call in logfile """
+    import datetime
+    now = datetime.datetime.now()
+    dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
+    import os
+    file_name = os.path.basename(sys.argv[0])
+    folderlist = "."
+    if add_folder is not None:
+        folderlist = (".", add_folder)
+    for folder in folderlist:
+        with open(folder + "/" + "log_" + file_name + ".log", 'a') as logfile:
+            logfile.write(dt_string + "\n" + " ".join(sys.argv) + '\n')
+    return
 
 
 # remove everything to the left of (and including) the first delimiter:
@@ -160,9 +177,9 @@ def get_flow_start_indices():
 
 # === plotting ===
 
-def get_color(myarray, i, start=0, end=0):
-    i = end - 1 - i + start
-    return matplotlib.cm.gnuplot((myarray[i] - myarray[start]) / (myarray[end - 1] - myarray[start]) * 0.9)
+def get_color(myarray, i, start=0, end=-1):
+    # i = end - 1 - i + start
+    return matplotlib.cm.gnuplot((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * 0.9)
 
 
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.01), ylabelpos=(0.01, 0.97), tickpad=2,
