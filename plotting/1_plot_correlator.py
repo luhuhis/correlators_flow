@@ -94,7 +94,7 @@ def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
     # save pdf
     filename = outputfolder + args.conftype + "_" + args.corr + prefix + "_T.pdf"
     fig.savefig(filename)
-    print("SAVED correlator plot", filename)
+    print("SAVED correlator plot \n", filename)
 
     # clear canvas
     ax.lines.clear()
@@ -180,7 +180,7 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
     # save pdf
     filename = outputfolder + args.conftype + "_" + args.corr + prefix + ".pdf"
     fig.savefig(filename)
-    print("SAVED correlator plot", filename)
+    print("SAVED correlator plot\n", filename)
 
     # clear canvas
     ax.lines.clear()
@@ -326,8 +326,8 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
         # --- explicit colorful datapoints ---
         zorder = -100 * (len(tau_selection)) +i
         color = lpd.get_color(tau_selection, len(tau_selection)-1-idx, 0, -1)
-        ax.errorbar(xdata, ydata, edata, color=color, zorder=zorder,
-                    **lpd.chmap(lpd.plotstyle_add_point, fmt='x', markersize=1.25, capsize=0.6))
+        plots.append(ax.errorbar(xdata, ydata, edata, color=color, zorder=zorder, label=tau_format.format(xdata_plot[i]),
+                    **lpd.chmap(lpd.plotstyle_add_point, fmt='x', markersize=1.25, capsize=0.6)))
         # , label=tau_format.format(xdata_plot[i])))
 
         # --- light grey lines and error bands ---
@@ -361,8 +361,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
             edata = XX_err[flow_extr_filter_low:, i]  # FIXME reset to flow_extr_filter_low_greyline
 
             # colored lines
-            plots.append(ax.errorbar(xdata, ydata, linewidth=0.5, color=color, label=tau_format.format(xdata_plot[i]),
-                                     zorder=zorder))
+            ax.errorbar(xdata, ydata, linewidth=0.5, color=color, alpha=0.5, zorder=zorder)
 
         # vertical dashed line
         if args.min_trusted_flow_idx > 0:
@@ -408,7 +407,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
     # save pdf
     filename = outputfolder + "/" + args.conftype + "_" + args.corr + prefix + "_flow.pdf"
     fig.savefig(filename)
-    print("SAVED flow effect plot", filename)
+    print("SAVED flow effect plot\n", filename)
 
     # clear canvas
     ax.lines.clear()
@@ -448,7 +447,7 @@ def get_args():
     parser.add_argument('--error_reduce_factor', type=float, default='1.0', help="reduce errors of all data by this factor")
     parser.add_argument('--rel_err_limit', type=float, default=0.05, help="float in [0,inf]. for plot no3: only show error bars if relative error is less than this value. default value is 0.05 (5% relative error)")
 
-    parser.add_argument('--hide_err_above', type=float, default=2, help="hide all data with relative errors larger than this. default is 2.")
+    parser.add_argument('--hide_err_above', type=float, default=2, help="hide all data with relative errors larger than this. default is just above rel_err_limit.")
 
     parser.add_argument('--ignore_pert_lims', action="store_true", help="for third plot ignore the perturbative flow limits for deciding the plot range")
 
@@ -459,6 +458,9 @@ def get_args():
     requiredNamed.add_argument('--conftype', help="format: s064t64_b0824900_m002022_m01011", required=True)
 
     args = parser.parse_args()
+
+    if not args.hide_err_above:
+        args.hide_err_above = args.rel_err_limit * 1.001
 
     if 1 not in args.only_plot_no and 2 not in args.only_plot_no and 3 not in args.only_plot_no:
         parser.error('usage: --only_plot_no 1 2 3')
@@ -487,6 +489,7 @@ def load_data(args, conftype: str, inputfolder: str, prefix_load: str, nt: int):
         for i, val in enumerate(flow_times):
             if val not in valid_flowtimes:
                 delete_indices.append(i)
+        print("deleting flow times with the following indices:", delete_indices)
         flow_times = numpy.delete(flow_times, delete_indices, 0)
         flow_radius = numpy.delete(flow_radius, delete_indices, 0)
         XX = numpy.delete(XX, delete_indices, 0)
@@ -504,6 +507,7 @@ def symmetry_index(nt, input_idx):
 
 
 def main():
+    print("\n")
     # parse arguments
     args = get_args()
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
@@ -554,29 +558,25 @@ def main():
     if args.wideaspect:
         figsize = (1.5 * (3 + 3 / 8), 1.5 * (3 + 3 / 8) / 16 * 9)
 
-    # ==================================================================================================================
-    # ===================== PLOT: corr normalized to temperature, x-axis tauT, flowtimes fixed =========================
-    # ==================================================================================================================
-
-    # nt_norm = int(nt/2) if args.reconstruct else nt
-    # nt_half = int(nt_norm / 2)
-
     # create reconstructed correlator
     if args.reconstruct:
         nt = int(nt/2)
         nt_half = int(nt/2)
         tauT = tauT[1:nt:2]
-        print(nt)
-        for i in range(len(flow_var)):
-            for j in range(nt_half):  # from 0 to 16 for a reconstructed Nt=32 correlator based on Nt=64
-                new_index = symmetry_index(int(nt*2), (j + nt))   # e.g. ((64-1) - (0 + 32-1)) = 32, which is the first index of the second half of the Nt64 data.
-                print(j, new_index)
+        for i in range(XX.shape[0]):
+            for j in range(nt_half):  # from 0 to 15 (or tau/a=[1,..,16]) for a reconstructed Nt=32 correlator based on Nt=64
+                new_index = symmetry_index(int(nt*2), (j + nt))
+                # print(j, j+nt, new_index)
                 XX_err[i, j] = numpy.sqrt(XX_err_bak[i, j] ** 2 + XX_err_bak[i, new_index] ** 2)
                 XX[i, j] += XX_bak[i, new_index]
         # load finite temp corr.
         if args.conftype_2:
             inputfolder_2 = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype_2)
-            XX_2, XX_2_err = load_data(args, args.conftype_2, inputfolder_2, prefix_load, nt)[2:4]
+            flow_times_2, XX_2, XX_2_err = load_data(args, args.conftype_2, inputfolder_2, prefix_load, nt)[1:4]
+
+            for i in range(len(flow_times)):
+                if flow_times[i] != flow_times_2[i]:
+                    print("bla")
 
             # load polyakovloop data as well
             ploop1, ploop_err1 = load_data(args, args.conftype, inputfolder, "_polyakovloop", int(nt*2))[2:4]  # nt*2 because this is the original one
@@ -584,16 +584,15 @@ def main():
 
             # TODO reconstruct polakovloop ????
             # for i in range(len(flow_var)):
-            #     for j in range(nt_half):
-            #         new_index = (j + nt_half)
+            #     for j in range(nt_half):  # from 0 to 15 (or tau/a=[1,..,16]) for a reconstructed Nt=32 correlator based on Nt=64
+            #         new_index = symmetry_index(int(nt * 2), (j + nt))
+            #         # print(j, j+nt, new_index)
             #         ploop_err1[i, j] = numpy.sqrt(ploop_err1[i, j] ** 2 + ploop_err1[i, new_index] ** 2)
             #         ploop1[i, j] += ploop1[i, new_index]
 
-            for i in range(len(flow_var)):
+            for i in range(XX.shape[0]):
                 for j in range(nt_half):
                     ploop1[i, j] = ploop2[i, j] / ploop1[i, j]
-                    # print(XX_2[i, j], XX[i, j])
-
                     # f = a A/B , df = a A/B sqrt( (dA/A)^2 (dB/B)^2 )
                     XX_err[i, j] = numpy.fabs(XX_2[i, j] / XX[i, j]) * numpy.sqrt((XX_err[i, j] / XX[i, j]) ** 2 + (XX_2_err[i, j] / XX_2[i, j]) ** 2) / ploop1[i, j]
                     XX[i, j] = XX_2[i, j] / XX[i, j] / ploop1[i, j]
@@ -605,13 +604,6 @@ def main():
     if args.show_TauByA:
         xdata_plot = tauT * nt
 
-    # normalize to temperature (as long as were not computing this special ratio with two conftypes)
-    if not args.conftype_2:
-        for i in range(len(flow_var)):
-            for j in range(nt_half):
-                XX[i, j] *= nt ** 4 * multiplicity_correction
-                XX_err[i, j] *= nt ** 4 * multiplicity_correction
-
     # DEBUG OPTION: reduce errors for plotting. default is to not do this. (args.error_reduce_factor=1)
     for i in range(len(flow_var)):
         for j in range(nt_half):
@@ -622,6 +614,17 @@ def main():
         args.conftype += "_rec"
         if args.conftype_2:
             args.conftype += "_ratio"
+
+    # ==================================================================================================================
+    # ===================== PLOT: corr normalized to temperature, x-axis tauT, flowtimes fixed =========================
+    # ==================================================================================================================
+
+    # normalize to temperature (as long as were not computing this special ratio with two conftypes)
+    if not args.conftype_2:
+        for i in range(len(flow_var)):
+            for j in range(nt_half):
+                XX[i, j] *= nt ** 4 * multiplicity_correction
+                XX_err[i, j] *= nt ** 4 * multiplicity_correction
 
     # plot the first figure
     if 1 in args.only_plot_no:
