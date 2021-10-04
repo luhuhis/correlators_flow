@@ -178,6 +178,8 @@ def get_flow_start_indices():
 # === plotting ===
 
 def get_color(myarray, i, start=0, end=-1):
+    if myarray[end] == myarray[start]:
+        return matplotlib.cm.gnuplot(0)
     # i = end - 1 - i + start
     return matplotlib.cm.gnuplot((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * 0.9)
 
@@ -222,9 +224,9 @@ legendstyle = dict(loc="center left", bbox_to_anchor=(1, 0.5), frameon=True, fra
                    labelspacing=0.1, borderpad=0.1, handletextpad=0.4, handlelength=1,
                    handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=1, yerr_size=0.3)})
 plotstyle_fill = dict(linewidth=0.5)
-xlabelstyle = dict(bbox=labelboxstyle, zorder=99)  # horizontalalignment='right', verticalalignment='bottom', bbox=labelboxstyle)
+xlabelstyle = dict(bbox=labelboxstyle, zorder=-1)  # horizontalalignment='right', verticalalignment='bottom', bbox=labelboxstyle)
 ylabelstyle = dict(bbox=labelboxstyle, horizontalalignment='left', verticalalignment='top', rotation=0,
-                   zorder=99)  # horizontalalignment='right', , rotation=0, bbox=labelboxstyle)
+                   zorder=-1)  # horizontalalignment='right', , rotation=0, bbox=labelboxstyle)
 titlestyle = dict(x=0.5, y=0.9, bbox=labelboxstyle, verticalalignment='top', zorder=99, fontsize=10)
 verticallinestyle = dict(ymin=0, ymax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4), lw=0.5)
 horizontallinestyle = dict(xmin=0, xmax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4), lw=0.5)
