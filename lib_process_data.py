@@ -130,7 +130,7 @@ def chmap(mydict, **kwargs):
 
 
 def get_tauTs(nt):
-    return numpy.arange(1 / nt, 0.501, 1 / nt)  # default tauT
+    return numpy.arange(1 / nt, 0.5001, 1 / nt)  # default tauT
     # return tauT_improved[nt] #tree-level improved tauT for XX correlators
 
 
@@ -160,7 +160,7 @@ def improve_corr_factor(tauTindex, nt, flowindex, improve=True, improve_with_flo
 
 
 def lower_tauT_limit(flowradius, coarsest_Ntau=20):
-    return flowradius / numpy.sqrt(8 * 0.014) + 1 / coarsest_Ntau
+    return flowradius/numpy.sqrt(8*0.014) + 1/coarsest_Ntau
 
 
 def upper_flow_limit(tauT, coarsest_Ntau=20):
@@ -169,10 +169,6 @@ def upper_flow_limit(tauT, coarsest_Ntau=20):
 
 # === some data that does not really belong to extra files ===
 ToverTc = {16: 1.510424, 20: 1.473469, 24: 1.484769, 30: 1.511761, 36: 1.504171}
-
-
-def get_flow_start_indices():
-    return [-1, -1, -1, -1, -1, -1, -1, 50, 53, 57, 61, 65, 68, 71, 74, 77, 82, 83]
 
 
 # === plotting ===

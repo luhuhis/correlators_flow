@@ -2,8 +2,8 @@
 
 #parameters
 qcdtype=quenched_1.50Tc_zeuthenFlow
-conftypes="s064t16_b0687361 s080t20_b0703500 s096t24_b0719200 s120t30_b0739400"
-corrs="BB" # BB_clover"
+conftypes="s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400"
+corrs="BB BB_clover"
 
 for corr in $corrs; do
     rm -f /home/altenkort/work/correlators_flow/plots/$qcdtype/$corr/cont_extr*/*.pdf
@@ -12,8 +12,8 @@ done
 
 
 for corr in $corrs; do
-    for i in {0..60} ; do
-            python _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $i 
+    for i in {0..100} ; do
+            python _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $i --use_tex
     done
 done
 

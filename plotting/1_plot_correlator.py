@@ -5,10 +5,12 @@ import numpy
 import sys
 import matplotlib
 from matplotlib import pyplot, legend_handler, container
+from matplotlib.ticker import MaxNLocator
 
 # Global variables for this script
 figsize = None
 corr_label = ""
+
 
 # input
 #   inputfolder+"flowradii_"+conftype+".dat"
@@ -27,7 +29,6 @@ def skip_large_errors(XX, XX_err, boundary):
 
 
 def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_half, flow_str, outputfolder):
-
     # default options for all plots
     global corr_label
     global figsize
@@ -38,7 +39,7 @@ def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
     ylabelpos = (0.01, 0.97)
     xlabelpos = (0.95, 0.06)
     ylims = ([1, 100000])
-    ylabel = r'$\displaystyle\frac{G^\mathrm{latt }_{\tau_\mathrm{F}}(\tau)}{T_\mathrm{norm}^4 }$'
+    ylabel = r'$\displaystyle\frac{G^\mathrm{latt }}{T_\mathrm{norm}^4 }$'
 
     # special options from user input
     if args.show_TauByA:
@@ -46,19 +47,17 @@ def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
         xlabel = r'$\tau/a$'
     if prefix == "_numerator":
         ylims = [-50, 17]
-        ylabel = r'$\displaystyle\frac{ \langle ' + corr_label + corr_label + r' \rangle_{\tau_\mathrm{F}}(\tau)}{T_\mathrm{norm}^4 }$'
+        ylabel = r'$\displaystyle\frac{ \langle ' + corr_label + corr_label + r' \rangle}{T_\mathrm{norm}^4 }$'
     if prefix == "_polyakovloop":
         ylims = [1, 1000000]
-        ylabel = r'$\displaystyle\frac{ \langle - \rangle_{\tau_\mathrm{F}}(\tau)}{T_\mathrm{norm}^4 }$'
+        ylabel = r'$\displaystyle\frac{ \langle -- \rangle}{T_\mathrm{norm}^4 }$'
     if args.wideaspect:
         ylabelpos = (-0.2, 0.95)
         xlabelpos = (0.5, -0.06)
     if args.reconstruct:
-        ylabel = r'$\displaystyle\frac{G^\mathrm{rec}_{\tau_\mathrm{F}}}{T_\mathrm{norm}^4 }$'
+        ylabel = r'$\displaystyle\frac{G^\mathrm{rec}}{T_\mathrm{norm}^4 }$'
     if args.custom_ylims:
         ylims = args.custom_ylims
-    if args.custom_xlims:
-        xlims = args.custom_xlims
 
     # create the figure and axes objects
     fig, ax, plots = lpd.create_figure(xlims=xlims, ylims=ylims, xlabel=xlabel, xlabelpos=xlabelpos, ylabel=ylabel,
@@ -104,10 +103,9 @@ def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
 
 def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_half, flow_str, outputfolder,
           fermions):
-
     # default options for all plots
     global corr_label
-    global figsize 
+    global figsize
 
     # default options for this plot
     xlabel = r'$\tau T$'
@@ -115,34 +113,37 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
     ylabelpos = (0.01, 0.97)
     xlims = [0, 0.505]
     ylims = ([-1, 20])
-    ylabel = r'$\displaystyle\frac{G^\mathrm{latt }_{\tau_\mathrm{F}}(\tau)}{G_{\tau_\mathrm{F}=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}  (\tau)    }$'
+    ylabel = r'$\displaystyle\frac{G^\mathrm{latt }}{G_{\tau_\mathrm{F}=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}}$'
     num_format = '{0:.3f}'
+    tau_format = '{0:.2f}'
 
     # special options from user input
     if args.show_TauByA:
         xlims = [0, nt_half * 1.01]
         xlabel = r'$\tau/a$'
+        tau_format = '{0:.0f}'
     if args.show_flowtime_instead_of_flowradii:
         num_format = '{0:.1f}'
     if fermions == "hisq":
         ylims = ([-0.5, 10])
         # if corr == "BB_clover" or corr == "BB":
         # ylims = ([-0.5,6])
-    if prefix == "_numerator":
-        ylims = [-50, 17]
-        ylabel = r'$\displaystyle  \langle ' + corr_label + corr_label + r' \rangle_{\tau_\mathrm{F}}(\tau)$'
-    if prefix == "_polyakovloop":
-        ylims = [1, 1000000]
-        ylabel = r'$\displaystyle\frac{ \langle - \rangle_{\tau_\mathrm{F}}(\tau)}{G_{\tau_\mathrm{F}=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}  (\tau)    }$'
     if args.reconstruct:
-        ylabel = r'$\displaystyle\frac{G^\mathrm{rec }_{\tau_\mathrm{F}}(\tau)}{G_{\tau_\mathrm{F}=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}  (\tau)    }$'
+        ylabel = r'$\displaystyle\frac{G^\mathrm{rec}_{T\rightarrow 2T}}{G_{\tau_\mathrm{F}=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}}$'
+    if args.part_obs == "numerator":
+        ylims = [-50, 17]
+        ylabel = r'$\displaystyle  \langle ' + corr_label + corr_label + r' \rangle$'
+    if args.part_obs == "polyakovloop":
+        ylims = [1, 1000000]
+        ylabel = r'$\displaystyle\frac{ \langle - \rangle}{G_{\tau_\mathrm{F}=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}}$'
+
     if args.wideaspect:
-        ylabelpos = (-0.2, 0.95)
+        # ylabelpos = (-0.2, 0.95)
         xlabelpos = (0.5, -0.06)
     if args.custom_ylims:
         ylims = args.custom_ylims
-    if args.custom_xlims:
-        xlims = args.custom_xlims
+    if args.custom_xlims2:
+        xlims = args.custom_xlims2
 
     # create the figure and axes objects
     fig, ax, plots = lpd.create_figure(xlims=xlims, ylims=ylims, xlabel=xlabel, xlabelpos=xlabelpos,
@@ -155,7 +156,7 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
 
     # draw the data
     for i in flow_selection:
-        mycolor = lpd.get_color(flow_var, i, flow_selection[0], flow_selection[-1] + 1)
+        mycolor = lpd.get_color(flow_var, flow_selection[-1] + 1 - i, flow_selection[0], flow_selection[-1] + 1)
         plots.append(ax.fill_between(list(xdata_plot[:nt_half]), XX[i, :nt_half] - XX_err[i, :nt_half],
                                      XX[i, :nt_half] + XX_err[i, :nt_half], facecolor=mycolor, lw=lpd.mylinewidth, zorder=-flow_selection[-1] + i))
         ax.errorbar(list(xdata_plot[:nt_half]), XX[i, :nt_half], color=mycolor, **lpd.plotstyle_lines, zorder=-flow_selection[-1] + i + 1)
@@ -165,7 +166,12 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
     # draw the legend
     leg = ax.legend(handles=plots, labels=[num_format.format(j) for i, j in enumerate(flow_var) if i in flow_selection], title=flow_str, **lpd.legendstyle)
 
-    ax.set_title(r'$N_\tau=' + str(int(nt_half * 2)) + '$', x=0.5, y=0.9)
+    if args.reconstruct:
+        ax.set_title(r'$N_\tau=' + str(int(nt_half * 4)) + r'\xrightarrow{\mathrm{rec}}' + str(int(nt_half * 2)) + '$', x=0.5, y=0.85)
+        if args.conftype_2:
+            ax.set_title(r'\scriptsize [errors of $\langle--\rangle$ ignored!]', x=0.5, y=0.89)
+    else:
+        ax.set_title(r'$N_\tau=' + str(int(nt_half * 2)) + '$', x=0.5, y=0.89)
 
     if not args.notightlayout:
         matplotlib.pyplot.tight_layout(0)
@@ -173,7 +179,7 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
     # change first xtick label from '0.0' to '0'
     fig.canvas.draw()
     ticks = ax.get_xticks().tolist()
-    ticks = ['{0:.1f}'.format(x) for x in ticks]
+    ticks = [tau_format.format(x) for x in ticks]
     ticks[0] = '0'
     ax.set_xticklabels(ticks)
 
@@ -189,7 +195,6 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
 
 
 def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfolder: str, fermions: str, valid_flowtimes, tauT, flow_radius, flowend: int):
-
     # default options for all plots
     global corr_label
     global figsize
@@ -200,7 +205,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
     xlabel = r'$ \tau_\mathrm{F} T^2 $'
     xlabel2 = r'$\sqrt{8\tau_\mathrm{F}}T$'
     legend_title = r"$\tau T=$"
-    xlims = [-0.0001, flow_var[-1]**2/8*1.01]
+    xlims = [-0.0001, flow_var[-1] ** 2 / 8 * 1.01]
     xlabel2_format = "%.2f"
     tau_format = '{0:.3f}'
     ylabel = r'$\displaystyle\frac{G^\mathrm{latt }}{G_{{\tau_\mathrm{F}}=0}^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } } }$'
@@ -210,7 +215,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
         ylabelpos = (-0.2, 0.95)
         xlabelpos = (0.5, -0.06)
     if fermions == "hisq":
-        ylims = (-0.5, 12)
+        ylims = (-0.5, 10)
         ylabelpos = (0.05, 0.97)
         xlabelpos = (0.94, 0.1)
     if args.show_flowtime_instead_of_flowradii:
@@ -225,24 +230,25 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
     if args.reconstruct:
         ylabel = r'$\displaystyle\frac{G^\mathrm{rec}_{T\rightarrow 2T} }{G_{\tau_\mathrm{F}=0}^{\begin{subarray}{l}\mathrlap{\textrm{\tiny  norm}}\\[-0.3ex] \textrm{\tiny latt}\end{subarray}}   }$'
     if args.conftype_2:
-        ylabel = r'$\displaystyle \frac { \langle E-E \rangle _{'+str(nt_half*2)+r'} }' \
-                    r'{\langle E-E \rangle_{'+str(nt_half*4)+r' }^{\mathrm{rec} }}'\
-                    r'\times \scriptstyle \frac{ \langle -- \rangle_{'+str(nt_half*4)+r'}}' \
-                    r'{\langle -- \rangle_{'+str(nt_half*2)+r'} }$'
-    if prefix == "_numerator":
-        ylims = [-1, 17]
+        ylabel = r'$\displaystyle \frac { \langle E-E \rangle _{' + str(nt_half * 2) + r'} }' \
+                                                                                       r'{\langle E-E \rangle_{' + str(nt_half * 4) + r' }^{\mathrm{rec} }}' \
+                                                                                                                                      r'\times \scriptstyle \frac{ \langle -- \rangle_{' + str(
+            nt_half * 4) + r'}}' \
+                           r'{\langle -- \rangle_{' + str(nt_half * 2) + r'} }$'
+    if args.part_obs == "numerator":
+        ylims = [-2, 17]
         ylabelpos = (0.1, 0.97)
-        ylabel = r'$\displaystyle{ \langle ' + corr_label + corr_label + r' \rangle_{\tau_\mathrm{F}}(\tau)} $'
-    if prefix == "_polyakovloop":
-        ylims = [1, 1000000]
-        ylabel = r'$\displaystyle\frac{ \langle - \rangle_{\tau_\mathrm{F}}(\tau)}{T_\mathrm{norm}^4 }$'
+        ylabel = r'$\displaystyle{ \langle ' + corr_label + corr_label + r' \rangle} $'
+    if args.part_obs == "polyakovloop":
+        ylims = [1e-6, 1]
+        ylabel = r'$\displaystyle{ \langle --- \rangle}$'
     if args.wideaspect:
         # ylabelpos = (-0.2, 0.95)
         xlabelpos = (0.5, -0.06)
     if args.custom_ylims:
         ylims = args.custom_ylims
-    if args.custom_xlims:
-        xlims = args.custom_xlims
+    if args.custom_xlims3:
+        xlims = args.custom_xlims3
 
     # create the figure and axes objects
     fig, ax, plots = lpd.create_figure(xlims=xlims, ylims=ylims, xlabelpos=xlabelpos, ylabelpos=ylabelpos,
@@ -261,7 +267,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
             flow_limit[i] = lpd.upper_flow_limit(tauT[i])
             index = (numpy.abs(flow_radius[:] - flow_limit[i])).argmin()
             offset = 1 if flow_limit[i] - flow_radius[index] > 0 else -1
-            if (index+offset) >= len(flow_radius):
+            if (index + offset) >= len(flow_radius):
                 interpolation_value[i] = numpy.nan
                 continue
             offset2 = -1 if offset == -1 else 0
@@ -273,6 +279,8 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
         tau_selection = tau_selection[args.tau_selection]
 
     for idx, i in enumerate(tau_selection):
+        if args.part_obs == "polyakovloop" and idx != 0:
+            continue
         flow_extr_filter_high = 0  # determines up to which index the discrete error bars should be plotted for this tauT
         flow_extr_filter_low = -1  # determines from which index on the discrete error bars should be plotted
         flow_extr_filter_low_grey = -1  # determines from which index on the grey band should be plotted
@@ -319,15 +327,17 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
         if args.flowstart:
             flow_extr_filter_low = args.flowstart
 
-        xdata = flow_var[flow_extr_filter_low:flow_extr_filter_high] ** 2 / 8
+        shift_factor = 0.9975 if not (idx % 2 == 0) else 1.0025
+
+        xdata = flow_var[flow_extr_filter_low:flow_extr_filter_high] ** 2 / 8 * shift_factor
         ydata = XX[flow_extr_filter_low:flow_extr_filter_high, i]
         edata = XX_err[flow_extr_filter_low:flow_extr_filter_high, i]
 
         # --- explicit colorful datapoints ---
-        zorder = -100 * (len(tau_selection)) +i
-        color = lpd.get_color(tau_selection, len(tau_selection)-1-idx, 0, -1)
+        zorder = -100 * (len(tau_selection)) + i
+        color = lpd.get_color(tau_selection, len(tau_selection) - 1 - idx, 0, -1) if not args.part_obs == "polyakovloop" else 'black'
         plots.append(ax.errorbar(xdata, ydata, edata, color=color, zorder=zorder, label=tau_format.format(xdata_plot[i]),
-                    **lpd.chmap(lpd.plotstyle_add_point, fmt='x', markersize=1.25, capsize=0.6)))
+                                 **lpd.chmap(lpd.plotstyle_add_point, fmt='x', markersize=1.25, capsize=0.6)))
         # , label=tau_format.format(xdata_plot[i])))
 
         # --- light grey lines and error bands ---
@@ -368,6 +378,11 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
             ax.axvline(x=flow_var[args.min_trusted_flow_idx] ** 2 / 8, **lpd.verticallinestyle)
 
     ax.axhline(y=0, **lpd.horizontallinestyle)
+    if args.conftype_2:
+        ax.axhline(y=1, **lpd.horizontallinestyle)
+
+    if args.part_obs == "numerator":
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
     # draw second axes
     ax2 = ax.twiny()
@@ -375,6 +390,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
     def tick_function(X):
         V = numpy.sqrt(X * 8)
         return ["%.1f" % z if z == 0 else xlabel2_format % z for z in V]
+
     ax2.tick_params(direction='in', pad=0, width=0.5)
     ax2.set_xlim(ax.get_xlim())
     nticks = len(ax.xaxis.get_ticklabels())
@@ -385,17 +401,18 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
     ax2.xaxis.set_label_coords(0.92, 0.92)
 
     # draw legend
-    xerr_size = 0.3 if fermions == "hisq" else 0
-    ax.legend(handles=plots)
-    handles, labels = ax.get_legend_handles_labels()
-    leg = ax.legend(handles[::-1], labels[::-1], ncol=2, title=legend_title,
-                    **lpd.chmap(lpd.legendstyle, loc="center left", bbox_to_anchor=(1, 0.3), columnspacing=0.3, handletextpad=0.2, handlelength=0.5,
-                                handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=xerr_size)}))
+    if not args.part_obs == "polyakovloop":
+        xerr_size = 0.3 if fermions == "hisq" else 0
+        ax.legend(handles=plots)
+        handles, labels = ax.get_legend_handles_labels()
+        leg = ax.legend(handles[::-1], labels[::-1], ncol=2, title=legend_title,
+                        **lpd.chmap(lpd.legendstyle, loc="center left", bbox_to_anchor=(1, 0.3), columnspacing=0.3, handletextpad=0.2, handlelength=0.5,
+                                    handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=xerr_size)}))
     # for line in leg.get_lines():
     # line.set_linewidth(4.0)
 
     if args.reconstruct:
-        ax.set_title(r'$N_\tau=' + str(int(nt_half * 4)) + r'\xrightarrow{\mathrm{rec}}'+str(int(nt_half*2))+ '$', x=0.5, y=0.85)
+        ax.set_title(r'$N_\tau=' + str(int(nt_half * 4)) + r'\xrightarrow{\mathrm{rec}}' + str(int(nt_half * 2)) + '$', x=0.5, y=0.85)
         if args.conftype_2:
             ax.set_title(r'\scriptsize [errors of $\langle--\rangle$ ignored!]', x=0.5, y=0.89)
     else:
@@ -442,16 +459,21 @@ def get_args():
                         help="use a wide aspect ratio (basically make the plots larger)")
     parser.add_argument('--notightlayout', action="store_true", help="disable matplotlib tight layout in case of clipped axis etc")
     parser.add_argument('--custom_ylims', nargs=2, type=float, help="overwrite any default ylims")
-    parser.add_argument('--custom_xlims', nargs=2, type=float, help="overwrite any default xlims")
+
+    parser.add_argument('--custom_xlims2', nargs=2, type=float, help="overwrite any default xlims for plot2")
+    parser.add_argument('--custom_xlims3', nargs=2, type=float, help="overwrite any default xlims for plot3")
 
     parser.add_argument('--error_reduce_factor', type=float, default='1.0', help="reduce errors of all data by this factor")
-    parser.add_argument('--rel_err_limit', type=float, default=0.05, help="float in [0,inf]. for plot no3: only show error bars if relative error is less than this value. default value is 0.05 (5% relative error)")
+    parser.add_argument('--rel_err_limit', type=float, default=0.05,
+                        help="float in [0,inf]. for plot no3: only show error bars if relative error is less than this value. default value is 0.05 (5% relative error)")
 
-    parser.add_argument('--hide_err_above', type=float, default=2, help="hide all data with relative errors larger than this. default is just above rel_err_limit.")
+    parser.add_argument('--hide_err_above', type=float, default=2,
+                        help="hide all data with relative errors larger than this. default is just above rel_err_limit.")
 
     parser.add_argument('--ignore_pert_lims', action="store_true", help="for third plot ignore the perturbative flow limits for deciding the plot range")
 
-    parser.add_argument('--min_trusted_flow_idx', type=int, default=0, help="minimum trusted flowtime index. Set this to the index where the flow radius is larger than one lattice spacing of the coarsest lattice used in cont extr. only data for flow times after this are plotted.")
+    parser.add_argument('--min_trusted_flow_idx', type=int, default=0,
+                        help="minimum trusted flowtime index. Set this to the index where the flow radius is larger than one lattice spacing of the coarsest lattice used in cont extr. only data for flow times after this are plotted.")
 
     parser.add_argument('--only_plot_no', type=int, nargs='*', default=[1, 3])
 
@@ -489,7 +511,7 @@ def load_data(args, conftype: str, inputfolder: str, prefix_load: str, nt: int):
         for i, val in enumerate(flow_times):
             if val not in valid_flowtimes:
                 delete_indices.append(i)
-        print("deleting flow times with the following indices:", delete_indices)
+        # print("deleting flow times with the following indices:", delete_indices)
         flow_times = numpy.delete(flow_times, delete_indices, 0)
         flow_radius = numpy.delete(flow_radius, delete_indices, 0)
         XX = numpy.delete(XX, delete_indices, 0)
@@ -502,12 +524,11 @@ def symmetry_index(nt, input_idx):
     input_idx += 1  # the zeroeth entry in the array corresponds to tau=1, so we have to add 1 here
     if input_idx > nt / 2:
         return nt - input_idx - 1  # remove the +1 again to obtain the correct array index
-    elif input_idx <= nt/2:
+    elif input_idx <= nt / 2:
         return input_idx - 1
 
 
 def main():
-    print("\n")
     # parse arguments
     args = get_args()
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
@@ -560,12 +581,12 @@ def main():
 
     # create reconstructed correlator
     if args.reconstruct:
-        nt = int(nt/2)
-        nt_half = int(nt/2)
+        nt = int(nt / 2)
+        nt_half = int(nt / 2)
         tauT = tauT[1:nt:2]
         for i in range(XX.shape[0]):
             for j in range(nt_half):  # from 0 to 15 (or tau/a=[1,..,16]) for a reconstructed Nt=32 correlator based on Nt=64
-                new_index = symmetry_index(int(nt*2), (j + nt))
+                new_index = symmetry_index(int(nt * 2), (j + nt))
                 # print(j, j+nt, new_index)
                 XX_err[i, j] = numpy.sqrt(XX_err_bak[i, j] ** 2 + XX_err_bak[i, new_index] ** 2)
                 XX[i, j] += XX_bak[i, new_index]
@@ -579,7 +600,7 @@ def main():
                     print("bla")
 
             # load polyakovloop data as well
-            ploop1, ploop_err1 = load_data(args, args.conftype, inputfolder, "_polyakovloop", int(nt*2))[2:4]  # nt*2 because this is the original one
+            ploop1, ploop_err1 = load_data(args, args.conftype, inputfolder, "_polyakovloop", int(nt * 2))[2:4]  # nt*2 because this is the original one
             ploop2, ploop_err2 = load_data(args, args.conftype_2, inputfolder_2, "_polyakovloop", nt)[2:4]
 
             # TODO reconstruct polakovloop ????
@@ -594,7 +615,8 @@ def main():
                 for j in range(nt_half):
                     ploop1[i, j] = ploop2[i, j] / ploop1[i, j]
                     # f = a A/B , df = a A/B sqrt( (dA/A)^2 (dB/B)^2 )
-                    XX_err[i, j] = numpy.fabs(XX_2[i, j] / XX[i, j]) * numpy.sqrt((XX_err[i, j] / XX[i, j]) ** 2 + (XX_2_err[i, j] / XX_2[i, j]) ** 2) / ploop1[i, j]
+                    XX_err[i, j] = numpy.fabs(XX_2[i, j] / XX[i, j]) * numpy.sqrt((XX_err[i, j] / XX[i, j]) ** 2 + (XX_2_err[i, j] / XX_2[i, j]) ** 2) / ploop1[
+                        i, j]
                     XX[i, j] = XX_2[i, j] / XX[i, j] / ploop1[i, j]
 
     skip_large_errors(XX, XX_err, args.hide_err_above)
@@ -620,14 +642,14 @@ def main():
     # ==================================================================================================================
 
     # normalize to temperature (as long as were not computing this special ratio with two conftypes)
-    if not args.conftype_2:
+    if not args.conftype_2 and not args.part_obs == "polyakovloop":
         for i in range(len(flow_var)):
             for j in range(nt_half):
                 XX[i, j] *= nt ** 4 * multiplicity_correction
                 XX_err[i, j] *= nt ** 4 * multiplicity_correction
 
     # plot the first figure
-    if 1 in args.only_plot_no:
+    if 1 in args.only_plot_no and not args.part_obs == "polyakovloop":
         plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_half, flow_str, outputfolder)
 
     # ==================================================================================================================
@@ -635,14 +657,14 @@ def main():
     # ==================================================================================================================
 
     # normalize data to perturbative lattice correlators
-    if not prefix == "_polyakovloop" and not prefix == "_numerator" and not args.conftype_2:
+    if not args.part_obs and not args.conftype_2:
         for i in range(len(flow_var)):
             for j in range(nt_half):
                 XX[i, j] *= lpd.improve_corr_factor(j, nt, i) / nt ** 4
                 XX_err[i, j] *= lpd.improve_corr_factor(j, nt, i) / nt ** 4
 
     # plot the second figure
-    if 2 in args.only_plot_no:
+    if 2 in args.only_plot_no and not args.part_obs == "polyakovloop":
         plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_half, flow_str, outputfolder,
               fermions)
 

@@ -2,8 +2,10 @@
 
 max_flow_idx=100
 qcdtype=quenched_1.50Tc_zeuthenFlow
-conftypes="s064t16_b0687361 s080t20_b0703500 s096t24_b0719200 " #  s144t36_b0754400"
+conftypes="s064t16_b0687361 s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400"
 corrs="BB BB_clover"
+int_Nt=36
+nsamples=200
 
 for conftype in $conftypes; do  
     for corr in $corrs; do
@@ -15,8 +17,8 @@ done
 
 for corr in $corrs; do
     for conftype in $conftypes ; do  
-        for i in {0..60} ; do
-            python _3_spline_interpolate.py --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $i --int_Nt 30 
+        for ((i=0; i < max_flow_idx; i++)) ; do
+            python _3_spline_interpolate.py --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $i --int_Nt $int_Nt --nsamples $nsamples
         done
     done
 done
