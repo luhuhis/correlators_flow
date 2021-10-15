@@ -46,6 +46,7 @@ def main():
     parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=200)
     parser.add_argument('--use_tex', action="store_true", help="use LaTeX when plotting")
     parser.add_argument('--start_at_zero', action="store_true", help="replace the flow indices from which on the continuum extr shall be performed")
+    parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
 
     args = parser.parse_args()
 
@@ -120,9 +121,8 @@ def main():
         ylabel = 'G'
 
     # plot settings
-    ymin = 2.55
-    ymax = 3.75
-    fig, ax, plots = lpd.create_figure(xlims=[-0.0001, 1/16**2+0.00015], ylims=[ymin, ymax], xlabel=r'$N_\tau^{-2}$', ylabel=ylabel,
+    ylims = (2.55, 3.75) if not args.custom_ylims else args.custom_ylims
+    fig, ax, plots = lpd.create_figure(xlims=[-0.0001, 1/nt_coarse**2*1.05], ylims=ylims, xlabel=r'$N_\tau^{-2}$', ylabel=ylabel,
                                        xlabelpos=(0.95, 0.07), ylabelpos=(0.08, 0.98), UseTex=args.use_tex)
     lpd.titlestyle.update(dict(y=0.95))
     ax.set_title(r'$ \sqrt{8\tau_\mathrm{F}}T = '+flowradius_str+r'$', **lpd.titlestyle)
@@ -200,7 +200,7 @@ def main():
 
     # save continuum extrapolation quality plot for this flow time
     lpd.plotstyle_add_point_single.update(dict(fmt='D-'))
-    ax.axvline(x=0, ymin=((results[mintauTindex, 1]-ymin)/(ymax-ymin)), ymax=((results[maxtauTindex_plot, 1]-ymin)/(ymax-ymin)), alpha=1, color='grey',
+    ax.axvline(x=0, ymin=((results[mintauTindex, 1]-ylims[0])/(ylims[1]-ylims[0])), ymax=((results[maxtauTindex_plot, 1]-ylims[0])/(ylims[1]-ylims[0])), alpha=1, color='grey',
                zorder=-1000, lw=0.5, dashes=(5, 2))
     lpd.legendstyle.update(dict(loc="lower left", bbox_to_anchor=(-0.01, -0.01), columnspacing=0.1, labelspacing=0.25, handletextpad=0, borderpad=0,
                                 framealpha=0, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=0.4)}))
@@ -215,8 +215,8 @@ def main():
 
     # save plot of single continuum extrapolation for this flow time
     fig, ax, plots = lpd.create_figure(xlims=[0.15, 0.51], ylims=[1.4, 4], xlabel=r'$\tau T$',
-                                       ylabel=r'$'+displaystyle+r'\frac{G}{G^\mathrm{ norm }_{\tau_\mathrm{F} = 0}}$', UseTex=args.use_tex)
-    ax.set_title(r'$ \sqrt{8\tau_\mathrm{F}}T = $'+flowradius_str)
+                                       ylabel=r'$'+displaystyle+r'\frac{G^\mathrm{cont}}{ G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } }_{\tau_\mathrm{F} = 0} }$', UseTex=args.use_tex)
+    ax.set_title(r'$ \sqrt{8\tau_\mathrm{F}}T = $'+flowradius_str, x=0.5, y=0.89)
     ax.axvline(x=lower_tauT_lim, **lpd.verticallinestyle)
     results = numpy.swapaxes(results, 0, 1)
     ax.errorbar(results[0], results[1], results[2], color="black", **lpd.plotstyle_add_point)

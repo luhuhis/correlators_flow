@@ -180,34 +180,8 @@ def get_color(myarray, i, start=0, end=-1):
     return matplotlib.cm.gnuplot((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * 0.9)
 
 
-def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.01), ylabelpos=(0.01, 0.97), tickpad=2,
-                  figsize=(3 + 3 / 8, 3 + 3 / 8 - 1 / 2.54), UseTex=True):
-    if UseTex == True:
-        matplotlib.pyplot.rc('text', usetex=True)
-        matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
-    matplotlib.pyplot.rc('font', family='serif', size=10)
-    linewidth = 0.5
-    matplotlib.rcParams['axes.linewidth'] = linewidth
-    fig = matplotlib.pyplot.figure(figsize=figsize)
-    ax = fig.add_subplot(1, 1, 1)
-    if xlabelpos is not None:
-        ax.xaxis.set_label_coords(*xlabelpos)
-    if ylabelpos is not None:
-        ax.yaxis.set_label_coords(*ylabelpos)
-    ax.minorticks_off()
-    ax.tick_params(direction='in', pad=tickpad, width=linewidth)
-    if xlims is not None:
-        ax.set_xlim(xlims)
-    if ylims is not None:
-        ax.set_ylim(ylims)
-    ax.set_xlabel(xlabel, **xlabelstyle)
-    ax.set_ylabel(ylabel, **ylabelstyle)
-    plots = []
-    matplotlib.rc('image', cmap='Set1')
-    return fig, ax, plots
-
-
 # styles
+fontsize = 10
 mylinewidth = 0.5
 figurestyle = dict(bbox_inches="tight", pad_inches=0)
 plotstyle_points = dict(fmt='D-', linewidth=1, markersize=4, capsize=2, mew=0.5, fillstyle='none')
@@ -229,6 +203,35 @@ horizontallinestyle = dict(xmin=0, xmax=1, color='grey', alpha=0.8, zorder=-1000
 flowlimitplotstyle = dict(fmt='|', mew=0.7, markersize=5)
 
 markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
+
+
+def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.01), ylabelpos=(0.01, 0.97), tickpad=2,
+                  figsize=(3 + 3 / 8, 3 + 3 / 8 - 1 / 2.54), UseTex=True):
+    if UseTex == True:
+        matplotlib.pyplot.rc('text', usetex=True)
+        matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
+    matplotlib.pyplot.rc('font', family='serif', size=fontsize)
+    linewidth = 0.5
+    matplotlib.rcParams['axes.linewidth'] = linewidth
+    fig = matplotlib.pyplot.figure(figsize=figsize)
+    ax = fig.add_subplot(1, 1, 1)
+    if xlabelpos is not None:
+        ax.xaxis.set_label_coords(*xlabelpos)
+    if ylabelpos is not None:
+        ax.yaxis.set_label_coords(*ylabelpos)
+    ax.minorticks_off()
+    ax.tick_params(direction='in', pad=tickpad, width=linewidth)
+    if xlims is not None:
+        ax.set_xlim(xlims)
+    if ylims is not None:
+        ax.set_ylim(ylims)
+    ax.set_xlabel(xlabel, **xlabelstyle)
+    ax.set_ylabel(ylabel, **ylabelstyle)
+    plots = []
+    matplotlib.rc('image', cmap='Set1')
+    fig.set_tight_layout(True)
+    return fig, ax, plots
+
 
 # === some parameters ===
 n_skiprows = 15  # skip the discrete points at the start of the continuum limit file
