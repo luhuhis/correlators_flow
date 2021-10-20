@@ -78,9 +78,6 @@ def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
     # draw the legend
     leg = ax.legend(handles=plots, labels=['{0:.3f}'.format(j) for i, j in enumerate(flow_var) if i in flow_selection], title=flow_str, **lpd.legendstyle)
 
-    if not args.notightlayout:
-        matplotlib.pyplot.tight_layout(0)
-
     ax.set_title(r'$N_\tau=' + str(int(nt_half * 2)) + '$', x=0.5, y=0.9)
 
     # change first xtick label from '0.0' to '0'
@@ -158,7 +155,7 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
 
     # draw the data
     for i in flow_selection:
-        mycolor = lpd.get_color(flow_var, flow_selection[-1]-i, flow_selection[0], flow_selection[-1])
+        mycolor = lpd.get_color(flow_var, flow_selection[-1]-i+flow_selection[0], flow_selection[0], flow_selection[-1])
         plots.append(ax.fill_between(list(xdata_plot[:nt_half]), XX[i, :nt_half] - XX_err[i, :nt_half],
                                      XX[i, :nt_half] + XX_err[i, :nt_half], facecolor=mycolor, lw=lpd.mylinewidth, zorder=-flow_selection[-1] + i))
         ax.errorbar(list(xdata_plot[:nt_half]), XX[i, :nt_half], color=mycolor, **lpd.plotstyle_lines, zorder=-flow_selection[-1] + i + 1)
@@ -174,9 +171,6 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
             ax.set_title(r'\scriptsize [errors of $\langle--\rangle$ ignored!]', x=0.5, y=0.89)
     else:
         ax.set_title(r'$N_\tau=' + str(int(nt_half * 2)) + '$', x=0.5, y=0.89)
-
-    # if not args.notightlayout:
-        # matplotlib.pyplot.tight_layout(0.2)
 
     # change first xtick label from '0.0' to '0'
     fig.canvas.draw()
@@ -271,6 +265,9 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
         for i in range(nt_half):
             flow_limit[i] = lpd.upper_flow_limit(tauT[i])
             index = (numpy.abs(flow_radius[:] - flow_limit[i])).argmin()
+            if index == 0:
+                interpolation_value[i] = XX[index, i]
+                continue
             offset = 1 if flow_limit[i] - flow_radius[index] > 0 else -1
             if (index + offset) >= len(flow_radius):
                 interpolation_value[i] = numpy.nan
@@ -309,7 +306,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
 
             # only show discrete error bars from here on
             if flow_extr_filter_low == -1:
-                if fermions == "hisq" and val <= args.rel_err_limit or fermions == "quenched" and val <= args.rel_err_limit * tauT[i]:
+                if fermions == "hisq" and val <= args.rel_err_limit or fermions == "quenched" and val <= args.rel_err_limit:  # * tauT[i]
                     flow_extr_filter_low = max(j, args.min_trusted_flow_idx)
 
             # only show grey line with fixed width from here on
@@ -366,8 +363,6 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
                                      marker=lpd.markers[i % len(lpd.markers)], fillstyle='none', markersize=4,
                                      mew=0.25, color=color, label=tau_format.format(tauT[i]),
                                      capsize=0, lw=0))
-            ax.errorbar(flow_limit[i] ** 2 / 8, interpolation_value[i], marker='|', fillstyle='none', markersize=4,
-                        mew=0.25, color=color, capsize=0)
 
         # dark grey lines that are cut off, may break perturbative flow limit markes (?)
         if fermions == "hisq":
@@ -405,7 +400,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
     ax2.set_xticks(new_tick_locations)  # TODO make this a cmd line input
     ax2.set_xticklabels(tick_function(new_tick_locations))
     ax2.set_xlabel(xlabel2)  # , horizontalalignment='right', verticalalignment='top', bbox=lpd.labelboxstyle, zorder=99)
-    ax2.xaxis.set_label_coords(0.92, 0.92)
+    ax2.xaxis.set_label_coords(0.92, 0.94)
 
     # draw legend
     if not args.part_obs == "polyakovloop":
@@ -413,8 +408,8 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
         ax.legend(handles=plots)
         handles, labels = ax.get_legend_handles_labels()
         ncol = 2 if not args.wideaspect else 1
-        bbox_to_anchor = (1, 0.3) if not args.wideaspect else (1, 1)
-        loc = "center left" if not args.wideaspect else "upper left"
+        bbox_to_anchor = (1, 0.1) if not args.wideaspect else (1, 1)
+        loc = "lower right" if not args.wideaspect else "upper left"
         fontsize = lpd.fontsize if not args.wideaspect else 8
         leg = ax.legend(handles[::-1], labels[::-1], ncol=ncol, title=legend_title, fontsize=fontsize,
                         **lpd.chmap(lpd.legendstyle, loc=loc, bbox_to_anchor=bbox_to_anchor, columnspacing=0.3, handletextpad=0.2, handlelength=0.5,
@@ -428,9 +423,6 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
             ax.set_title(r'\scriptsize [errors of $\langle--\rangle$ ignored!]', x=0.5, y=0.89)
     else:
         ax.set_title(r'$N_\tau=' + str(int(nt_half * 2)) + '$', x=0.5, y=0.89)
-
-    if not args.notightlayout:
-        matplotlib.pyplot.tight_layout(0.2)
 
     # save pdf
     filename = outputfolder + "/" + args.conftype + "_" + args.corr + prefix + "_flow.pdf"
@@ -468,7 +460,6 @@ def get_args():
 
     parser.add_argument('--wideaspect', action="store_true",
                         help="use a wide aspect ratio (basically make the plots larger)")
-    parser.add_argument('--notightlayout', action="store_true", help="disable matplotlib tight layout in case of clipped axis etc")
     parser.add_argument('--custom_ylims', nargs=2, type=float, help="overwrite any default ylims")
 
     parser.add_argument('--custom_xlims2', nargs=2, type=float, help="overwrite any default xlims for plot2")
@@ -491,6 +482,9 @@ def get_args():
     requiredNamed.add_argument('--conftype', help="format: s064t64_b0824900_m002022_m01011", required=True)
 
     args = parser.parse_args()
+
+    if 3 in args.only_plot_no and args.rel_err_limit and args.flowstart:
+        print("WARNING: plot 3: flowstart will override rel_err_limit!")
 
     if not args.hide_err_above:
         args.hide_err_above = args.rel_err_limit * 1.001

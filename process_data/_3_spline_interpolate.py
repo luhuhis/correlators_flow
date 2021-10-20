@@ -29,7 +29,7 @@ def filter_corr_data(flowradius, xdata, ydata):
     xdata, indices = filter_tauTs(flowradius, xdata) 
     ydata = numpy.asarray(ydata)
     ydata = ydata[indices]
-    edata = [1 for dummy in range(len(xdata))]  # here in principle one could somehow weigh the data points according to some relation depending on tau and flow time
+    edata = [1 for _ in range(len(xdata))]  # here in principle one could somehow weigh the data points according to some relation depending on tau and flow time
     return xdata, ydata, edata
 
 
@@ -49,7 +49,7 @@ def main():
     parser.add_argument('--use_imp', help='whether to use tree-level improvement', type=bool, default=True)
     parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=1000)
     parser.add_argument('--int_Nt', help='use tauT of this Nt as xdata for the interpolation output', type=int, default=36)
-    requiredNamed.add_argument('--min_Nt', help="only perform intepolation if sqrt(8tF)T>1/min_Nt", required=True)
+    requiredNamed.add_argument('--min_Nt', help="only perform intepolation if sqrt(8tF)T>1/min_Nt", type=int, required=True)
 
     args = parser.parse_args()
    
@@ -126,6 +126,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+    lpd.save_script_call()
     
 
 # unused and probably deprecated code (used for averaged fitting smoothing splines using analysistoolbox constrained spline):

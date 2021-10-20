@@ -229,7 +229,7 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,
     ax.set_ylabel(ylabel, **ylabelstyle)
     plots = []
     matplotlib.rc('image', cmap='Set1')
-    fig.set_tight_layout(True)
+    fig.set_tight_layout(dict(pad=0.2))
     return fig, ax, plots
 
 

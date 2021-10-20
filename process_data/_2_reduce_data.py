@@ -188,3 +188,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    lpd.save_script_call()

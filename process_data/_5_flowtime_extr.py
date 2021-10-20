@@ -85,7 +85,7 @@ def main():
 
     fig, ax, plots = lpd.create_figure(xlims=[-0.0001, 0.0033], ylims=ylims, xlabel=r'$\tau_\mathrm{F} T^2$',
                                        ylabel=r'$' + displaystyle + r'\frac{G^\mathrm{cont }}{G_{\tau_\mathrm{F}=0}^{\substack{\text{\tiny norm} \\[-0.5ex] \text{\tiny cont }}}}$',
-                                       xlabelpos=(0.94, 0.05), ylabelpos=(0.08, 0.96), UseTex=args.use_tex)
+                                       xlabelpos=(0.94, 0.05), ylabelpos=(0.04, 0.96), UseTex=args.use_tex)
 
     with open(basepath+"/"+args.corr+"_flow_extr_quality.txt", 'w') as outfile:
         outfile.write('# flowtime zero extrapolation quality at fixed tauT for all tauT of Ntau=36 \n')
@@ -122,7 +122,7 @@ def main():
                         # ax.errorbar([x for i,x in enumerate(xdata) if i%2==0], [y for i,y in enumerate(ydata) if i%2==0], **lpd.plotstyle_add_point_single, color='grey', zorder=-100+i)#, label='{0:.3f}'.format(tauT))
                         # ax.fill_between(xdata, ydata-edata, ydata+edata, facecolor=mycolor, alpha=1, zorder=-300+i)#, label='{0:.3f}'.format(tauT))
                         if args.no_extr:
-                            plots.append(ax.errorbar(xdata, ydata, edata, **lpd.plotstyle_add_point_single, color=mycolor, zorder=-100+i, label='{0:.3f}'.format(tauT)))
+                            plots.append(ax.errorbar(xdata, ydata, edata, **lpd.chmap(lpd.plotstyle_add_point_single, fmt='+-', lw=0.3), color=mycolor, zorder=-100+i, label='{0:.3f}'.format(tauT)))
                         else:
                             ax.errorbar(xdata, ydata, edata, **lpd.plotstyle_add_point_single, color=mycolor, zorder=-100 + i)
 
@@ -168,7 +168,7 @@ def main():
     ax.axvline(x=0, ymin=((results[mintauTindex, 1]-ylims[0])/(ylims[1]-ylims[0])), ymax=((results[finest_Nt_half-1, 1]-ylims[0])/(ylims[1]-ylims[0])), alpha=1, color='grey', zorder=-1000, lw=0.5, dashes=(5, 2))
     
     # lpd.legendstyle.update(dict(handlelength=0.5))
-    lpd.legendstyle.update(dict(loc="lower right", bbox_to_anchor=(1.01, 0.01), columnspacing=0.5, handlelength=0.75, labelspacing=0.1, handletextpad=0.2,
+    lpd.legendstyle.update(dict(loc="lower right", bbox_to_anchor=(1.01, 0.03), columnspacing=0.5, handlelength=0.75, labelspacing=0.1, handletextpad=0.2,
                                 borderpad=0, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(yerr_size=0.4)}))
     ax.legend(handles=plots)
     handles, labels = ax.get_legend_handles_labels()
@@ -191,3 +191,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    lpd.save_script_call()
