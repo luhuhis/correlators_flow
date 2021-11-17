@@ -179,6 +179,13 @@ def get_color(myarray, i, start=0, end=-1):
     # i = end - 1 - i + start
     return matplotlib.cm.gnuplot((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * 0.9)
 
+def get_color2(myarray, i, start=0, end=-1):
+    if myarray[end] == myarray[start]:
+        return matplotlib.cm.viridis(0)
+    # i = end - 1 - i + start
+    return matplotlib.cm.viridis((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * 0.9)
+
+
 
 # styles
 fontsize = 10
