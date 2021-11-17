@@ -259,22 +259,22 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
         ax.set_yscale('log', nonposy='mask')
 
     # calculate positions on the curves for perturbative flow limits
-    if not args.ignore_pert_lims:
-        flow_limit = numpy.zeros(len(tauT))
-        interpolation_value = numpy.zeros(len(tauT))
-        for i in range(nt_half):
-            flow_limit[i] = lpd.upper_flow_limit(tauT[i])
-            index = (numpy.abs(flow_radius[:] - flow_limit[i])).argmin()
-            if index == 0:
-                interpolation_value[i] = XX[index, i]
-                continue
-            offset = 1 if flow_limit[i] - flow_radius[index] > 0 else -1
-            if (index + offset) >= len(flow_radius):
-                interpolation_value[i] = numpy.nan
-                continue
-            offset2 = -1 if offset == -1 else 0
-            interpolation_value[i] = XX[index + offset2, i] - abs(XX[index, i] - XX[index + offset, i]) / abs(
-                flow_radius[index] - flow_radius[index + offset]) * abs(flow_limit[i] - flow_radius[index + offset2])
+    # if not args.ignore_pert_lims:
+    flow_limit = numpy.zeros(len(tauT))
+    interpolation_value = numpy.zeros(len(tauT))
+    for i in range(nt_half):
+        flow_limit[i] = lpd.upper_flow_limit(tauT[i])
+        index = (numpy.abs(flow_radius[:] - flow_limit[i])).argmin()
+        if index == 0:
+            interpolation_value[i] = XX[index, i]
+            continue
+        offset = 1 if flow_limit[i] - flow_radius[index] > 0 else -1
+        if (index + offset) >= len(flow_radius):
+            interpolation_value[i] = numpy.nan
+            continue
+        offset2 = -1 if offset == -1 else 0
+        interpolation_value[i] = XX[index + offset2, i] - abs(XX[index, i] - XX[index + offset, i]) / abs(
+            flow_radius[index] - flow_radius[index + offset]) * abs(flow_limit[i] - flow_radius[index + offset2])
 
     tau_selection = numpy.arange(nt_half)
     if args.tau_selection:
@@ -368,6 +368,10 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
         if fermions == "hisq":
             plots.append(ax.errorbar(xdata, ydata, edata, color=color, zorder=zorder, label=tau_format.format(xdata_plot[i]),
                                      **lpd.chmap(lpd.plotstyle_add_point, fmt='x', markersize=1.25, capsize=0.6)))
+
+            ax.errorbar(flow_limit[i] ** 2 / 8, interpolation_value[i],
+                                     marker=lpd.markers[i % len(lpd.markers)], fillstyle='none', markersize=4,
+                                     mew=0.25, color=color, capsize=0, lw=0)
 
             xdata = flow_var[flow_extr_filter_low:] ** 2 / 8  # FIXME reset to flow_extr_filter_low_greyline
             ydata = XX[flow_extr_filter_low:, i]  # FIXME reset to flow_extr_filter_low_greyline
