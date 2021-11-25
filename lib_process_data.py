@@ -220,7 +220,7 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,
     matplotlib.pyplot.rc('font', family='serif', size=fontsize)
     linewidth = 0.5
     matplotlib.rcParams['axes.linewidth'] = linewidth
-    fig = matplotlib.pyplot.figure(figsize=figsize)
+    fig = matplotlib.pyplot.figure(figsize=figsize, constrained_layout=True)
     ax = fig.add_subplot(1, 1, 1)
     if xlabelpos is not None:
         ax.xaxis.set_label_coords(*xlabelpos)
@@ -236,7 +236,7 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,
     ax.set_ylabel(ylabel, **ylabelstyle)
     plots = []
     matplotlib.rc('image', cmap='Set1')
-    fig.set_tight_layout(dict(pad=0.2))
+    # fig.set_tight_layout(dict(pad=0.4))
     return fig, ax, plots
 
 

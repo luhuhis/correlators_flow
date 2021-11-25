@@ -26,7 +26,7 @@ def main():
     requiredNamed.add_argument('--finest_Nt', help='finest Nt used in previous cont extr.', required=True, type=int)
     requiredNamed.add_argument('--coarsest_Nt', help='coarsest Nt used in previous cont extr. needed for lower flow time limit.', required=True, type=int)
 
-    parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=200)
+    parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=400)
     parser.add_argument('--use_tex', type=bool, default=True)
     parser.add_argument('--error_treshhold', help='factor of tauT that limits the relative error', default='0.01', type=float)
     parser.add_argument('--flowend', help='maximum flow index for all tauT that should be used in the extrapolation', type=int, default=134)
@@ -85,7 +85,7 @@ def main():
 
     fig, ax, plots = lpd.create_figure(xlims=[-0.0001, 0.0033], ylims=ylims, xlabel=r'$\tau_\mathrm{F} T^2$',
                                        ylabel=r'$' + displaystyle + r'\frac{G^\mathrm{cont }}{G_{\tau_\mathrm{F}=0}^{\substack{\text{\tiny norm} \\[-0.5ex] \text{\tiny cont }}}}$',
-                                       xlabelpos=(0.94, 0.05), ylabelpos=(0.04, 0.96), UseTex=args.use_tex)
+                                       xlabelpos=(0.94, 0.05), ylabelpos=(0.08, 0.96), UseTex=args.use_tex)
 
     with open(basepath+"/"+args.corr+"_flow_extr_quality.txt", 'w') as outfile:
         outfile.write('# flowtime zero extrapolation quality at fixed tauT for all tauT of Ntau=36 \n')
@@ -173,7 +173,7 @@ def main():
     ax.legend(handles=plots)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[::-1], labels[::-1], title=r'$\tau T=$', ncol=2, **lpd.legendstyle).set_zorder(-1)
-    matplotlib.pyplot.tight_layout(0)
+    # matplotlib.pyplot.tight_layout(0)
     fig.savefig(plotbasepath+"/"+args.corr+"_flow_extr_quality.pdf")
     ax.lines.clear()
     ax.collections.clear()
@@ -185,7 +185,7 @@ def main():
     lpd.plotstyle_add_point.update(dict(fmt='D-'))
     results = numpy.swapaxes(results, 0, 1)
     ax.errorbar(results[0], results[1], results[2], color='black', **lpd.plotstyle_add_point)
-    matplotlib.pyplot.tight_layout(0.2)
+    # matplotlib.pyplot.tight_layout(0.2)
     fig.savefig(plotbasepath+"/"+args.corr+"_final.pdf")
 
 

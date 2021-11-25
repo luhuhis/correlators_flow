@@ -3,7 +3,7 @@
 #parameters
 qcdtype=quenched_1.50Tc_zeuthenFlow
 conftypes="s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400"
-corrs="BB BB_clover"
+corrs="BB" #BB_clover
 
 #for corr in $corrs; do
 #    rm -f /home/altenkort/work/correlators_flow/plots/$qcdtype/$corr/cont_extr*/*.pdf

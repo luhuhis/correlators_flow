@@ -72,7 +72,7 @@ def main():
     parser, requiredNamed = lpd.get_parser()
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     parser.add_argument('--part_obs', help="only compute part of the observable", choices=['numerator', 'polyakovloop'])
-    parser.add_argument('--n_samples', help='number of bootstrap samples', type=int, default='200')
+    parser.add_argument('--n_samples', help='number of bootstrap samples', type=int, default='400')
     args = parser.parse_args()
    
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
@@ -106,7 +106,7 @@ def main():
 
     # add renormalization factor for BB correlator. errors for it are extremely small. FIXME abstract this ?
     path = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
-    if args.corr == "BB" and nt in (20, 24, 30, 36):
+    if args.corr == "BB":
         tfT2, Z2 = numpy.loadtxt(path + "Z2_" + str(nt) + ".dat", unpack=True)
         for i in range(XX_mean.shape[0]):
             for j in range(XX_mean.shape[1]):
@@ -134,6 +134,12 @@ def main():
     for i in range(n_flow):
         filename = outputfolder+"/btstrp_samples/"+file_prefix+"_"+'{0:.4f}'.format(numpy.sqrt(flow_times[i]*8)/nt)+"_Nt"+str(nt)+"_btstrp_samples.dat"
         print("write "+filename)
+
+        # add BB renorm
+        Z = 1
+        if args.corr == "BB":
+            Z = Z2[i]
+
         with open(filename, 'w') as outfile:
             outfile.write("# "+str(n_samples)+" bootstrap samples for "+args.corr+" correlator "+args.qcdtype+" "+args.conftype+"\n# one sample consists of "+str(n_datafiles)+" draws(measurements), which are then reduced\n")
             outfile.write("# flowtime="+str(flow_times[i])+" or flowradius="+str(numpy.sqrt(flow_times[i]*8)/nt)+'\n')
@@ -142,8 +148,8 @@ def main():
                 XX_sample_single_flowtime = numpy.empty((nt_half, 3))
                 for j in range(nt_half):
                     XX_sample_single_flowtime[j, 0] = tauTs[j]
-                    XX_sample_single_flowtime[j, 1] = XX_samples_mean[k][i, j]
-                    XX_sample_single_flowtime[j, 2] = XX_samples_err[k][i, j]
+                    XX_sample_single_flowtime[j, 1] = XX_samples_mean[k][i, j] * Z
+                    XX_sample_single_flowtime[j, 2] = XX_samples_err[k][i, j] * Z
                 numpy.savetxt(outfile, XX_sample_single_flowtime)
                 outfile.write('#\n')
 

@@ -43,7 +43,7 @@ def main():
                                help="ORDERED list of conftypes (from coarse to fine), e.g. s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
 
     parser.add_argument('--use_imp', help='whether to use tree-level improvement', type=bool, default=True)
-    parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=200)
+    parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=400)
     parser.add_argument('--use_tex', action="store_true", help="use LaTeX when plotting")
     parser.add_argument('--start_at_zero', action="store_true", help="replace the flow indices from which on the continuum extr shall be performed")
     parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
@@ -207,7 +207,7 @@ def main():
     ax.legend(handles=plots)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[::-1], labels[::-1], title=r'$\tau T=$', **lpd.legendstyle, ncol=3)  # reverse ordering of legend
-    matplotlib.pyplot.tight_layout(0)
+    # matplotlib.pyplot.tight_layout(0)
     fig.savefig(plotpath+"/cont_extr_quality/"+args.corr+"_"+flowradius_str+"_cont_quality.pdf")
     ax.lines.clear()
     ax.collections.clear()
@@ -220,7 +220,7 @@ def main():
     ax.axvline(x=lower_tauT_lim, **lpd.verticallinestyle)
     results = numpy.swapaxes(results, 0, 1)
     ax.errorbar(results[0], results[1], results[2], color="black", **lpd.plotstyle_add_point)
-    matplotlib.pyplot.tight_layout(0.1)
+    # matplotlib.pyplot.tight_layout(0.1)
     fig.savefig(plotpath+"/cont_extr/"+args.corr+"_"+flowradius_str+"_cont.pdf")
 
 

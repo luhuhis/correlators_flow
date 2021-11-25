@@ -3,9 +3,9 @@
 max_flow_idx=100
 qcdtype=quenched_1.50Tc_zeuthenFlow
 conftypes="s080t20_b0703500 s096t24_b0719200 s120t30_b0739400"
-corrs="BB BB_clover"
+corrs="BB" # BB_clover
 int_Nt=36
-nsamples=200
+nsamples=400
 
 for conftype in $conftypes; do  
     for corr in $corrs; do
