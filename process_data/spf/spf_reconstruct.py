@@ -5,6 +5,7 @@ import sys
 import scipy.integrate
 import scipy.optimize
 import scipy.interpolate
+from typing import NamedTuple
 
 
 def Gnorm(tauT):
@@ -43,38 +44,60 @@ def En(n, OmegaByT, mu):
         sys.exit(2)
 
 
-def SpfByT3(OmegaByT, model, mu, PhiuvByT3, *fit_params_0):
-    if model == 3:
-        return np.maximum(0.5 * fit_params_0[0][0] * OmegaByT, PhiuvByT3(OmegaByT) * fit_params_0[0][1])
+class SpfArgs(NamedTuple):
+    model: int
+    mu: str
+    constrain: bool
+    PhiuvByT3: scipy.interpolate.InterpolatedUnivariateSpline
+
+
+def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params_0):
+    if spfargs.model == 3:
+        return np.maximum(0.5 * fit_params_0[0][0] * OmegaByT, spfargs.PhiuvByT3(OmegaByT) * fit_params_0[0][1])
     else:
+        n_max = len(*fit_params_0) - 1
+        if spfargs.constrain:
+            coef_tmp = 1
+            for i in range(1, n_max + 1):
+                coef_tmp += fit_params_0[0][i] * En(i, MaxOmegaByT, spfargs.mu)
+            if spfargs.model == 2:
+                c_nmax = (spfargs.PhiuvByT3(MaxOmegaByT) / np.sqrt((0.5 * fit_params_0[0][0] * MaxOmegaByT) ** 2 + (spfargs.PhiuvByT3(MaxOmegaByT)) ** 2) - coef_tmp) / En(
+                    n_max + 1, MaxOmegaByT, spfargs.mu)
+            else:
+                c_nmax = (spfargs.PhiuvByT3(MaxOmegaByT) / (0.5 * fit_params_0[0][0] * MaxOmegaByT + spfargs.PhiuvByT3(MaxOmegaByT)) - coef_tmp) / En(n_max + 1, MaxOmegaByT, spfargs.mu)
+
         coef = 1
-        for i in range(1, len(*fit_params_0)):
-            coef += fit_params_0[0][i] * En(i, OmegaByT, mu)
+        for i in range(1, n_max+1):
+            coef += fit_params_0[0][i] * En(i, OmegaByT, spfargs.mu)
+
+        if spfargs.constrain:
+            coef += c_nmax * En(n_max + 1, OmegaByT, spfargs.mu)
+
         if coef < 0:
             print("negative spf")
             return 1e20
-        if model == 2:
-            return np.sqrt((0.5 * fit_params_0[0][0] * OmegaByT) ** 2 + (PhiuvByT3(OmegaByT)) ** 2) * coef
+        if spfargs.model == 2:
+            return np.sqrt((0.5 * fit_params_0[0][0] * OmegaByT) ** 2 + (spfargs.PhiuvByT3(OmegaByT)) ** 2) * coef
         else:
-            return (0.5 * fit_params_0[0][0] * OmegaByT + PhiuvByT3(OmegaByT)) * coef
+            return (0.5 * fit_params_0[0][0] * OmegaByT + spfargs.PhiuvByT3(OmegaByT)) * coef
 
 
-def Integrand(OmegaByT, tauT, model, mu, PhiuvByT3, *fit_params_0):
-    return 1. / np.pi * Kernel(OmegaByT, tauT) * SpfByT3(OmegaByT, model, mu, PhiuvByT3, *fit_params_0)
+def Integrand(OmegaByT, tauT, MaxOmegaByT, spfargs, *fit_params_0):
+    return 1. / np.pi * Kernel(OmegaByT, tauT) * SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params_0)
 
 
-def TargetCorr(tauT, model, mu, MaxOmegaByT, PhiuvByT3, *fit_params_0):
+def TargetCorr(tauT, MaxOmegaByT, spfargs, *fit_params_0):
     CorrTrial = []
     for i in range(len(tauT)):
         try:
-            CorrTrial.append(scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT[i], model, mu, PhiuvByT3, *fit_params_0), 0, MaxOmegaByT)[0])
+            CorrTrial.append(scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT[i], MaxOmegaByT, spfargs, *fit_params_0), 0, MaxOmegaByT)[0])
         except OverflowError as e:
             print(str(e) + " for integration appears at tauT=" + str(tauT[i]))
     return CorrTrial
 
 
-def chisq_dof(fit_params_0, xdata, ydata, edata, MaxOmegaByT, model, mu, PhiuvByT3, Record):
-    res = (ydata - TargetCorr(xdata, model, mu, MaxOmegaByT, PhiuvByT3, fit_params_0)) / edata
+def chisq_dof(fit_params_0, xdata, ydata, edata, MaxOmegaByT, spfargs, Record):
+    res = (ydata - TargetCorr(xdata, MaxOmegaByT, spfargs, fit_params_0)) / edata
     chisqdof = np.sum(res ** 2) / (len(xdata) - len(fit_params_0))
     record = list(fit_params_0)
     record.append(chisqdof)
@@ -93,13 +116,14 @@ def main():
     requiredNamed.add_argument('--ID', help='number we name this run, and also serve as seed', type=int)
     requiredNamed.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str)
     requiredNamed.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', choices=[1, 2, 3, 4, 5, 6], type=int)
+    requiredNamed.add_argument('--constrain', help='force the spf to reach the UV limit at large omega', action="store_true")
 
     args = parser.parse_args()
 
     MaxIter = 2000
 
     # read in the normalized correlator
-    inputfolder = lpd.get_merged_data_path(args.qcdtype, args.corr, "")
+    inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "")
     corr = np.genfromtxt(inputfolder+args.corr+"_final.txt", missing_values=None, usemask=True, invalid_raise=False)
 
     # remove lines with NaN's
@@ -136,16 +160,19 @@ def main():
         fit_params_0 = [1, 1]
     else:
         fit_params_0 = [1]
+        if args.constrain:
+            args.nmax -= 1
         for i in range(args.nmax):
             fit_params_0.append(0.)
 
     Record = []
+    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3)  # constant parameters only used by the function SpfByT3
 
-    # on this line the fit happens
+    # on the next line the fit happens
     # fun: The objective function to be minimized.
     # x0: Initial guess.
     # args: Extra arguments passed to the objective function
-    res = scipy.optimize.minimize(fun=chisq_dof, x0=fit_params_0, args=(xdata, corr_sample, edata, MaxOmegaByT, args.model, args.mu, PhiuvByT3, Record), method='Nelder-Mead',
+    res = scipy.optimize.minimize(fun=chisq_dof, x0=fit_params_0, args=(xdata, corr_sample, edata, MaxOmegaByT, spfargs, Record), method='Nelder-Mead',
                                   options={'maxiter': MaxIter, 'disp': True}, callback=None)
 
     # because in the fit we take the square of PhiIR, kappa can be negative. Since it is a square, the sign doesn't matter, so just take the absolute:
