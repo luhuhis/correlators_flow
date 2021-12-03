@@ -1,0 +1,193 @@
+import lib_process_data as lpd
+import numpy as np
+import math
+import sys
+import scipy.integrate
+import scipy.optimize
+import scipy.interpolate
+
+
+def Gnorm(tauT):
+    norm = np.pi ** 2 * (np.cos(np.pi * tauT) ** 2 / np.sin(np.pi * tauT) ** 4 + 1 / (3 * np.sin(np.pi * tauT) ** 2))
+    return norm
+
+
+def bootstr_from_gauss(data, data_std_dev, Seed):
+    data = np.asarray(data)
+    data_std_dev = np.asarray(data_std_dev)
+    np.random.seed(Seed)
+    numb_observe = len(data)
+    sampleval = []
+    for k in range(numb_observe):
+        sampleval.append(np.random.normal(data[k], data_std_dev[k]))
+    sampleval = np.array(sampleval)
+    return sampleval
+
+# ==============================================================
+
+
+def Kernel(OmegaByT, tauT):
+    kernel = np.cosh(OmegaByT / 2 - OmegaByT * tauT) / np.sinh(OmegaByT / 2)
+    return kernel
+
+
+def En(n, OmegaByT, mu):
+    x = np.log(1 + OmegaByT / np.pi)
+    y = x / (1 + x)
+    if mu == "alpha":
+        return np.sin(np.pi * n * y)
+    elif mu == "beta":
+        return np.sin(np.pi * y) * np.sin(np.pi * n * y)
+    else:
+        print("wrong mu!!!")
+        sys.exit(2)
+
+
+def SpfByT3(OmegaByT, model, mu, PhiuvByT3, *fit_params_0):
+    if model == 3:
+        return np.maximum(0.5 * fit_params_0[0][0] * OmegaByT, PhiuvByT3(OmegaByT) * fit_params_0[0][1])
+    else:
+        coef = 1
+        for i in range(1, len(*fit_params_0)):
+            coef += fit_params_0[0][i] * En(i, OmegaByT, mu)
+        if coef < 0:
+            print("negative spf")
+            return 1e20
+        if model == 2:
+            return np.sqrt((0.5 * fit_params_0[0][0] * OmegaByT) ** 2 + (PhiuvByT3(OmegaByT)) ** 2) * coef
+        else:
+            return (0.5 * fit_params_0[0][0] * OmegaByT + PhiuvByT3(OmegaByT)) * coef
+
+
+def Integrand(OmegaByT, tauT, model, mu, PhiuvByT3, *fit_params_0):
+    return 1. / np.pi * Kernel(OmegaByT, tauT) * SpfByT3(OmegaByT, model, mu, PhiuvByT3, *fit_params_0)
+
+
+def TargetCorr(tauT, model, mu, MaxOmegaByT, PhiuvByT3, *fit_params_0):
+    CorrTrial = []
+    for i in range(len(tauT)):
+        try:
+            CorrTrial.append(scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT[i], model, mu, PhiuvByT3, *fit_params_0), 0, MaxOmegaByT)[0])
+        except OverflowError as e:
+            print(str(e) + " for integration appears at tauT=" + str(tauT[i]))
+    return CorrTrial
+
+
+def chisq_dof(fit_params_0, xdata, ydata, edata, MaxOmegaByT, model, mu, PhiuvByT3, Record):
+    res = (ydata - TargetCorr(xdata, model, mu, MaxOmegaByT, PhiuvByT3, fit_params_0)) / edata
+    chisqdof = np.sum(res ** 2) / (len(xdata) - len(fit_params_0))
+    record = list(fit_params_0)
+    record.append(chisqdof)
+    Record.append(record)
+    print(record)
+    return chisqdof
+
+
+def main():
+    """this script currently only does one bootstrap sample. so instead, wrap everything in bootstrap"""
+    parser, requiredNamed = lpd.get_parser()
+
+    requiredNamed.add_argument('--model', help='which model to use', choices=[1, 2, 3], type=int)
+    requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str)
+    requiredNamed.add_argument('--PathOutputFolder', help='the path of output folder like /a/b', type=str)
+    requiredNamed.add_argument('--ID', help='number we name this run, and also serve as seed', type=int)
+    requiredNamed.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str)
+    requiredNamed.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', choices=[1, 2, 3, 4, 5, 6], type=int)
+
+    args = parser.parse_args()
+
+    MaxIter = 2000
+
+    # read in the normalized correlator
+    inputfolder = lpd.get_merged_data_path(args.qcdtype, args.corr, "")
+    corr = np.genfromtxt(inputfolder+args.corr+"_final.txt", missing_values=None, usemask=True, invalid_raise=False)
+
+    # remove lines with NaN's
+    corr = corr[~np.isnan(corr).any(axis=1)]
+
+    # beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
+    NtauT = len(corr)
+
+    # read in the phiuv. columns in order: OmegaByT, PhiUVByT3, err
+    PhiUV = np.loadtxt(args.PathPhiUV)
+    PhiUV = PhiUV[:, 0:2]
+    # interpolate and extrapolate the spf to everywhere for the integration in the next
+    # spline order: 1 linear, 2 quadratic, 3 cubic ...
+    order = 3
+    PhiuvByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[:, 0], PhiUV[:, 1], k=order)
+    MaxOmegaByT = PhiUV[-1][0]
+
+    # get rid of the pert. normalization in the correlator data
+    CorrByT4 = np.copy(corr)
+    for i in range(NtauT):
+        CorrByT4[i][2] = corr[i][2] * Gnorm(corr[i][0])
+        CorrByT4[i][1] = corr[i][1] * Gnorm(corr[i][0])
+
+    xdata = CorrByT4[:, 0]
+    ydata = CorrByT4[:, 1]
+    edata = CorrByT4[:, 2]
+
+    # resampling using bootstrp
+    corr_sample = bootstr_from_gauss(ydata, edata, args.ID)
+
+    # set up initial guess for the fitted parameters. the initial guess for kappa is 1, and for the c_n is 0. for model 3 we only have one other fit parameter
+    # (the overall coefficient for the UV part), whose initial guess is also 1.
+    if args.model == 3:
+        fit_params_0 = [1, 1]
+    else:
+        fit_params_0 = [1]
+        for i in range(args.nmax):
+            fit_params_0.append(0.)
+
+    Record = []
+
+    # on this line the fit happens
+    # fun: The objective function to be minimized.
+    # x0: Initial guess.
+    # args: Extra arguments passed to the objective function
+    res = scipy.optimize.minimize(fun=chisq_dof, x0=fit_params_0, args=(xdata, corr_sample, edata, MaxOmegaByT, args.model, args.mu, PhiuvByT3, Record), method='Nelder-Mead',
+                                  options={'maxiter': MaxIter, 'disp': True}, callback=None)
+
+    # because in the fit we take the square of PhiIR, kappa can be negative. Since it is a square, the sign doesn't matter, so just take the absolute:
+    if args.model == 2:
+        res.x[0] = math.fabs(res.x[0])
+
+    # use the fit results for the parameters to compute the fitted spectral function and correlator
+    try:
+        Spf = []
+        for i in range(len(PhiUV)):
+            Spf.append(SpfByT3(PhiUV[i][0], args.model, args.mu, PhiuvByT3, res.x))
+        if any(n < 0 for n in Spf):
+            print("negative spf")
+            sys.exit(4)
+        np.savetxt(args.PathOutputFolder + "/Spf_fitted_" + str(args.ID) + ".dat", np.column_stack((PhiUV[:, 0], Spf)), fmt='%16.15e')
+
+        chisqdof = chisq_dof(res.x, xdata, corr_sample, edata, MaxOmegaByT, args.model, args.mu, PhiuvByT3, Record)  # Note: this chisq_dof is appended to the end of Record!
+
+        Corr_fit = TargetCorr(xdata, args.model, args.mu, MaxOmegaByT, PhiuvByT3, res.x)
+        for i in range(NtauT):
+            Corr_fit[i] /= Gnorm(corr[i][0])
+        resx = " ".join(map(str, res.x))
+        write_final = open(args.PathOutputFolder + "/Final_collection_" + str(args.ID) + ".dat", "w+")
+        write_final.write("#Fitted params:\n")
+        write_final.write("%s\n" % resx)
+        write_final.write("#Fit success:\n")
+        write_final.write("%s\n" % res.success)
+        write_final.write("#Fit status:\n")
+        write_final.write("%s\n" % res.status)
+        write_final.write("#Chisq_dof:\n")
+        write_final.write("%e\n" % chisqdof)
+        write_final.close()
+
+        np.savetxt(args.PathOutputFolder + "/Record_" + str(args.ID) + ".dat", Record, fmt='%16.15e')
+
+        np.savetxt(args.PathOutputFolder + "/Corr_original_fitted_" + str(args.ID) + ".dat", np.column_stack((xdata, corr[:, 1], corr[:, 2], Corr_fit)),
+                   fmt='%16.15e')
+    except:
+        print("fit fails")  # this error message may be a bit misleading
+        sys.exit(3)
+
+
+if __name__ == '__main__':
+    main()
+    lpd.save_script_call()
