@@ -24,6 +24,15 @@ def save_script_call(add_folder=None):
     return
 
 
+def print_script_call():
+    """ save full script call in logfile """
+    import datetime
+    now = datetime.datetime.now()
+    dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
+    print(dt_string + "\n" + " ".join(sys.argv) + '\n')
+    return
+
+
 # remove everything to the left of (and including) the first delimiter:
 def remove_left_of_first(delimiter, label):
     return re.sub(r'(^.*?)' + delimiter, '', label)
@@ -179,6 +188,7 @@ def get_color(myarray, i, start=0, end=-1):
     # i = end - 1 - i + start
     return matplotlib.cm.gnuplot((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * 0.9)
 
+
 def get_color2(myarray, i, start=0, end=-1):
     if myarray[end] == myarray[start]:
         return matplotlib.cm.viridis(0)
@@ -213,8 +223,8 @@ markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^',
 
 
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.01), ylabelpos=(0.01, 0.97), tickpad=2,
-                  figsize=(3 + 3 / 8, 3 + 3 / 8 - 1 / 2.54), UseTex=True):
-    if UseTex == True:
+                  figsize=(3+3/8, 3+3/8 - 1/2.54), UseTex=True):
+    if UseTex:
         matplotlib.pyplot.rc('text', usetex=True)
         matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
     matplotlib.pyplot.rc('font', family='serif', size=fontsize)

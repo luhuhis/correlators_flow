@@ -1,3 +1,5 @@
+#!/usr/local/bin/python3.7m
+
 import lib_process_data as lpd
 import numpy as np
 import math
@@ -6,30 +8,20 @@ import scipy.integrate
 import scipy.optimize
 import scipy.interpolate
 from typing import NamedTuple
+import latqcdtools.bootstr
+
+global args
 
 
 def Gnorm(tauT):
     norm = np.pi ** 2 * (np.cos(np.pi * tauT) ** 2 / np.sin(np.pi * tauT) ** 4 + 1 / (3 * np.sin(np.pi * tauT) ** 2))
     return norm
 
-
-def bootstr_from_gauss(data, data_std_dev, Seed):
-    data = np.asarray(data)
-    data_std_dev = np.asarray(data_std_dev)
-    np.random.seed(Seed)
-    numb_observe = len(data)
-    sampleval = []
-    for k in range(numb_observe):
-        sampleval.append(np.random.normal(data[k], data_std_dev[k]))
-    sampleval = np.array(sampleval)
-    return sampleval
-
 # ==============================================================
 
 
 def Kernel(OmegaByT, tauT):
-    kernel = np.cosh(OmegaByT / 2 - OmegaByT * tauT) / np.sinh(OmegaByT / 2)
-    return kernel
+    return np.cosh(OmegaByT / 2 - OmegaByT * tauT) / np.sinh(OmegaByT / 2)
 
 
 def En(n, OmegaByT, mu):
@@ -39,9 +31,6 @@ def En(n, OmegaByT, mu):
         return np.sin(np.pi * n * y)
     elif mu == "beta":
         return np.sin(np.pi * y) * np.sin(np.pi * n * y)
-    else:
-        print("wrong mu!!!")
-        sys.exit(2)
 
 
 class SpfArgs(NamedTuple):
@@ -49,37 +38,33 @@ class SpfArgs(NamedTuple):
     mu: str
     constrain: bool
     PhiuvByT3: scipy.interpolate.InterpolatedUnivariateSpline
+    n_max: int
 
+
+# ========= Spf models =========
 
 def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params_0):
-    if spfargs.model == 3:
-        return np.maximum(0.5 * fit_params_0[0][0] * OmegaByT, spfargs.PhiuvByT3(OmegaByT) * fit_params_0[0][1])
-    else:
-        n_max = len(*fit_params_0) - 1
-        if spfargs.constrain:
-            coef_tmp = 1
-            for i in range(1, n_max + 1):
-                coef_tmp += fit_params_0[0][i] * En(i, MaxOmegaByT, spfargs.mu)
-            if spfargs.model == 2:
-                c_nmax = (spfargs.PhiuvByT3(MaxOmegaByT) / np.sqrt((0.5 * fit_params_0[0][0] * MaxOmegaByT) ** 2 + (spfargs.PhiuvByT3(MaxOmegaByT)) ** 2) - coef_tmp) / En(
-                    n_max + 1, MaxOmegaByT, spfargs.mu)
-            else:
-                c_nmax = (spfargs.PhiuvByT3(MaxOmegaByT) / (0.5 * fit_params_0[0][0] * MaxOmegaByT + spfargs.PhiuvByT3(MaxOmegaByT)) - coef_tmp) / En(n_max + 1, MaxOmegaByT, spfargs.mu)
+    if spfargs.constrain:
+        coef_tmp = 1
+        for i in range(1, spfargs.n_max + 1):
+            coef_tmp += fit_params_0[0][i] * En(i, MaxOmegaByT, spfargs.mu)
+        c_nmax = (spfargs.PhiuvByT3(MaxOmegaByT) / np.sqrt((0.5 * fit_params_0[0][0] * MaxOmegaByT) ** 2 + (spfargs.PhiuvByT3(MaxOmegaByT)) ** 2) - coef_tmp) / En(
+                spfargs.n_max + 1, MaxOmegaByT, spfargs.mu)
+    coef = 1
+    for i in range(1, spfargs.n_max+1):
+        coef += fit_params_0[0][i]*En(i, OmegaByT, spfargs.mu)
 
-        coef = 1
-        for i in range(1, n_max+1):
-            coef += fit_params_0[0][i] * En(i, OmegaByT, spfargs.mu)
+    if spfargs.constrain:
+        coef += c_nmax * En(spfargs.n_max + 1, OmegaByT, spfargs.mu)
 
-        if spfargs.constrain:
-            coef += c_nmax * En(n_max + 1, OmegaByT, spfargs.mu)
-
+    if args.verbose:
         if coef < 0:
-            print("negative spf")
-            return 1e20
-        if spfargs.model == 2:
-            return np.sqrt((0.5 * fit_params_0[0][0] * OmegaByT) ** 2 + (spfargs.PhiuvByT3(OmegaByT)) ** 2) * coef
-        else:
-            return (0.5 * fit_params_0[0][0] * OmegaByT + spfargs.PhiuvByT3(OmegaByT)) * coef
+            print("negative SPF")
+        # return np.inf  # this results in infinite chisq whenever the spf becomes zero.
+    return np.sqrt((0.5*fit_params_0[0][0]*OmegaByT)**2+(spfargs.PhiuvByT3(OmegaByT))**2)*coef
+
+
+# ==============================================================
 
 
 def Integrand(OmegaByT, tauT, MaxOmegaByT, spfargs, *fit_params_0):
@@ -93,38 +78,99 @@ def TargetCorr(tauT, MaxOmegaByT, spfargs, *fit_params_0):
             CorrTrial.append(scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT[i], MaxOmegaByT, spfargs, *fit_params_0), 0, MaxOmegaByT)[0])
         except OverflowError as e:
             print(str(e) + " for integration appears at tauT=" + str(tauT[i]))
+            return np.inf
     return CorrTrial
 
 
-def chisq_dof(fit_params_0, xdata, ydata, edata, MaxOmegaByT, spfargs, Record):
-    res = (ydata - TargetCorr(xdata, MaxOmegaByT, spfargs, fit_params_0)) / edata
+def chisq_dof(fit_params_0, xdata, ydata_sample, edata, MaxOmegaByT, spfargs, verbose=False):
+    res = (ydata_sample - TargetCorr(xdata, MaxOmegaByT, spfargs, fit_params_0)) / edata
     chisqdof = np.sum(res ** 2) / (len(xdata) - len(fit_params_0))
-    record = list(fit_params_0)
-    record.append(chisqdof)
-    Record.append(record)
-    print(record)
+    if verbose:
+        print(['{0:.7f} '.format(i) for i in fit_params_0], '{0:.4f}'.format(chisqdof))
     return chisqdof
 
 
+def get_results(ydata_sample, fit_params_0, xdata, edata, MaxOmegaByT, spfargs, PhiUV, MaxIter, NtauT, corr, model, verbose=False):
+    if verbose:
+        print("current correlator sample:", ydata_sample)
+
+    # fun: The objective function to be minimized.
+    # x0: Initial guess.
+    # args: Extra arguments passed to the objective function
+    fit_res = scipy.optimize.minimize(fun=chisq_dof, x0=fit_params_0, args=(xdata, ydata_sample, edata, MaxOmegaByT, spfargs, verbose), method='Nelder-Mead',
+                                      options={'maxiter': MaxIter, 'disp': True, 'xatol': 0.00001, 'fatol': 0.00001}, callback=None)  # bounds=[[0, np.inf], *([[-1, 1]]*spfargs.n_max)])
+
+    # now use the fit results for the parameters to compute the fitted spectral function and correlator
+
+    # spectral function
+    Spf = []
+    for i in range(len(PhiUV)):
+        Spf.append(SpfByT3(PhiUV[i][0], MaxOmegaByT, spfargs, fit_res.x))
+    return_nan = False
+    if any(n < 0 for n in Spf):
+        print("negative spf for this sample. returning nan.")
+        return_nan = True
+
+    # because in the fit we take the square of PhiIR, kappa can be negative. Since it is a square, the sign doesn't matter, so just take the absolute:
+    if model == 2:
+        if fit_res.x[0] < 0 and return_nan is False:
+            print("kappa negative but spf positive. using absolute kappa value.")
+            fit_res.x[0] = math.fabs(fit_res.x[0])
+
+    # correlator
+    fit_corr = TargetCorr(xdata, MaxOmegaByT, spfargs, fit_res.x)
+    for i in range(NtauT):
+        fit_corr[i] /= Gnorm(corr[i][0])
+
+    # chisq
+    chisqdof = chisq_dof(fit_res.x, xdata, ydata_sample, edata, MaxOmegaByT, spfargs, verbose)  # Note: this chisq_dof is appended to the end of Record!
+    if chisqdof > args.discard_above:
+        print("final chisq/dof is larger than ", args.discard_above, ". returning nan.")
+        return_nan = True
+
+    # stack the result into one array, so that the bootstrap works for all the values. we'll accordingly extract this again later.
+    result = np.hstack((fit_res.x, Spf, fit_corr, chisqdof))
+
+    if return_nan:
+        nans = np.empty(result.shape)
+        nans[:] = np.nan
+        return nans
+    else:
+        return result
+
+
 def main():
-    """this script currently only does one bootstrap sample. so instead, wrap everything in bootstrap"""
     parser, requiredNamed = lpd.get_parser()
 
-    requiredNamed.add_argument('--model', help='which model to use', choices=[1, 2, 3], type=int)
-    requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str)
-    requiredNamed.add_argument('--PathOutputFolder', help='the path of output folder like /a/b', type=str)
-    requiredNamed.add_argument('--ID', help='number we name this run, and also serve as seed', type=int)
-    requiredNamed.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str)
-    requiredNamed.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', choices=[1, 2, 3, 4, 5, 6], type=int)
-    requiredNamed.add_argument('--constrain', help='force the spf to reach the UV limit at large omega', action="store_true")
+    requiredNamed.add_argument('--model', help='which model to use', choices=[2], type=int, required=True)
+    requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str, required=True)
+    requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO (a) or NLO (b)', type=str, choices=["a", "b"], required=True)
+    requiredNamed.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str, required=True)
+    requiredNamed.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', type=int, choices=[4, 5], required=True)
+    parser.add_argument('--constrain', help='force the spf to reach the UV limit at large omega', action="store_true")
 
+    parser.add_argument('--nsamples', help='number of bootstrap samples to draw from the gaussian distribution', default=200, type=int)
+
+    parser.add_argument('--PathOutputFolder', help='the path of output folder like /a/b', type=str)
+    parser.add_argument('--PathInputFolder', help='the path of input folder like /a/b', type=str)
+
+    parser.add_argument('--maxiter', help='maximum number of nelder-mead iterations', default=1000, type=int)
+    parser.add_argument('--nproc', help='number of processes for the parallel bootstrap', default=1, type=int)
+    parser.add_argument('--verbose', help='output current fit parameters at each iteration', action="store_true")
+    parser.add_argument('--seed', help='seed for gaussian bootstrap sample drawings', default=None, type=int)
+    parser.add_argument('--guess_from_mean', help='fit the mean first and use its fit params as the initial guess for all other fits', action="store_true")
+    parser.add_argument('--ignore_nans', help='ignore nans', action="store_true")
+    parser.add_argument('--discard_above', help='discard fits that did not find a minimum smaller than this for chisq/dof', default=np.inf, type=float)
+
+    global args
     args = parser.parse_args()
 
-    MaxIter = 2000
+    constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
+    fileidentifier = str(args.model)+"_"+constrainstr+"_"+str(args.mu)+"_"+args.PhiUVtype+"_"+str(args.nmax)+"_"+str(args.nsamples)
 
     # read in the normalized correlator
-    inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "")
-    corr = np.genfromtxt(inputfolder+args.corr+"_final.txt", missing_values=None, usemask=True, invalid_raise=False)
+    inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "") if not args.PathInputFolder else args.PathInputFolder
+    corr = np.loadtxt(inputfolder+args.corr+"_final.txt")
 
     # remove lines with NaN's
     corr = corr[~np.isnan(corr).any(axis=1)]
@@ -135,7 +181,8 @@ def main():
     # read in the phiuv. columns in order: OmegaByT, PhiUVByT3, err
     PhiUV = np.loadtxt(args.PathPhiUV)
     PhiUV = PhiUV[:, 0:2]
-    # interpolate and extrapolate the spf to everywhere for the integration in the next
+
+    # interpolate the UV spf for the integration
     # spline order: 1 linear, 2 quadratic, 3 cubic ...
     order = 3
     PhiuvByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[:, 0], PhiUV[:, 1], k=order)
@@ -151,70 +198,91 @@ def main():
     ydata = CorrByT4[:, 1]
     edata = CorrByT4[:, 2]
 
-    # resampling using bootstrp
-    corr_sample = bootstr_from_gauss(ydata, edata, args.ID)
-
     # set up initial guess for the fitted parameters. the initial guess for kappa is 1, and for the c_n is 0. for model 3 we only have one other fit parameter
     # (the overall coefficient for the UV part), whose initial guess is also 1.
-    if args.model == 3:
-        fit_params_0 = [1, 1]
+    fit_params_0 = [1.]
+    if args.constrain:
+        args.nmax -= 1
+    for i in range(args.nmax):
+        fit_params_0.append(0.)
+
+    nparam = len(fit_params_0)
+
+    # constant parameters only used by the function SpfByT3
+    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3, nparam-1)
+
+    if args.guess_from_mean:
+        mean_result = get_results(ydata, fit_params_0, xdata, edata, MaxOmegaByT, spfargs, PhiUV, args.maxiter, NtauT, corr, args.model, verbose=args.verbose)
+
+    nomega = len(PhiUV[:, 0])
+    structure = np.asarray((
+        (0, nparam),
+        (nparam, nparam+nomega),
+        (nparam+nomega, nparam+nomega+NtauT),
+        (nparam+nomega+NtauT, nparam+nomega+NtauT+1)
+    ), dtype=int)
+
+    if args.guess_from_mean and not np.isnan(mean_result).any():
+        fit_params_0 = np.asarray(mean_result[structure[0, 0]:structure[0, 1]])
+    if args.verbose:
+        print("Initial guess for fit params:", fit_params_0)
+
+    samples, results, error = \
+        latqcdtools.bootstr.bootstr_from_gauss(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
+                                               useCovariance=False, parallelize=True, nproc=args.nproc, ignore_nans=args.ignore_nans,
+                                               args=(fit_params_0, xdata, edata, MaxOmegaByT, spfargs, PhiUV, args.maxiter, NtauT, corr, args.model, args.verbose))
+
+    if args.PathOutputFolder:
+        outputfolder = args.PathOutputFolder
     else:
-        fit_params_0 = [1]
-        if args.constrain:
-            args.nmax -= 1
-        for i in range(args.nmax):
-            fit_params_0.append(0.)
+        outputfolder = inputfolder+"/spf/"
+    lpd.create_folder(outputfolder)
 
-    Record = []
-    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3)  # constant parameters only used by the function SpfByT3
+    np.savetxt(outputfolder+"samples_structure_"+fileidentifier+".txt", structure, header='This file contains pairs (a,b) of indeces with which to split the array '
+                                                                                          'in the samples.npy in the correct way. Example: Spf=samples(a:b). \n rows for (a,b) in order: fit_resx, Spf, '
+                                                                                          'fit_corr, chisqdof', fmt='%i')
+    np.save(outputfolder+"samples_"+fileidentifier, samples)
 
-    # on the next line the fit happens
-    # fun: The objective function to be minimized.
-    # x0: Initial guess.
-    # args: Extra arguments passed to the objective function
-    res = scipy.optimize.minimize(fun=chisq_dof, x0=fit_params_0, args=(xdata, corr_sample, edata, MaxOmegaByT, spfargs, Record), method='Nelder-Mead',
-                                  options={'maxiter': MaxIter, 'disp': True}, callback=None)
+    # extract the various quantities that have been stacked together due to bootstrap data format restrictions
+    fit_resx = results[structure[0, 0]:structure[0, 1]]
+    fit_resx_err = error[structure[0, 0]:structure[0, 1]]
+    Spf = results[structure[1, 0]:structure[1, 1]]
+    Spf_err = error[structure[1, 0]:structure[1, 1]]
+    fit_corr = results[structure[2, 0]:structure[2, 1]]
+    fit_corr_err = error[structure[2, 0]:structure[2, 1]]
+    chisqdof = results[structure[3, 0]]
+    chisqdof_err = error[structure[3, 0]]
 
-    # because in the fit we take the square of PhiIR, kappa can be negative. Since it is a square, the sign doesn't matter, so just take the absolute:
-    if args.model == 2:
-        res.x[0] = math.fabs(res.x[0])
+    print("Fitted params (first one is kappaByT3):", fit_resx)
+    print("Fitted params errors:", fit_resx_err)
+    print("Chisq_dof   Chisq_dof_err:", chisqdof, chisqdof_err)
 
-    # use the fit results for the parameters to compute the fitted spectral function and correlator
-    try:
-        Spf = []
-        for i in range(len(PhiUV)):
-            Spf.append(SpfByT3(PhiUV[i][0], args.model, args.mu, PhiuvByT3, res.x))
-        if any(n < 0 for n in Spf):
-            print("negative spf")
-            sys.exit(4)
-        np.savetxt(args.PathOutputFolder + "/Spf_fitted_" + str(args.ID) + ".dat", np.column_stack((PhiUV[:, 0], Spf)), fmt='%16.15e')
+    # save reconstructed fit spf
+    np.savetxt(outputfolder + "/Spf_fitted_" + fileidentifier + ".dat", np.column_stack((PhiUV[:, 0], Spf, Spf_err)), fmt='%16.15e',
+               header='omegaByT            SpfByT3               err')
 
-        chisqdof = chisq_dof(res.x, xdata, corr_sample, edata, MaxOmegaByT, args.model, args.mu, PhiuvByT3, Record)  # Note: this chisq_dof is appended to the end of Record!
+    # save fitparams and chisqdof
+    resx = " ".join(map(str, fit_resx))
+    resx_err = " ".join(map(str, fit_resx_err))
+    write_final = open(outputfolder + "/fitparams_chisqdof_" + fileidentifier + ".dat", "w+")
+    write_final.write("#Fitted params (first one is kappaByT3):\n")
+    write_final.write("%s\n\n" % resx)
+    write_final.write("#Fitted params errors:\n")
+    write_final.write("%s\n\n" % resx_err)
+    write_final.write("#Chisq_dof   Chisq_dof_err\n")
+    write_final.write("%e " % chisqdof)
+    write_final.write("%e \n" % chisqdof_err)
+    write_final.close()
 
-        Corr_fit = TargetCorr(xdata, args.model, args.mu, MaxOmegaByT, PhiuvByT3, res.x)
-        for i in range(NtauT):
-            Corr_fit[i] /= Gnorm(corr[i][0])
-        resx = " ".join(map(str, res.x))
-        write_final = open(args.PathOutputFolder + "/Final_collection_" + str(args.ID) + ".dat", "w+")
-        write_final.write("#Fitted params:\n")
-        write_final.write("%s\n" % resx)
-        write_final.write("#Fit success:\n")
-        write_final.write("%s\n" % res.success)
-        write_final.write("#Fit status:\n")
-        write_final.write("%s\n" % res.status)
-        write_final.write("#Chisq_dof:\n")
-        write_final.write("%e\n" % chisqdof)
-        write_final.close()
+    # save reconstructed correlator
+    np.savetxt(outputfolder + "/Corr_original_fitted_" + fileidentifier + ".dat",
+               np.column_stack((xdata, corr[:, 1], corr[:, 2], fit_corr, fit_corr_err)),
+               fmt='%16.15e', header='tauT                corr(orig)            err                   corr(fit)             err')
 
-        np.savetxt(args.PathOutputFolder + "/Record_" + str(args.ID) + ".dat", Record, fmt='%16.15e')
-
-        np.savetxt(args.PathOutputFolder + "/Corr_original_fitted_" + str(args.ID) + ".dat", np.column_stack((xdata, corr[:, 1], corr[:, 2], Corr_fit)),
-                   fmt='%16.15e')
-    except:
-        print("fit fails")  # this error message may be a bit misleading
-        sys.exit(3)
+    print("kappa = ", fit_resx[0], "+/-", fit_resx_err[0])
 
 
 if __name__ == '__main__':
+    lpd.print_script_call()
     main()
     lpd.save_script_call()
