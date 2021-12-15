@@ -15,7 +15,7 @@ def save_script_call(add_folder=None):
     dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
     import os
     file_name = os.path.basename(sys.argv[0])
-    folderlist = "."
+    folderlist = "./logs/"
     if add_folder is not None:
         folderlist = (".", add_folder)
     for folder in folderlist:
