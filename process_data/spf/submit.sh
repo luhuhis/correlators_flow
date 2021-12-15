@@ -31,7 +31,7 @@ echo -e "Start $(date +"%F %T") | $SLURM_JOB_ID $SLURM_JOB_NAME | $(hostname) | 
 
 #Job steps
 echo "${params[$((SLURM_ARRAY_TASK_ID-1))]}"
-srun ./spf_reconstruct.py --seed 123456 --ignore_nans --guess_from_mean --qcdtype quenched_1.50Tc_zeuthenFlow --model 2 --PathPhiUV /work/data/htshu/ee_spf/PHIUV_a.dat --nsamples $nsamples --nproc 4 --PhiUVtype a --maxiter 2000 ${params[$((SLURM_ARRAY_TASK_ID-1))]}
+srun ./spf_reconstruct.py ${params[$((SLURM_ARRAY_TASK_ID-1))]} --seed 123456 --ignore_nans --guess_from_mean --qcdtype quenched_1.50Tc_zeuthenFlow --model 2 --PathPhiUV /work/data/htshu/ee_spf/PHIUV_a.dat --nsamples $nsamples --nproc 4 --PhiUVtype a --maxiter 2000
 
 
 echo -e "End $(date +"%F %T") | $SLURM_JOB_ID $SLURM_JOB_NAME | $(hostname) | $(pwd) \n"

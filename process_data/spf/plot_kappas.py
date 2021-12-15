@@ -21,14 +21,19 @@ def main():
     labels_plot = (r'$s_2 \alpha a 4$', r'$s_2 \alpha a 5$', r'$s_1 \alpha a 4$', r'$s_1 \alpha a 5$', r'$s_2 \beta a 4$', r'$s_2 \beta a 5$', r'$s_1 \beta a 4$', r'$s_1 \beta a 5$')
     kappas = []
     for label in labels:
-        kappas.append(numpy.genfromtxt(inputfolder+"fitparams_chisqdof_"+label+"_"+str(args.nsamples)+".dat", skip_footer=1)[0:2, 0])
+        try:
+            kappas.append(numpy.genfromtxt(inputfolder+"fitparams_chisqdof_"+label+"_"+str(args.nsamples)+".dat", skip_footer=1)[0:2, 0])
+        except:
+            print(label, " not found")
+            kappas.append([numpy.nan, numpy.nan])
+    print(kappas)
 
     pos = 0.3+numpy.asarray((0.45, 0.85, 1.25, 1.65, 2.65, 3.05, 3.45, 3.85))
     colors = ('red', 'red', 'blue', 'blue', 'red', 'red', 'blue', 'blue')
 
     xlabel = r'$\kappa / T^3$'
 
-    fig, ax, plots = lpd.create_figure(ylims=(0, 5), xlims=(0,5), xlabel=xlabel, xlabelpos=(0.5, -0.1), UseTex=False)
+    fig, ax, plots = lpd.create_figure(xlabel=xlabel, xlabelpos=(0.5, -0.1), UseTex=False) #ylims=(0, 5), xlims=(0,5),
 
     for i, label in enumerate(labels):
         ax.errorbar(kappas[i][0], pos[i], xerr=kappas[i][1], color=colors[i], fmt='x-', fillstyle='none', markersize=5, mew=0.25, lw=0.8, elinewidth=0.5, capsize=1.2)
