@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/local/bin/python3.7m
 import numpy
 from os import listdir 
 import lib_process_data as lpd
@@ -6,20 +6,16 @@ import lib_process_data as lpd
 
 def main():
 
-  
-    #parse cmd line arguments
+    # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
     requiredNamed.add_argument('--acc_sts', help="accuracy and stepsize. format: acc0.000010_sts0.000010", default="acc0.000010_sts0.000010", required=True)
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
-    
-    
-    
+
     args = parser.parse_args()
    
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
     fermions, temp, flowtype = lpd.parse_qcdtype(args.qcdtype)
-   
-   
+
     if args.corr == "EE": 
         XX_label = "ColElecCorrTimeSlices_naive_s"
     elif args.corr == "BB":
@@ -35,43 +31,54 @@ def main():
     outputfolder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype)
     lpd.create_folder(outputfolder)
 
-    XX_numerator_real, XX_numerator_imag, polyakov_real, polyakov_imag, flow_times = ([] for i in range(5))
-    n_datafiles, n_streams = (0,0)
-    
+    XX_numerator_real, XX_numerator_imag, polyakov_real, polyakov_imag, flow_times = ([] for _ in range(5))
+    n_datafiles, n_streams = (0, 0)
+    n_files_per_stream = []
+    streamids = []
+
     full_prefix = flow_prefix+XX_label
     print("searching for files named "+inputfolder+full_prefix+"*")
 
-    """read in data from many files"""
-    shape = (0,0)
-    for stream_folder in listdir(inputfolder):
+    # read in data from many files
+    shape = (0, 0)
+    folders = listdir(inputfolder)
+    folders.sort()
+    for stream_folder in folders:
         print(stream_folder)
+        n_files_this_stream = 0
         if stream_folder.startswith(args.conftype+"_"):
-            n_streams += 1
             datafiles = listdir(inputfolder+"/"+stream_folder)
             datafiles.sort()
             for datafile in datafiles:
                 if datafile.startswith(full_prefix): 
                     path = inputfolder+"/"+stream_folder+"/"+datafile
                     print("reading "+datafile)
-                    tmp = numpy.loadtxt(path) 
-                    if shape == (0,0):
+                    tmp = numpy.loadtxt(path)
+                    if shape == (0, 0):
                         shape = tmp.shape
                     if shape != tmp.shape:
                         print("error! shapes of input files don't match")
                         print(shape, " (previous) vs ", tmp.shape, " (current file)")
                         exit()
                     if n_datafiles == 0:
-                        flow_times = tmp[:,0]
-                    polyakov_real.append(tmp[:,1])
-                    polyakov_imag.append(tmp[:,2])
-                    XX_numerator_real.append(tmp[:,3:int((3 + nt_half))])
-                    XX_numerator_imag.append(tmp[:,int((3 + nt_half)):])
-                    n_datafiles += 1                
+                        flow_times = tmp[:, 0]
+                    polyakov_real.append(tmp[:, 1])
+                    polyakov_imag.append(tmp[:, 2])
+                    XX_numerator_real.append(tmp[:, 3:int((3 + nt_half))])
+                    XX_numerator_imag.append(tmp[:, int((3 + nt_half)):])
+                    n_datafiles += 1
+                    if n_files_this_stream == 0:
+                        streamid = lpd.remove_left_of_last(r'_', lpd.remove_right_of_first(r'_U', datafile))
+                        streamids.append(streamid)
+                    n_files_this_stream += 1
+            if n_files_this_stream > 0:
+                n_files_per_stream.append(n_files_this_stream)
+                n_streams += 1
     if n_datafiles == 0:
         print("Didn't find any files! Are the input parameters correct?", args.conftype, beta, ns, nt, nt_half, args.qcdtype, fermions, temp, flowtype, args.corr, args.acc_sts)
         exit()
 
-    """write data to one file"""
+    # write merged data to files
     filename = outputfolder+'n_datafiles_'+args.conftype+'.dat'
     print("write "+filename)
     with open(filename, 'w') as outfile:
@@ -79,10 +86,16 @@ def main():
         outfile.write(str(n_datafiles)+'\n')
         outfile.write('# number of streams for '+args.qcdtype+' '+args.conftype+'\n')
         outfile.write(str(n_streams)+'\n')
-    flow_times=[i for i in flow_times]
+        outfile.write('# stream identifiers:\n# ')
+        for strid in streamids:
+            outfile.write(strid+' ')
+        outfile.write('\n')
+        numpy.savetxt(outfile, numpy.asarray(n_files_per_stream), header='number of confs contained in each stream respectively', fmt='%i')
+    flow_times = [i for i in flow_times]
     flow_radii = [numpy.sqrt(i*8)/nt for i in flow_times]
-    numpy.savetxt(outputfolder+'flowtimes_'+args.conftype+'.dat', flow_times, header='flow times \\tau_F for '+args.qcdtype+' '+args.conftype)
-    numpy.savetxt(outputfolder+'flowradii_'+args.conftype+'.dat', flow_radii, header='flow radii (\sqrt{8\\tau_F}T) for '+args.qcdtype+' '+args.conftype)
+    numpy.savetxt(outputfolder+'flowtimes_'+args.conftype+'.dat', flow_times, header=r'flow times \tau_F for '+args.qcdtype+' '+args.conftype)
+    numpy.savetxt(outputfolder+'flowradii_'+args.conftype+'.dat', flow_radii, header=r'flow radii (\sqrt{8\tau_F}T) for '+args.qcdtype+' '+args.conftype)
+
     filename = outputfolder+args.corr+'_real_'+args.conftype+'_merged.dat'
     print("write "+filename)
     with open(filename, 'w') as outfile:
@@ -93,7 +106,8 @@ def main():
         for conf in XX_numerator_real: 
             numpy.savetxt(outfile, conf)
             outfile.write('# \n')
-    filename=outputfolder+args.corr+'_imag_'+args.conftype+'_merged.dat'
+
+    filename = outputfolder+args.corr+'_imag_'+args.conftype+'_merged.dat'
     print("write "+filename)
     with open(filename, 'w') as outfile:
         outfile.write('# imag part of numerator of '+args.corr+' correlator '+args.qcdtype+' '+args.conftype+'\n')
@@ -103,7 +117,8 @@ def main():
         for conf in XX_numerator_imag: 
             numpy.savetxt(outfile, conf)
             outfile.write('# \n')
-    filename=outputfolder+'polyakov_real_'+args.conftype+'_merged.dat'
+
+    filename = outputfolder+'polyakov_real_'+args.conftype+'_merged.dat'
     print("write "+filename)
     with open(filename, 'w') as outfile:
         outfile.write('# real part of polyakov loop '+args.qcdtype+' '+args.conftype+'\n')
@@ -113,7 +128,8 @@ def main():
         for conf in polyakov_real: 
             numpy.savetxt(outfile, conf)
             outfile.write('# \n')
-    filename=outputfolder+'polyakov_imag_'+args.conftype+'_merged.dat'
+
+    filename = outputfolder+'polyakov_imag_'+args.conftype+'_merged.dat'
     print("write "+filename)
     with open(filename, 'w') as outfile:
         outfile.write('# imag part of polyakov loop '+args.qcdtype+' '+args.conftype+'\n')
@@ -125,7 +141,9 @@ def main():
             outfile.write('# \n')
             
     print("done with "+args.qcdtype+" "+args.conftype)
-    
+
+
 if __name__ == '__main__':
+    lpd.print_script_call()
     main()
     lpd.save_script_call()
