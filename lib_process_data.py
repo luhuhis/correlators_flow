@@ -15,11 +15,11 @@ def save_script_call(add_folder=None):
     dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
     import os
     file_name = os.path.basename(sys.argv[0])
-    folderlist = "./logs/"
+    folderlist = ("./logs/",)
     if add_folder is not None:
-        folderlist = (".", add_folder)
+        folderlist = (*folderlist, add_folder)
     for folder in folderlist:
-        with open(folder + "/" + "log_" + file_name + ".log", 'a') as logfile:
+        with open(folder + "/" + file_name + ".log", 'a') as logfile:
             logfile.write(dt_string + "\n" + " ".join(sys.argv) + '\n')
     return
 
