@@ -179,7 +179,7 @@ def main():
         modelidentifier = str(args.model)+"_"+args.PhiUVtype+"_"+constrainstr+"_"+str(args.mu)+"_"+str(args.nmax)
     elif args.model == 3:
         modelidentifier = str(args.model)+"_"+args.PhiUVtype
-    fileidentifier = modelidentifier+"_"+str(args.nsamples)+"_"+str(args.tol)+startstr
+    fileidentifier = modelidentifier+"_"+str(args.nsamples)+"_"+'{:.0e}'.format(args.tol)+startstr
 
     # read in the normalized correlator
     inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "") if not args.PathInputFolder else args.PathInputFolder
@@ -253,9 +253,9 @@ def main():
     error = np.swapaxes(error, 0, 1)
 
     if args.PathOutputFolder:
-        outputfolder = args.PathOutputFolder
+        outputfolder = args.PathOutputFolder+"/"+fileidentifier+"/"
     else:
-        outputfolder = inputfolder+"/spf/"
+        outputfolder = inputfolder+"/spf/"+fileidentifier+"/"
     lpd.create_folder(outputfolder)
 
     np.savetxt(outputfolder+"samples_structure_"+fileidentifier+".dat", structure, header='This file contains pairs (a,b) of indeces with which to split the array '
@@ -282,19 +282,21 @@ def main():
           "param                  error_left    error_right:")
     print(fitparams_chisqdof)
 
+    # make it say 1e-4 instead of 0.0001
+
     # save reconstructed fit spf
-    np.savetxt(outputfolder + "/Spf_fitted_" + fileidentifier + ".dat", np.column_stack((PhiUV[:, 0], Spf, Spf_err)), fmt='%16.15e',
+    np.savetxt(outputfolder + "/spffit_" + fileidentifier + ".dat", np.column_stack((PhiUV[:, 0], Spf, Spf_err)), fmt='%16.15e',
                header='omegaByT            SpfByT3               err(-/+)')
 
     # save fitparams and chisqdof
-    np.savetxt(outputfolder + "/fitparams_chisqdof_" + fileidentifier + ".dat", fitparams_chisqdof,
+    np.savetxt(outputfolder + "/params_" + fileidentifier + ".dat", fitparams_chisqdof, fmt='%22.15e',
                header="The first line contains kappa/T^3. The last line contains chisq/dof. In between are c_i.\n"
                       "param                  error_left                 error_right:")
 
     # save reconstructed correlator
-    np.savetxt(outputfolder + "/Corr_original_fitted_" + fileidentifier + ".dat",
+    np.savetxt(outputfolder + "/corrfit_" + fileidentifier + ".dat",
                np.column_stack((xdata, corr[:, 1], corr[:, 2], fit_corr, fit_corr_err)),
-               fmt='%16.15e', header='tauT                corr(orig)            err                   corr(fit)             err(-/+)')
+               fmt='%16.15e', header='tauT                corr(orig)            err(orig)             corr(fit)             err(-/+)')
 
 
 if __name__ == '__main__':
