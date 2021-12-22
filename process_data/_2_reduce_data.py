@@ -20,8 +20,10 @@ def load_merged_data(qcdtype, corr, conftype):
     flow_times = numpy.loadtxt(inputfolder+"flowtimes_"+conftype+".dat")
     n_flow = len(flow_times)
     
-    print("read  "+inputfolder+"n_datafiles_"+conftype+".dat")
-    n_datafiles, n_streams = [int(i) for i in numpy.loadtxt(inputfolder+"n_datafiles_"+conftype+".dat")]
+    print("read  " + inputfolder + "n_datafiles_" + conftype + ".dat")
+    metadata = numpy.loadtxt(inputfolder + "n_datafiles_" + conftype + ".dat")
+    n_datafiles, n_streams, n_discarded = [int(i) for i in metadata[0:3]]
+    n_conf_per_stream = [int(i) for i in metadata[3:]]
 
     print("read  "+inputfolder+corr+"_real_"+conftype+"_merged.dat")
     XX_numerator_real_tmp = numpy.loadtxt(inputfolder+corr+"_real_"+conftype+"_merged.dat")
