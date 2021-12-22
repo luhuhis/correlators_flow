@@ -10,14 +10,20 @@ def main():
     parser, requiredNamed = lpd.get_parser()
     requiredNamed.add_argument('--acc_sts', help="accuracy and stepsize. format: acc0.000010_sts0.000010", default="acc0.000010_sts0.000010", required=True)
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
+    parser.add_argument('--basepath', help="override default base input path with this one", type=str)
+    parser.add_argument('--n_discard', help="number of configurations, counted from the lowest conf_num, in each stream that should be ignored", type=int, default=0)
+    parser.add_argument('--legacy', help="use legacy file names", action="store_true")
 
     args = parser.parse_args()
    
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
     fermions, temp, flowtype = lpd.parse_qcdtype(args.qcdtype)
 
-    if args.corr == "EE": 
-        XX_label = "ColElecCorrTimeSlices_naive_s"
+    if args.corr == "EE":
+        if args.legacy:
+            XX_label = "ColElecCorrTimeSlices_s"
+        else:
+            XX_label = "ColElecCorrTimeSlices_naive_s"
     elif args.corr == "BB":
         XX_label = "ColMagnCorrTimeSlices_naive_s"
     elif args.corr == "EE_clover":
@@ -26,8 +32,12 @@ def main():
         XX_label = "ColMagnCorrTimeSlices_clover_s"
 
     flow_prefix = flowtype+"_"+args.acc_sts+"_"
-    
-    inputfolder = lpd.get_raw_data_path(args.qcdtype, args.conftype)
+
+    if args.basepath:
+        inputfolder = args.basepath + "/" + args.qcdtype + "/" + args.conftype + "/"
+    else:
+        inputfolder = lpd.get_raw_data_path(args.qcdtype, args.conftype)
+
     outputfolder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype)
     lpd.create_folder(outputfolder)
 
@@ -43,12 +53,14 @@ def main():
     shape = (0, 0)
     folders = listdir(inputfolder)
     folders.sort()
+    corrupt_files = []
     for stream_folder in folders:
-        print(stream_folder)
         n_files_this_stream = 0
         if stream_folder.startswith(args.conftype+"_"):
+            print(stream_folder)
             datafiles = listdir(inputfolder+"/"+stream_folder)
             datafiles.sort()
+            discarded = 0
             for datafile in datafiles:
                 if datafile.startswith(full_prefix): 
                     path = inputfolder+"/"+stream_folder+"/"+datafile
@@ -57,9 +69,13 @@ def main():
                     if shape == (0, 0):
                         shape = tmp.shape
                     if shape != tmp.shape:
-                        print("error! shapes of input files don't match")
+                        print("error! shapes of input files don't match. ignoring this file.")
                         print(shape, " (previous) vs ", tmp.shape, " (current file)")
-                        exit()
+                        corrupt_files.append(path)
+                        continue
+                    if discarded < args.n_discard:
+                        discarded += 1
+                        continue
                     if n_datafiles == 0:
                         flow_times = tmp[:, 0]
                     polyakov_real.append(tmp[:, 1])
@@ -71,9 +87,15 @@ def main():
                         streamid = lpd.remove_left_of_last(r'_', lpd.remove_right_of_first(r'_U', datafile))
                         streamids.append(streamid)
                     n_files_this_stream += 1
+            print(n_files_this_stream)
             if n_files_this_stream > 0:
                 n_files_per_stream.append(n_files_this_stream)
                 n_streams += 1
+    if len(corrupt_files) > 0:
+        print("\n============================= \nWARNING!!!!!!!!!!")
+        print("These files are corrupt and were skipped:")
+        print(*corrupt_files)
+        print("================================\n")
     if n_datafiles == 0:
         print("Didn't find any files! Are the input parameters correct?", args.conftype, beta, ns, nt, nt_half, args.qcdtype, fermions, temp, flowtype, args.corr, args.acc_sts)
         exit()
@@ -90,6 +112,8 @@ def main():
         for strid in streamids:
             outfile.write(strid+' ')
         outfile.write('\n')
+        outfile.write('# number of discarded confs from the beginning of each stream:\n')
+        outfile.write(str(args.n_discard) + '\n')
         numpy.savetxt(outfile, numpy.asarray(n_files_per_stream), header='number of confs contained in each stream respectively', fmt='%i')
     flow_times = [i for i in flow_times]
     flow_radii = [numpy.sqrt(i*8)/nt for i in flow_times]
