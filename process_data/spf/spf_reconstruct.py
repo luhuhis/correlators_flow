@@ -126,9 +126,6 @@ def get_results(ydata_sample, fit_params_0, xdata, edata, MaxOmegaByT, spfargs, 
 
     # chisq
     chisqdof = chisq_dof(fit_res.x, xdata, ydata_sample, edata, MaxOmegaByT, spfargs, verbose)  # Note: this chisq_dof is appended to the end of Record!
-    if chisqdof > args.discard_above:
-        print("final chisq/dof is larger than ", args.discard_above, ". returning nan.")
-        return_nan = True
 
     # stack the result into one long array, because the bootstrap is limited to 1D arrays. we'll need to accordingly extract this again later.
     result = np.hstack((fit_res.x, Spf, fit_corr, chisqdof))
@@ -162,8 +159,6 @@ def main():
     parser.add_argument('--verbose', help='output current fit parameters at each iteration', action="store_true")
     parser.add_argument('--seed', help='seed for gaussian bootstrap sample drawings', default=None, type=int)
     parser.add_argument('--start_from_mean_fit', help='fit the mean first and use its fit params as the initial guess for all other fits', action="store_true")
-    parser.add_argument('--ignore_nans', help='ignore nans', action="store_true")
-    parser.add_argument('--discard_above', help='discard fits that did not find a minimum smaller than this for chisq/dof', default=np.inf, type=float)
     parser.add_argument('--asym_err', help='get asymmetric errors from the bootstrap to better reflect the distribution', action="store_true")
 
     global args
@@ -245,7 +240,7 @@ def main():
 
     samples, results, error = \
         latqcdtools.bootstr.bootstr_from_gauss(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
-                                               useCovariance=False, parallelize=True, nproc=args.nproc, ignore_nans=args.ignore_nans, asym_err=args.asym_err,
+                                               useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=args.asym_err,
                                                args=(fit_params_0, xdata, edata, MaxOmegaByT, spfargs, PhiUV, args.maxiter, NtauT, corr, args.model, args.verbose))
 
     # make handling of the left and right 68-quantiles easier
