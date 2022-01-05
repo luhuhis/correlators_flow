@@ -12,26 +12,31 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --array=1-16
 
-nsamples=998
+nsamples=500
 
-params=()
-
-for corr in EE BB ; do
-  for constrain in "--constrain" "" ; do
-    for mu in alpha beta; do
-      for nmax in 4 5 ; do
-         params+=("$constrain --nmax ${nmax} --mu ${mu} --corr ${corr}")
+#params=()
+for tol in 0.000001 ; do #0.0001 0.00001
+  for start in "" ; do #"--start_from_mean_fit" 
+    for corr in EE ; do
+      for constrain in "--constrain" "" ; do
+        for mu in alpha beta; do
+          for nmax in 4 5 ; do
+              echo -e "==================================\n $tol $start $corr $constrain $mu $nmax\n ==================================\n"
+#             params+=("$constrain --nmax ${nmax} --mu ${mu} --corr ${corr}")
+            /usr/local/bin/python3.7m -u spf_reconstruct.py $constrain --nmax ${nmax} --mu ${mu} --corr ${corr} ${start} --tol ${tol} --seed 0 --qcdtype quenched_1.50Tc_zeuthenFlow --model 2 --PathPhiUV /work/data/htshu/ee_spf/PHIUV_a.dat --nsamples $nsamples --nproc 35 --PhiUVtype a --maxiter 2000 --asym_err
+          done
+        done
       done
     done
   done
 done
 
 #Print some information
-echo -e "Start $(date +"%F %T") | $SLURM_JOB_ID $SLURM_JOB_NAME | $(hostname) | $(pwd) \n"
+#echo -e "Start $(date +"%F %T") | $SLURM_JOB_ID $SLURM_JOB_NAME | $(hostname) | $(pwd) \n"
 
 #Job steps
-echo "${params[$((SLURM_ARRAY_TASK_ID-1))]}"
-srun ./spf_reconstruct.py ${params[$((SLURM_ARRAY_TASK_ID-1))]} --seed 123456 --ignore_nans --guess_from_mean --qcdtype quenched_1.50Tc_zeuthenFlow --model 2 --PathPhiUV /work/data/htshu/ee_spf/PHIUV_a.dat --nsamples $nsamples --nproc 4 --PhiUVtype a --maxiter 2000
+#echo "${params[$((SLURM_ARRAY_TASK_ID-1))]}"
+#srun ./spf_reconstruct.py ${params[$((SLURM_ARRAY_TASK_ID-1))]} --seed 0 --ignore_nans --guess_from_mean --qcdtype quenched_1.50Tc_zeuthenFlow --model 2 --PathPhiUV /work/data/htshu/ee_spf/PHIUV_a.dat --nsamples $nsamples --nproc 20 --PhiUVtype a --maxiter 2000
 
 
-echo -e "End $(date +"%F %T") | $SLURM_JOB_ID $SLURM_JOB_NAME | $(hostname) | $(pwd) \n"
+#echo -e "End $(date +"%F %T") | $SLURM_JOB_ID $SLURM_JOB_NAME | $(hostname) | $(pwd) \n"

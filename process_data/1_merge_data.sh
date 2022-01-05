@@ -1,9 +1,9 @@
 #!/bin/bash
-conftypes_quenched=${1:-s064t16_b0687361 s080t20_b0703500 s096t24_b0719200} #s120t30_b0739400 s096t16_b0719200 s096t28_b0719200 s096t32_b0719200 
+#conftypes_quenched=${1:-s064t16_b0687361 s080t20_b0703500 s096t24_b0719200} #s120t30_b0739400 s096t16_b0719200 s096t28_b0719200 s096t32_b0719200
+conftypes_hisq=(s096t36_b0824900_m002022_m01011 s096t28_b0824900_m002022_m01011 s064t64_b0824900_m002022_m01011 s096t20_b0824900_m002022_m01011 s096t24_b0824900_m002022_m01011 s096t32_b0824900_m002022_m01011 s096t40_b0824900_m002022_m01011 s096t44_b0824900_m002022_m01011 s096t48_b0824900_m002022_m01011 s096t56_b0824900_m002022_m01011)
 
-for conftype in $conftypes_quenched ; do
-    mkdir -p ../data_merged/quenched/$conftype
-    python3 1_merge_data.py quenched $conftype &
+for conftype in "${conftypes_hisq[@]}" ; do
+    ./_1_merge_data.py --n_discard 400 --qcdtype hisq_b8249_zeuthenFlow --corr EE --acc_sts sts0.150000 --conftype $conftype --basepath /work/data/altenkort/gradientFlow
 done
 
 

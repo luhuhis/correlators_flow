@@ -1,7 +1,7 @@
 #!/bin/bash
-for samples in 1000 ; do
-  for obs in kappa chisqdof ; do
-    for corr in EE BB ; do
+for corr in EE ; do #BB
+  for samples in 200 ; do
+    for obs in kappa chisqdof ; do
       for constrain in "--constrain" "" ; do
         for nmax in 4 5 ; do
           for mu in alpha beta; do
