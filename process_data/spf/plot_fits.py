@@ -21,7 +21,8 @@ def main():
     # plot settings
     parser.add_argument('--wideaspect', action="store_true",
                         help="use a wide aspect ratio (basically make the plots larger)")
-    parser.add_argument('--xlims', help='custom xlims for plot', nargs=2, type=float, default=None)
+    parser.add_argument('--xlims', help='custom xlims for plot', nargs=2, type=float)
+    parser.add_argument('--ylims', help='custom ylims for plot', nargs=2, type=float)
     parser.add_argument('--usetex', help='use latex to plot labels', action="store_true")
 
     args = parser.parse_args()
@@ -113,6 +114,8 @@ def main():
         figsize = (1.5 * (3 + 3 / 8), 1.5 * (3 + 3 / 8) / 16 * 9)
     if args.xlims:
         xlims = args.xlims
+    if args.ylims:
+        ylims = args.ylims
     fig, ax, plots = lpd.create_figure(figsize=figsize, xlabel=xlabel, ylabel=ylabel, ylabelpos=ylabelpos, xlims=xlims, xlabelpos=(0.5, -0.1), ylims=ylims, UseTex=args.usetex)
 
     if args.obs == "kappa" or args.obs == "chisqdof":
