@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="cc4bb989-46e1-45d2-b0fe-79204bfa1262" name="influx">
+        <fileTransfer accessType="SFTP" host="influx2.physik.uni-bielefeld.de" port="22" sshConfigId="c4ed2004-1362-4360-8af0-22fdeb8b102c" sshConfig="altenkort@influx2.physik.uni-bielefeld.de:22 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="influx" stopOnFirstError="true" overwriteAll="false" createEmptyFolders="true" exclude=".svn;.cvs;.idea;.DS_Store;.hg;*.hprof;*.pyc" autoUploadExternalChanges="true">
+    <serverData>
+      <paths name="influx">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/altenkort/work/correlators_flow/scripts" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>
