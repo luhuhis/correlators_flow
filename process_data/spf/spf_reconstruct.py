@@ -145,7 +145,7 @@ def main():
     requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str, required=True)
     requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO (a) or NLO (b)', type=str, choices=["a", "b"], required=True)
     parser.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str)
-    parser.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', type=int, choices=[3, 4, 5, 6, 7])
+    parser.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', type=int, choices=[1, 2, 3, 4, 5, 6, 7])
     parser.add_argument('--constrain', help='force the spf to reach the UV limit at large omega', action="store_true")
 
     parser.add_argument('--nsamples', help='number of bootstrap samples to draw from the gaussian distribution', default=200, type=int)
@@ -160,6 +160,7 @@ def main():
     parser.add_argument('--seed', help='seed for gaussian bootstrap sample drawings', default=None, type=int)
     parser.add_argument('--start_from_mean_fit', help='fit the mean first and use its fit params as the initial guess for all other fits', action="store_true")
     parser.add_argument('--asym_err', help='get asymmetric errors from the bootstrap to better reflect the distribution', action="store_true")
+    parser.add_argument('--min_tauT', help='ignore corr data below this tauT', type=float, default=0)
 
     global args
     args = parser.parse_args()
@@ -169,19 +170,21 @@ def main():
         return 1
 
     constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
-    startstr = "" if not args.start_from_mean_fit else "_m"
+    startstr = "_d" if not args.start_from_mean_fit else "_m"
     if args.model == 2:
         modelidentifier = str(args.model)+"_"+args.PhiUVtype+"_"+constrainstr+"_"+str(args.mu)+"_"+str(args.nmax)
     elif args.model == 3:
         modelidentifier = str(args.model)+"_"+args.PhiUVtype
-    fileidentifier = modelidentifier+"_"+str(args.nsamples)+"_"+'{:.0e}'.format(args.tol)+startstr
+    fileidentifier = modelidentifier+"_"+str(args.nsamples)+"_"+'{:.0e}'.format(args.tol)+startstr+"_"+str(args.min_tauT)
 
-    # read in the normalized correlator
+    # read in the normalized correlator:
     inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "") if not args.PathInputFolder else args.PathInputFolder
     corr = np.loadtxt(inputfolder+args.corr+"_final.txt")
 
-    # remove lines with NaN's
+    # remove lines with NaN's:
     corr = corr[~np.isnan(corr).any(axis=1)]
+    # filter out below min_tauT:
+    corr = corr[corr[:, 0] >= args.min_tauT, :]
 
     # beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
     NtauT = len(corr)
