@@ -21,8 +21,8 @@ def main():
     # plot settings
     parser.add_argument('--wideaspect', action="store_true",
                         help="use a wide aspect ratio (basically make the plots larger)")
-    parser.add_argument('--xlims', help='custom xlims for plot', nargs=2, type=float)
-    parser.add_argument('--ylims', help='custom ylims for plot', nargs=2, type=float)
+    parser.add_argument('--xlims', help='custom xlims for plot', nargs=2, type=float, default=None)
+    parser.add_argument('--ylims', help='custom ylims for plot', nargs=2, type=float, default=None)
     parser.add_argument('--usetex', help='use latex to plot labels', action="store_true")
 
     args = parser.parse_args()
@@ -37,6 +37,7 @@ def main():
 
     # plot settings
     ylabel = None
+    ylims = None
     if args.obs == "kappa" or args.obs == "chisqdof":
         if args.obs == "kappa":
             xlims = (1.5, 12.5)
@@ -55,10 +56,8 @@ def main():
     if args.obs == "corr" or args.obs == "spf":
         ylabelpos = (0.2, 0.9)
         if args.obs == "corr":
-            obslabel = r'G^\mathrm{model}'
             filelabel = "corrfit_"
-            ylims = (0.99, 1.03)
-            ylabel = r'$\frac{\mathrm{median}('+obslabel+r') \pm 34^{\mathrm{th}}\, \%}{G^\mathrm{cont}}$'
+            ylabel = r'$\frac{\mathrm{median}(G^\mathrm{model}) \pm 34^{\mathrm{th}}\, \%}{G^\mathrm{cont} \pm \delta G}$'
             xlabel = r'$\tau T$'
             xlims = (0.2, 0.52)
         if args.obs == "spf":
@@ -85,10 +84,10 @@ def main():
     for label in labels:
         try:
             file = inputfolder + "/"+label+"/" + filelabel + label + ".dat"
-            print("read in", file)
             data = numpy.loadtxt(file)
+            print("succes: read in", file, "\n")
         except OSError:
-            print(label, "not found, skipping")
+            print("fail: could not find ", file, "\n")
             xdata.append(numpy.nan)
             ydata.append(numpy.nan)
             errorsleft.append(numpy.nan)
@@ -99,10 +98,10 @@ def main():
             errorsleft.append(data[idx, 1])
             errorsright.append(data[idx, 2])
         elif args.obs == "corr":
-            ydata.append(data[:, 3]/data[:, 1])
+            ydata.append((data[:, 3]/data[:, 1]))
             xdata.append(data[:, 0])
-            errorsleft.append(data[:, 4]/data[:, 1])
-            errorsright.append(data[:, 5]/data[:, 1])
+            errorsleft.append(numpy.abs(ydata[-1]) * numpy.sqrt((data[:, 4]/data[:, 3])**2 + (data[:, 2]/data[:, 1])**2))
+            errorsright.append(numpy.abs(ydata[-1]) * numpy.sqrt((data[:, 5]/data[:, 3])**2 + (data[:, 2]/data[:, 1])**2))
         elif args.obs == "spf":
             ydata.append(data[:, 1])
             xdata.append(data[:, 0])
@@ -122,7 +121,8 @@ def main():
         pos = 0.3+numpy.asarray((0.45, 0.85, 1.25, 1.65, 2.65, 3.05, 3.45, 3.85))
         colors = ('red', 'red', 'blue', 'blue', 'red', 'red', 'blue', 'blue')
         for i, label in enumerate(labels):
-            ax.errorbar(xdata[i], pos[i], xerr=[[errorsleft[i]], [errorsright[i]]], color=colors[i], fmt='x-', fillstyle='none', markersize=5, mew=0.25, lw=0.8, elinewidth=0.5, capsize=1.2, zorder=-10)
+            if not numpy.isnan(xdata[i]).any():
+                ax.errorbar(xdata[i], pos[i], xerr=[[errorsleft[i]], [errorsright[i]]], color=colors[i], fmt='x-', fillstyle='none', markersize=5, mew=0.25, lw=0.8, elinewidth=0.5, capsize=1.2, zorder=-10)
         # custom yaxis
         ax.set_yticks(pos)
         ax.set_yticklabels(labels_plot)
@@ -136,7 +136,8 @@ def main():
     if args.obs == "corr" or args.obs == "spf":
         if args.obs == "corr":
             for i, label in enumerate(labels):
-                plots.append(ax.errorbar(xdata[i]+i*0.003, ydata[i], yerr=[errorsleft[i], errorsright[i]], fmt=fmts[i], fillstyle='none', markersize=2, mew=0.25, lw=0.2, elinewidth=0.2, capsize=1.2, zorder=-10))
+                if not numpy.isnan(xdata[i]).any():
+                    plots.append(ax.errorbar(xdata[i]+i*0.003, ydata[i], yerr=[errorsleft[i], errorsright[i]], fmt=fmts[i], fillstyle='none', markersize=2, mew=0.25, lw=0.2, elinewidth=0.2, capsize=1.2, zorder=-10))
         if args.obs == "spf":
             PhiUV = numpy.loadtxt("/work/data/htshu/ee_spf/PHIUV_a.dat")
             PhiUV = PhiUV[:, 0:2]
@@ -144,7 +145,8 @@ def main():
             ax.set_xscale('log')
             plots.append(ax.errorbar(PhiUV[:, 0], PhiUV[:, 1]/PhiUV[:, 0], fmt='-', label=r'$\Phi_a^\mathrm{UV}$', lw=0.4))
             for i, label in enumerate(labels):
-                plots.append(ax.errorbar(xdata[i]+i*0.003, ydata[i]/xdata[i],  fmt=fmts[i], fillstyle='none', markersize=0, mew=0.25, lw=0.2, elinewidth=0.2, capsize=1.2, zorder=-10))  # yerr=[errorsleft[i], errorsright[i]],
+                if not numpy.isnan(xdata[i]).any():
+                    plots.append(ax.errorbar(xdata[i]+i*0.003, ydata[i]/xdata[i],  fmt=fmts[i], fillstyle='none', markersize=0, mew=0.25, lw=0.2, elinewidth=0.2, capsize=1.2, zorder=-10))  # yerr=[errorsleft[i], errorsright[i]],
         ax.legend(handles=plots, labels=(r'$\Phi^\mathrm{UV}$', *labels_plot), **lpd.legendstyle)
         ax.axhline(y=1, **lpd.horizontallinestyle)
 
@@ -152,7 +154,9 @@ def main():
     startstrplot = "naive" if not args.start_from_mean_fit else "mean"
     ax.set_title(r'$\mathrm{'+args.corr+r'},n_\mathrm{bs}='+str(args.nsamples)+r', \mathrm{tol}=\mathrm{'+'{:.0e}'.format(args.tol)+r'}, \mathrm{start}=\mathrm{'+startstrplot+r'}$')
 
-    fig.savefig(outputfolder+"/"+args.obs+"_"+args.corr+suffix+".pdf")
+    outfile = outputfolder+"/"+args.obs+"_"+args.corr+suffix+".pdf"
+    fig.savefig(outfile)
+    print("saved ", outfile)
 
 
 if __name__ == '__main__':
