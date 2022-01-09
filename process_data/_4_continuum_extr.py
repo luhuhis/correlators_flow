@@ -1,9 +1,9 @@
-#!/usr/local/bin/python
+#!/usr/local/bin/python3.7m -u
 
 import lib_process_data as lpd
 import numpy
 import matplotlib
-from matplotlib import pyplot, container, legend_handler
+from matplotlib import container, legend_handler
 import re
 from latqcdtools import fitting
 from latqcdtools import bootstr
@@ -34,7 +34,7 @@ def fit_sample(ydata, xdata, edata, start_params=None):
 
 
 def main():
-    
+
     # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
 
@@ -70,7 +70,7 @@ def main():
     XX_mean_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_"+args.conftypes[-1]+".dat")
     XX_err_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_err_"+args.conftypes[-1]+".dat")
 
-    # --- only use points beyond the lower limit
+    # --- only use points above the lower limit
     lower_tauT_lim = lpd.lower_tauT_limit(flowradius, nt_coarse)
     tauTs_fine = lpd.get_tauTs(nt_fine)
     print("INFO: lower tauT limit for this flow time and coarsest lattice: ", lower_tauT_lim)
@@ -146,7 +146,7 @@ def main():
         with open(ceq_prefix+"_cont_quality_slope.txt", 'w') as outfile_slope:
             outfile_slope.write('# continuum extrapolation slope at fixed flowtime for all tauT of Ntau='+str(nt_fine)+r' \n')
             outfile_slope.write('# tauT     slope     slope_err \n')
-        
+
             # perform cont extr for each tauT at fixed flowtime
             for j, tauT in enumerate(tauTs_fine):
                 xdata = numpy.asarray([1/Ntau**2 for k, Ntau in enumerate(Nts) if XX_ints[k] is not None])
@@ -158,7 +158,7 @@ def main():
                     # actually perform extr
                     # for m, XX_int in enumerate(XX_ints):
                     # print("XX_int no ", m, "of length", len(XX_int[1]))
-                    
+
                     ydata = [XX_int[1][j-offset] for XX_int in XX_ints if XX_int is not None]
                     edata = [XX_int[2][j-offset] for XX_int in XX_ints if XX_int is not None]
                     fitparams, fitparams_err = bootstr.bootstr_from_gauss(fit_sample, data=ydata, data_std_dev=edata, numb_samples=args.nsamples,
@@ -170,7 +170,7 @@ def main():
                     results[j][2] = fitparams_err[1]
                     # noinspection PyTypeChecker
                     numpy.savetxt(outfile_slope, numpy.stack(([tauT], [fitparams[0]], [fitparams_err[0]]), axis=-1))
-                
+
                     # plot extrapolation
                     if mintauTindex is None:
                         mintauTindex = j
@@ -225,5 +225,6 @@ def main():
 
 
 if __name__ == '__main__':
+    lpd.print_script_call()
     main()
     lpd.save_script_call()
