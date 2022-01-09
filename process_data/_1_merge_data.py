@@ -12,16 +12,18 @@ def main():
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     parser.add_argument('--basepath', help="override default base input path with this one", type=str)
     parser.add_argument('--n_discard', help="number of configurations, counted from the lowest conf_num, in each stream that should be ignored", type=int, default=0)
-    parser.add_argument('--legacy', help="use legacy file names", action="store_true")
+    parser.add_argument('--legacy', help="use legacy file names and legacy multiplicity factor of -3", action="store_true")
 
     args = parser.parse_args()
    
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
     fermions, temp, flowtype = lpd.parse_qcdtype(args.qcdtype)
 
+    multiplicity = 1
     if args.corr == "EE":
         if args.legacy:
             XX_label = "ColElecCorrTimeSlices_s"
+            multiplicity = -6
         else:
             XX_label = "ColElecCorrTimeSlices_naive_s"
     elif args.corr == "BB":
@@ -80,17 +82,16 @@ def main():
                         flow_times = tmp[:, 0]
                     polyakov_real.append(tmp[:, 1])
                     polyakov_imag.append(tmp[:, 2])
-                    XX_numerator_real.append(tmp[:, 3:int((3 + nt_half))])
-                    XX_numerator_imag.append(tmp[:, int((3 + nt_half)):])
+                    XX_numerator_real.append(tmp[:, 3:int((3 + nt_half))] / multiplicity)
+                    XX_numerator_imag.append(tmp[:, int((3 + nt_half)):] / multiplicity)
                     n_datafiles += 1
-                    if n_files_this_stream == 0:
-                        streamid = lpd.remove_left_of_last(r'_', lpd.remove_right_of_first(r'_U', datafile))
-                        streamids.append(streamid)
                     n_files_this_stream += 1
-            print(n_files_this_stream)
+            print("n_files_this_stream: ", n_files_this_stream)
             if n_files_this_stream > 0:
                 n_files_per_stream.append(n_files_this_stream)
                 n_streams += 1
+                streamid = lpd.remove_left_of_last(r'_', stream_folder)
+                streamids.append(streamid)
     if len(corrupt_files) > 0:
         print("\n============================= \nWARNING!!!!!!!!!!")
         print("These files are corrupt and were skipped:")
