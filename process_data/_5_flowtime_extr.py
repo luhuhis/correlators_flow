@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/local/bin/python3.7m -u
 import numpy
 import matplotlib
 from matplotlib import pyplot, container, legend_handler
@@ -8,7 +8,7 @@ from latqcdtools import bootstr
 
 
 def extrapolation_ansatz(x, m, b):
-    return m * x + b 
+    return m * x + b
 
 
 def fit_sample(ydata, xdata, edata):
@@ -18,25 +18,41 @@ def fit_sample(ydata, xdata, edata):
 
 
 def main():
-    
+
     # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
 
     requiredNamed.add_argument('--flowradii_file', help='file with list of all flow radii', required=True)
-    requiredNamed.add_argument('--finest_Nt', help='finest Nt used in previous cont extr.', required=True, type=int)
-    requiredNamed.add_argument('--coarsest_Nt', help='coarsest Nt used in previous cont extr. needed for lower flow time limit.', required=True, type=int)
+    parser.add_argument('--finest_Nt', help='finest Nt used in previous cont extr.', type=int)
+    parser.add_argument('--coarsest_Nt', help='coarsest Nt used in previous cont extr. needed for lower flow time limit.', type=int)
 
     parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=400)
     parser.add_argument('--use_tex', type=bool, default=True)
-    parser.add_argument('--error_treshhold', help='factor of tauT that limits the relative error', default='0.01', type=float)
+    parser.add_argument('--error_treshhold', help='filter low distance high error data that is nor really linear. discard data if rel_err > error_threshold*tauT.', default='0.01', type=float)
     parser.add_argument('--flowend', help='maximum flow index for all tauT that should be used in the extrapolation', type=int, default=134)
-    parser.add_argument('--no_extr', help='do NOT perform an extrapolation, just plot the continuum data', action="store_true")
+    parser.add_argument('--no_extr', help='do NOT perform a flow-time-to-zero extrapolation, just plot the data', action="store_true")
     parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
+    parser.add_argument('--input_type', help="cont: one input file per flow time, as provided by continuum_extr.py. latt: read from single file that "
+                                             "contains all flow times, as provided by reduce_data.py", choices=["cont", "latt"], default="cont")
+    parser.add_argument('--conftype', help="format: s064t64_b0824900*", type=str)
 
     args = parser.parse_args()
 
-    basepath = lpd.get_merged_data_path(args.qcdtype, args.corr, "")
-    plotbasepath = lpd.get_plot_path(args.qcdtype, args.corr, "")
+    if (args.input_type == "cont" and not args.coarsest_Nt) or (args.input_type == "cont" and not args.finest_Nt):
+        parser.error("--input_type cont requires --coarsest_Nt and --finest_Nt")
+    if args.input_type == "latt" and not args.conftype:
+        parser.error("--input_type latt requires --conftype")
+    if (args.input_type == "latt" and args.finest_Nt) or (args.input_type == "latt" and args.coarsest_Nt):
+        parser.error("--input_type latt prohibits --finest_Nt or --coarsest_Nt")
+    if args.input_type == "cont":
+        basepath = lpd.get_merged_data_path(args.qcdtype, args.corr, "")
+        plotbasepath = lpd.get_plot_path(args.qcdtype, args.corr, "")
+    elif args.input_type == "latt":
+        basepath = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype)
+        plotbasepath = lpd.get_plot_path(args.qcdtype, args.corr, args.conftype)
+        _, _, nt, _ = lpd.parse_conftype(args.conftype)
+        args.finest_Nt = nt
+        args.coarsest_Nt = nt
 
     # parse some more arguments
     flowradii = numpy.loadtxt(args.flowradii_file)
@@ -49,16 +65,37 @@ def main():
     XX = numpy.empty((ntauT, nflow, 2))
     XX[:] = numpy.nan
 
-    # load continuum extr for each flowtime, only extract the desired tauT
-    for i, flowradius in enumerate(flowradii):
-        flowradius_str = '{0:.4f}'.format(flowradius)
+    if args.input_type == "cont":
+        # load continuum extr for each flowtime, only extract the desired tauT
+        for i, flowradius in enumerate(flowradii):
+            flowradius_str = '{0:.4f}'.format(flowradius)
+            filename = basepath+"/cont_extr/"+args.corr+"_"+flowradius_str+"_cont.txt"
+            try:
+                tmp = numpy.loadtxt(filename)
+                for j, row in enumerate(tmp):
+                    XX[j][i][0] = row[1]
+                    XX[j][i][1] = row[2]
+                print("success: read in ", filename)
+            except OSError:
+                print("WARN: could not read in ", filename)
+                pass
+            if i == 50:
+                print(XX)
+    elif args.input_type == "latt":
+        # load single lattice data of all flow times
         try:
-            tmp = numpy.loadtxt(basepath+"/cont_extr/"+args.corr+"_"+flowradius_str+"_cont.txt")
-            for j, row in enumerate(tmp):
-                XX[j][i][0] = row[1]
-                XX[j][i][1] = row[2]
+            filename = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype) + args.corr + "_" + args.conftype + ".dat"
+            filename_err = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype) + args.corr + "_err_" + args.conftype + ".dat"
+            tmp = numpy.loadtxt(filename)
+            tmp_err = numpy.loadtxt(filename_err)
         except OSError:
-            pass
+            print("ERROR: could not read in \n", filename, "\n", filename_err)
+            exit(1)
+        print("SUCCESS: read in \n", filename, "\n", filename_err)
+        for i, flowradius in enumerate(flowradii):
+            for j in range(ntauT):
+                XX[j][i][0] = tmp[i, j] / lpd.EE_cont_LO(finest_tauTs[j]) * args.finest_Nt**4
+                XX[j][i][1] = tmp_err[i, j] / lpd.EE_cont_LO(finest_tauTs[j]) * args.finest_Nt**4
 
     # filter low distance high error data that is not really linear
     flow_extr_filter = []  # this is the firts flowindex that shall be used
@@ -72,7 +109,7 @@ def main():
                 break
         if not found:
             flow_extr_filter.append(-1)
-    flowstarts = flow_extr_filter  
+    flowstarts = flow_extr_filter
 
     # declarations
     results = numpy.zeros((ntauT, 3))
@@ -151,9 +188,11 @@ def main():
                     results[i] = None
                 print("done ", '{0:.3f}'.format(tauT))
 
+    print(results)
+    # save results
     # noinspection PyTypeChecker
-    numpy.savetxt(basepath+"/"+args.corr+"_final.txt", results, header="tauT    G/Gnorm    err")
-    
+    numpy.savetxt(basepath + "/" + args.corr + "_flow_extr.txt", results, header="                tauT                G/Gnorm                    err", fmt='%22.15e')
+
     # second x-axis for flow radius
     ax2 = ax.twiny()
     new_tick_locations = numpy.array([0, 0.05**2/8, 0.08**2/8, 0.1**2/8, 0.13**2/8, 0.15**2/8])
@@ -166,7 +205,7 @@ def main():
     ax2.tick_params(direction='in', pad=0, width=0.5)
 
     ax.axvline(x=0, ymin=((results[mintauTindex, 1]-ylims[0])/(ylims[1]-ylims[0])), ymax=((results[finest_Nt_half-1, 1]-ylims[0])/(ylims[1]-ylims[0])), alpha=1, color='grey', zorder=-1000, lw=0.5, dashes=(5, 2))
-    
+
     # lpd.legendstyle.update(dict(handlelength=0.5))
     lpd.legendstyle.update(dict(loc="lower right", bbox_to_anchor=(1.01, 0.03), columnspacing=0.5, handlelength=0.75, labelspacing=0.1, handletextpad=0.2,
                                 borderpad=0, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(yerr_size=0.4)}))
@@ -186,9 +225,10 @@ def main():
     results = numpy.swapaxes(results, 0, 1)
     ax.errorbar(results[0], results[1], results[2], color='black', **lpd.plotstyle_add_point)
     # matplotlib.pyplot.tight_layout(0.2)
-    fig.savefig(plotbasepath+"/"+args.corr+"_final.pdf")
+    fig.savefig(plotbasepath+"/"+args.corr+"_flow_extr.pdf")
 
 
 if __name__ == '__main__':
+    lpd.print_script_call()
     main()
     lpd.save_script_call()
