@@ -20,7 +20,7 @@ def save_script_call(add_folder=None):
         folderlist = (*folderlist, add_folder)
     for folder in folderlist:
         with open(folder + "/" + file_name + ".log", 'a') as logfile:
-            logfile.write(dt_string + "\n" + " ".join(sys.argv) + '\n')
+            logfile.write(dt_string + "\n" + "./" + " ".join(sys.argv) + '\n')
     return
 
 
@@ -29,7 +29,7 @@ def print_script_call():
     import datetime
     now = datetime.datetime.now()
     dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
-    print(dt_string + "\n" + " ".join(sys.argv) + '\n')
+    print("\n" +dt_string + "\n" + " ".join(sys.argv) + '\n')
     return
 
 
