@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/local/bin/python3.7m -u
 import numpy
 import lib_process_data as lpd
 from latqcdtools import bootstr
@@ -15,11 +15,11 @@ def load_merged_data(qcdtype, corr, conftype):
     """
     inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype)
     nt, nt_half = lpd.parse_conftype(conftype)[2:]
-    
+
     print("read  "+inputfolder+"flowtimes_"+conftype+".dat")
     flow_times = numpy.loadtxt(inputfolder+"flowtimes_"+conftype+".dat")
     n_flow = len(flow_times)
-    
+
     print("read  " + inputfolder + "n_datafiles_" + conftype + ".dat")
     metadata = numpy.loadtxt(inputfolder + "n_datafiles_" + conftype + ".dat")
     n_datafiles, n_streams, n_discarded = [int(i) for i in metadata[0:3]]
@@ -30,7 +30,7 @@ def load_merged_data(qcdtype, corr, conftype):
     XX_numerator_real = []
     for i in range(n_datafiles):
         XX_numerator_real.append(XX_numerator_real_tmp[i*n_flow:(i+1)*n_flow, :])
-        
+
     print("read  "+inputfolder+"polyakov_real_"+conftype+"_merged.dat")
     polyakov_real_tmp = numpy.loadtxt(inputfolder+"polyakov_real_"+conftype+"_merged.dat")
 
@@ -69,19 +69,19 @@ def compute_only_denominator(data):
 
 
 def main():
-    
+
     # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     parser.add_argument('--part_obs', help="only compute part of the observable", choices=['numerator', 'polyakovloop'])
-    parser.add_argument('--n_samples', help='number of bootstrap samples', type=int, default='400')
+    parser.add_argument('--n_samples', help='number of bootstrap samples', type=int, default='1000')
     args = parser.parse_args()
-   
+
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
 
     inputfolder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype)
     outputfolder = inputfolder
-    
+
     lpd.create_folder(outputfolder+"/btstrp_samples/")
     flow_times, n_flow, n_datafiles, n_streams, XX_data = load_merged_data(args.qcdtype, args.corr, args.conftype)
     XX_data = numpy.asarray(XX_data)
@@ -98,7 +98,7 @@ def main():
             reduce_function = compute_only_denominator
             file_prefix += "_polyakovloop"
     # Use same_rand_for_obs=False in order to break up correlations between the observables
-    XX_samples, XX, XX_err = bootstr.bootstr(reduce_function, XX_data, numb_samples=n_samples, sample_size=n_datafiles, conf_axis=1, return_sample=True, same_rand_for_obs=False)
+    XX_samples, XX, XX_err = bootstr.bootstr(reduce_function, XX_data, numb_samples=n_samples, sample_size=n_datafiles, conf_axis=1, return_sample=True, same_rand_for_obs=False, parallelize=True, nproc=40, seed=0)
 
     # extract the right data
     XX_samples_mean = numpy.asarray([i[0] for i in XX_samples])
@@ -106,7 +106,7 @@ def main():
     XX_mean = XX[0]  # this is the bootstrap estimate for the mean of the correlator
     XX_err = XX_err[0]  # this is the bootstrap estimate for the error of the mean of the correlator
 
-    # add renormalization factor for BB correlator. errors for it are extremely small. FIXME abstract this ?
+    # add renormalization factor for BB correlator. errors for it are extremely small. FIXME abstract this
     path = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
     if args.corr == "BB":
         tfT2, Z2 = numpy.loadtxt(path + "Z2_" + str(nt) + ".dat", unpack=True)
