@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3.7m -u
 import numpy
 import matplotlib
-from matplotlib import pyplot, container, legend_handler
+from matplotlib import container, legend_handler
 import lib_process_data as lpd
 from latqcdtools import bootstr
 import scipy.optimize
@@ -35,7 +35,7 @@ def main():
                                                  'this parameter controls how much stricter the criterion is for larger and larger tau. '
                                                  '0 means all tau are treated equally.'
                         , default='0.4', type=float)
-    #
+
     parser.add_argument('--flowend', help='maximum flow index for all tauT that should be used in the extrapolation', type=int, default=134)
     parser.add_argument('--no_extr', help='do NOT perform a flow-time-to-zero extrapolation, just plot the data', action="store_true")
     parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
@@ -233,7 +233,8 @@ def main():
     plots.clear()
 
     # plot final double-extrapolated correlator in its one plot
-    fig, ax, plots = lpd.create_figure(xlims=[0.15, 0.51], ylims=[1.5, 4], xlabel=r'$\tau T$',
+    ylims = [1.5, 4] if not args.custom_ylims else args.custom_ylims
+    fig, ax, plots = lpd.create_figure(xlims=[0.15, 0.51], ylims=ylims, xlabel=r'$\tau T$',
                                        ylabel=r'$'+displaystyle+r'\frac{G^\mathrm{cont}_{\tau_\mathrm{F}\rightarrow 0}}{ G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny cont } } }_{\tau_\mathrm{F} = 0} }$', UseTex=args.use_tex)
     lpd.plotstyle_add_point.update(dict(fmt='D-'))
     results = numpy.swapaxes(results, 0, 1)
