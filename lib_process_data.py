@@ -29,7 +29,7 @@ def print_script_call():
     import datetime
     now = datetime.datetime.now()
     dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
-    print("\n" +dt_string + "\n" + " ".join(sys.argv) + '\n')
+    print("\n" + dt_string + "\n" + " ".join(sys.argv) + '\n')
     return
 
 
@@ -57,8 +57,6 @@ def remove_right_of_first(delimiter, label):
 
 
 # === extract information from qcdtype and conftype ===
-
-
 def parse_conftype(conftype):
     beta = remove_left_of_first('_b', conftype)
     beta = remove_right_of_first('_', beta)
@@ -80,19 +78,11 @@ def parse_qcdtype(qcdtype):
 
 
 # === read and parse cmd line arguments ===
-
-
 def get_parser():
     parser = argparse.ArgumentParser()
     requiredNamed = parser.add_argument_group('required named arguments')
     requiredNamed.add_argument('--qcdtype', help="format doesnt matter, only used for finding data. example: quenched_1.50Tc_zeuthenFlow", required=True)
     requiredNamed.add_argument('--corr', choices=['EE', 'EE_clover', 'BB', 'BB_clover'], help="choose from EE, EE_clover, BB, BB_clover", required=True)
-
-    # optional
-    # parser.add_argument('--conftype', help="format: s064t64_b0824900_m002022_m01011")
-
-    # return qcdtype, fermions, temp, flowtype, corr, add_params
-    # return onftype, beta, ns, nt, nt_half, qcdtype, fermions, temp, flowtype, corr, add_params
     return parser, requiredNamed
 
 
@@ -143,29 +133,27 @@ def get_tauTs(nt):
     # return tauT_improved[nt] #tree-level improved tauT for XX correlators
 
 
-# only this called in the other scripts
-# tauT_imp = {}
-# for key in tauT_unimproved:
-# tauT_imp[key] = [*tauT_improved[key][0:5], *tauT_unimproved[key][5:]]
-
 def EE_cont_LO(tauT):
     return math.pi ** 2 * (math.cos(math.pi * tauT) ** 2 / math.sin(math.pi * tauT) ** 4 + 1 / (3 * math.sin(math.pi * tauT) ** 2))
 
 
+# TODO: implement this here instead of relying on the output from the Mathematica Notebook
 EE_latt_LO_flow = {}
 for Ntau in (16, 20, 24, 30, 32, 36, 44, 48, 56, 64):
     EE_latt_LO_flow[Ntau] = numpy.loadtxt("/home/altenkort/work/correlators_flow/data/merged/quenched_pertLO_wilsonFlow/EE/EE_latt_flow_" + str(Ntau) + '.dat')
 
 
+# TODO: clean this up
 def improve_corr_factor(tauTindex, nt, flowindex, improve=True, improve_with_flow=False):
     nt_half = int(nt / 2)
     if improve:
         if improve_with_flow:
+            print("=========== WARN =============== \n This only works for the exact flow times used in the Mathematica Notebook! \n ========================")
             return nt ** 4 / EE_latt_LO_flow[nt][tauTindex + nt_half * flowindex][2]  # here, "G_norm" is pert latt corr at zero flow time
         else:
             return nt ** 4 / EE_latt_LO_flow[nt][tauTindex][2]  # here, "G_norm" is pert latt corr at zero flow time
     else:
-        return nt ** 4 / EE_cont_LO(tauT_imp[nt][tauTindex])  # here, "G_norm" is pert cont corr at zero flow time
+        return nt ** 4 / EE_cont_LO(get_tauTs(nt)[tauTindex])  # here, "G_norm" is pert cont corr at zero flow time
 
 
 def lower_tauT_limit(flowradius, coarsest_Ntau=20):
@@ -194,7 +182,6 @@ def get_color2(myarray, i, start=0, end=-1):
         return matplotlib.cm.viridis(0)
     # i = end - 1 - i + start
     return matplotlib.cm.viridis((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * 0.9)
-
 
 
 # styles
