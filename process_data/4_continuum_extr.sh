@@ -1,21 +1,23 @@
 #!/bin/bash
 
 #parameters
+max_flow_idx=135
+min_flow_idx=50
 qcdtype=quenched_1.50Tc_zeuthenFlow
 conftypes="s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400"
-corrs="BB" #BB_clover
+corrs="EE" #BB BB_clover
 
-#for corr in $corrs; do
-#    rm -f /home/altenkort/work/correlators_flow/plots/$qcdtype/$corr/cont_extr*/*.pdf
-#    rm -f /home/altenkort/work/correlators_flow//data/merged/$qcdtype/$corr/$conftype/cont_extr*/*.txt
-#done
+for corr in $corrs; do
+    rm -f /home/altenkort/work/correlators_flow/plots/$qcdtype/$corr/cont_extr*/*.pdf
+    rm -f /home/altenkort/work/correlators_flow//data/merged/$qcdtype/$corr/cont_extr*/*.txt
+done
 
-for i in {10..100} ; do
+for ((i=min_flow_idx; i < max_flow_idx; i++)) ; do
   for corr in $corrs; do
-    python _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $i --use_tex --custom_ylims 1.5 4 &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $i --use_tex --custom_ylims 1.5 4 --int_only --int_Nt 64
   done
 done
-wait
+#wait
 
 
 #deprecated:
