@@ -12,18 +12,20 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --array=1-16
 
+add_suffix="moretauT"
 nsamples=500
+min_tauT=0.25
 
 #params=()
-for tol in 0.000001 ; do #0.0001 0.00001
-  for start in "" ; do #"--start_from_mean_fit" 
+for tol in 0.0001 ; do # 0.00001 0.000001
+  for start in "" ; do #"--start_from_mean_fit"
     for corr in EE ; do
       for constrain in "--constrain" "" ; do
         for mu in alpha beta; do
           for nmax in 4 5 ; do
               echo -e "==================================\n $tol $start $corr $constrain $mu $nmax\n ==================================\n"
 #             params+=("$constrain --nmax ${nmax} --mu ${mu} --corr ${corr}")
-            /usr/local/bin/python3.7m -u spf_reconstruct.py $constrain --nmax ${nmax} --mu ${mu} --corr ${corr} ${start} --tol ${tol} --seed 0 --qcdtype quenched_1.50Tc_zeuthenFlow --model 2 --PathPhiUV /work/data/htshu/ee_spf/PHIUV_a.dat --nsamples $nsamples --nproc 35 --PhiUVtype a --maxiter 2000 --asym_err
+            /usr/local/bin/python3.7m -u spf_reconstruct.py --min_tauT $min_tauT --add_suffix $add_suffix $constrain --nmax ${nmax} --mu ${mu} --corr ${corr} ${start} --tol ${tol} --seed 0 --qcdtype quenched_1.50Tc_zeuthenFlow --model 2 --PathPhiUV /work/data/htshu/ee_spf/PHIUV_a.dat --nsamples $nsamples --nproc 35 --PhiUVtype a --maxiter 2000 --asym_err
           done
         done
       done
