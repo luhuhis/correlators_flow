@@ -42,13 +42,19 @@ def main():
     requiredNamed.add_argument('--conftypes', nargs='*', required=True,
                                help="ORDERED list of conftypes (from coarse to fine), e.g. s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
 
-    parser.add_argument('--use_imp', help='whether to use tree-level improvement', type=bool, default=True)
+    parser.add_argument('--use_imp', help='whether to use tree-level improvement for the finest lattice. use the same setting you used for the interpolation of the coarser lattices!', type=bool, default=True)
     parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=400)
     parser.add_argument('--use_tex', action="store_true", help="use LaTeX when plotting")
     parser.add_argument('--start_at_zero', action="store_true", help="replace the flow indices from which on the continuum extr shall be performed")
     parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
+    parser.add_argument('--int_only', help="load an interpolation of the finest lattice instead of the original non-interpolated data. useful if you want to "
+                                           "look at more tauT-points than what the finest lattice can offer.", action="store_true")
+    parser.add_argument('--int_Nt', help="if --int_only, then specify the Nt, for whose tauT values the interpolations were saved at", type=int)
 
     args = parser.parse_args()
+
+    if (args.int_only and not args.int_Nt) or (args.int_Nt and not args.int_only):
+        parser.error("Error while parsing arguments. --int_only requires --int_Nt and vice versa.")
 
     # load flow radius
     flowradius = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/flowradii_"+args.conftypes[-1]+".dat")[args.flow_index]
@@ -60,30 +66,36 @@ def main():
         dummy = re.sub(r'(^.*?)t', '', conftype)
         Nts.append(int(re.sub(r'(^.*?)_b(.*)', r'\1', dummy)))
     nt_coarse = Nts[0]
-    nt_fine = Nts[-1]
+    if not args.int_Nt:
+        nt_fine = Nts[-1]
+    else:
+        nt_fine = args.int_Nt
     print("INFO: perform extrapolation using Nts:", Nts)
 
     if flowradius < 1/nt_coarse:
         exit("ERROR: need at least a flow radius sqrt(8t)/a of 1/"+str(nt_coarse)+" to have enough flow for cont extr")
 
-    # load finest lattice
-    XX_mean_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_"+args.conftypes[-1]+".dat")
-    XX_err_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_err_"+args.conftypes[-1]+".dat")
-
-    # --- only use points above the lower limit
     lower_tauT_lim = lpd.lower_tauT_limit(flowradius, nt_coarse)
-    tauTs_fine = lpd.get_tauTs(nt_fine)
-    print("INFO: lower tauT limit for this flow time and coarsest lattice: ", lower_tauT_lim)
-    XX_finest = numpy.asarray(([tauT for tauT in tauTs_fine if tauT > lower_tauT_lim],
-                               [val*lpd.improve_corr_factor(j, nt_fine, args.flow_index, args.use_imp) for j, val in enumerate(XX_mean_finest[args.flow_index])
-                                if tauTs_fine[j] > lower_tauT_lim],
-                               [val*lpd.improve_corr_factor(j, nt_fine, args.flow_index, args.use_imp) for j, val in enumerate(XX_err_finest[args.flow_index])
-                                if tauTs_fine[j] > lower_tauT_lim]))
+    if not args.int_only:
+        # load finest lattice
+        XX_mean_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_"+args.conftypes[-1]+".dat")
+        XX_err_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_err_"+args.conftypes[-1]+".dat")
+
+        # --- only use points above the lower limit
+        tauTs_fine = lpd.get_tauTs(nt_fine)
+        print("INFO: lower tauT limit for this flow time and coarsest lattice: ", lower_tauT_lim)
+        XX_finest = numpy.asarray(([tauT for tauT in tauTs_fine if tauT > lower_tauT_lim],
+                                   [val*lpd.improve_corr_factor(j, nt_fine, args.flow_index, args.use_imp) for j, val in enumerate(XX_mean_finest[args.flow_index])
+                                    if tauTs_fine[j] > lower_tauT_lim],
+                                   [val*lpd.improve_corr_factor(j, nt_fine, args.flow_index, args.use_imp) for j, val in enumerate(XX_err_finest[args.flow_index])
+                                    if tauTs_fine[j] > lower_tauT_lim]))
+    else:
+        tauTs_fine = lpd.get_tauTs(args.int_Nt)
 
     # --- load interpolations
     XX_ints = []
     for conftype in args.conftypes:
-        if conftype == args.conftypes[-1]:
+        if conftype == args.conftypes[-1] and not args.int_only:
             XX_ints.append(XX_finest)
         else:
             try:
@@ -96,7 +108,11 @@ def main():
             XX_ints.append(tmp2)
 
     # define some parameters
-    valid_tauTs = XX_finest[0]
+    if not args.int_only:
+        valid_tauTs = XX_finest[0]
+    else:
+        valid_tauTs = [tauT for tauT in XX_ints[-1][0] if tauT > lower_tauT_lim]
+        print(valid_tauTs)
     n_valid_tauTs = len(valid_tauTs)
     nt_half_fine = int(nt_fine/2)
     offset = nt_half_fine-n_valid_tauTs
@@ -177,7 +193,7 @@ def main():
                     if j > maxtauTindex_plot:
                         maxtauTindex_plot = j
                     mycolor = lpd.get_color(tauTs_fine, nt_half_fine-1-j+offset, mintauTindex, nt_half_fine-1)
-                    lpd.plotstyle_add_point_single.update(dict(fmt=lpd.markers[j-18+len(lpd.markers)]))
+                    lpd.plotstyle_add_point_single.update(dict(fmt=lpd.markers[j-nt_half_fine+len(lpd.markers)]))
                     plots.append(ax.errorbar(xdata, ydata, edata, **lpd.plotstyle_add_point_single, color=mycolor, zorder=-100+j, label='{0:.3f}'.format(tauT)))
                     ax.errorbar(0, fitparams[1], fitparams_err[1], **lpd.plotstyle_add_point_single, color=mycolor, zorder=1)
                     x = numpy.linspace(0, 0.1, 100)
