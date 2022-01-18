@@ -20,7 +20,7 @@ def save_script_call(add_folder=None):
         folderlist = (*folderlist, add_folder)
     for folder in folderlist:
         with open(folder + "/" + file_name + ".log", 'a') as logfile:
-            logfile.write(dt_string + "\n" + "./" + " ".join(sys.argv) + '\n')
+            logfile.write(dt_string + "\n" + " ".join(sys.argv) + '\n')
     return
 
 
@@ -206,7 +206,7 @@ verticallinestyle = dict(ymin=0, ymax=1, color='grey', alpha=0.8, zorder=-10000,
 horizontallinestyle = dict(xmin=0, xmax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4), lw=0.5)
 flowlimitplotstyle = dict(fmt='|', mew=0.7, markersize=5)
 
-markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
+markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
 
 
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.01), ylabelpos=(0.01, 0.97), tickpad=2,
