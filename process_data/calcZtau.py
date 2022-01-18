@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7
+#!/usr/local/bin/python3.7 -u
 import numpy
 from scipy import integrate
 import lib_process_data as lpd
@@ -83,5 +83,6 @@ def main():
 
 
 if __name__ == '__main__':
+    lpd.print_script_call()
     main()
     lpd.save_script_call()
