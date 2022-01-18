@@ -45,7 +45,7 @@ def main():
     requiredNamed.add_argument('--flow_index', help='which flow time to interpolate', type=int, required=True)
 
     parser.add_argument('--use_imp', help='whether to use tree-level improvement', type=bool, default=True)
-    parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=1000)
+    parser.add_argument('--nsamples', help="number of gaussian bootstrap samples that are contained in the input files", type=int, default=1000)
     parser.add_argument('--int_Nt', help='use tauT of this Nt as xdata for the interpolation output', type=int, default=36)
     requiredNamed.add_argument('--min_Nt', help="only perform intepolation if sqrt(8tF)T>1/min_Nt", type=int, required=True)
 
