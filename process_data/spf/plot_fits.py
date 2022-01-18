@@ -16,7 +16,10 @@ def main():
     requiredNamed.add_argument('--start_from_mean_fit', help="identify file input.", action="store_true")
     parser.add_argument('--obs', help='whether to plot kappa or chisqdof', choices=["kappa", "chisqdof", "corr", "spf"], default="kappa")
 
-    # TODO add support for choosing which models to plot
+    # choose which data ensemble to plot
+    parser.add_argument('--min_tauT', help='only used to specify which ensemble of data to plot', type=str, default="0")
+    parser.add_argument('--add_suffix', help='only used to specify which ensemble of data to plot', type=str, default="")
+    parser.add_argument('--legacy', help='use legacy file naming conventions', action="store_true")
 
     # plot settings
     parser.add_argument('--wideaspect', action="store_true",
@@ -24,16 +27,19 @@ def main():
     parser.add_argument('--xlims', help='custom xlims for plot', nargs=2, type=float, default=None)
     parser.add_argument('--ylims', help='custom ylims for plot', nargs=2, type=float, default=None)
     parser.add_argument('--usetex', help='use latex to plot labels', action="store_true")
+    parser.add_argument('--plot_spf_err', help='usually one cant see anything when plotting these errors, but sometimes it may be helpful.', action="store_true")
 
     args = parser.parse_args()
 
     # read in the normalized correlator
     inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "")+"/spf/"
-    outputfolder = inputfolder if not args.PathOutputFolder else args.PathOutputFolder
 
     # file identifier
-    startstr = "" if not args.start_from_mean_fit else "_m"
-    suffix = "_" + str(args.nsamples) + "_" + '{:.0e}'.format(args.tol) + startstr
+    startstr = "_d" if not args.start_from_mean_fit else "_m"
+    suffix = "_" + str(args.nsamples) + "_" + '{:.0e}'.format(args.tol) + startstr+"_"+str(args.min_tauT) + args.add_suffix
+    if args.legacy:
+        startstr = ""
+        suffix = "_" + str(args.nsamples) + "_" + '{:.0e}'.format(args.tol) + startstr
 
     # plot settings
     ylabel = None
@@ -63,7 +69,8 @@ def main():
         if args.obs == "spf":
             obslabel = r'\frac{\rho}{\omega^2 T}'
             xlabel = r'$\omega/T$'
-            ylims = (0.1, 1000)
+            xlims = (0.1, 100)
+            ylims = (1, 100)
             filelabel = "spffit_"
             ylabel = r'$\mathrm{median}(' + obslabel + r') \pm 34^{\mathrm{th}}\, \%$'
 
@@ -146,7 +153,11 @@ def main():
             plots.append(ax.errorbar(PhiUV[:, 0], PhiUV[:, 1]/PhiUV[:, 0], fmt='-', label=r'$\Phi_a^\mathrm{UV}$', lw=0.4))
             for i, label in enumerate(labels):
                 if not numpy.isnan(xdata[i]).any():
-                    plots.append(ax.errorbar(xdata[i]+i*0.003, ydata[i]/xdata[i],  fmt=fmts[i], fillstyle='none', markersize=0, mew=0.25, lw=0.2, elinewidth=0.2, capsize=1.2, zorder=-10))  # yerr=[errorsleft[i], errorsright[i]],
+                    if args.plot_spf_err:
+                        yerr = [errorsleft[i], errorsright[i]]
+                    else:
+                        yerr = None
+                    plots.append(ax.errorbar(xdata[i]+i*0.003, ydata[i]/xdata[i],  yerr=yerr, fmt=fmts[i], fillstyle='none', markersize=0, mew=0.25, lw=0.2, elinewidth=0.2, capsize=1.2, zorder=-10))  # yerr=[errorsleft[i], errorsright[i]],
         ax.legend(handles=plots, labels=(r'$\Phi^\mathrm{UV}$', *labels_plot), **lpd.legendstyle)
         ax.axhline(y=1, **lpd.horizontallinestyle)
 
@@ -154,6 +165,8 @@ def main():
     startstrplot = "naive" if not args.start_from_mean_fit else "mean"
     ax.set_title(r'$\mathrm{'+args.corr+r'},n_\mathrm{bs}='+str(args.nsamples)+r', \mathrm{tol}=\mathrm{'+'{:.0e}'.format(args.tol)+r'}, \mathrm{start}=\mathrm{'+startstrplot+r'}$')
 
+    outputfolder = "../" + lpd.get_plot_path(args.qcdtype, args.corr, "") + "/spf/"
+    lpd.create_folder(outputfolder)
     outfile = outputfolder+"/"+args.obs+"_"+args.corr+suffix+".pdf"
     fig.savefig(outfile)
     print("saved ", outfile)

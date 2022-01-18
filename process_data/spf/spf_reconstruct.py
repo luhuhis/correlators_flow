@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7m
+#!/usr/local/bin/python3.7m -u
 
 import lib_process_data as lpd
 import numpy as np
@@ -162,6 +162,9 @@ def main():
     parser.add_argument('--asym_err', help='get asymmetric errors from the bootstrap to better reflect the distribution', action="store_true")
     parser.add_argument('--min_tauT', help='ignore corr data below this tauT', type=float, default=0)
 
+    parser.add_argument('--add_suffix', help='add an extra suffix to the output files in order to not overwrite previous ones with similar parameters on a '
+                                             'different data set', type=str, default="")
+
     global args
     args = parser.parse_args()
 
@@ -175,11 +178,11 @@ def main():
         modelidentifier = str(args.model)+"_"+args.PhiUVtype+"_"+constrainstr+"_"+str(args.mu)+"_"+str(args.nmax)
     elif args.model == 3:
         modelidentifier = str(args.model)+"_"+args.PhiUVtype
-    fileidentifier = modelidentifier+"_"+str(args.nsamples)+"_"+'{:.0e}'.format(args.tol)+startstr+"_"+str(args.min_tauT)
+    fileidentifier = modelidentifier+"_"+str(args.nsamples)+"_"+'{:.0e}'.format(args.tol)+startstr+"_"+str(args.min_tauT) + args.add_suffix
 
     # read in the normalized correlator:
     inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "") if not args.PathInputFolder else args.PathInputFolder
-    corr = np.loadtxt(inputfolder+args.corr+"_final.txt")
+    corr = np.loadtxt(inputfolder+args.corr+"_flow_extr.txt")
 
     # remove lines with NaN's:
     corr = corr[~np.isnan(corr).any(axis=1)]
