@@ -28,10 +28,10 @@ def main():
     parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=1000)
     parser.add_argument('--use_tex', type=bool, default=True)
     parser.add_argument('--rel_err_param1', help='ignore correlator data at small flow times that have a large relative error, adjusted for each tau via '
-                                                 'max_allowed_rel_error = rel_err_param1 / (1 + rel_err_param2 * log(tau)). '
+                                                 'max_allowed_rel_error = rel_err_param1 / (1 + rel_err_param2 * log(tauT*10)). '
                                                  'this parameter controls the max relative error for the tau=1.', default='0.005', type=float)
     parser.add_argument('--rel_err_param2', help='ignore correlator data at small flow times that have a large relative error, adjusted for each tau via '
-                                                 'max_allowed_rel_error = rel_err_param1 / (1 + rel_err_param2 * log(tau)). '
+                                                 'max_allowed_rel_error = rel_err_param1 / (1 + rel_err_param2 * log(tauT*10)). '
                                                  'this parameter controls how much stricter the criterion is for larger and larger tau. '
                                                  '0 means all tau are treated equally.'
                         , default='0.4', type=float)
@@ -51,6 +51,8 @@ def main():
         parser.error("--input_type latt requires --conftype")
     if args.input_type == "latt" and args.flowradii_file:
         parser.error("--input_type latt prohibits --flowradii_file")
+    if args.input_type == "cont" and not args.flowradii_file:
+        parser.error("--input_type cont requires --flowradii_file")
     if (args.input_type == "latt" and args.finest_Nt) or (args.input_type == "latt" and args.coarsest_Nt):
         parser.error("--input_type latt prohibits --finest_Nt or --coarsest_Nt")
     if args.input_type == "cont":
@@ -111,7 +113,7 @@ def main():
         rel_err = numpy.fabs(XX[i][:, 1]/XX[i][:, 0])
         found = False
         for j, each_rel_err in enumerate(rel_err):  # loop over flowtimes
-            max_allowed_rel_error = args.rel_err_param1 / (1+args.rel_err_param2*numpy.log(finest_tauTs[i]*args.finest_Nt))
+            max_allowed_rel_error = args.rel_err_param1 / (1+args.rel_err_param2*numpy.log(finest_tauTs[i]*10))
             if each_rel_err <= max_allowed_rel_error:
                 flow_extr_filter.append(j)
                 found = True
@@ -218,7 +220,7 @@ def main():
     ax2.xaxis.set_label_coords(0.99, 0.97)
     ax2.tick_params(direction='in', pad=0, width=0.5)
 
-    # ax.axvline(x=0, ymin=((results[mintauTindex, 1]-ylims[0])/(ylims[1]-ylims[0])), ymax=((results[finest_Nt_half-1, 1]-ylims[0])/(ylims[1]-ylims[0])), alpha=1, color='grey', zorder=-1000, lw=0.5, dashes=(5, 2))
+    ax.axvline(x=0, ymin=((results[mintauTindex, 1]-ylims[0])/(ylims[1]-ylims[0])), ymax=((results[finest_Nt_half-1, 1]-ylims[0])/(ylims[1]-ylims[0])), alpha=1, color='grey', zorder=-1000, lw=0.5, dashes=(5, 2))
 
     # lpd.legendstyle.update(dict(handlelength=0.5))
     lpd.legendstyle.update(dict(loc="lower right", bbox_to_anchor=(1.01, 0.03), columnspacing=0.5, handlelength=0.75, labelspacing=0.1, handletextpad=0.2,
