@@ -39,6 +39,7 @@ def main():
     parser.add_argument('--flowend', help='maximum flow index for all tauT that should be used in the extrapolation', type=int, default=134)
     parser.add_argument('--no_extr', help='do NOT perform a flow-time-to-zero extrapolation, just plot the data', action="store_true")
     parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
+    parser.add_argument('--plot_all_flowtimes', help="plot all flowtimes instead of only the ones that are used in the extrapolation", action="store_true")
     parser.add_argument('--input_type', help="cont: one input file per flow time, as provided by continuum_extr.py. latt: read from single file that "
                                              "contains all flow times, as provided by reduce_data.py", choices=["cont", "latt"], default="cont")
     parser.add_argument('--conftype', help="format: s064t64_b0824900*", type=str)
@@ -177,6 +178,9 @@ def main():
                 else:
                     ax.errorbar(xdata, ydata, edata, **lpd.plotstyle_add_point_single, color=mycolor, zorder=-100 + i)
 
+                if args.plot_all_flowtimes:
+                    ax.errorbar(flowradii**2/8, XX[i][:, 0], XX[i][:, 1], **lpd.plotstyle_add_point_single, color=mycolor, alpha=0.4, zorder=-1000 + i)
+
                 if not args.no_extr:
                     # perform extrapolation
                     fitparams, fitparams_err = bootstr.bootstr_from_gauss(fit_sample, data=ydata, data_std_dev=edata, numb_samples=args.nsamples, sample_size=1, return_sample=False, args=[xdata, edata], nproc=10)
@@ -234,7 +238,7 @@ def main():
     ax.collections.clear()
     plots.clear()
 
-    # plot final double-extrapolated correlator in its one plot
+    # plot final double-extrapolated correlator in its own plot
     ylims = [1.5, 4] if not args.custom_ylims else args.custom_ylims
     fig, ax, plots = lpd.create_figure(xlims=[0.15, 0.51], ylims=ylims, xlabel=r'$\tau T$',
                                        ylabel=r'$'+displaystyle+r'\frac{G^\mathrm{cont}_{\tau_\mathrm{F}\rightarrow 0}}{ G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny cont } } }_{\tau_\mathrm{F} = 0} }$', UseTex=args.use_tex)
