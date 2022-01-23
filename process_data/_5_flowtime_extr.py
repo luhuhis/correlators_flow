@@ -105,8 +105,8 @@ def main():
         print("SUCCESS: read in \n", filename, "\n", filename_err)
         for i, flowradius in enumerate(flowradii):
             for j in range(ntauT):
-                XX[j][i][0] = tmp[i, j] / lpd.EE_cont_LO(finest_tauTs[j]) * args.finest_Nt**4
-                XX[j][i][1] = tmp_err[i, j] / lpd.EE_cont_LO(finest_tauTs[j]) * args.finest_Nt**4
+                XX[j][i][0] = tmp[i, j] * lpd.improve_corr_factor(j, nt, i, improve=True)
+                XX[j][i][1] = tmp_err[i, j] * lpd.improve_corr_factor(j, nt, i, improve=True)
 
     # filter low distance high error data that is not really linear
     flow_extr_filter = []  # this is the firts flowindex that shall be used
