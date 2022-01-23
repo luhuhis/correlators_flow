@@ -5,7 +5,7 @@ import numpy
 import matplotlib
 from matplotlib import container, legend_handler
 import re
-from latqcdtools import fitting
+import scipy.optimize
 from latqcdtools import bootstr
 import sys
 
@@ -28,9 +28,8 @@ def extrapolation_ansatz(x, m, b):
 def fit_sample(ydata, xdata, edata, start_params=None):
     if start_params is None:
         start_params = [80, 3]
-    fitter = fitting.Fitter(func=extrapolation_ansatz, xdata=xdata, ydata=ydata, edata=edata, func_sup_numpy=True, always_return=False)
-    fitparams, fitparams_err, chi_dof = fitter.try_fit(algorithms=["curve_fit"], start_params=start_params)
-    return fitparams  # , fitparams_err
+    fitparams, _ = scipy.optimize.curve_fit(extrapolation_ansatz, xdata, ydata, p0=start_params, sigma=edata)
+    return fitparams
 
 
 def main():
@@ -50,6 +49,8 @@ def main():
     parser.add_argument('--int_only', help="load an interpolation of the finest lattice instead of the original non-interpolated data. useful if you want to "
                                            "look at more tauT-points than what the finest lattice can offer.", action="store_true")
     parser.add_argument('--int_Nt', help="if --int_only, then specify the Nt, for whose tauT values the interpolations were saved at", type=int)
+    parser.add_argument('--grace_factor', help='make the lower_tauT_limit less strict by using grace_factor < 1 in order to allow higher flow times. '
+                                               'use the same value here that was also used for the interpolation.', type=float, default=1)
 
     args = parser.parse_args()
 
@@ -75,7 +76,7 @@ def main():
     if flowradius < 1/nt_coarse:
         exit("ERROR: need at least a flow radius sqrt(8t)/a of 1/"+str(nt_coarse)+" to have enough flow for cont extr")
 
-    lower_tauT_lim = lpd.lower_tauT_limit(flowradius, nt_coarse)
+    lower_tauT_lim = args.grace_factor*lpd.lower_tauT_limit(flowradius, nt_coarse)
     if not args.int_only:
         # load finest lattice
         XX_mean_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_"+args.conftypes[-1]+".dat")
@@ -230,8 +231,13 @@ def main():
     plots.clear()
 
     # save plot of single continuum extrapolation for this flow time
+    if args.use_tex:
+        displaystyle = r'\displaystyle'
+        ylabel = r'$'+displaystyle+r'\frac{G^\mathrm{cont}}{ G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } }_{\tau_\mathrm{F} = 0} }$'
+    else:
+        ylabel = 'G'
     fig, ax, plots = lpd.create_figure(xlims=[0.15, 0.51], ylims=[1.4, 4], xlabel=r'$\tau T$',
-                                       ylabel=r'$'+displaystyle+r'\frac{G^\mathrm{cont}}{ G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } }_{\tau_\mathrm{F} = 0} }$', UseTex=args.use_tex)
+                                       ylabel=ylabel, UseTex=args.use_tex)
     ax.set_title(r'$ \sqrt{8\tau_\mathrm{F}}T = $'+flowradius_str, x=0.5, y=0.89)
     ax.axvline(x=lower_tauT_lim, **lpd.verticallinestyle)
     results = numpy.swapaxes(results, 0, 1)
