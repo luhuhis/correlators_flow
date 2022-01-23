@@ -1,20 +1,32 @@
 #!/bin/bash
 
 #parameters
-max_flow_idx=135
-min_flow_idx=50
+max_flow_idx=100 #135
+min_flow_idx=0 #50
 qcdtype=quenched_1.50Tc_zeuthenFlow
 conftypes="s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400"
-corrs="EE" #BB BB_clover
+corrs="BB" # BB_clover EE
+int="" #--int_only --int_Nt 64"
+tex="" #"--use_tex"
 
 for corr in $corrs; do
     rm -f /home/altenkort/work/correlators_flow/plots/$qcdtype/$corr/cont_extr*/*.pdf
     rm -f /home/altenkort/work/correlators_flow//data/merged/$qcdtype/$corr/cont_extr*/*.txt
 done
 
-for ((i=min_flow_idx; i < max_flow_idx; i++)) ; do
+for ((i=min_flow_idx; i < max_flow_idx; i+=10)) ; do
   for corr in $corrs; do
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $i --use_tex --custom_ylims 1.5 4 --int_only --int_Nt 64
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i)) $tex --custom_ylims 1.5 4  $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+1)) $tex --custom_ylims 1.5 4  $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+2)) $tex --custom_ylims 1.5 4  $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+3)) $tex --custom_ylims 1.5 4  $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+4)) $tex --custom_ylims 1.5 4  $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+5)) $tex --custom_ylims 1.5 4  $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+6)) $tex --custom_ylims 1.5 4  $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+7)) $tex --custom_ylims 1.5 4  $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+8)) $tex --custom_ylims 1.5 4  $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+9)) $tex --custom_ylims 1.5 4  $int &
+    wait
   done
 done
 #wait

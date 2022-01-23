@@ -2,7 +2,7 @@
 conftypes_quenched="s064t16_b0687361 s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400" #s144t36_b0754400 s064t16_b0687361 s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s096t16_b0719200 s096t28_b0719200 s096t32_b0719200
 
 for conftype in $conftypes_quenched ; do
-	  /usr/local/bin/python3.7m -u _2_reduce_data.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype $conftype &
+	  /usr/local/bin/python3.7m -u _2_reduce_data.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr BB --conftype $conftype &
 done
 wait
 
