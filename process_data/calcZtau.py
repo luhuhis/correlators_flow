@@ -10,7 +10,7 @@ def find_index(array, value):
 
 
 def main():
-    lowtfT2 = 0.002719
+    lowtauFT2 = 0.002719  # this comes from choosing overline{mu} such that Z_B =1
     inputpath = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
     outputpath = "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/"
     lpd.create_folder(outputpath)
@@ -40,7 +40,7 @@ def main():
 
     for i, Nt in enumerate(Nts):
         ax.errorbar(tauFT2_arr[i], integrand_arr[i], integrand_err_arr[i], fmt='x-', lw=0.5, markersize=2, mew=0.3, capsize=1, label=str(Nt), zorder=-Nt)
-    ax.axvline(x=lowtfT2, **lpd.verticallinestyle)
+    ax.axvline(x=lowtauFT2, **lpd.verticallinestyle)
     ax.legend(**lpd.legendstyle, title=r'$N_\tau$')
     fig.savefig(outputpath+"integrand.pdf")
 
@@ -48,7 +48,7 @@ def main():
     x_arr = []
 
     for i, Nt in enumerate(Nts):
-        lowindex = find_index(tauFT2_arr[i], lowtfT2)
+        lowindex = find_index(tauFT2_arr[i], lowtauFT2)
 
         temp_Z2 = []
         temp_x = []
@@ -77,14 +77,14 @@ def main():
     fig2, ax2, plots2 = lpd.create_figure(xlabel=r'$\tau_F T^2$', xlabelpos=(1.1, 0.05), ylabelpos=(0.1, 0.9))  # xlims=(0, 0.0032)
     # ax2.set_yscale('log')
 
-    ax2.set_title(r'$Z_\tau^2, \quad T=1.5T_c$',  y=0.85)
+    ax2.set_title(r'$Z_f^2, \quad T=1.5T_c$',  y=0.85)
 
     for i, Nt in enumerate(Nts):
         ax2.errorbar(x_arr[i], Z2_arr[i], fmt='x-', lw=0.5, markersize=2, mew=0.3, capsize=1, label=str(Nt), zorder=-Nt)
-    ax2.axvline(x=lowtfT2, **lpd.verticallinestyle)
+    ax2.axvline(x=lowtauFT2, **lpd.verticallinestyle)
     ax2.axhline(y=1, **lpd.horizontallinestyle)
     ax2.legend(**lpd.legendstyle, title=r'$N_\tau$')
-    fig2.savefig(outputpath+"Z2.pdf")
+    fig2.savefig(outputpath+"Zf2.pdf")
 
 
 if __name__ == '__main__':
