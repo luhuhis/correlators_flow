@@ -156,12 +156,12 @@ def improve_corr_factor(tauTindex, nt, flowindex, improve=True, improve_with_flo
         return nt ** 4 / EE_cont_LO(get_tauTs(nt)[tauTindex])  # here, "G_norm" is pert cont corr at zero flow time
 
 
-def lower_tauT_limit(flowradius, coarsest_Ntau=20):
-    return flowradius/numpy.sqrt(8*0.014) + 1/coarsest_Ntau
+def lower_tauT_limit_(flowradius, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=0):  # note: sqrt(8*0.014) ~= 0.33
+    return flowradius/max_FlowradiusBytauT + tauT_offset
 
 
-def upper_flow_limit(tauT, coarsest_Ntau=20):
-    return (tauT - 1 / coarsest_Ntau) * numpy.sqrt(8 * 0.014)
+def upper_flowradius_limit_(tauT, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=0):  # note: sqrt(8*0.014) ~= 0.33
+    return (tauT - tauT_offset) * max_FlowradiusBytauT
 
 
 # === some data that does not really belong to extra files ===

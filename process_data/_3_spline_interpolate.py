@@ -8,9 +8,9 @@ import scipy.interpolate
 import sys
 
 
-def filter_tauTs(flowradius, xdata, grace_factor=1):
+def filter_tauTs(flowradius, xdata, max_FlowradiusBytauT):
     """ remove datapoints that the flow has destroyed """
-    indices = numpy.asarray([k for k, j in enumerate(xdata) if j > grace_factor*lpd.lower_tauT_limit(flowradius)])
+    indices = numpy.asarray([k for k, j in enumerate(xdata) if j > lpd.lower_tauT_limit_(flowradius, max_FlowradiusBytauT)])
     if len(indices) == 0:
         sys.exit("Error at "+"flow_radius="+'{0:.4f}'.format(flowradius)+". There are no datapoints that the flow hasn't destroyed according to pert. flow limits.")
     min_ind = numpy.min(indices)
@@ -22,9 +22,9 @@ def filter_tauTs(flowradius, xdata, grace_factor=1):
     return xdata, indices
 
 
-def filter_corr_data(flowradius, xdata, ydata, grace_factor=1):
+def filter_corr_data(flowradius, xdata, ydata, max_FlowradiusBytauT):
     """ remove datapoints that the flow has destroyed """
-    xdata, indices = filter_tauTs(flowradius, xdata, grace_factor)
+    xdata, indices = filter_tauTs(flowradius, xdata, max_FlowradiusBytauT)
     ydata = numpy.asarray(ydata)
     ydata = ydata[indices]
     edata = [1 for _ in range(len(xdata))]  # here in principle one could somehow weigh the data points according to some relation depending on tau and flow time
@@ -49,9 +49,9 @@ def main():
     parser.add_argument('--int_Nt', help='use tauT of this Nt as xdata for the interpolation output', type=int, default=36)
     requiredNamed.add_argument('--min_Nt', help="only perform intepolation if sqrt(8tF)T>1/min_Nt", type=int, required=True)
 
-    # TODO make this a bit more sophisticated
-    parser.add_argument('--grace_factor', type=float, default=1, help='modify the tauT filter based on flow time to be more/less strict. values smaller 1 will '
-                                                                      'allow larger flowtimes to be okay, values greater 1 will restrict to small flow times.')
+    parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
+                        help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
+                             'cannot be greater than 0.33*tauT, or that for each flow radius the tauT must be atleast 3*flowradius.')
 
     args = parser.parse_args()
 
@@ -73,20 +73,25 @@ def main():
     # result variables
     theoutputdata = []
     interpolation_points = numpy.arange(0, 0.5, 0.001)
-    xpoints = numpy.asarray([x for x in numpy.sort(numpy.unique([*interpolation_points, *lpd.get_tauTs(args.int_Nt), 0.5, args.grace_factor*lpd.lower_tauT_limit(flowradius)])) if x >= args.grace_factor*lpd.lower_tauT_limit(flowradius, args.min_Nt)])  # xdata[0]
+    xpoints = numpy.asarray([x for x in numpy.sort(
+        numpy.unique([*interpolation_points, *lpd.get_tauTs(args.int_Nt),
+                      0.5,
+                      lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT)]))
+                             if x >= lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT)])  # xdata[0]
 
     # perform spline fits for each sample
     for m in range(args.nsamples):
         ydata = numpy.asarray(XX_samples[m*nt_half:(m+1)*nt_half, 1])
         for a in range(nt_half):
             ydata[a] = ydata[a] * lpd.improve_corr_factor(a, nt, args.flow_index, args.use_imp)
-        xdata, ydata, edata = filter_corr_data(flowradius, lpd.get_tauTs(nt), ydata, args.grace_factor)
+        xdata, ydata, edata = filter_corr_data(flowradius, lpd.get_tauTs(nt), ydata, args.max_FlowradiusBytauT)
         theoutputdata.append(interpolate_XX_flow(xdata, ydata, output_xdata=xpoints))
 
     # compute spline average over all samples at all desired tauT (xpoints) and save
     ypoints = numpy.mean(theoutputdata, axis=0)
     epoints = numpy.std(theoutputdata, axis=0)
-    numpy.savetxt(outputfolder_data+args.corr+"_"+'{0:.4f}'.format(flowradius)+"_interpolation.txt", numpy.stack((xpoints, ypoints, epoints), axis=-1), header="tauT     G_tauF(tau)/Gnorm      err")
+    numpy.savetxt(outputfolder_data+args.corr+"_"+'{0:.4f}'.format(flowradius)+"_interpolation.txt",
+                  numpy.stack((xpoints, ypoints, epoints), axis=-1), header="tauT     G_tauF(tau)/Gnorm      err")
 
     # plot interpolations and underlying data points
     UseTex = False
@@ -97,7 +102,7 @@ def main():
         ylabel = 'G'
     fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=[1.4, 4], xlabel=r'$\tau T$', ylabel=ylabel, xlabelpos=(0.95, 0.05), UseTex=UseTex)
     ax.set_title(r'$ \sqrt{8\tau_F}T = $'+'{0:.3f}'.format(flowradius))  # +", nknots = "+nknot_str)
-    ax.axvline(x=lpd.lower_tauT_limit(flowradius), **lpd.verticallinestyle)
+    ax.axvline(x=lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT), **lpd.verticallinestyle)
     ax.fill_between(xpoints, ypoints-epoints, ypoints+epoints, alpha=0.5)
     ax.errorbar(xpoints, ypoints, fmt='-', lw=0.5, mew=0)
     XX = numpy.loadtxt(merged_data_path+"/"+args.corr+"_"+args.conftype+".dat")

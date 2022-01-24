@@ -49,8 +49,9 @@ def main():
     parser.add_argument('--int_only', help="load an interpolation of the finest lattice instead of the original non-interpolated data. useful if you want to "
                                            "look at more tauT-points than what the finest lattice can offer.", action="store_true")
     parser.add_argument('--int_Nt', help="if --int_only, then specify the Nt, for whose tauT values the interpolations were saved at", type=int)
-    parser.add_argument('--grace_factor', help='make the lower_tauT_limit less strict by using grace_factor < 1 in order to allow higher flow times. '
-                                               'use the same value here that was also used for the interpolation.', type=float, default=1)
+    parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
+                        help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
+                             'cannot be greater than 0.33*tauT, or that for each flow radius the tauT must be atleast 3*flowradius.')
 
     args = parser.parse_args()
 
@@ -76,7 +77,7 @@ def main():
     if flowradius < 1/nt_coarse:
         exit("ERROR: need at least a flow radius sqrt(8t)/a of 1/"+str(nt_coarse)+" to have enough flow for cont extr")
 
-    lower_tauT_lim = args.grace_factor*lpd.lower_tauT_limit(flowradius, nt_coarse)
+    lower_tauT_lim = lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT)
     if not args.int_only:
         # load finest lattice
         XX_mean_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_"+args.conftypes[-1]+".dat")
@@ -134,7 +135,6 @@ def main():
         displaystyle = r'\displaystyle'
         ylabel = r'$'+displaystyle+r'\frac{G^\mathrm{latt }} { G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } }_{\tau_\mathrm{F} = 0} } $'
     else:
-        displaystyle = ''
         ylabel = 'G'
 
     # plot settings

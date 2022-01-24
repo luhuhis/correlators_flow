@@ -33,10 +33,11 @@ def main():
     parser.add_argument('--rel_err_param2', help='ignore correlator data at small flow times that have a large relative error, adjusted for each tau via '
                                                  'max_allowed_rel_error = rel_err_param1 / (1 + rel_err_param2 * log(tauT*10)). '
                                                  'this parameter controls how much stricter the criterion is for larger and larger tau. '
-                                                 '0 means all tau are treated equally.'
-                        , default='0.4', type=float)
-
+                                                 '0 means all tau are treated equally.', default='0.4', type=float)
     parser.add_argument('--flowend', help='maximum flow index for all tauT that should be used in the extrapolation', type=int, default=134)
+    parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
+                        help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
+                             'cannot be greater than 0.33*tauT, or that for each flow radius the tauT must be atleast 3*flowradius.')
     parser.add_argument('--no_extr', help='do NOT perform a flow-time-to-zero extrapolation, just plot the data', action="store_true")
     parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
     parser.add_argument('--plot_all_flowtimes', help="plot all flowtimes instead of only the ones that are used in the extrapolation", action="store_true")
@@ -46,6 +47,7 @@ def main():
 
     args = parser.parse_args()
 
+    # check if given arguments are valid
     if (args.input_type == "cont" and not args.coarsest_Nt) or (args.input_type == "cont" and not args.finest_Nt):
         parser.error("--input_type cont requires --coarsest_Nt and --finest_Nt")
     if args.input_type == "latt" and not args.conftype:
@@ -125,7 +127,10 @@ def main():
             print("max rel err of tau=1: ", args.rel_err_param1)
             print("max rel err of tau=", int(finest_tauTs[i]*args.finest_Nt), ":", max_allowed_rel_error)
     flowstarts = flow_extr_filter  # TODO add a check if no datapoints have made it through the rel error filter
-
+    if -1 in flowstarts:
+        print("minimum flow indices: ", flowstarts)
+        print("ERROR: please increase --rel_err_param1. For atleast one tauT there was not a single flow time where the relative error was less than this")
+        exit(1)
     # declarations
     results = numpy.zeros((ntauT, 3))
     mintauTindex = None
@@ -136,7 +141,8 @@ def main():
     lpd.labelboxstyle.update(dict(alpha=0.8))
 
     fig, ax, plots = lpd.create_figure(xlims=[-0.0001, 0.0033], ylims=ylims, xlabel=r'$\tau_\mathrm{F} T^2$',
-                                       ylabel=r'$' + displaystyle + r'\frac{G^\mathrm{cont }}{G_{\tau_\mathrm{F}=0}^{\substack{\text{\tiny norm} \\[-0.5ex] \text{\tiny cont }}}}$',
+                                       ylabel=r'$' + displaystyle +
+                                              r'\frac{G^\mathrm{cont }}{G_{\tau_\mathrm{F}=0}^{\substack{\text{\tiny norm} \\[-0.5ex] \text{\tiny cont }}}}$',
                                        xlabelpos=(0.94, 0.05), ylabelpos=(0.08, 0.96), UseTex=args.use_tex)
 
     outfile = open(basepath+"/"+args.corr+"_flow_extr_quality.txt", 'w')
@@ -153,8 +159,8 @@ def main():
         if not numpy.isnan(flowstart):
 
             # organize data
-            maxflowtime = (tauT-1/args.coarsest_Nt)*numpy.sqrt(8*0.014)
-            flowend = min((numpy.abs(flowradii - maxflowtime)).argmin(), args.flowend)
+            maxflowradius = lpd.upper_flowradius_limit_(tauT, args.max_FlowradiusBytauT)
+            flowend = min((numpy.abs(flowradii - maxflowradius)).argmin(), args.flowend)
             xdatatmp = flowradii[flowstart:flowend]**2/8
             ydatatmp = XX[i][flowstart:flowend, 0]
             edatatmp = XX[i][flowstart:flowend, 1]
@@ -174,16 +180,18 @@ def main():
                 # ax.errorbar([x for i,x in enumerate(xdata) if i%2==0], [y for i,y in enumerate(ydata) if i%2==0], **lpd.plotstyle_add_point_single, color='grey', zorder=-100+i)#, label='{0:.3f}'.format(tauT))
                 # ax.fill_between(xdata, ydata-edata, ydata+edata, facecolor=mycolor, alpha=1, zorder=-300+i)#, label='{0:.3f}'.format(tauT))
                 if args.no_extr:
-                    plots.append(ax.errorbar(xdata, ydata, edata, **lpd.chmap(lpd.plotstyle_add_point_single, fmt='+-', lw=0.3), color=mycolor, zorder=-100+i, label='{0:.3f}'.format(tauT)))
+                    plots.append(ax.errorbar(xdata, ydata, edata, **lpd.chmap(lpd.plotstyle_add_point_single, fmt='+-', lw=0.3),
+                                             color=mycolor, zorder=-100+i, label='{0:.3f}'.format(tauT)))
                 else:
                     ax.errorbar(xdata, ydata, edata, **lpd.plotstyle_add_point_single, color=mycolor, zorder=-100 + i)
 
                 if args.plot_all_flowtimes:
-                    ax.errorbar(flowradii**2/8, XX[i][:, 0], XX[i][:, 1], **lpd.plotstyle_add_point_single, color=mycolor, alpha=0.4, zorder=-1000 + i)
+                    ax.errorbar(flowradii**2/8, XX[i][:, 0], XX[i][:, 1], **lpd.plotstyle_add_point_single, color=mycolor, alpha=0.1, zorder=-1000 + i)
 
                 if not args.no_extr:
                     # perform extrapolation
-                    fitparams, fitparams_err = bootstr.bootstr_from_gauss(fit_sample, data=ydata, data_std_dev=edata, numb_samples=args.nsamples, sample_size=1, return_sample=False, args=[xdata, edata], nproc=10)
+                    fitparams, fitparams_err = bootstr.bootstr_from_gauss(fit_sample, data=ydata, data_std_dev=edata, numb_samples=args.nsamples,
+                                                                          sample_size=1, return_sample=False, args=[xdata, edata], nproc=10)
                     results[i][0] = tauT
                     results[i][1] = fitparams[1]
                     results[i][2] = fitparams_err[1]
@@ -191,12 +199,14 @@ def main():
                     numpy.savetxt(outfile_slope, numpy.stack(([tauT], [fitparams[0]], [fitparams_err[0]]), axis=-1))
 
                     lpd.plotstyle_add_point_single.update(dict(fmt=lpd.markers[i - finest_Nt_half], mew=0.25, markersize=5))
-                    plots.append(ax.errorbar(0, fitparams[1], fitparams_err[1], **lpd.plotstyle_add_point_single, alpha=1, color=mycolor, zorder=1, label='{0:.3f}'.format(tauT)))
+                    plots.append(ax.errorbar(0, fitparams[1], fitparams_err[1], **lpd.plotstyle_add_point_single,
+                                             alpha=1, color=mycolor, zorder=1, label='{0:.3f}'.format(tauT)))
                     x = numpy.linspace(0, 0.1, 100)
                     ax.errorbar(x, extrapolation_ansatz(x, *fitparams[0:2]), color=mycolor, alpha=1, fmt=':', lw=0.5, zorder=-100)
 
                     # noinspection PyTypeChecker
-                    numpy.savetxt(outfile, numpy.stack(([tauT for _ in range(len(xdata) + 1)], [0, *xdata], [fitparams[1], *ydata], [fitparams_err[1], *edata]), axis=-1))
+                    numpy.savetxt(outfile, numpy.stack(
+                        ([tauT for _ in range(len(xdata) + 1)], [0, *xdata], [fitparams[1], *ydata], [fitparams_err[1], *edata]), axis=-1))
                     outfile.write('# \n')
                 else:
                     results[i] = None
@@ -211,7 +221,8 @@ def main():
     print(results)
     # save results
     # noinspection PyTypeChecker
-    numpy.savetxt(basepath + "/" + args.corr + "_flow_extr.txt", results, header="                tauT                G/Gnorm                    err", fmt='%22.15e')
+    numpy.savetxt(basepath + "/" + args.corr + "_flow_extr.txt", results,
+                  header="                tauT                G/Gnorm                    err", fmt='%22.15e')
 
     # second x-axis for flow radius
     ax2 = ax.twiny()
@@ -224,7 +235,9 @@ def main():
     ax2.xaxis.set_label_coords(0.99, 0.97)
     ax2.tick_params(direction='in', pad=0, width=0.5)
 
-    ax.axvline(x=0, ymin=((results[mintauTindex, 1]-ylims[0])/(ylims[1]-ylims[0])), ymax=((results[finest_Nt_half-1, 1]-ylims[0])/(ylims[1]-ylims[0])), alpha=1, color='grey', zorder=-1000, lw=0.5, dashes=(5, 2))
+    ax.axvline(x=0, ymin=((results[mintauTindex, 1]-ylims[0])/(ylims[1]-ylims[0])),
+               ymax=((results[finest_Nt_half-1, 1]-ylims[0])/(ylims[1]-ylims[0])),
+               alpha=1, color='grey', zorder=-1000, lw=0.5, dashes=(5, 2))
 
     # lpd.legendstyle.update(dict(handlelength=0.5))
     lpd.legendstyle.update(dict(loc="lower right", bbox_to_anchor=(1.01, 0.03), columnspacing=0.5, handlelength=0.75, labelspacing=0.1, handletextpad=0.2,
@@ -241,7 +254,10 @@ def main():
     # plot final double-extrapolated correlator in its own plot
     ylims = [1.5, 4] if not args.custom_ylims else args.custom_ylims
     fig, ax, plots = lpd.create_figure(xlims=[0.15, 0.51], ylims=ylims, xlabel=r'$\tau T$',
-                                       ylabel=r'$'+displaystyle+r'\frac{G^\mathrm{cont}_{\tau_\mathrm{F}\rightarrow 0}}{ G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny cont } } }_{\tau_\mathrm{F} = 0} }$', UseTex=args.use_tex)
+                                       ylabel=r'$'+displaystyle+
+                                              r'\frac{G^\mathrm{cont}_{\tau_\mathrm{F}\rightarrow 0}}'
+                                              r'{ G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny cont } } }_{\tau_\mathrm{F} = 0} }$',
+                                       UseTex=args.use_tex)
     lpd.plotstyle_add_point.update(dict(fmt='D-'))
     results = numpy.swapaxes(results, 0, 1)
     ax.errorbar(results[0], results[1], results[2], color='black', **lpd.plotstyle_add_point)
