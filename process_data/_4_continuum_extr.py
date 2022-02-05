@@ -53,6 +53,9 @@ def main():
     parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
                         help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
                              'cannot be greater than 0.33*tauT, or that for each flow radius the tauT must be atleast 3*flowradius.')
+    parser.add_argument('--max_FlowradiusBytauT_offset', type=float, default=1/20,
+                        help='fixed offset to make lower_tauT_limit stricter (by e.g. one lattice spacing 1/Nt), as the 0.33 criterion is only valid in the '
+                             'continuum. on the lattice one has to be stricter. 1/Nt_coarsest is a good value.')
 
     args = parser.parse_args()
 
@@ -78,7 +81,7 @@ def main():
     if flowradius < 1/nt_coarse:
         exit("ERROR: need at least a flow radius sqrt(8t)/a of 1/"+str(nt_coarse)+" to have enough flow for cont extr")
 
-    lower_tauT_lim = lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT)
+    lower_tauT_lim = lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset)
     if not args.int_only:
         # load finest lattice
         XX_mean_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_"+args.conftypes[-1]+".dat")
