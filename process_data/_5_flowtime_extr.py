@@ -28,12 +28,11 @@ def main():
     parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=1000)
     parser.add_argument('--use_tex', type=bool, default=True)
     parser.add_argument('--rel_err_param1', help='ignore correlator data at small flow times that have a large relative error, adjusted for each tau via '
-                                                 'max_allowed_rel_error = rel_err_param1 / (1 + rel_err_param2 * log(tauT*10)). '
-                                                 'this parameter controls the max relative error for the tau=1.', default='0.005', type=float)
-    parser.add_argument('--rel_err_param2', help='ignore correlator data at small flow times that have a large relative error, adjusted for each tau via '
-                                                 'max_allowed_rel_error = rel_err_param1 / (1 + rel_err_param2 * log(tauT*10)). '
-                                                 'this parameter controls how much stricter the criterion is for larger and larger tau. '
-                                                 '0 means all tau are treated equally.', default='0.4', type=float)
+                                                 'max_allowed_rel_error = rel_err_param1 *tauT/0.5', default='0.003', type=float)
+    # parser.add_argument('--rel_err_param2', help='ignore correlator data at small flow times that have a large relative error, adjusted for each tau via '
+    #                                              'max_allowed_rel_error = rel_err_param1 / (1 + rel_err_param2 * log(tauT*10)). '
+    #                                              'this parameter controls how much stricter the criterion is for larger and larger tau. '
+    #                                              '0 means all tau are treated equally.', default='0.4', type=float)
     parser.add_argument('--flowend', help='maximum flow index for all tauT that should be used in the extrapolation', type=int, default=134)
     parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
                         help='modify the flow filter based on tauT to be more/less strict. default value of 0.33 means that for each flow radius the tauT '
@@ -119,7 +118,8 @@ def main():
         rel_err = numpy.fabs(XX[i][:, 1]/XX[i][:, 0])
         found = False
         for j, each_rel_err in enumerate(rel_err):  # loop over flowtimes
-            max_allowed_rel_error = args.rel_err_param1 / (1+args.rel_err_param2*numpy.log(finest_tauTs[i]*10))
+            max_allowed_rel_error = args.rel_err_param1 * lpd.get_tauTs(finest_Nt_half*2)[i]/0.5  # normalized to largest tauT, such that rel_err_param1 is meaningful for largest tauT
+            # max_allowed_rel_error = args.rel_err_param1 / (1 + args.rel_err_param2 * numpy.log(finest_tauTs[i] * 10))
             if each_rel_err <= max_allowed_rel_error:
                 flow_extr_filter.append(j)
                 found = True
@@ -232,7 +232,7 @@ def main():
     numpy.savetxt(basepath + "/" + args.corr + "_flow_extr.txt", results,
                   header="                tauT                G/Gnorm                    err", fmt='%22.15e')
 
-    ax.set_xlim([-0.0001, 1.2*lpd.upper_flowradius_limit_(0.5, args.max_FlowradiusBytauT)**2/8])
+    ax.set_xlim([-0.0001, 1*lpd.upper_flowradius_limit_(0.5, args.max_FlowradiusBytauT,args.max_FlowradiusBytauT_offset)**2/8])
     # second x-axis for flow radius
     ax2 = ax.twiny()
     new_tick_locations = numpy.array([0, 0.05**2/8, 0.08**2/8, 0.1**2/8, 0.13**2/8, 0.15**2/8])
