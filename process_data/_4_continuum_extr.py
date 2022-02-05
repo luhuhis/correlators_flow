@@ -6,7 +6,7 @@ import matplotlib
 from matplotlib import container, legend_handler
 import re
 import scipy.optimize
-from latqcdtools import bootstr
+from latqcdtools.statistics import bootstr
 import sys
 
 # input
@@ -42,12 +42,13 @@ def main():
                                help="ORDERED list of conftypes (from coarse to fine), e.g. s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
 
     parser.add_argument('--use_imp', help='whether to use tree-level improvement for the finest lattice. use the same setting you used for the interpolation of the coarser lattices!', type=bool, default=True)
-    parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=400)
+    parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=1000)
     parser.add_argument('--use_tex', action="store_true", help="use LaTeX when plotting")
     parser.add_argument('--start_at_zero', action="store_true", help="replace the flow indices from which on the continuum extr shall be performed")
     parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
-    parser.add_argument('--int_only', help="load an interpolation of the finest lattice instead of the original non-interpolated data. useful if you want to "
-                                           "look at more tauT-points than what the finest lattice can offer.", action="store_true")
+    parser.add_argument('--int_only', help="load an interpolation of the finest lattice instead of the original non-interpolated data. useful if you have "
+                                           "interpolated the finest lattice to even smaller spaced tauT, and want to see how much that improves the fit",
+                        action="store_true")
     parser.add_argument('--int_Nt', help="if --int_only, then specify the Nt, for whose tauT values the interpolations were saved at", type=int)
     parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
                         help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
@@ -179,7 +180,7 @@ def main():
                     ydata = [XX_int[1][j-offset] for XX_int in XX_ints if XX_int is not None]
                     edata = [XX_int[2][j-offset] for XX_int in XX_ints if XX_int is not None]
                     fitparams, fitparams_err = bootstr.bootstr_from_gauss(fit_sample, data=ydata, data_std_dev=edata, numb_samples=args.nsamples,
-                                                                          sample_size=1, return_sample=False, args=[xdata, edata])
+                                                                          sample_size=1, return_sample=False, args=[xdata, edata], seed=0)
                     # fitparams, fitparams_err = fit_sample(ydata, xdata, edata)
 
                     results[j][0] = tauT
@@ -216,7 +217,7 @@ def main():
                   header="tauT    G/G_norm    err")
 
     # save continuum extrapolation quality plot for this flow time
-    lpd.plotstyle_add_point_single.update(dict(fmt='D-'))
+    lpd.plotstyle_add_point_single.update(dict(fmt='-'))
     ax.axvline(x=0, ymin=((results[mintauTindex, 1]-ylims[0])/(ylims[1]-ylims[0])), ymax=((results[maxtauTindex_plot, 1]-ylims[0])/(ylims[1]-ylims[0])), alpha=1, color='grey',
                zorder=-1000, lw=0.5, dashes=(5, 2))
     lpd.legendstyle.update(dict(loc="lower left", bbox_to_anchor=(-0.01, -0.01), columnspacing=0.1, labelspacing=0.25, handletextpad=0, borderpad=0,
