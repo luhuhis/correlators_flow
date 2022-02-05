@@ -7,9 +7,10 @@ import scipy.integrate
 import scipy.optimize
 import scipy.interpolate
 from typing import NamedTuple
-import latqcdtools.bootstr
+from latqcdtools.statistics import bootstr
+import argparse
 
-global args
+global args  # TODO make this nonglobal
 
 
 def Gnorm(tauT):
@@ -139,11 +140,14 @@ def get_results(ydata_sample, fit_params_0, xdata, edata, MaxOmegaByT, spfargs, 
 
 
 def main():
-    parser, requiredNamed = lpd.get_parser()
+    parser = argparse.ArgumentParser()
+    requiredNamed = parser.add_argument_group('required named arguments')
+    requiredNamed.add_argument('--qcdtype', help="format doesnt matter, only used for finding data. example: quenched_1.50Tc_zeuthenFlow", required=True)
+    requiredNamed.add_argument('--corr', choices=['EE', 'EE_clover', 'BB', 'BB_clover'], help="choose from EE, EE_clover, BB, BB_clover", required=True)
 
     requiredNamed.add_argument('--model', help='which model to use', choices=[2, 3], type=int, required=True)
     requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str, required=True)
-    requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO (a) or NLO (b)', type=str, choices=["a", "b"], required=True)
+    requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO (a) or NLO (b)', type=str, choices=["a", "b", "alatt"], required=True)
     parser.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str)
     parser.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', type=int, choices=[1, 2, 3, 4, 5, 6, 7])
     parser.add_argument('--constrain', help='force the spf to reach the UV limit at large omega', action="store_true")
@@ -164,6 +168,7 @@ def main():
 
     parser.add_argument('--add_suffix', help='add an extra suffix to the output files in order to not overwrite previous ones with similar parameters on a '
                                              'different data set', type=str, default="")
+    parser.add_argument('--input_corr', help='provide custom input correlator data. three columns: tauT, G, err', type=str)
 
     global args
     args = parser.parse_args()
@@ -182,7 +187,11 @@ def main():
 
     # read in the normalized correlator:
     inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "") if not args.PathInputFolder else args.PathInputFolder
-    corr = np.loadtxt(inputfolder+args.corr+"_flow_extr.txt")
+    if not args.input_corr:
+        corrfile = inputfolder+args.corr+"_flow_extr.txt"
+    else:
+        corrfile = args.input_corr
+    corr = np.loadtxt(corrfile)
 
     # remove lines with NaN's:
     corr = corr[~np.isnan(corr).any(axis=1)]
@@ -192,15 +201,20 @@ def main():
     # beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
     NtauT = len(corr)
 
-    # read in the phiuv. columns in order: OmegaByT, PhiUVByT3, err
-    PhiUV = np.loadtxt(args.PathPhiUV)
-    PhiUV = PhiUV[:, 0:2]
+    if args.PhiUVtype == "a" or args.PhiUVtype == "b":
+        # read in the phiuv. columns in order: OmegaByT, PhiUVByT3, err
+        PhiUV = np.loadtxt(args.PathPhiUV)
+        PhiUV = PhiUV[:, 0:2]
 
-    # interpolate the UV spf for the integration
-    # spline order: 1 linear, 2 quadratic, 3 cubic ...
-    order = 3
-    PhiuvByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[:, 0], PhiUV[:, 1], k=order)
-    MaxOmegaByT = PhiUV[-1][0]
+        # interpolate the UV spf for the integration
+        # spline order: 1 linear, 2 quadratic, 3 cubic ...
+        order = 3
+        PhiuvByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[:, 0], PhiUV[:, 1], k=order)
+        MaxOmegaByT = PhiUV[-1][0]
+    elif args.PhiUVtype == "alatt":
+        print("NOT YET SUPPORTED!")
+        exit(1)
+        #TODO: implement this!!!
 
     # get rid of the pert. normalization in the correlator data
     CorrByT4 = np.copy(corr)
@@ -245,7 +259,7 @@ def main():
     print("Initial guess for fit params:", fit_params_0)
 
     samples, results, error = \
-        latqcdtools.bootstr.bootstr_from_gauss(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
+        bootstr.bootstr_from_gauss(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
                                                useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=args.asym_err,
                                                args=(fit_params_0, xdata, edata, MaxOmegaByT, spfargs, PhiUV, args.maxiter, NtauT, corr, args.model, args.verbose))
 
