@@ -57,6 +57,8 @@ def main():
                         help='fixed offset to make lower_tauT_limit stricter (by e.g. one lattice spacing 1/Nt), as the 0.33 criterion is only valid in the '
                              'continuum. on the lattice one has to be stricter. 1/Nt_coarsest is a good value.')
 
+    parser.add_argument('--verbose', help='print out progress information', action="store_true")
+
     args = parser.parse_args()
 
     if (args.int_only and not args.int_Nt) or (args.int_Nt and not args.int_only):
@@ -174,7 +176,8 @@ def main():
 
                 # skip if flow time is too small
                 if tauT in valid_tauTs and len(xdata) >= 3:  # and args.flow_index >= flowstarts[j]:
-                    print("working on flowtime ", flowradius_str, " tauT=", '{0:.4f}'.format(tauT))
+                    if args.verbose:
+                        print("working on flowtime ", flowradius_str, " tauT=", '{0:.4f}'.format(tauT))
 
                     # actually perform extr
                     # for m, XX_int in enumerate(XX_ints):
