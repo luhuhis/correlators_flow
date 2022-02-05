@@ -4,10 +4,11 @@ max_flow_idx=100
 min_flow_idx=0
 qcdtype=quenched_1.50Tc_zeuthenFlow
 conftypes="s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400" #""
-corrs="BB" # BB BB_clover EE
+corrs="EE" # BB BB_clover EE
 int_Nt=36
 nsamples=1000
-grace_factor="--grace_factor 0.5"
+max_FlowradiusBytauT=""  # "--max_FlowradiusBytauT 0.33"
+
 
 for conftype in $conftypes; do
     for corr in $corrs; do
@@ -20,16 +21,16 @@ done
 for corr in $corrs; do
     for conftype in $conftypes ; do
         for ((i=min_flow_idx; i < max_flow_idx; i+=10)) ; do
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $grace_factor --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i)) --min_Nt 20 --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $grace_factor --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+1)) --min_Nt 20 --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $grace_factor --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+2)) --min_Nt 20 --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $grace_factor --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+3)) --min_Nt 20 --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $grace_factor --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+4)) --min_Nt 20 --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $grace_factor --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+5)) --min_Nt 20 --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $grace_factor --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+6)) --min_Nt 20 --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $grace_factor --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+7)) --min_Nt 20 --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $grace_factor --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+8)) --min_Nt 20 --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $grace_factor --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+9)) --min_Nt 20 --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i))   --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+1)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+2)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+3)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+4)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+5)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+6)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+7)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+8)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+9)) --int_Nt $int_Nt --nsamples $nsamples &
             wait
         done
     done
