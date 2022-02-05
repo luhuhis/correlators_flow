@@ -85,12 +85,11 @@ def main():
                              if x >= lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset)])  # xdata[0]
 
     # this is only relevant for the plot
-    tauTs_used_in_int, _ = filter_tauTs(flowradius, lpd.get_tauTs(nt), args.max_FlowradiusBytauT, args.tauT_offset)
+    tauTs_used_in_int, _ = filter_tauTs(flowradius, lpd.get_tauTs(nt), args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset, args.int_left_tauT_offset)
     xpointsplot = numpy.linspace(tauTs_used_in_int[0], xpoints[-1], 1000)
     theplotdata = []
 
-    # relevent_tauT = numpy.asarray([x for x in lpd.get_tauTs(nt) if x >= lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT)])
-    weights = ((tauTs_used_in_int / flowradius) * args.max_FlowradiusBytauT)**3
+    weights = ((tauTs_used_in_int / flowradius) * args.max_FlowradiusBytauT)**3  # TODO justify the exponent here?
 
     # perform spline fits for each sample
     for m in range(args.nsamples):
