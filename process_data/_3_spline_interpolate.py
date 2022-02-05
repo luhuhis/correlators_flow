@@ -32,10 +32,8 @@ def filter_corr_data(flowradius, xdata, ydata, max_FlowradiusBytauT, max_Flowrad
     return xdata, ydata
 
 
-# TODO find a way to do smoothing AND constrain the first derivative at 0.5 to zero
-def interpolate_XX_flow(xdata, ydata, weights, output_xdata1, output_xdata2):
-    # spline = scipy.interpolate.CubicSpline(xdata, ydata, bc_type=((2, 0.0), (1, 0.0)))  # true interpolating spline
-    spline = scipy.interpolate.UnivariateSpline(xdata, ydata, w=weights, k=3, s=0.001)  # smoothing spline with minimal smoothing and fit weights
+def interpolate_XX_flow(xdata, ydata, output_xdata1, output_xdata2):
+    spline = scipy.interpolate.CubicSpline(xdata, ydata, bc_type=((2, 0.0), (1, 0.0)))  # true interpolating spline
     return spline(output_xdata1), spline(output_xdata2)
 
 
@@ -52,7 +50,7 @@ def main():
     parser.add_argument('--int_Nt', help='use tauT of this Nt as xdata for the interpolation output', type=int, default=36)
     parser.add_argument('--int_left_tauT_offset', help='include points <int_left_tauT_offset> below the lower tauT limit in the spline calculation. this helps '
                                                        'to make the interpolation smooth/consistent across varying flow time.  a good value is ~2/Nt_coarsest.',
-                        default=2/20, type=float)
+                        default=3.5/20, type=float)
     parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
                         help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
                              'cannot be greater than 0.33*tauT, or that for each flow radius the tauT must be atleast 3*flowradius.')
@@ -89,15 +87,13 @@ def main():
     xpointsplot = numpy.linspace(tauTs_used_in_int[0], xpoints[-1], 1000)
     theplotdata = []
 
-    weights = ((tauTs_used_in_int / flowradius) * args.max_FlowradiusBytauT)**3  # TODO justify the exponent here?
-
     # perform spline fits for each sample
     for m in range(args.nsamples):
         ydata = numpy.asarray(XX_samples[m*nt_half:(m+1)*nt_half, 1])
         for a in range(nt_half):
             ydata[a] = ydata[a] * lpd.improve_corr_factor(a, nt, args.flow_index, args.use_imp)
         xdata, ydata = filter_corr_data(flowradius, lpd.get_tauTs(nt), ydata, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset, args.int_left_tauT_offset)
-        output, plot_output = interpolate_XX_flow(xdata, ydata, weights, xpoints, xpointsplot)
+        output, plot_output = interpolate_XX_flow(xdata, ydata, xpoints, xpointsplot)
         theoutputdata.append(output)
         theplotdata.append(plot_output)
 
@@ -117,7 +113,7 @@ def main():
         ylabel = r'$'+displaystyle+r'\frac{ G^\mathrm{latt }_{\tau_F} (\tau)}{G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } }_{\tau_F = 0} (\tau)}$'
     else:
         ylabel = 'G'
-    fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=[1.4, 4], xlabel=r'$\tau T$', ylabel=ylabel, xlabelpos=(0.95, 0.05), UseTex=UseTex)
+    fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=[-0.2, 4], xlabel=r'$\tau T$', ylabel=ylabel, xlabelpos=(0.95, 0.05), UseTex=UseTex)
     ax.set_title(r'$ \sqrt{8\tau_F}T = $'+'{0:.3f}'.format(flowradius))  # +", nknots = "+nknot_str)
     ax.axvline(x=lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset), **lpd.verticallinestyle)
     ax.fill_between(xpointsplot, ypointsplot-epointsplot, ypointsplot+epointsplot, alpha=0.5)
