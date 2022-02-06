@@ -49,8 +49,8 @@ def main():
     parser.add_argument('--nsamples', help="number of gaussian bootstrap samples that are contained in the input files", type=int, default=1000)
     parser.add_argument('--int_Nt', help='use tauT of this Nt as xdata for the interpolation output', type=int, default=36)
     parser.add_argument('--int_left_tauT_offset', help='include points <int_left_tauT_offset> below the lower tauT limit in the spline calculation. this helps '
-                                                       'to make the interpolation smooth/consistent across varying flow time.  a good value is ~2/Nt_coarsest.',
-                        default=3.5/20, type=float)
+                                                       'to make the interpolation smooth/consistent across varying flow times. default is to always use all tauT.',
+                        default=1.0, type=float)
     parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
                         help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
                              'cannot be greater than 0.33*tauT, or that for each flow radius the tauT must be atleast 3*flowradius.')
