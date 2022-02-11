@@ -44,11 +44,8 @@ def remove_left_of_last(delimiter, label):
 
 
 # remove everything to the right of (and including) the last delimiter:
-# TODO FIX THIS ONE
 def remove_right_of_last(delimiter, label):
-    print("ERROR THIS FUNCTION DOESNT WORK")
-    exit()
-    return re.sub(r'(^.*?)' + delimiter + r'(.*?)', r'\1', label)
+    return re.sub(r'(^.*)' + delimiter + r'(.*)', r'\1', label)
 
 
 # remove everything to the right of (and including) the first delimiter:
@@ -137,14 +134,12 @@ def EE_cont_LO(tauT):
     return math.pi ** 2 * (math.cos(math.pi * tauT) ** 2 / math.sin(math.pi * tauT) ** 4 + 1 / (3 * math.sin(math.pi * tauT) ** 2))
 
 
-# TODO: implement this here instead of relying on the output from the Mathematica Notebook
-EE_latt_LO_flow = {}
-for Ntau in (16, 20, 24, 30, 32, 36, 44, 48, 56, 64):
-    EE_latt_LO_flow[Ntau] = numpy.loadtxt("/home/altenkort/work/correlators_flow/data/merged/quenched_pertLO_wilsonFlow/EE/EE_latt_flow_" + str(Ntau) + '.dat')
+def EE_latt_LO_flow(Ntau):
+    return numpy.loadtxt("/home/altenkort/work/correlators_flow/data/merged/quenched_pertLO_wilsonFlow/EE/EE_latt_flow_" + str(Ntau) + '.dat')
 
 
 # TODO: clean this up
-def improve_corr_factor(tauTindex, nt, flowindex, improve=True, improve_with_flow=False):
+def improve_corr_factor(tauTindex, nt, flowindex=0, improve=True, improve_with_flow=False):
     nt_half = int(nt / 2)
     if improve:
         if improve_with_flow:
@@ -170,11 +165,11 @@ ToverTc = {16: 1.510424, 20: 1.473469, 24: 1.484769, 30: 1.511761, 36: 1.504171}
 
 # === plotting ===
 
-def get_color(myarray, i, start=0, end=-1):
+def get_color(myarray, i, start=0, end=-1, scale_factor=0.9):
     if myarray[end] == myarray[start]:
         return matplotlib.cm.gnuplot(0)
     # i = end - 1 - i + start
-    return matplotlib.cm.gnuplot((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * 0.9)
+    return matplotlib.cm.gnuplot((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * scale_factor)
 
 
 def get_color2(myarray, i, start=0, end=-1):
@@ -235,14 +230,3 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,
     matplotlib.rc('image', cmap='Set1')
     # fig.set_tight_layout(dict(pad=0.4))
     return fig, ax, plots
-
-
-# === some parameters ===
-n_skiprows = 15  # skip the discrete points at the start of the continuum limit file
-offset = 0.02  # for flow limits
-# index for tauT
-start = 2
-end = 14
-# index for tau_F
-flowstart = 10
-flowend = 21
