@@ -1,6 +1,6 @@
 #!/bin/bash
 
-max_flow_idx=100
+max_flow_idx=170
 min_flow_idx=0
 qcdtype=quenched_1.50Tc_zeuthenFlow
 conftypes="s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400" #""
