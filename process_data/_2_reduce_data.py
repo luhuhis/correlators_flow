@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3.7m -u
 import numpy
 import lib_process_data as lpd
-from latqcdtools import bootstr
+from latqcdtools.statistics import bootstr
 
 
 def load_merged_data(qcdtype, corr, conftype):
