@@ -134,8 +134,17 @@ def EE_cont_LO(tauT):
     return math.pi ** 2 * (math.cos(math.pi * tauT) ** 2 / math.sin(math.pi * tauT) ** 4 + 1 / (3 * math.sin(math.pi * tauT) ** 2))
 
 
+EE_latt_LO_flow_storage = {}
+
+
 def EE_latt_LO_flow(Ntau):
-    return numpy.loadtxt("/home/altenkort/work/correlators_flow/data/merged/quenched_pertLO_wilsonFlow/EE/EE_latt_flow_" + str(Ntau) + '.dat')
+    global EE_latt_LO_flow_storage
+    if Ntau not in EE_latt_LO_flow_storage.keys():
+        tmp = numpy.loadtxt("/home/altenkort/work/correlators_flow/data/merged/quenched_pertLO_wilsonFlow/EE/EE_latt_flow_" + str(Ntau) + '.dat')
+        EE_latt_LO_flow_storage[Ntau] = tmp
+        return tmp
+    else:
+        return EE_latt_LO_flow_storage[Ntau]
 
 
 # TODO: clean this up
@@ -144,9 +153,9 @@ def improve_corr_factor(tauTindex, nt, flowindex=0, improve=True, improve_with_f
     if improve:
         if improve_with_flow:
             print("=========== WARN =============== \n This only works for the exact flow times used in the Mathematica Notebook! \n ========================")
-            return nt ** 4 / EE_latt_LO_flow[nt][tauTindex + nt_half * flowindex][2]  # here, "G_norm" is pert latt corr at zero flow time
+            return nt ** 4 / EE_latt_LO_flow(nt)[tauTindex + nt_half * flowindex][2]  # here, "G_norm" is pert latt corr at zero flow time
         else:
-            return nt ** 4 / EE_latt_LO_flow[nt][tauTindex][2]  # here, "G_norm" is pert latt corr at zero flow time
+            return nt ** 4 / EE_latt_LO_flow(nt)[tauTindex][2]  # here, "G_norm" is pert latt corr at zero flow time
     else:
         return nt ** 4 / EE_cont_LO(get_tauTs(nt)[tauTindex])  # here, "G_norm" is pert cont corr at zero flow time
 
