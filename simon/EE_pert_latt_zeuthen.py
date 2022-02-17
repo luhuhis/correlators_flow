@@ -3,7 +3,6 @@
 import argparse
 import sys
 
-import numpy
 import numpy as np
 import scipy.linalg
 
@@ -19,7 +18,7 @@ WT_ONE = .6957096902749077147
 WT_TWO = 1.3042903097250922853
 
 
-@numba.njit
+@numba.njit(cache=True)
 def SHIFT(i):
     condition = (i % 4)
 
@@ -36,17 +35,17 @@ def SHIFT(i):
     return i + 0.5 + addend
 
 
-@numba.njit
+@numba.njit(cache=True)
 def BRANGE(x):
     return x ** 2
 
 
-@numba.njit
+@numba.njit(cache=True)
 def BJACOBIAN(x):
     return 2 * x
 
 
-@numba.njit
+@numba.njit(cache=True)
 def WEIGHT(i):
     condition = (i % 4)
 
@@ -56,7 +55,7 @@ def WEIGHT(i):
         return WT_TWO
 
 
-@numba.njit
+@numba.njit(cache=True)
 def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, lam=1):
     # arguments: desired action, definition of flow, four-momentum, flow times, gauge fixing
 
@@ -138,7 +137,7 @@ def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, 
 
     # calculate flowed correlator matrix from dot product of action kernel & heat kernels
     # use contiguous arrays to suppress numba warnings
-    flowed_corr_matrix = np.dot(numpy.ascontiguousarray(exp1), np.dot(numpy.ascontiguousarray(unfl_prop), numpy.ascontiguousarray(np.transpose(exp2))))
+    flowed_corr_matrix = np.dot(np.ascontiguousarray(exp1), np.dot(np.ascontiguousarray(unfl_prop), np.ascontiguousarray(np.transpose(exp2))))
 
     # return desired component of flowed propagator
     return flowed_corr_matrix
@@ -159,19 +158,19 @@ class ComputationClass:
         self._result = self.parallelization_wrapper()
 
     def parallelization_wrapper(self):
-        with numba.objmode(answer='float64[:,:]'):
-            if self._printprogress:
-                print("Started parallel work on these flow times:")
-            with concurrent.futures.ProcessPoolExecutor(max_workers=self._nproc) as executor:
-                result = executor.map(self.pass_argument_wrapper, self._flow_times)
-            answer = np.asarray(list(result))
+        if self._printprogress:
+            print("Started parallel work on these flow times:")
+        with concurrent.futures.ProcessPoolExecutor(max_workers=self._nproc) as executor:
+            result = executor.map(self.pass_argument_wrapper, self._flow_times)
+        print("")
+        answer = np.asarray(list(result))
         return answer
 
     def pass_argument_wrapper(self, tau_f):
         return self.actual_corr_computation(tau_f, self._ls_t, self._N_t, self._t, self._ls_space, self._N_space, self._factor_space, self._up, self._printprogress)
 
     @staticmethod
-    @numba.njit
+    @numba.njit(cache=True)
     def actual_corr_computation(tau_f, ls_t, N_t, t, ls_space, N_space, factor_space, up, printprogress):
         if printprogress:
             with numba.objmode():
