@@ -19,6 +19,7 @@ def save_script_call(add_folder=None):
     if add_folder is not None:
         folderlist = (*folderlist, add_folder)
     for folder in folderlist:
+        create_folder(folder)
         with open(folder + "/" + file_name + ".log", 'a') as logfile:
             logfile.write(dt_string + "\n" + " ".join(sys.argv) + '\n')
     return
@@ -137,10 +138,10 @@ def EE_cont_LO(tauT):
 EE_latt_LO_flow_storage = {}
 
 
-def EE_latt_LO_flow(Ntau):
+def EE_latt_LO_flow(Ntau, flowtype="wilson"):
     global EE_latt_LO_flow_storage
     if Ntau not in EE_latt_LO_flow_storage.keys():
-        tmp = numpy.loadtxt("/home/altenkort/work/correlators_flow/data/merged/quenched_pertLO_wilsonFlow/EE/EE_latt_flow_" + str(Ntau) + '.dat')
+        tmp = numpy.loadtxt("/home/altenkort/work/correlators_flow/data/merged/quenched_pertLO_"+flowtype+"Flow/EE/EE_latt_flow_" + str(Ntau) + '.dat')
         EE_latt_LO_flow_storage[Ntau] = tmp
         return tmp
     else:
@@ -148,23 +149,28 @@ def EE_latt_LO_flow(Ntau):
 
 
 # TODO: clean this up
-def improve_corr_factor(tauTindex, nt, flowindex=0, improve=True, improve_with_flow=False):
+def improve_corr_factor(tauTindex, nt, flowindex=0, improve=True, improve_with_flow=False, flowtype="wilson"):
     nt_half = int(nt / 2)
     if improve:
-        if improve_with_flow:
-            print("=========== WARN =============== \n This only works for the exact flow times used in the Mathematica Notebook! \n ========================")
-            return nt ** 4 / EE_latt_LO_flow(nt)[tauTindex + nt_half * flowindex][2]  # here, "G_norm" is pert latt corr at zero flow time
-        else:
-            return nt ** 4 / EE_latt_LO_flow(nt)[tauTindex][2]  # here, "G_norm" is pert latt corr at zero flow time
+        if flowtype == "wilson":
+            if improve_with_flow:
+                return nt ** 4 / EE_latt_LO_flow(nt, flowtype)[tauTindex + nt_half * flowindex][2]  # here, "G_norm" is pert latt corr at zero flow time
+            else:
+                return nt ** 4 / EE_latt_LO_flow(nt, flowtype)[tauTindex][2]  # here, "G_norm" is pert latt corr at zero flow time
+        elif flowtype == "zeuthen":
+            if improve_with_flow:
+                return nt ** 4 / EE_latt_LO_flow(nt, flowtype)[flowindex, tauTindex]
+            else:
+                return nt ** 4 / EE_latt_LO_flow(nt, flowtype)[0, tauTindex]
     else:
-        return nt ** 4 / EE_cont_LO(get_tauTs(nt)[tauTindex])  # here, "G_norm" is pert cont corr at zero flow time
+        return nt ** 4 / EE_cont_LO(get_tauTs(nt)[tauTindex])
 
 
-def lower_tauT_limit_(flowradius, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=0):  # note: sqrt(8*0.014) ~= 0.33
+def lower_tauT_limit_(flowradius, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=1/20):  # note: sqrt(8*0.014) ~= 0.33
     return flowradius/max_FlowradiusBytauT + tauT_offset
 
 
-def upper_flowradius_limit_(tauT, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=0):  # note: sqrt(8*0.014) ~= 0.33
+def upper_flowradius_limit_(tauT, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=1/20):  # note: sqrt(8*0.014) ~= 0.33
     return (tauT - tauT_offset) * max_FlowradiusBytauT
 
 
@@ -210,7 +216,9 @@ verticallinestyle = dict(ymin=0, ymax=1, color='grey', alpha=0.8, zorder=-10000,
 horizontallinestyle = dict(xmin=0, xmax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4), lw=0.5)
 flowlimitplotstyle = dict(fmt='|', mew=0.7, markersize=5)
 
-markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
+markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8',
+           'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P',
+           '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
 
 
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.01), ylabelpos=(0.01, 0.97), tickpad=2,
