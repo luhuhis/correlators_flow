@@ -21,16 +21,16 @@ done
 for corr in $corrs; do
     for conftype in $conftypes ; do
         for ((i=min_flow_idx; i < max_flow_idx; i+=10)) ; do
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i))   --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+1)) --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+2)) --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+3)) --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+4)) --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+5)) --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+6)) --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+7)) --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+8)) --int_Nt $int_Nt --nsamples $nsamples &
-            /usr/local/bin/python3.7m -u _3_spline_interpolate.py $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+9)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py --tree_imp_flow zeuthen $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i))   --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py --tree_imp_flow zeuthen $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+1)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py --tree_imp_flow zeuthen $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+2)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py --tree_imp_flow zeuthen $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+3)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py --tree_imp_flow zeuthen $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+4)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py --tree_imp_flow zeuthen $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+5)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py --tree_imp_flow zeuthen $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+6)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py --tree_imp_flow zeuthen $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+7)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py --tree_imp_flow zeuthen $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+8)) --int_Nt $int_Nt --nsamples $nsamples &
+            /usr/local/bin/python3.7m -u _3_spline_interpolate.py --tree_imp_flow zeuthen $max_FlowradiusBytauT --qcdtype $qcdtype --conftype $conftype --corr $corr --flow_index $((i+9)) --int_Nt $int_Nt --nsamples $nsamples &
             wait
         done
     done

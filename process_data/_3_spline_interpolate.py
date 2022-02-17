@@ -45,7 +45,8 @@ def main():
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     requiredNamed.add_argument('--flow_index', help='which flow time to interpolate', type=int, required=True)
 
-    parser.add_argument('--use_imp', help='whether to use tree-level improvement', type=bool, default=True)
+    parser.add_argument('--no_tree_imp', action="store_false", default=True, help='do not use tree-level improvement')
+    parser.add_argument('--tree_imp_flow', help='use flow time dependent tree-level improvement', choices=["wilson", "zeuthen"])
     parser.add_argument('--nsamples', help="number of gaussian bootstrap samples that are contained in the input files", type=int, default=1000)
     parser.add_argument('--int_Nt', help='use tauT of this Nt as xdata for the interpolation output', type=int, default=36)
     parser.add_argument('--int_left_tauT_offset', help='include points <int_left_tauT_offset> below the lower tauT limit in the spline calculation. this helps '
@@ -91,7 +92,7 @@ def main():
     for m in range(args.nsamples):
         ydata = numpy.asarray(XX_samples[m*nt_half:(m+1)*nt_half, 1])
         for a in range(nt_half):
-            ydata[a] = ydata[a] * lpd.improve_corr_factor(a, nt, args.flow_index, args.use_imp)
+            ydata[a] = ydata[a] * lpd.improve_corr_factor(a, nt, args.flow_index, args.no_tree_imp, True if args.tree_imp_flow else False, args.tree_imp_flow if args.tree_imp_flow else "wilson")
         xdata, ydata = filter_corr_data(flowradius, lpd.get_tauTs(nt), ydata, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset, args.int_left_tauT_offset)
         output, plot_output = interpolate_XX_flow(xdata, ydata, xpoints, xpointsplot)
         theoutputdata.append(output)
@@ -121,8 +122,8 @@ def main():
     XX = numpy.loadtxt(merged_data_path+"/"+args.corr+"_"+args.conftype+".dat")
     XX_err = numpy.loadtxt(merged_data_path+"/"+args.corr+"_err_"+args.conftype+".dat")
     for a in range(len(XX[args.flow_index])):
-        XX[args.flow_index, a] = XX[args.flow_index, a] * lpd.improve_corr_factor(a, nt, args.flow_index, args.use_imp)
-        XX_err[args.flow_index, a] = XX_err[args.flow_index, a] * lpd.improve_corr_factor(a, nt, args.flow_index, args.use_imp)
+        XX[args.flow_index, a] = XX[args.flow_index, a] * lpd.improve_corr_factor(a, nt, args.flow_index, args.no_tree_imp, True if args.tree_imp_flow else False, args.tree_imp_flow if args.tree_imp_flow else "wilson")
+        XX_err[args.flow_index, a] = XX_err[args.flow_index, a] * lpd.improve_corr_factor(a, nt, args.flow_index, args.no_tree_imp, True if args.tree_imp_flow else False, args.tree_imp_flow if args.tree_imp_flow else "wilson")
     ax.errorbar(lpd.get_tauTs(nt), XX[args.flow_index], XX_err[args.flow_index], **lpd.plotstyle_add_point_single)
     filepath = outputfolder_plot+"/"+args.corr+"_"+'{0:.4f}'.format(flowradius)+"_interpolation.pdf"
     print("saving ", filepath)

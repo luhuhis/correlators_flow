@@ -41,7 +41,8 @@ def main():
     requiredNamed.add_argument('--conftypes', nargs='*', required=True,
                                help="ORDERED list of conftypes (from coarse to fine), e.g. s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
 
-    parser.add_argument('--use_imp', help='whether to use tree-level improvement for the finest lattice. use the same setting you used for the interpolation of the coarser lattices!', type=bool, default=True)
+    parser.add_argument('--no_tree_imp', action="store_false", default=True, help='do not use tree-level improvement')
+    parser.add_argument('--tree_imp_flow', help='use flow time dependent tree-level improvement', choices=["wilson", "zeuthen"])
     parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=1000)
     parser.add_argument('--use_tex', action="store_true", help="use LaTeX when plotting")
     parser.add_argument('--start_at_zero', action="store_true", help="replace the flow indices from which on the continuum extr shall be performed")
@@ -93,9 +94,9 @@ def main():
         tauTs_fine = lpd.get_tauTs(nt_fine)
         print("INFO: lower tauT limit for this flow time and coarsest lattice: ", lower_tauT_lim)
         XX_finest = numpy.asarray(([tauT for tauT in tauTs_fine if tauT > lower_tauT_lim],
-                                   [val*lpd.improve_corr_factor(j, nt_fine, args.flow_index, args.use_imp) for j, val in enumerate(XX_mean_finest[args.flow_index])
+                                   [val*lpd.improve_corr_factor(j, nt_fine, args.flow_index, args.no_tree_imp, True if args.tree_imp_flow else False, args.tree_imp_flow if args.tree_imp_flow else "wilson") for j, val in enumerate(XX_mean_finest[args.flow_index])
                                     if tauTs_fine[j] > lower_tauT_lim],
-                                   [val*lpd.improve_corr_factor(j, nt_fine, args.flow_index, args.use_imp) for j, val in enumerate(XX_err_finest[args.flow_index])
+                                   [val*lpd.improve_corr_factor(j, nt_fine, args.flow_index, args.no_tree_imp, True if args.tree_imp_flow else False, args.tree_imp_flow if args.tree_imp_flow else "wilson") for j, val in enumerate(XX_err_finest[args.flow_index])
                                     if tauTs_fine[j] > lower_tauT_lim]))
     else:
         tauTs_fine = lpd.get_tauTs(args.int_Nt)
