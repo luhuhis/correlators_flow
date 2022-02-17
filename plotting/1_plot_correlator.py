@@ -263,7 +263,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
     flow_limit = numpy.zeros(len(tauT))
     interpolation_value = numpy.zeros(len(tauT))
     for i in range(nt_half):
-        flow_limit[i] = lpd.upper_flow_limit(tauT[i])
+        flow_limit[i] = lpd.upper_flowradius_limit_(tauT[i])
         index = (numpy.abs(flow_radius[:] - flow_limit[i])).argmin()
         if index == 0:
             interpolation_value[i] = XX[index, i]
@@ -447,7 +447,7 @@ def get_args():
                         help='list of indices which tauT to plot in third flow plot')
 
     parser.add_argument('--flowselectionfile', help="only consider the flowtimes given in this file")
-    parser.add_argument('--flowend', type=int, help="index of the maximum flow time")
+    parser.add_argument('--flowend', type=int, help="index of the maximum flow time to plot")
     parser.add_argument('--flowstart', type=int, help="index of the minimum flow time", default='0')
     parser.add_argument('--flowstep', type=int, help="index step size for flow time", default='10')
 
@@ -482,6 +482,9 @@ def get_args():
                         help="minimum trusted flowtime index. Set this to the index where the flow radius is larger than one lattice spacing of the coarsest lattice used in cont extr. only data for flow times after this are plotted.")
 
     parser.add_argument('--only_plot_no', type=int, nargs='*', default=[2, 3])
+    parser.add_argument('--no_tree_imp', action="store_false", default=True, help='do not use tree-level improvement')
+    parser.add_argument('--tree_imp_flow', help='use flow time dependent tree-level improvement', choices=["wilson", "zeuthen"])
+    parser.add_argument('--flowend_data', help='cut off the data beyond this flow index. only valid for the third plot', type=int)
 
     requiredNamed.add_argument('--conftype', help="format: s064t64_b0824900_m002022_m01011", required=True)
 
@@ -665,12 +668,14 @@ def main():
     # ==================== PLOT: corr normalized to LO pert corr, x-axis tauT, flowtimes fixed =========================
     # ==================================================================================================================
 
+
+    flowend_data = args.flowend_data if args.flowend_data else flowend
     # normalize data to perturbative lattice correlators
     if not args.part_obs and not args.conftype_2:
-        for i in range(len(flow_var)):
+        for i in range(len(flow_var[:flowend_data])):
             for j in range(nt_half):
-                XX[i, j] *= lpd.improve_corr_factor(j, nt, i) / nt ** 4
-                XX_err[i, j] *= lpd.improve_corr_factor(j, nt, i) / nt ** 4
+                XX[i, j] *= lpd.improve_corr_factor(j, nt, i, args.no_tree_imp, True if args.tree_imp_flow else False, args.tree_imp_flow if args.tree_imp_flow else "wilson") / nt ** 4
+                XX_err[i, j] *= lpd.improve_corr_factor(j, nt, i, args.no_tree_imp, True if args.tree_imp_flow else False, args.tree_imp_flow if args.tree_imp_flow else "wilson") / nt ** 4
 
     # plot the second figure
     if 2 in args.only_plot_no and not args.part_obs == "polyakovloop":
