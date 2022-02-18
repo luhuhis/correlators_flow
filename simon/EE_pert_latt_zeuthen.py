@@ -10,51 +10,16 @@ import numba
 import concurrent.futures
 
 
-# first define stuff needed for precise integration (shift, weight)
-N_IMP = 4
-SH_ONE = .2222726231881051504
-SH_TWO = .1799620871697125296
-WT_ONE = .6957096902749077147
-WT_TWO = 1.3042903097250922853
-
-
+# this is necessary to use unsupported scipy functions inside of a jit-compiled function
 @numba.njit(cache=True)
-def SHIFT(i):
-    condition = (i % 4)
-
-    if condition < 2:
-        if condition == 0:
-            addend = -SH_ONE
-        else:
-            addend = -SH_TWO
-    elif condition == 2:
-        addend = SH_TWO
-    else:
-        addend = SH_ONE
-
-    return i + 0.5 + addend
+def scipy_linalg_expm_wrapper(arg):
+    with numba.objmode(answer='float64[:,:]'):
+        answer = scipy.linalg.expm(arg)
+    return answer
 
 
-@numba.njit(cache=True)
-def BRANGE(x):
-    return x ** 2
-
-
-@numba.njit(cache=True)
-def BJACOBIAN(x):
-    return 2 * x
-
-
-@numba.njit(cache=True)
-def WEIGHT(i):
-    condition = (i % 4)
-
-    if (condition == 0) or (condition == 3):
-        return WT_ONE
-    else:
-        return WT_TWO
-
-
+# this function has to be outside the ComputationClass class, as numba doesn't support calling other functions that contain "with numba.objmode" from
+# nested functions
 @numba.njit(cache=True)
 def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, lam=1):
     # arguments: desired action, definition of flow, four-momentum, flow times, gauge fixing
@@ -75,14 +40,14 @@ def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, 
 
     # turn the four imput momenta into arrays of lattice momenta (and their square)
     ps = np.array([p_hat(p1), p_hat(p2), p_hat(p3), p_hat(p4)])
-    psquared = sum(ps ** 2)
+    psquared = np.sum(ps ** 2)
     cs = np.array([c(p1), c(p2), c(p3), c(p4)])
 
     # define kernels of plaquette and rectangles as they will be needed for action kernel
     plaquette_kernel = np.array([[psquared * delta(i, j) - ps[i] * ps[j] for i in range(4)]
                                  for j in range(4)])
     rectangle_kernel = 4 * np.array(
-        [[(cs[i] ** 2 * psquared + sum(ps ** 2 * cs ** 2)) * delta(i, j) - (cs[i] ** 2 + cs[j] ** 2) * ps[i] * ps[j] for i in range(4)]
+        [[(cs[i] ** 2 * psquared + np.sum(ps ** 2 * cs ** 2)) * delta(i, j) - (cs[i] ** 2 + cs[j] ** 2) * ps[i] * ps[j] for i in range(4)]
          for j in range(4)])
     # additionally, the term for gauge fixing the unflowed propagator is needed
     gf_lambda_kernel = lam * np.array([[ps[i] * ps[j] for i in range(4)] for j in range(4)])
@@ -98,7 +63,7 @@ def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, 
     action_kernel = action_kernel + gf_lambda_kernel
 
     # (unflowed) propagator is inverse of (gauge fixed) action kernel
-    unfl_prop = np.linalg.inv(action_kernel)
+    unfl_prop = np.ascontiguousarray(np.linalg.inv(action_kernel))
 
     # define gauge fixing term for flow
     gf_alpha_kernel = alpha * np.array([[ps[i] * ps[j] for i in range(4)] for j in range(4)])
@@ -114,9 +79,10 @@ def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, 
         Zpk = np.array([[psquared * delta(i, j) * ps[i] ** 2 - ps[i] ** 3 * ps[j] for i in range(4)]
                         for j in range(4)])  # Zeuthen extra term for plaquette
         Zeuthen_pk = plaquette_kernel - (1 / 12) * Zpk  # full Zeuthen flow expression for plaquette
-        Zrk = 4 * np.array([[(cs[i] ** 2 * psquared + sum(ps ** 2 * cs ** 2)) * ps[i] ** 2 * delta(i, j) - (cs[i] ** 2 + cs[j] ** 2) * ps[i] ** 3 * ps[j]
-                             for i in range(4)]
-                            for j in range(4)])  # Zeuthen extra term for rectangle
+        Zrk = 4 * np.array(
+            [[(cs[i] ** 2 * psquared + np.sum(ps ** 2 * cs ** 2)) * ps[i] ** 2 * delta(i, j) - (cs[i] ** 2 + cs[j] ** 2) * ps[i] ** 3 * ps[j]
+              for i in range(4)]
+             for j in range(4)])  # Zeuthen extra term for rectangle
         Zeuthen_rk = rectangle_kernel - (1 / 12) * Zrk  # Zeuthen flowed rectangle kernel
         flow_kernel = (5 / 3) * Zeuthen_pk - (1 / 12) * Zeuthen_rk  # full Zeuthen flow kernel
 
@@ -124,27 +90,24 @@ def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, 
     flow_kernel = flow_kernel + gf_alpha_kernel
 
     # obtain matrix exponential of (gauge fixed) flow kernel for both flow times (=heat kernel)
-    with numba.objmode(answer='float64[:,:]'):  # this is necessary to use unsupported scipy functions inside of a jit-compiled block
-        answer = scipy.linalg.expm(-tau1 * flow_kernel)
-    exp1 = answer
+    exp1 = np.ascontiguousarray(scipy_linalg_expm_wrapper(-tau1 * flow_kernel))
 
     if tau1 == tau2:
         exp2 = exp1
     else:
-        with numba.objmode(answer='float64[:,:]'):
-            answer = scipy.linalg.expm(-tau2 * flow_kernel)
-        exp2 = answer
+        exp2 = np.ascontiguousarray(scipy_linalg_expm_wrapper(-tau2 * flow_kernel))
 
     # calculate flowed correlator matrix from dot product of action kernel & heat kernels
-    # use contiguous arrays to suppress numba warnings
-    flowed_corr_matrix = np.dot(np.ascontiguousarray(exp1), np.dot(np.ascontiguousarray(unfl_prop), np.ascontiguousarray(np.transpose(exp2))))
+    flowed_corr_matrix = np.dot(exp1, np.dot(unfl_prop, np.transpose(exp2)))
 
     # return desired component of flowed propagator
     return flowed_corr_matrix
 
 
 class ComputationClass:
-    def __init__(self, flow_times, ls_t, N_t, t, ls_space, N_space, factor_space, up, printprogress, nproc):
+    def __init__(self, flow_times, flow_action, corr, ls_t, N_t, t, ls_space, N_space, factor_space, up, printprogress, nproc):
+        self._flow_action = flow_action
+        self._corr = corr
         self._ls_t = ls_t
         self._N_t = N_t
         self._t = t
@@ -167,14 +130,45 @@ class ComputationClass:
         return answer
 
     def pass_argument_wrapper(self, tau_f):
-        return self.actual_corr_computation(tau_f, self._ls_t, self._N_t, self._t, self._ls_space, self._N_space, self._factor_space, self._up, self._printprogress)
+        if self._printprogress:
+            print(r'{0:.6f}'.format(tau_f), end=' ')
+        return self.actual_corr_computation(tau_f, self._flow_action, self._corr, self._ls_t, self._N_t, self._t, self._ls_space, self._N_space, self._factor_space, self._up)
 
     @staticmethod
     @numba.njit(cache=True)
-    def actual_corr_computation(tau_f, ls_t, N_t, t, ls_space, N_space, factor_space, up, printprogress):
-        if printprogress:
-            with numba.objmode():
-                print(r'{0:.6f}'.format(tau_f), end=' ')
+    def actual_corr_computation(tau_f, flow_action, corr, ls_t, N_t, t, ls_space, N_space, factor_space, up):
+
+        # first define stuff needed for precise integration (shift, weight)
+        SH_ONE = .2222726231881051504
+        SH_TWO = .1799620871697125296
+        WT_ONE = .6957096902749077147
+        WT_TWO = 1.3042903097250922853
+
+        def SHIFT(i):
+            condition = (i % 4)
+            if condition < 2:
+                if condition == 0:
+                    addend = -SH_ONE
+                else:
+                    addend = -SH_TWO
+            elif condition == 2:
+                addend = SH_TWO
+            else:
+                addend = SH_ONE
+            return i + 0.5 + addend
+
+        def BRANGE(x):
+            return x ** 2
+
+        def BJACOBIAN(x):
+            return 2 * x
+
+        def WEIGHT(i):
+            condition = (i % 4)
+            if (condition == 0) or (condition == 3):
+                return WT_ONE
+            else:
+                return WT_TWO
 
         # starting correlator value at specific tau, tau_F that will be increased each step
         value = 0
@@ -210,14 +204,40 @@ class ComputationClass:
                         pz_hat = 2 * np.sin(p_z / 2)
                         wt_z *= BJACOBIAN(u_z)
 
-                        # actually calculate the integrand at this p_t,p_x,p_y,p_z
-                        # calculate correlator matrix
-                        cm = 16 * flowed_correlator_matrix('Wilson', 'Zeuthen', p_t, p_x, p_y, p_z, tau_f, tau_f)
-                        # first term of EE correlator
-                        term1 = (px_hat ** 2 + py_hat ** 2 + pz_hat ** 2) * cm[0, 0] + pt_hat ** 2 * (cm[1, 1] + cm[2, 2] + cm[3, 3])
-                        # second term of EE correlator
-                        term2 = pt_hat * (px_hat * (cm[0, 1] + cm[1, 0]) + py_hat * (cm[0, 2] + cm[2, 0]) + pz_hat * (cm[0, 3] + cm[3, 0]))
-                        val_at_pos = term1 - term2  # difference of first and second term
+                        if corr == "EE":
+                            # actually calculate the integrand at this p_t,p_x,p_y,p_z
+                            # calculate correlator matrix
+                            cm = 16 * flowed_correlator_matrix('Wilson', flow_action, p_t, p_x, p_y, p_z, tau_f, tau_f)
+                            # first term of EE correlator
+                            term1 = (px_hat ** 2 + py_hat ** 2 + pz_hat ** 2) * cm[0, 0] + pt_hat ** 2 * (cm[1, 1] + cm[2, 2] + cm[3, 3])
+                            # second term of EE correlator
+                            term2 = pt_hat * (px_hat * (cm[0, 1] + cm[1, 0]) + py_hat * (cm[0, 2] + cm[2, 0]) + pz_hat * (cm[0, 3] + cm[3, 0]))
+                            val_at_pos = term1 - term2  # difference of first and second term
+                        elif corr == "BB":
+                            # actually calculate the integrand at this p_t,p_x,p_y,p_z
+
+                            # array to iterate over
+                            p_vec = np.array([0, px_hat, py_hat, pz_hat])
+
+                            # diagonal term of operator matrix
+                            pvecsum = np.sum(p_vec ** 2)
+                            diago_term = np.diag(np.array([0, pvecsum, pvecsum, pvecsum]))
+
+                            # non-diagonal term of operator matrix
+                            nondiago_term = np.zeros((4, 4))
+                            for nu in range(4):
+                                for mu in range(4):
+                                    nondiago_term[mu, nu] = p_vec[mu] * p_vec[nu]
+
+                            # full operator matrix
+                            operator_matrix = diago_term - nondiago_term
+
+                            # calculate propagator matrix
+                            cm = 16 * flowed_correlator_matrix('Wilson', flow_action, p_t, p_x, p_y, p_z, tau_f, tau_f)
+
+                            # put operator matrix and propagator together
+                            val_at_pos = np.sum(operator_matrix * cm)
+
                         val_y += val_at_pos * wt_z  # modify value at fixed y at each z
 
                     val_x += val_y * wt_y  # modify value at fixed x at each y
@@ -235,12 +255,12 @@ class ComputationClass:
         return self._result
 
 
-def get_correlators(temp_seps, flow_times, ls_t, ls_space, N_t, N_space, factor_space, up, printprogress: bool, nproc: int):
+def get_correlators(temp_seps, flow_times, flow_action, corr, ls_t, ls_space, N_t, N_space, factor_space, up, printprogress: bool, nproc: int):
     correlators = np.empty((len(flow_times), len(temp_seps)), dtype=np.float64)
     for g, t in enumerate(temp_seps):
         if printprogress:
             print('Temporal separation:', r'{0:.4f}'.format(t))
-        tmp = ComputationClass(flow_times, ls_t, N_t, t, ls_space, N_space, factor_space, up, printprogress, nproc)
+        tmp = ComputationClass(flow_times, flow_action, corr, ls_t, N_t, t, ls_space, N_space, factor_space, up, printprogress, nproc)
         results = tmp.getResult()
         for f in range(len(flow_times)):
             correlators[f, g] = results[f]
@@ -255,8 +275,10 @@ def main():
     parser.add_argument('--flowradii_file', type=str, required=True,
                         help='path fo file that contains dimensionless flowradii sqrt(8tauF)T that shall be calculated')
     parser.add_argument('--printprogress', action="store_true")
-    parser.add_argument('--outputfile', help='path to outputfile', default='EE_WZnaive.txt', type=str)
+    parser.add_argument('--outputpath', help='path to output folder', default='./', type=str, required=True)
     parser.add_argument('--nproc', default=1, type=int, help='max number of concurrently running processes')
+    parser.add_argument('--flow_action', choices=['Wilson', 'Zeuthen'], type=str, required=True)
+    parser.add_argument('--corr', choices=['EE', 'BB'], type=str, required=True)
 
     args = parser.parse_args()
 
@@ -267,6 +289,7 @@ def main():
     # upper limit of spatial integration
     up = np.pi
 
+    N_IMP = 4
     args.N_space *= N_IMP  # multiply this number by four
 
     # list of all indices in temporal addition. Sum runs from 0 to args.N_t/2, will be accounted for by factor 2 if i \neq 0,args.N_t/2
@@ -280,14 +303,14 @@ def main():
     # define temporal separations
     temp_seps = np.asarray([n / args.N_t for n in range(1, int(args.N_t / 2 + 1))])  # in the form \tau T
 
-    correlators = get_correlators(temp_seps, flow_times, ls_t, ls_space, args.N_t, args.N_space, factor_space, up, args.printprogress, args.nproc)
+    correlators = get_correlators(temp_seps, flow_times, args.flow_action, args.corr, ls_t, ls_space, args.N_t, args.N_space, factor_space, up, args.printprogress, args.nproc)
 
     # overall normalization
     overall_factor = -args.N_t ** 3 / (24 * np.pi ** 3)
     correlators *= overall_factor
 
     # save data in .txt file
-    np.savetxt(args.outputfile, correlators, header='naive EE observable, Wilson action, Zeuthen flow')
+    np.savetxt(args.outputpath+"/"+args.corr+"_pert_latt_"+args.flow_action+"_Nt"+str(args.N_t)+".dat", correlators, header='rows are flow times, columns are temp seps')
 
 
 def save_script_call(add_folder=None):
