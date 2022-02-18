@@ -310,6 +310,7 @@ def main():
     correlators *= overall_factor
 
     # save data in .txt file
+    create_folder(args.outputpath)
     np.savetxt(args.outputpath+"/"+args.corr+"_pert_latt_"+args.flow_action+"_Nt"+str(args.N_t)+".dat", correlators, header='rows are flow times, columns are temp seps')
 
 
