@@ -68,8 +68,6 @@ def find_and_plot_and_save_frankenstein(flowradiusBytauT_list, possible_tauTs, y
 def main():
     parser = argparse.ArgumentParser()
 
-    # TODO FIX output folder and output plot name!
-
     parser.add_argument('--fitparam_files', nargs='*', help='plot model 3 spf for these fit params', required=True)
     parser.add_argument('--fitparam_basepath', default="", type=str, help='shared basepath of all fitparam files, prepended to --fitparam_files.')
     parser.add_argument('--use_tex', action="store_true")
@@ -83,6 +81,7 @@ def main():
                                                                    'for all of them. file should contain three columns: omega/T, PhiUVByT3, err', required=True)
     parser.add_argument('--plot_quenched_extr', help='whether to plot the 1.5 Tc quenched continuum/flow-extr EE data', action="store_true")  # TODO soften hard code
     parser.add_argument('--title', help='title prefix of plot', default=r'quenched, $1.5 T_c$', type=str)
+    parser.add_argument('--outputpath', help="where to save the plot.")
 
     # when you want to load finite lattice spacing
     parser.add_argument('--qcdtype', help="list of qcdtypes. format doesnt matter, only used for finding data. example: quenched_1.50Tc_zeuthenFlow", nargs='*', type=str)
@@ -94,6 +93,10 @@ def main():
     args = parser.parse_args()
 
     args.title = args.title + r', $\rho= \mathrm{max}(\kappa \omega /2T, \, c\,\phi_\mathrm{UV}^\mathrm{LO})$'
+
+    if not args.outputpath:
+        if args.qcdtype and args.corr:
+            args.outputpath = lpd.get_plot_path(args.qcdtype[0], args.corr[0], "")
 
     # calc reconstructed corrs for all given fitparam and PhiUV files.
     xpoints_arr = []
@@ -159,8 +162,9 @@ def main():
                     **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='-.', zorder=-zorder-10000,))
 
     color_offset = 0
+    # NOTE: This whole branch is hardcoded
     if args.plot_quenched_extr:
-        color_offset = 1
+        color_offset = 2
         # plot cont+flow extr. corr
         # TODO abstract this or make a flag to plot this or not?
         XX_flow_extr = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr.txt", unpack=True)
@@ -206,8 +210,9 @@ def main():
                 cont_int.append(None)
                 cont_err_int.append(None)
         find_and_plot_and_save_frankenstein(args.flowradiusBytauT, possible_tauTs, cont_int, cont_err_int,
-                                            "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/", ax, colors, r'cont')
+                                            "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/", ax, colors[1:], r'cont')
 
+    # TODO put this part under process_data, and just plot the corresponding frankstein corrs here!
     # find frankenstein correlator at various fixed flowradiusBytauT
     colors = colors[color_offset:color_offset + len(args.conftype)]
     if args.qcdtype is not None and args.corr is not None and args.conftype is not None:
@@ -244,7 +249,7 @@ def main():
             fontsize=16, color='gray', alpha=0.2,
             ha='center', va='center', rotation='20', zorder=-1000000)
 
-    fig.savefig("/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/EE/EE_frankenstein_comparison.pdf")
+    fig.savefig(args.outputpath+"/EE_fixFlowBytauT_comparison.pdf")
 
 
 if __name__ == '__main__':
