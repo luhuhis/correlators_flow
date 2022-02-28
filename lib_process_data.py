@@ -226,7 +226,8 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,
     if UseTex:
         matplotlib.pyplot.rc('text', usetex=True)
         matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
-    matplotlib.pyplot.rc('font', family='serif', size=fontsize)
+    matplotlib.pyplot.rc('font', family='cmr10', size=fontsize)
+    matplotlib.rcParams['mathtext.fontset'] = 'cm'
     linewidth = 0.5
     matplotlib.rcParams['axes.linewidth'] = linewidth
     fig = matplotlib.pyplot.figure(figsize=figsize, constrained_layout=True)
