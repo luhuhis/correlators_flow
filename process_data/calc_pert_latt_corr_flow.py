@@ -105,12 +105,11 @@ def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, 
 
 
 class ComputationClass:
-    def __init__(self, flow_times, flow_action, corr, ls_t, N_t, t, ls_space, N_space, factor_space, up, printprogress, nproc):
+    def __init__(self, flow_times, flow_action, corr, ls_t, N_t, ls_space, N_space, factor_space, up, printprogress, nproc):
         self._flow_action = flow_action
         self._corr = corr
         self._ls_t = ls_t
         self._N_t = N_t
-        self._t = t
         self._ls_space = ls_space
         self._N_space = N_space
         self._factor_space = factor_space
@@ -122,7 +121,7 @@ class ComputationClass:
 
     def parallelization_wrapper(self):
         if self._printprogress:
-            print("Started parallel work on these flow times:")
+            print("Started parallel work on these flow times (tau_F/a^2):")
         with concurrent.futures.ProcessPoolExecutor(max_workers=self._nproc) as executor:
             result = executor.map(self.pass_argument_wrapper, self._flow_times)
         print("")
@@ -132,11 +131,11 @@ class ComputationClass:
     def pass_argument_wrapper(self, tau_f):
         if self._printprogress:
             print(r'{0:.6f}'.format(tau_f), end=' ')
-        return self.actual_corr_computation(tau_f, self._flow_action, self._corr, self._ls_t, self._N_t, self._t, self._ls_space, self._N_space, self._factor_space, self._up)
+        return self.actual_corr_computation(tau_f, self._flow_action, self._corr, self._ls_t, self._N_t, self._ls_space, self._N_space, self._factor_space, self._up)
 
     @staticmethod
     @numba.njit(cache=True)
-    def actual_corr_computation(tau_f, flow_action, corr, ls_t, N_t, t, ls_space, N_space, factor_space, up):
+    def actual_corr_computation(tau_f, flow_action, corr, ls_t, N_t, ls_space, N_space, factor_space, up):
 
         # first define stuff needed for precise integration (shift, weight)
         SH_ONE = .2222726231881051504
@@ -171,14 +170,14 @@ class ComputationClass:
                 return WT_TWO
 
         # starting correlator value at specific tau, tau_F that will be increased each step
-        value = 0
+        value = np.zeros(N_t)
+        temp_seps = np.asarray([n / N_t for n in range(1, int(N_t / 2 + 1))])  # in the form \tau T
 
         # iteration over all time momenta; i is temporal summation index
         for i in ls_t:
             val_t = 0  # value for this specific p_t
             p_t = 2 * np.pi * i / N_t  # temporal momentum
             pt_hat = 2 * np.sin(p_t / 2)  # temporal lattice momentum
-            cos_at_t = np.cos(2 * np.pi * i * t)  # factor that will be used later, not needed for spatial integration
 
             # numerical p_t integration, j is summation index
             for j in ls_space:
@@ -247,23 +246,24 @@ class ComputationClass:
             if i == 0 or i == int(N_t / 2):
                 val_t *= 0.5
 
-            # modify correlator value at each t. Afterwards, it's completely summed & integrated
-            value += val_t * cos_at_t
+            # modify correlator value at each tauT
+            for m, t in enumerate(temp_seps):
+                cos_at_t = np.cos(2 * np.pi * i * t)
+                value[m] += val_t * cos_at_t
+
         return value
 
     def getResult(self):
-        return self._result
+        return np.asarray(self._result)
 
 
-def get_correlators(temp_seps, flow_times, flow_action, corr, ls_t, ls_space, N_t, N_space, factor_space, up, printprogress: bool, nproc: int):
-    correlators = np.empty((len(flow_times), len(temp_seps)), dtype=np.float64)
-    for g, t in enumerate(temp_seps):
-        if printprogress:
-            print('Temporal separation:', r'{0:.4f}'.format(t))
-        tmp = ComputationClass(flow_times, flow_action, corr, ls_t, N_t, t, ls_space, N_space, factor_space, up, printprogress, nproc)
-        results = tmp.getResult()
+def get_correlators(flow_times, flow_action, corr, ls_t, ls_space, N_t, N_space, factor_space, up, printprogress: bool, nproc: int):
+    correlators = np.empty((len(flow_times), int(N_t/2)), dtype=np.float64)
+    tmp = ComputationClass(flow_times, flow_action, corr, ls_t, N_t, ls_space, N_space, factor_space, up, printprogress, nproc)
+    results = tmp.getResult()
+    for g in range(N_t):
         for f in range(len(flow_times)):
-            correlators[f, g] = results[f]
+            correlators[f, g] = results[f, g]
     return correlators
 
 
@@ -300,10 +300,7 @@ def main():
 
     factor_space = up / args.N_space
 
-    # define temporal separations
-    temp_seps = np.asarray([n / args.N_t for n in range(1, int(args.N_t / 2 + 1))])  # in the form \tau T
-
-    correlators = get_correlators(temp_seps, flow_times, args.flow_action, args.corr, ls_t, ls_space, args.N_t, args.N_space, factor_space, up, args.printprogress, args.nproc)
+    correlators = get_correlators(flow_times, args.flow_action, args.corr, ls_t, ls_space, args.N_t, args.N_space, factor_space, up, args.printprogress, args.nproc)
 
     # overall normalization
     overall_factor = -args.N_t ** 3 / (24 * np.pi ** 3)
@@ -332,7 +329,7 @@ def save_script_call(add_folder=None):
 
 
 def print_script_call():
-    """ save full script call in logfile """
+    """ print full script call to std out """
     import datetime
     now = datetime.datetime.now()
     dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
