@@ -261,7 +261,7 @@ def get_correlators(flow_times, flow_action, corr, ls_t, ls_space, N_t, N_space,
     correlators = np.empty((len(flow_times), int(N_t/2)), dtype=np.float64)
     tmp = ComputationClass(flow_times, flow_action, corr, ls_t, N_t, ls_space, N_space, factor_space, up, printprogress, nproc)
     results = tmp.getResult()
-    for g in range(N_t):
+    for g in range(int(N_t/2)):
         for f in range(len(flow_times)):
             correlators[f, g] = results[f, g]
     return correlators
