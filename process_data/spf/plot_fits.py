@@ -10,7 +10,7 @@ def main():
     # parser.add_argument('--oldformat', help='read in data files of the old format', action="store_true")
 
     # identify the run
-    requiredNamed.add_argument('--model', help='identify the spf model', type=int, choices=[2, 3], required=True)
+    requiredNamed.add_argument('--model', help='identify the spf model', type=int, choices=[2, 3, 4, 5], required=True)
     requiredNamed.add_argument('--nsamples', help='identify file input. number of bootstrap samples', type=int, required=True)
     requiredNamed.add_argument('--tol', help='identify file input. which tolerance was used', type=float)
     requiredNamed.add_argument('--start_from_mean_fit', help="identify file input.", action="store_true")
@@ -22,12 +22,12 @@ def main():
     parser.add_argument('--legacy', help='use legacy file naming conventions', action="store_true")
 
     # plot settings
-    parser.add_argument('--wideaspect', action="store_true",
-                        help="use a wide aspect ratio (basically make the plots larger)")
+    parser.add_argument('--wideaspect', action="store_true", help="use a wide aspect ratio (basically make the plots larger)")
     parser.add_argument('--xlims', help='custom xlims for plot', nargs=2, type=float, default=None)
     parser.add_argument('--ylims', help='custom ylims for plot', nargs=2, type=float, default=None)
     parser.add_argument('--usetex', help='use latex to plot labels', action="store_true")
     parser.add_argument('--plot_spf_err', help='usually one cant see anything when plotting these errors, but sometimes it may be helpful.', action="store_true")
+    parser.add_argument('--PhiUV_path', help='path to PhiUV file', type=str, required=True)
 
     args = parser.parse_args()
 
@@ -36,7 +36,7 @@ def main():
 
     # file identifier
     startstr = "_d" if not args.start_from_mean_fit else "_m"
-    suffix = "_" + str(args.nsamples) + "_" + '{:.0e}'.format(args.tol) + startstr+"_"+str(args.min_tauT) + args.add_suffix
+    suffix = "_" + str(args.nsamples) + "_" + '{:.0e}'.format(args.tol) + startstr+"_"+str(args.min_tauT) + "_" + args.add_suffix
     if args.legacy:
         startstr = ""
         suffix = "_" + str(args.nsamples) + "_" + '{:.0e}'.format(args.tol) + startstr
@@ -72,15 +72,16 @@ def main():
             xlims = (0.1, 100)
             ylims = (1, 100)
             filelabel = "spffit_"
-            ylabel = r'$\mathrm{median}(' + obslabel + r') \pm 34^{\mathrm{th}}\, \%$'
+            # ylabel = r'$\mathrm{median}(' + obslabel + r') \pm 34^{\mathrm{th}}\, \%$'
+            ylabel = r'$' + obslabel + r'$'
 
     if args.model == 2:
         labels = ("2_a_s2_alpha_4",    "2_a_s2_alpha_5",    "2_a_s1_alpha_4",   "2_a_s1_alpha_5",     "2_a_s2_beta_4",    "2_a_s2_beta_5",    "2_a_s1_beta_4",
                   "2_a_s1_beta_5")
         labels_plot = (r'$s_2 \alpha a 4$', r'$s_2 \alpha a 5$', r'$s_1 \alpha a 4$', r'$s_1 \alpha a 5$', r'$s_2 \beta a 4$', r'$s_2 \beta a 5$',
                        r'$s_1 \beta a 4$', r'$s_1 \beta a 5$')
-    elif args.model == 3:
-        labels = ("3_a",)
+    elif args.model == 3 or args.model == 4 or args.model == 5:
+        labels = (str(args.model)+"_a",)
         labels_plot = (r'$3a$',)
     labels = [label+suffix for label in labels]
 
@@ -146,7 +147,7 @@ def main():
                 if not numpy.isnan(xdata[i]).any():
                     plots.append(ax.errorbar(xdata[i]+i*0.003, ydata[i], yerr=[errorsleft[i], errorsright[i]], fmt=fmts[i], fillstyle='none', markersize=2, mew=0.25, lw=0.2, elinewidth=0.2, capsize=1.2, zorder=-10))
         if args.obs == "spf":
-            PhiUV = numpy.loadtxt("/work/data/htshu/ee_spf/PHIUV_a.dat")
+            PhiUV = numpy.loadtxt(args.PhiUV_path)
             PhiUV = PhiUV[:, 0:2]
             ax.set_yscale('log')
             ax.set_xscale('log')
@@ -163,7 +164,7 @@ def main():
 
     # title
     startstrplot = "naive" if not args.start_from_mean_fit else "mean"
-    ax.set_title(r'$\mathrm{'+args.corr+r'},n_\mathrm{bs}='+str(args.nsamples)+r', \mathrm{tol}=\mathrm{'+'{:.0e}'.format(args.tol)+r'}, \mathrm{start}=\mathrm{'+startstrplot+r'}$')
+    # ax.set_title(r'$\mathrm{'+args.corr+r'},n_\mathrm{bs}='+str(args.nsamples)+r', \mathrm{tol}=\mathrm{'+'{:.0e}'.format(args.tol)+r'}, \mathrm{start}=\mathrm{'+startstrplot+r'}$')
 
     outputfolder = "../" + lpd.get_plot_path(args.qcdtype, args.corr, "") + "/spf/"
     lpd.create_folder(outputfolder)
