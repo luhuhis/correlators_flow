@@ -26,7 +26,7 @@ def save_script_call(add_folder=None):
 
 
 def print_script_call():
-    """ save full script call in logfile """
+    """ print full script call to std out """
     import datetime
     now = datetime.datetime.now()
     dt_string = now.strftime("%Y/%m/%d %H:%M:%S")
@@ -34,23 +34,23 @@ def print_script_call():
     return
 
 
-# remove everything to the left of (and including) the first delimiter:
 def remove_left_of_first(delimiter, label):
+    """ remove everything to the left of (and including) the first delimiter """
     return re.sub(r'(^.*?)' + delimiter, '', label)
 
 
-# remove everything to the left of (and including) the last delimiter:
 def remove_left_of_last(delimiter, label):
+    """remove everything to the left of (and including) the last delimiter"""
     return re.sub(r'(^.*)' + delimiter, '', label)
 
 
-# remove everything to the right of (and including) the last delimiter:
 def remove_right_of_last(delimiter, label):
+    """remove everything to the right of (and including) the last delimiter"""
     return re.sub(r'(^.*)' + delimiter + r'(.*)', r'\1', label)
 
 
-# remove everything to the right of (and including) the first delimiter:
 def remove_right_of_first(delimiter, label):
+    """remove everything to the right of (and including) the first delimiter"""
     return re.sub(r'(^.*?)' + delimiter + r'(.*)', r'\1', label)
 
 
@@ -221,7 +221,7 @@ markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^',
            '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
 
 
-def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.01), ylabelpos=(0.01, 0.97), tickpad=2,
+def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.03), ylabelpos=(0.01, 0.97), tickpad=2,
                   figsize=(3+3/8, 3+3/8 - 1/2.54), UseTex=True):
     if UseTex:
         matplotlib.pyplot.rc('text', usetex=True)
