@@ -8,7 +8,7 @@ import argparse
 import itertools
 
 
-plotwidth = 0.8
+plotwidth = 0.5
 
 
 def Gnorm(tauT):
@@ -50,28 +50,31 @@ def Integrand(OmegaByT, tauT, spf, *args):
     return 1. / numpy.pi * Kernel(OmegaByT, tauT) * spf(OmegaByT, *args)
 
 
-# find frankenstein continuum correlator at various fixed flowradiusBytauT
-def find_and_plot_and_save_frankenstein(flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, ax, color, Glabel, zorder=-10, nt=None):
-    frankenstein_arr = []
-    frankenstein_edata = []
-    frankenstein_ydata = []
-    frankenstein_xdata = []
+# find continuum correlator at various fixed flowradiusBytauT
+def find_and_plot_and_save_relflow(flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, ax, color, Glabel, zorder=-10, nt=None):
+    relflow_arr = []
+    relflow_edata = []
+    relflow_ydata = []
+    relflow_xdata = []
     for i, tauT in enumerate(possible_tauTs):
         wanted_flowradius = flowradiusBytauT * tauT
         if y_int_list[i] is not None:
             try:
-                frankenstein_edata.append(e_int_list[i](wanted_flowradius))
-                frankenstein_ydata.append(y_int_list[i](wanted_flowradius))
-                frankenstein_xdata.append(tauT)
+                relflow_edata.append(e_int_list[i](wanted_flowradius))
+                relflow_ydata.append(y_int_list[i](wanted_flowradius))
+                relflow_xdata.append(tauT)
             except ValueError:
                 pass
-    frankenstein_arr.append(numpy.column_stack((frankenstein_xdata, frankenstein_ydata, frankenstein_edata)))
-    numpy.savetxt(out_file_path+"frankenstein_"+r'{0:.3f}'.format(flowradiusBytauT)+".txt",
-                  numpy.column_stack((frankenstein_xdata, frankenstein_ydata, frankenstein_edata)),
-                  header="tauT      G/Gnorm_sqrt(8tauF)/tau="+r'{0:.3f}'.format(flowradiusBytauT)+"       err")
-    ax.errorbar(frankenstein_xdata if nt is None else numpy.asarray(frankenstein_xdata)*nt, frankenstein_ydata, frankenstein_edata, zorder=zorder,
+    flowstr = r'{0:.2f}'.format(flowradiusBytauT)
+    relflow_arr.append(numpy.column_stack((relflow_xdata, relflow_ydata, relflow_edata)))
+    numpy.savetxt(out_file_path+"EE_relflow_"+flowstr+".dat",
+                  numpy.column_stack((relflow_xdata, relflow_ydata, relflow_edata)),
+                  header="tauT      G/Gnorm_sqrt(8tauF)/tau="+flowstr+"       err")
+    ax.errorbar(relflow_xdata if nt is None else numpy.asarray(relflow_xdata)*nt, relflow_ydata, relflow_edata, zorder=zorder,
                 **lpd.chmap(lpd.plotstyle_add_point, markersize=0, elinewidth=plotwidth, mew=plotwidth, fmt='x', color=color,
-                            label=r'$G_\mathrm{' + Glabel + r'}^{\sqrt{8\tau_\mathrm{F}}/\tau='+r'{0:.2f}'.format(flowradiusBytauT)+r'}$'))  #
+                            label=r'$G_\mathrm{' + Glabel + r'}^{\sqrt{8\tau_\mathrm{F}}/\tau='+flowstr+r'}$'))
+    ax.errorbar(relflow_xdata if nt is None else numpy.asarray(relflow_xdata) * nt, relflow_ydata, relflow_edata, zorder=-100*zorder,
+                **lpd.chmap(lpd.plotstyle_add_point, markersize=0, lw=0.75*plotwidth, alpha=0.5, fmt='-', color=color))
 
 
 def main():
@@ -93,7 +96,7 @@ def main():
     parser.add_argument('--npoints', help='how many tauT to plot between 0 and 0.5 for the model correlators', default=100, type=int)
     parser.add_argument('--ylims', help='custom ylims', nargs=2, type=float, default=(-0.03, 4))
     parser.add_argument('--xlims', help='custom xlims', nargs=2, type=float, default=(-0.01, 0.51))
-    parser.add_argument('--plot_in_lattice_units', action="store_true")
+    parser.add_argument('--plot_in_lattice_units', help="only works if the lattice spacing is constant across different conftypes", action="store_true")
     parser.add_argument('--min_tauT', type=float, help='lower limit from which tauT on the reconstructed corr is valid/should be plotted. '
                                                        'default is to parse it from fitparam file.')
     parser.add_argument('--title', help='title prefix of plot', default=r'quenched, $1.5 T_c$', type=str)
@@ -115,13 +118,28 @@ def main():
     parser.add_argument('--outputpath', help="where to save the plot.")
     parser.add_argument('--suffix', type=str, help="suffix to add to plot file output name")
 
+    parser.add_argument('--model', choices=[3, 4, 5], help="which spf model to use")
+
     args = parser.parse_args()
 
-    args.title = args.title + r', $\rho= \mathrm{max}(\kappa \omega /2T, \, c\,\phi_\mathrm{UV}^\mathrm{LO})$'
+    if args.plot_quenched_extr:
+        if not all(element == args.flowradiusBytauT[0] for element in args.flowradiusBytauT):
+            print("ERROR: when plotting the quenched cont/flow extr, all flowradiusBytauT have to be identical")
+            exit(1)
+
+    # model str options
+    model_str = ""
+    if args.model == 3:
+        model_str = r', $\rho= \mathrm{max}(\kappa \omega /2T, \, c\,\phi_\mathrm{UV}^\mathrm{LO})$'
+    elif args.model == 5:
+        model_str = r', $\rho= \sqrt{(\kappa \omega /2T)^2 + (c\,\phi_\mathrm{UV}^\mathrm{LO})^2}$'
+
+    args.title = args.title + model_str
 
     if not args.outputpath:
         if args.qcdtype and args.corr:
-            args.outputpath = lpd.get_plot_path(args.qcdtype[0], args.corr[0], "")
+            args.outputpath = lpd.get_plot_path(args.qcdtype[0], args.corr[0], "")+"/rel_flow/"
+    lpd.create_folder(args.outputpath)
 
     nts = []
     if args.conftype is not None:
@@ -135,8 +153,8 @@ def main():
     fitparams = []
     just_UVs = []
     if args.fitparam_files:
-        for fitparam_file, PhiUV_file in zip(args.fitparam_files if len(args.fitparam_files) > 1 else itertools.cycle(args.fitparam_files),
-                                             args.PhiUV_files if len(args.PhiUV_files) < 1 else itertools.cycle(args.PhiUV_files)):
+        for fitparam_file, PhiUV_file in zip(args.fitparam_files,
+                                             args.PhiUV_files if len(args.PhiUV_files) > 1 else itertools.cycle(args.PhiUV_files)):
             if args.deduce_fitparam_files:
                 fitparam_file = args.fitparam_basepath + "/" + fitparam_file + "/params_" + fitparam_file + ".dat"
             else:
@@ -201,6 +219,7 @@ def main():
         ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2], zorder=0, **lpd.chmap(lpd.plotstyle_add_point, color='k', fmt='x', markersize=0,
                                                                                              mew=plotwidth, elinewidth=plotwidth,
                                                                                              label=r'$G^{\tau_\mathrm{F}\rightarrow 0}_\mathrm{cont}$'))
+        ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2], zorder=-100000, markersize=0, lw=0.75*plotwidth, color='k', fmt='-', alpha=0.5)
 
         # load continuum quenched data and interpolate it
         EE_cont_arr = []
@@ -239,11 +258,12 @@ def main():
             else:
                 cont_int.append(None)
                 cont_err_int.append(None)
-        find_and_plot_and_save_frankenstein(args.flowradiusBytauT, possible_tauTs, cont_int, cont_err_int,
-                                            "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/", ax, colors[1], r'cont')
+        outfolder = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/cont_rel_flow/"
+        lpd.create_folder(outfolder)
+        find_and_plot_and_save_relflow(args.flowradiusBytauT[0], possible_tauTs, cont_int, cont_err_int, outfolder, ax, colors[1], r'cont')
 
-    # TODO put this part under process_data, and just plot the corresponding frankstein corrs here!
-    # find frankenstein correlator at various fixed flowradiusBytauT
+    # TODO put this part under process_data, and just plot the corresponding corrs here?
+    # find correlator at various fixed flowradiusBytauT
     n = max(len(args.flowradiusBytauT), len(args.qcdtype), len(args.corr), len(args.conftype))
     colors = colors[color_offset:color_offset + n]
     if args.qcdtype is not None and args.corr is not None and args.conftype is not None:
@@ -253,7 +273,7 @@ def main():
                     args.corr if len(args.corr) > 1 else itertools.cycle(args.corr),
                     args.conftype if len(args.conftype) > 1 else itertools.cycle(args.conftype),
                     colors):
-            print(flowradiusBytauT, qcdtype, corr, conftype)
+            print(flowradiusBytauT, qcdtype, corr, conftype, color)
             if flowradiusBytauT is not None:
                 inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype)
                 these_flowradii = numpy.loadtxt(inputfolder + "flowradii_" + conftype + ".dat")
@@ -271,8 +291,8 @@ def main():
                     xdata = these_flowradii
                     y_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, ydata, k=3, ext=2, check_finite=True))
                     e_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, edata, k=3, ext=2, check_finite=True))
-                find_and_plot_and_save_frankenstein(flowradiusBytauT, these_tauT, y_int, e_int,
-                                                    inputfolder, ax, color, r'N_\tau='+str(nt), int(-1000*flowradiusBytauT), nt if args.plot_in_lattice_units else None)
+                find_and_plot_and_save_relflow(flowradiusBytauT, these_tauT, y_int, e_int,
+                                               inputfolder, ax, color, r'N_\tau=' + str(nt), int(-1000*flowradiusBytauT), nt if args.plot_in_lattice_units else None)
 
     # Legend
     lpd.legendstyle.update(dict(loc="lower right", bbox_to_anchor=(1.01, 0.07), labelspacing=1))
