@@ -222,7 +222,7 @@ markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^',
 
 
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.03), ylabelpos=(0.01, 0.97), tickpad=2,
-                  figsize=(3+3/8, 3+3/8 - 1/2.54), UseTex=True):
+                  figsize=(3+3/8, 3+3/8 - 1/2.54), UseTex=True, fig=None, subplot=111, no_ax=False):
     if UseTex:
         matplotlib.pyplot.rc('text', usetex=True)
         matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
@@ -230,20 +230,24 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,
     matplotlib.rcParams['mathtext.fontset'] = 'cm'
     linewidth = 0.5
     matplotlib.rcParams['axes.linewidth'] = linewidth
-    fig = matplotlib.pyplot.figure(figsize=figsize, constrained_layout=True)
-    ax = fig.add_subplot(1, 1, 1)
-    if xlabelpos is not None:
-        ax.xaxis.set_label_coords(*xlabelpos)
-    if ylabelpos is not None:
-        ax.yaxis.set_label_coords(*ylabelpos)
-    ax.minorticks_off()
-    ax.tick_params(direction='in', pad=tickpad, width=linewidth)
-    if xlims is not None:
-        ax.set_xlim(xlims)
-    if ylims is not None:
-        ax.set_ylim(ylims)
-    ax.set_xlabel(xlabel, **xlabelstyle)
-    ax.set_ylabel(ylabel, **ylabelstyle)
+    if fig is None:
+        fig = matplotlib.pyplot.figure(figsize=figsize, constrained_layout=True)
+    if not no_ax:
+        ax = fig.add_subplot(subplot)
+        if xlabelpos is not None:
+            ax.xaxis.set_label_coords(*xlabelpos)
+        if ylabelpos is not None:
+            ax.yaxis.set_label_coords(*ylabelpos)
+        ax.minorticks_off()
+        ax.tick_params(direction='in', pad=tickpad, width=linewidth)
+        if xlims is not None:
+            ax.set_xlim(xlims)
+        if ylims is not None:
+            ax.set_ylim(ylims)
+        ax.set_xlabel(xlabel, **xlabelstyle)
+        ax.set_ylabel(ylabel, **ylabelstyle)
+    else:
+        ax = None
     plots = []
     matplotlib.rc('image', cmap='Set1')
     # fig.set_tight_layout(dict(pad=0.4))
