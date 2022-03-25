@@ -6,9 +6,9 @@ import scipy.integrate
 import scipy.interpolate
 import argparse
 import itertools
+from matplotlib import gridspec
 
-
-plotwidth = 0.5
+plotwidth = 0.6
 
 
 def Gnorm(tauT):
@@ -31,7 +31,7 @@ def model4(OmegaByT, kappa, PhiuvByT3, UV_prefactor):
 
 
 def model5(OmegaByT, kappa, PhiuvByT3, UV_prefactor):
-    return numpy.sqrt(PhiIR(OmegaByT, kappa)**2, (UV_prefactor * PhiuvByT3(OmegaByT))**2)
+    return numpy.sqrt(PhiIR(OmegaByT, kappa) ** 2 + (UV_prefactor * PhiuvByT3(OmegaByT)) ** 2)
 
 
 def UV_part(OmegaByT, PhiuvByT3, UV_prefactor):
@@ -51,7 +51,8 @@ def Integrand(OmegaByT, tauT, spf, *args):
 
 
 # find continuum correlator at various fixed flowradiusBytauT
-def find_and_plot_and_save_relflow(flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, ax, color, Glabel, zorder=-10, nt=None):
+def find_and_plot_and_save_relflow(flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, ax, color, Glabel, no_connection, zorder=-10,
+                                   nt=None):
     relflow_arr = []
     relflow_edata = []
     relflow_ydata = []
@@ -65,165 +66,99 @@ def find_and_plot_and_save_relflow(flowradiusBytauT, possible_tauTs, y_int_list,
                 relflow_xdata.append(tauT)
             except ValueError:
                 pass
+    relflow_xdata = numpy.asarray(relflow_xdata)
+    relflow_ydata = numpy.asarray(relflow_ydata)
+    relflow_edata = numpy.asarray(relflow_edata)
     flowstr = r'{0:.2f}'.format(flowradiusBytauT)
     relflow_arr.append(numpy.column_stack((relflow_xdata, relflow_ydata, relflow_edata)))
-    numpy.savetxt(out_file_path+"EE_relflow_"+flowstr+".dat",
+    lpd.create_folder(out_file_path + "/rel_flow/")
+    numpy.savetxt(out_file_path + "/rel_flow/EE_relflow_" + flowstr + ".dat",
                   numpy.column_stack((relflow_xdata, relflow_ydata, relflow_edata)),
-                  header="tauT      G/Gnorm_sqrt(8tauF)/tau="+flowstr+"       err")
-    ax.errorbar(relflow_xdata if nt is None else numpy.asarray(relflow_xdata)*nt, relflow_ydata, relflow_edata, zorder=zorder,
-                **lpd.chmap(lpd.plotstyle_add_point, markersize=0, elinewidth=plotwidth, mew=plotwidth, fmt='x', color=color,
-                            label=r'$G_\mathrm{' + Glabel + r'}^{\sqrt{8\tau_\mathrm{F}}/\tau='+flowstr+r'}$'))
-    ax.errorbar(relflow_xdata if nt is None else numpy.asarray(relflow_xdata) * nt, relflow_ydata, relflow_edata, zorder=-100*zorder,
-                **lpd.chmap(lpd.plotstyle_add_point, markersize=0, lw=0.75*plotwidth, alpha=0.5, fmt='-', color=color))
+                  header="tauT      G/Gnorm_sqrt(8tauF)/tau=" + flowstr + "       err")
+    ax.errorbar(relflow_xdata if nt is None else numpy.asarray(relflow_xdata) * nt, relflow_ydata, relflow_edata * (0.5 / relflow_xdata) ** 2, zorder=zorder,
+                **lpd.chmap(lpd.plotstyle_add_point, markersize=1.5, elinewidth=plotwidth, mew=plotwidth, fmt='_', color=color,
+                            label="$" + Glabel + "$\n $\\sqrt{8\\tau_\\mathrm{F}}/\\tau=" + flowstr + "}$"))
+    if not no_connection:
+        ax.errorbar(relflow_xdata if nt is None else numpy.asarray(relflow_xdata) * nt, relflow_ydata, zorder=-100 * zorder,
+                    **lpd.chmap(lpd.plotstyle_add_point, markersize=0, lw=0.75 * plotwidth, alpha=0.5, fmt='-', color=color))
 
 
-def main():
-
-    #TODO make --flowradiusBytauT a similar option as conftype, so it needs to be specified for each conftype seperately!
-    # TODO make the colors also a similar input option!
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--flowradiusBytauT', nargs='*', type=float, help='which sqrt(8tauF)/tauT to plot', required=True)
-
-    # fitparam options
-    parser.add_argument('--fitparam_files', nargs='*', help='plot model 3 spf for these fit params')
-    parser.add_argument('--fitparam_basepath', default="", type=str, help='shared basepath of all fitparam files, prepended to --fitparam_files.')
-    parser.add_argument('--deduce_fitparam_files', help='with this option it suffices to only specify the fitparam file folder. it only works for a specific '
-                                                        'folder structure/naming convention', action="store_true")
-
-    # plot options
-    parser.add_argument('--npoints', help='how many tauT to plot between 0 and 0.5 for the model correlators', default=100, type=int)
-    parser.add_argument('--ylims', help='custom ylims', nargs=2, type=float, default=(-0.03, 4))
-    parser.add_argument('--xlims', help='custom xlims', nargs=2, type=float, default=(-0.01, 0.51))
-    parser.add_argument('--plot_in_lattice_units', help="only works if the lattice spacing is constant across different conftypes", action="store_true")
-    parser.add_argument('--min_tauT', type=float, help='lower limit from which tauT on the reconstructed corr is valid/should be plotted. '
-                                                       'default is to parse it from fitparam file.')
-    parser.add_argument('--title', help='title prefix of plot', default=r'quenched, $1.5 T_c$', type=str)
-
-    # PhiUV options
-    parser.add_argument('--PhiUV_basepath', default="", type=str, help='shared basepath of all PhiUV files, prepended to --PhiUV_files.')
-    parser.add_argument('--PhiUV_files', type=str, nargs='*', help='path to PhiUV file(s), space seperated. these should match the fitparam_files. '
-                                                                   'if you specify a single PhiUV_file but multiple fitparam_files, than the single one is used '
-                                                                   'for all of them. file should contain three columns: omega/T, PhiUVByT3, err')
-
-    parser.add_argument('--plot_quenched_extr', help='whether to plot the 1.5 Tc quenched continuum/flow-extr EE data', action="store_true")  # TODO soften hard code
-
-    # when you want to load finite lattice spacing
-    parser.add_argument('--qcdtype', help="list of qcdtypes. format doesnt matter, only used for finding data. example: quenched_1.50Tc_zeuthenFlow", nargs='*', type=str)
-    parser.add_argument('--corr', help="list of corrs. choose from EE, EE_clover, BB, BB_clover", nargs='*', type=str)
-    parser.add_argument('--conftype', nargs='*', type=str, help="list of conftypes, e.g. s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
-
-    # file output options
-    parser.add_argument('--outputpath', help="where to save the plot.")
-    parser.add_argument('--suffix', type=str, help="suffix to add to plot file output name")
-
-    parser.add_argument('--model', choices=[3, 4, 5], help="which spf model to use")
-
-    args = parser.parse_args()
-
-    if args.plot_quenched_extr:
-        if not all(element == args.flowradiusBytauT[0] for element in args.flowradiusBytauT):
-            print("ERROR: when plotting the quenched cont/flow extr, all flowradiusBytauT have to be identical")
-            exit(1)
-
-    # model str options
-    model_str = ""
-    if args.model == 3:
+def get_model_params(model):
+    if model == 3:
         model_str = r', $\rho= \mathrm{max}(\kappa \omega /2T, \, c\,\phi_\mathrm{UV}^\mathrm{LO})$'
-    elif args.model == 5:
-        model_str = r', $\rho= \sqrt{(\kappa \omega /2T)^2 + (c\,\phi_\mathrm{UV}^\mathrm{LO})^2}$'
+        model_func = model3
+    elif model == 5:
+        model_str = r', $\rho= \sqrt{(\kappa \omega /2T\,)^2 + (c\,\phi_\mathrm{UV}^\mathrm{LO}(\mu))^2}$'
+        model_func = model5
+    else:
+        print("ERROR: invalid model")
+        exit(1)
+    return model_str, model_func
 
-    args.title = args.title + model_str
 
-    if not args.outputpath:
-        if args.qcdtype and args.corr:
-            args.outputpath = lpd.get_plot_path(args.qcdtype[0], args.corr[0], "")+"/rel_flow/"
-    lpd.create_folder(args.outputpath)
+def set_output_path(outputpath, qcdtype, corr):
+    if not outputpath:
+        if qcdtype:
+            outputpath = lpd.get_plot_path(qcdtype[0], "", "") + "/rel_flow/"
+        if qcdtype and corr:
+            outputpath = lpd.get_plot_path(qcdtype[0], corr[0], "") + "/rel_flow/"
+    lpd.create_folder(outputpath)
+    return outputpath
 
+
+def plot_fit_corrs(ax, xpoints_arr, model_means, just_UVs, fitparams, color_fit, zorders, nts, plot_in_lattice_units, no_just_UV, no_label):
+    # plot reconstructed correlators
+    for xpoints, model_mean, just_UV, fitparam, color, zorder, nt in itertools.zip_longest(xpoints_arr, model_means, just_UVs, fitparams, color_fit,
+                                                                                           zorders, nts):
+        if xpoints is not None:
+            if plot_in_lattice_units:
+                xpoints = xpoints * nt
+
+            if not no_label:
+                label = "$ \\kappa/T^3=" + "{0:.2f}".format(fitparam[0][0]) + "\\pm " + "{0:.2f}".format(numpy.fmax(fitparam[0][1], fitparam[0][2])) \
+                      + "$\n $ c=" + "{0:.2f}".format(fitparam[1][0]) + "\\pm " + "{0:.2f}".format(numpy.fmax(fitparam[1][1], fitparam[1][2])) + "$"
+                # "$ G_\\mathrm{fit}^{\\rho =\\mathrm{max(IR,c\\,UV_{a})}}$ \n "
+                # + "$\\chi^2/\\mathrm{dof}=" + "{0:.1f}".format(fitparam[2][0]) + " \\pm " + "{0:.1f}".format(numpy.fmax(fitparam[2][1], fitparam[2][2])) +"$",
+            else:
+                label = ""
+            ax.errorbar(xpoints, model_mean, color=color,
+                        label=label, **lpd.chmap(lpd.plotstyle_add_point, lw=1.5*plotwidth, fmt='--', zorder=-100+zorder, ))
+
+            if not no_just_UV:
+                ax.errorbar(xpoints, just_UV, color=color, alpha=0.25, **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='-.', zorder=-10000+zorder, ))
+
+            # ax.errorbar(xpoints, ratio, color=color, alpha=0.25, **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='-.', zorder=-10000+zorder, ))
+
+
+def get_nts(conftypes):
     nts = []
-    if args.conftype is not None:
-        for conftype in args.conftype:
+    if conftypes is not None:
+        for conftype in conftypes:
             _, _, nt, _ = lpd.parse_conftype(conftype)
             nts.append(nt)
+    return nts
 
-    # calc reconstructed corrs for all given fitparam and PhiUV files.
-    xpoints_arr = []
-    model3_means = []
-    fitparams = []
-    just_UVs = []
-    if args.fitparam_files:
-        for fitparam_file, PhiUV_file in zip(args.fitparam_files,
-                                             args.PhiUV_files if len(args.PhiUV_files) > 1 else itertools.cycle(args.PhiUV_files)):
-            if args.deduce_fitparam_files:
-                fitparam_file = args.fitparam_basepath + "/" + fitparam_file + "/params_" + fitparam_file + ".dat"
-            else:
-                fitparam_file = args.fitparam_basepath + "/" + fitparam_file
-            PhiUV_file = args.PhiUV_basepath + PhiUV_file
-            # load PhiUV
-            PhiUVa = numpy.loadtxt(PhiUV_file, unpack=True)[0:3]
-            PhiUVaByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUVa[0], PhiUVa[1], k=3, ext=2, check_finite=True)
-            MinOmegaByT = PhiUVa[0][0]
-            MaxOmegaByT = PhiUVa[0][-1]
 
-            # find out lower tauT based on file path
-            if args.min_tauT is not None:
-                this_mintauT = args.min_tauT
-            else:
-                tmp = lpd.remove_left_of_last('/', fitparam_file)
-                tmp = lpd.remove_right_of_last('.dat', tmp)
-                tmp = "0"+lpd.remove_left_of_first('_0', tmp)
-                this_mintauT = float(lpd.remove_right_of_first('_', tmp))
-            xpoints_arr.append(numpy.linspace(this_mintauT, 0.5, args.npoints))
-            params, err_left, err_right = numpy.loadtxt(fitparam_file, unpack=True)
-            fitparams.append(numpy.column_stack((params, err_left, err_right)))
-            model3_mean = []
-            just_UV = []
-            for tauT in xpoints_arr[-1]:
-                model3_mean.append(scipy.integrate.quad(
-                    lambda OmegaByT: Integrand(OmegaByT, tauT, model3, params[0], PhiUVaByT3, params[1]), MinOmegaByT, MaxOmegaByT)[0] / Gnorm(tauT))
-                just_UV.append(scipy.integrate.quad(
-                    lambda OmegaByT: Integrand(OmegaByT, tauT, UV_part, PhiUVaByT3, params[1]), MinOmegaByT,
-                    MaxOmegaByT)[0] / Gnorm(tauT))
-            model3_means.append(model3_mean)
-            just_UVs.append(just_UV)
-
-    # prepare plot canvas
-    xlabel = r'$\tau T$' if not args.plot_in_lattice_units else r'$\tau/a$'
-    fig, ax, _ = lpd.create_figure(xlims=args.xlims, ylims=args.ylims, xlabel=xlabel, xlabelpos=(0.95, 0.05), ylabelpos=(0.08, 0.9), UseTex=False)
-
-    colors = ('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9')
-
-    # plot reconstructed correlators with "error bands"
-    for xpoints, model3_mean, just_UV, fitparam, color, zorder, nt in itertools.zip_longest(xpoints_arr, model3_means, just_UVs, fitparams, colors, range(len(xpoints_arr)), nts):
-        if xpoints is not None:
-            if args.plot_in_lattice_units:
-                xpoints = xpoints*nt
-            ax.errorbar(xpoints, model3_mean, color=color,
-                        label="$ \\kappa/T^3=" + "{0:.2f}".format(fitparam[0][0])
-                              + "\\pm " + "{0:.2f}".format(numpy.fmax(fitparam[0][1], fitparam[0][2]))
-                              + "$\n $ c=" + "{0:.2f}".format(fitparam[1][0]) + "\\pm " + "{0:.2f}".format(numpy.fmax(fitparam[1][1], fitparam[1][2])) + "$",
-                        **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='--', zorder=-zorder-100,))
-            #                          "$ G_\\mathrm{fit}^{\\rho =\\mathrm{max(IR,c\\,UV_{a})}}$ \n "
-            #                          + "$\\chi^2/\\mathrm{dof}=" + "{0:.1f}".format(fitparam[2][0]) + " \\pm " + "{0:.1f}".format(numpy.fmax(fitparam[2][1], fitparam[2][2])) +"$",
-            ax.errorbar(xpoints, just_UV, color=color, alpha=0.25,
-                        **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='-.', zorder=-zorder-10000,))
-
+def plot_extrapolated_data(ax, flowradiusBytauT, plot_quenched_extr, no_connection, color):
+    # TODO no hardcoded paths!!!
     color_offset = 0
     # NOTE: This whole branch is hardcoded
-    if args.plot_quenched_extr:
+    if plot_quenched_extr:
         color_offset = 2
         # plot cont+flow extr. corr
         # TODO abstract this or make a flag to plot this or not?
         XX_flow_extr = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr.txt", unpack=True)
-        ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2], zorder=0, **lpd.chmap(lpd.plotstyle_add_point, color='k', fmt='x', markersize=0,
-                                                                                             mew=plotwidth, elinewidth=plotwidth,
-                                                                                             label=r'$G^{\tau_\mathrm{F}\rightarrow 0}_\mathrm{cont}$'))
-        ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2], zorder=-100000, markersize=0, lw=0.75*plotwidth, color='k', fmt='-', alpha=0.5)
+        ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2], zorder=-10000,
+                    **lpd.chmap(lpd.plotstyle_add_point, color='k', fmt='_', markersize=1.5,
+                                mew=plotwidth, elinewidth=plotwidth,
+                                label="$\\mathrm{cont}$\n$\\tau_\\mathrm{F}\\rightarrow 0}$"))
+        if not no_connection:
+            ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], zorder=-100000, markersize=0, lw=0.75 * plotwidth, color='k', fmt='-', alpha=0.5)
 
         # load continuum quenched data and interpolate it
         EE_cont_arr = []
-        flowradii = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/s144t36_b0754400/flowradii_s144t36_b0754400.dat")
+        flowradii = numpy.loadtxt(
+            "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/s144t36_b0754400/flowradii_s144t36_b0754400.dat")
         min_idx = 0
         max_idx = 0
         stop = False
@@ -260,27 +195,196 @@ def main():
                 cont_err_int.append(None)
         outfolder = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/cont_rel_flow/"
         lpd.create_folder(outfolder)
-        find_and_plot_and_save_relflow(args.flowradiusBytauT[0], possible_tauTs, cont_int, cont_err_int, outfolder, ax, colors[1], r'cont')
+        find_and_plot_and_save_relflow(flowradiusBytauT, possible_tauTs, cont_int, cont_err_int, outfolder, ax, color, r'\mathrm{cont}',
+                                       no_connection, zorder=-9999)
+    return color_offset
+
+
+def main():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--flowradiusBytauT', nargs='*', type=float, help='which sqrt(8tauF)/tauT to plot', required=True)
+
+    # fitparam options
+    parser.add_argument('--fitparam_files', nargs='*', help='plot model 3 spf for these fit params')
+    parser.add_argument('--fitparam_basepath', default="", type=str, help='shared basepath of all fitparam files, prepended to --fitparam_files.')
+    parser.add_argument('--deduce_fitparam_files', help='with this option it suffices to only specify the fitparam file folder. it only works for a specific '
+                                                        'folder structure/naming convention', action="store_true")
+
+    # plot options
+    parser.add_argument('--npoints', help='how many tauT to plot between 0 and 0.5 for the model correlators', default=100, type=int)
+    parser.add_argument('--ylims', help='custom ylims', nargs=2, type=float, default=(-0.03, 4))
+    parser.add_argument('--xlims', help='custom xlims', nargs=2, type=float, default=(-0.01, 0.51))
+    parser.add_argument('--xlims_kappa', help="custom xlims for kappa plot", nargs=2, type=float, default=(0, 3))
+    parser.add_argument('--plot_in_lattice_units', help="only works if the lattice spacing is constant across different conftypes", action="store_true")
+    parser.add_argument('--min_tauT', type=float, help='lower limits from which on the corr is fitted. appear in the kappa plot.', nargs='*')
+    parser.add_argument('--min_tauT_plot', type=float, help='lower limit from which tauT on the reconstructed corr is valid/should be plotted. '
+                                                            'default is to parse it from fitparam file.', nargs='*')
+    parser.add_argument('--tauT_vlines', type=float, help='where to plot vertical dashed lines', nargs='*')
+    parser.add_argument('--title', help='title prefix of plot', default=r'quenched, $1.5 T_c$', type=str)
+
+    # PhiUV options
+    parser.add_argument('--PhiUV_basepath', default="", type=str, help='shared basepath of all PhiUV files, prepended to --PhiUV_files.')
+    parser.add_argument('--PhiUV_files', type=str, nargs='*', help='path to PhiUV file(s), space seperated. these should match the fitparam_files. '
+                                                                   'if you specify a single PhiUV_file but multiple fitparam_files, than the single one is used '
+                                                                   'for all of them. file should contain three columns: omega/T, PhiUVByT3, err')
+
+    parser.add_argument('--plot_quenched_extr', help='whether to plot the 1.5 Tc quenched continuum/flow-extr EE data',
+                        action="store_true")  # TODO soften hard code
+    parser.add_argument('--plot_special_first_fit', help="", action="store_true")
+    parser.add_argument('--no_vlines', help="hide vertical lines that indicate lower fit limit", action="store_true")
+    parser.add_argument('--no_connection', help="hide connections between data points", action="store_true")
+    parser.add_argument('--no_label', help="hide labels of fit corrs", action="store_true")
+
+    parser.add_argument('--color_data', help="specify colors in order that the data should have", type=str, nargs='*',
+                        default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
+    parser.add_argument('--color_fit', help="specify colors in order that the fits should have", type=str, nargs='*',
+                        default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
+    parser.add_argument('--color_vlines', help="specify colors in order that the vlines should have", type=str, nargs='*',
+                        default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
+    parser.add_argument('--kappa_ypos', default=(0.75, 0.105, 1.55, 1.95, 2.35, 2.75, 3.15, 3.55), nargs='*', type=float, help="ypos of kappas in kappa plot, in order")
+    parser.add_argument('--n_dummies', help="how many dummy entries to put in the legend in order to align things nicely", default=0, type=int)
+    parser.add_argument('--ncol_legend', help="how many columns the legend should have", default=1, type=int)
+
+    # when you want to load finite lattice spacing
+    parser.add_argument('--qcdtype', help="list of qcdtypes. format doesnt matter, only used for finding data. example: quenched_1.50Tc_zeuthenFlow", nargs='*',
+                        type=str)
+    parser.add_argument('--corr', help="list of corrs. choose from EE, EE_clover, BB, BB_clover", nargs='*', type=str)
+    parser.add_argument('--conftype', nargs='*', type=str, help="list of conftypes, e.g. s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
+
+    # file output options
+    parser.add_argument('--outputpath', help="where to save the plot.")
+    parser.add_argument('--suffix', type=str, help="suffix to add to plot file output name")
+
+    parser.add_argument('--model', choices=[3, 4, 5], type=int, help="which spf model to use", required=True)
+    parser.add_argument('--no_just_UV', action="store_true", help="do not plot dash-dotted UV parts")
+
+    args = parser.parse_args()
+
+    # check if arguments make sense
+    if args.plot_quenched_extr:
+        if not all(element == args.flowradiusBytauT[0] for element in args.flowradiusBytauT):
+            print("ERROR: when plotting the quenched cont/flow extr, all flowradiusBytauT have to be identical")
+            exit(1)
+    if args.fitparam_files and not args.model:
+        print("ERROR no model was specified although fit parameters were given")
+        exit(1)
+
+    model_str, model_func = get_model_params(args.model)
+    args.title = "$G/G_\\mathrm{norm}$ (" + args.title + model_str + ")"
+    args.outputpath = set_output_path(args.outputpath, args.qcdtype, args.corr)
+    nts = get_nts(args.conftype)
+
+    # prepare plot canvas
+    xlabel = r'$\tau T$' if not args.plot_in_lattice_units else r'$\tau/a$'
+    fig, _, _ = lpd.create_figure(figsize=(1.5*(3+3/8), (3+3/8 - 1/2.54)), UseTex=False, subplot=None, no_ax=True)
+    spec = gridspec.GridSpec(figure=fig, ncols=2, nrows=1, width_ratios=[3, 1], wspace=0)
+    _, ax, _ = lpd.create_figure(figsize=(1.5 * (3 + 3 / 8), 3 + 3 / 8 - 1 / 2.54), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel, xlabelpos=(0.97, 0.07),
+                                  ylabelpos=(0.08, 0.9), UseTex=False, fig=fig, subplot=spec[0])
+    _, ax_kappa, _ = lpd.create_figure(ylims=(0, 2.5), UseTex=False, fig=fig, subplot=spec[1])
+    ax_kappa.set_title("$\\kappa/T^3$", x=0.5, y=1, fontsize=7)
+    ax_kappa.set_xlim(args.xlims_kappa)
+
+    # plot dashed vlines
+    if not args.no_vlines:
+        for tauT, color in zip(args.tauT_vlines, args.color_vlines):
+            ax.axvline(tauT, **lpd.chmap(lpd.verticallinestyle, color=color))
+
+    xpoints_arr = []
+    model_means = []
+    fitparams = []
+    just_UVs = []
+    # ratios = []
+
+    posidx = 0
+    pos = numpy.asarray(list(args.kappa_ypos))
+    pos = pos[:len(args.fitparam_files)]
+
+    # plot fit corrs for all given fitparam and PhiUV files
+    if args.fitparam_files and args.model:
+        for fitparam_file, PhiUV_file, min_tauT_plot in zip(args.fitparam_files,
+                                                       args.PhiUV_files if len(args.PhiUV_files) > 1 else itertools.cycle(args.PhiUV_files),
+                                                       args.min_tauT_plot if len(args.min_tauT_plot) > 1 else itertools.cycle(args.min_tauT_plot)):
+            if args.deduce_fitparam_files:
+                fitparam_file = args.fitparam_basepath + "/" + fitparam_file + "/params_" + fitparam_file + ".dat"
+            else:
+                fitparam_file = args.fitparam_basepath + "/" + fitparam_file
+            PhiUV_file = args.PhiUV_basepath + PhiUV_file
+            # load PhiUV
+            PhiUVa = numpy.loadtxt(PhiUV_file, unpack=True)[0:3]
+            PhiUVaByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUVa[0], PhiUVa[1], k=3, ext=2, check_finite=True)
+            MinOmegaByT = PhiUVa[0][0]
+            MaxOmegaByT = PhiUVa[0][-1]
+
+            # find out lower tauT based on file path
+            tmp = lpd.remove_left_of_last('/', fitparam_file)
+            tmp = lpd.remove_right_of_last('.dat', tmp)
+            tmp = "0" + lpd.remove_left_of_first('_0', tmp)
+            this_mintauT = float(lpd.remove_right_of_first('_', tmp))
+            # TODO, if min tauT is "detected" and it is the same as other min tauT, then display it in the title!?
+            # TODO, also do this for other properties of the SPF fit!!! look into plot_fit.py or so!
+
+            if min_tauT_plot is not None:
+                this_mintauT = min_tauT_plot
+
+            xpoints_arr.append(numpy.linspace(this_mintauT, 0.5, args.npoints))
+            params, err_left, err_right = numpy.loadtxt(fitparam_file, unpack=True)
+            fitparams.append(numpy.column_stack((params, err_left, err_right)))
+
+            ax_kappa.errorbar(params[0], pos[posidx], xerr=[[err_left[0]], [err_right[0]]], color=args.color_fit[posidx], fmt='x-', fillstyle='none',
+                              markersize=3, mew=plotwidth, elinewidth=plotwidth, capsize=2.5, zorder=-10)
+            if posidx == 0:
+                ax_kappa.axvline(params[0], **lpd.chmap(lpd.verticallinestyle, color='k'))
+
+            posidx += 1
+            model_mean = []
+            just_UV = []
+            # ratio = []
+            for tauT in xpoints_arr[-1]:
+                model_mean.append(scipy.integrate.quad(
+                    lambda OmegaByT: Integrand(OmegaByT, tauT, model_func, params[0], PhiUVaByT3, params[1]), MinOmegaByT, MaxOmegaByT)[0] / Gnorm(tauT))
+                just_UV.append(scipy.integrate.quad(
+                    lambda OmegaByT: Integrand(OmegaByT, tauT, UV_part, PhiUVaByT3, params[1]), MinOmegaByT,
+                    MaxOmegaByT)[0] / Gnorm(tauT))
+                # ratio.append(model_mean[-1]/just_UV[-1])
+            model_means.append(model_mean)
+            just_UVs.append(just_UV)
+            # ratios.append(ratio)
+
+    # kappa plot
+    labels_plot = []
+    for mintauT in args.min_tauT:
+        labels_plot.append("$\\geq"+str(mintauT)+"$")
+    ax_kappa.text(0.02, 0.75, "Fit $\\tau T$", transform=ax_kappa.transAxes, fontsize=7, color='k', alpha=1, ha='left', va='center', rotation='0')
+    ax_kappa.set_yticks(pos)
+    ax_kappa.set_yticklabels(labels_plot)
+    for label in ax_kappa.yaxis.get_majorticklabels():
+        label.set_ha("left")
+    ax_kappa.tick_params(axis='y', length=0, direction='in', labelsize=7, pad=0)
+
+    plot_fit_corrs(ax, xpoints_arr, model_means, just_UVs, fitparams, args.color_fit, range(len(xpoints_arr)), nts, args.plot_in_lattice_units, args.no_just_UV, args.no_label)
+
+    color_offset = plot_extrapolated_data(ax, args.flowradiusBytauT[0], args.plot_quenched_extr, args.no_connection, args.color_data[1])
 
     # TODO put this part under process_data, and just plot the corresponding corrs here?
     # find correlator at various fixed flowradiusBytauT
     n = max(len(args.flowradiusBytauT), len(args.qcdtype), len(args.corr), len(args.conftype))
-    colors = colors[color_offset:color_offset + n]
+    args.color_data = args.color_data[color_offset:color_offset + n]
     if args.qcdtype is not None and args.corr is not None and args.conftype is not None:
         for flowradiusBytauT, qcdtype, corr, conftype, color in \
                 zip(args.flowradiusBytauT if len(args.flowradiusBytauT) > 1 else itertools.cycle(args.flowradiusBytauT),
                     args.qcdtype if len(args.qcdtype) > 1 else itertools.cycle(args.qcdtype),
                     args.corr if len(args.corr) > 1 else itertools.cycle(args.corr),
                     args.conftype if len(args.conftype) > 1 else itertools.cycle(args.conftype),
-                    colors):
-            print(flowradiusBytauT, qcdtype, corr, conftype, color)
+                    args.color_data):
             if flowradiusBytauT is not None:
                 inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype)
                 these_flowradii = numpy.loadtxt(inputfolder + "flowradii_" + conftype + ".dat")
                 XX = numpy.loadtxt(inputfolder + corr + "_" + conftype + ".dat")
                 XX_err = numpy.loadtxt(inputfolder + corr + "_err_" + conftype + ".dat")
                 beta, ns, nt, nt_half = lpd.parse_conftype(conftype)
-                these_tauT = numpy.arange(1/nt, 0.501, 1/nt)
+                these_tauT = numpy.arange(1 / nt, 0.501, 1 / nt)
 
                 # interpolate between flow times
                 y_int = []
@@ -292,20 +396,31 @@ def main():
                     y_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, ydata, k=3, ext=2, check_finite=True))
                     e_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, edata, k=3, ext=2, check_finite=True))
                 find_and_plot_and_save_relflow(flowradiusBytauT, these_tauT, y_int, e_int,
-                                               inputfolder, ax, color, r'N_\tau=' + str(nt), int(-1000*flowradiusBytauT), nt if args.plot_in_lattice_units else None)
+                                               inputfolder, ax, color, r'N_\tau=' + str(nt), args.no_connection, int(-1000 * flowradiusBytauT),
+                                               nt if args.plot_in_lattice_units else None)
 
     # Legend
-    lpd.legendstyle.update(dict(loc="lower right", bbox_to_anchor=(1.01, 0.07), labelspacing=1))
-    ax.legend(**lpd.chmap(lpd.legendstyle, framealpha=0, bbox_to_anchor=(0.01, 1), loc='upper left', ncol=2, columnspacing=1.2, fontsize=7))
-    ax.set_title(args.title, x=0.5, y=1, fontsize=8)
+    for i in range(args.n_dummies):
+        ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
+    lpd.legendstyle.update(dict(loc="lower right", bbox_to_anchor=(1.01, 0.07), labelspacing=0.6))
+    legend = ax.legend(**lpd.chmap(lpd.legendstyle, framealpha=0, bbox_to_anchor=(0.02, 1), loc='upper left', ncol=args.ncol_legend, columnspacing=1.2, handlelength=1.2, fontsize=7))
+    texts = legend.get_texts()
+    for text in texts:
+        text.set_linespacing(0.85)
+
+    ax.set_title(args.title, x=0.5, y=1, fontsize=7)
 
     # Watermark
-    ax.text(0.65, 0.2, 'HotQCD preliminary', transform=ax.transAxes,
+    ax.text(0.67, 0.2, 'HotQCD preliminary', transform=ax.transAxes,
             fontsize=16, color='gray', alpha=0.2,
             ha='center', va='center', rotation='20', zorder=-1000000)
 
-    args.suffix = "_"+args.suffix if args.suffix is not None else ""
-    file = args.outputpath+"/EE_relflow"+args.suffix+".pdf"
+    ax_kappa.text(0.5, 0.2, 'HotQCD preliminary', transform=ax_kappa.transAxes,
+            fontsize=8, color='gray', alpha=0.2,
+            ha='center', va='center', rotation='20', zorder=-1000000)
+
+    # save figure
+    file = args.outputpath + "/EE_relflow" + args.suffix + ".pdf"
     print("saving ", file)
     fig.savefig(file)
 
