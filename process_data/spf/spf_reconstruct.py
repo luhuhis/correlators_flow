@@ -172,7 +172,7 @@ def main():
     # parser.add_argument('--start_from_mean_fit', help='fit the mean first and use its fit params as the initial guess for all other fits', action="store_true")
     parser.add_argument('--asym_err', help='get asymmetric errors from the bootstrap to better reflect the distribution', action="store_true")
     parser.add_argument('--min_tauT', help='ignore corr data below this tauT', type=float, default=0)
-    parser.add_argument('--error_exponent', default=0, type=int, help="increase errors for small tauT data like this: error*(0.5/tauT)^weight_exponent")
+    parser.add_argument('--error_exponent', default=0, type=int, help="increase errors for small tauT data like this: error*(0.5/tauT)^error_exponent")
 
     parser.add_argument('--add_suffix', help='add an extra suffix to the output files in order to not overwrite previous ones with similar parameters on a '
                                              'different data set', type=str, default="")
@@ -198,7 +198,7 @@ def main():
         modelidentifier = str(args.model)+"_"+args.PhiUVtype
     if args.add_suffix:
         args.add_suffix = "_"+args.add_suffix
-    fileidentifier = modelidentifier+"_"+str(args.nsamples)+"_"+str(args.min_tauT) + args.add_suffix  # +'{:.0e}'.format(args.tol)  "_"+startstr
+    fileidentifier = modelidentifier+"_"+str(args.nsamples)+"_"+str(args.min_tauT)+"_exp"+str(args.error_exponent) + args.add_suffix  # +'{:.0e}'.format(args.tol)  "_"+startstr
 
     # read in the normalized correlator:
     inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "") if not args.PathInputFolder else args.PathInputFolder
@@ -248,7 +248,7 @@ def main():
 
     # change errors (i.e. inverse fit weights) depending on tauT
     for i, val in enumerate(edata):
-        edata_fit[i] = val * (0.5 / xdata[i])**args.weight_exponent
+        edata_fit[i] = val * (0.5 / xdata[i])**args.error_exponent
 
     # set up initial guess for the fitted parameters. the initial guess for kappa is 1, and for the c_n is 0. for model 3 we only have one other fit parameter
     # (the overall coefficient for the UV part), whose initial guess is also 1.
