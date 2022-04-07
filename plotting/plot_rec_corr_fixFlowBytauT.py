@@ -52,7 +52,7 @@ def Integrand(OmegaByT, tauT, spf, *args):
 
 # find continuum correlator at various fixed flowradiusBytauT
 def find_and_plot_and_save_relflow(flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, ax, color, Glabel, no_connection, zorder=-10,
-                                   nt=None):
+                                   nt=None, label_suffix=""):
     relflow_arr = []
     relflow_edata = []
     relflow_ydata = []
@@ -77,7 +77,8 @@ def find_and_plot_and_save_relflow(flowradiusBytauT, possible_tauTs, y_int_list,
                   header="tauT      G/Gnorm_sqrt(8tauF)/tau=" + flowstr + "       err")
     ax.errorbar(relflow_xdata if nt is None else numpy.asarray(relflow_xdata) * nt, relflow_ydata, relflow_edata * (0.5 / relflow_xdata) ** 2, zorder=zorder,
                 **lpd.chmap(lpd.plotstyle_add_point, markersize=1.5, elinewidth=plotwidth, mew=plotwidth, fmt='_', color=color,
-                            label="$" + Glabel + "$\n $\\sqrt{8\\tau_\\mathrm{F}}/\\tau=" + flowstr + "}$"))
+                            label="$(" + Glabel + ", \\: " + flowstr + label_suffix + ")$"))
+    # TODO add custom labels
     if not no_connection:
         ax.errorbar(relflow_xdata if nt is None else numpy.asarray(relflow_xdata) * nt, relflow_ydata, zorder=-100 * zorder,
                     **lpd.chmap(lpd.plotstyle_add_point, markersize=0, lw=0.75 * plotwidth, alpha=0.5, fmt='-', color=color))
@@ -85,10 +86,10 @@ def find_and_plot_and_save_relflow(flowradiusBytauT, possible_tauTs, y_int_list,
 
 def get_model_params(model):
     if model == 3:
-        model_str = r', $\rho= \mathrm{max}(\kappa \omega /2T, \, c\,\phi_\mathrm{UV}^\mathrm{LO})$'
+        model_str = r'Fit: $\:\rho(\omega)= \mathrm{max}(\kappa \omega /2T, \, c\: \phi_\mathrm{UV}^\mathrm{LO})$'
         model_func = model3
     elif model == 5:
-        model_str = r', $\rho= \sqrt{(\kappa \omega /2T\,)^2 + (c\,\phi_\mathrm{UV}^\mathrm{LO}(\mu))^2}$'
+        model_str = r'Fit: $\:\rho(\omega)= \sqrt{[\kappa \omega /2T\,]^2 + [c\: \phi_\mathrm{UV}(\mu)]^2}$'
         model_func = model5
     else:
         print("ERROR: invalid model")
@@ -151,7 +152,7 @@ def plot_extrapolated_data(ax, flowradiusBytauT, plot_quenched_extr, no_connecti
         ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2], zorder=-10000,
                     **lpd.chmap(lpd.plotstyle_add_point, color='k', fmt='_', markersize=1.5,
                                 mew=plotwidth, elinewidth=plotwidth,
-                                label="$\\mathrm{cont}$\n$\\tau_\\mathrm{F}\\rightarrow 0}$"))
+                                label="$(\\mathrm{cont}, \\tau_\\mathrm{F}\\rightarrow 0)$"))
         if not no_connection:
             ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], zorder=-100000, markersize=0, lw=0.75 * plotwidth, color='k', fmt='-', alpha=0.5)
 
@@ -236,14 +237,20 @@ def main():
     parser.add_argument('--no_vlines', help="hide vertical lines that indicate lower fit limit", action="store_true")
     parser.add_argument('--no_connection', help="hide connections between data points", action="store_true")
     parser.add_argument('--no_label', help="hide labels of fit corrs", action="store_true")
-
+    parser.add_argument('--kappa_labelheight', help="how high the label that says Fit tauT is in the plot", default=0.75, type=float)
+    parser.add_argument('--data_label_suffix', help="additional strings to put after the Ntau in the label", nargs='*', type=str)
+    parser.add_argument('--leg_title_suffix', help="Put this at end of legend title", type=str, default="")
+    parser.add_argument('--leg_pos', nargs=2, default=(0.02, 1), type=float, help="where to put the upper left corner of the legend")
+    parser.add_argument('--plot_kappa_temp', help="plot temp on x-axis on kappa plot", action="store_true")
+    parser.add_argument('--temps', help="temps of kappas of fit files in order", nargs='*', type=float)
+    parser.add_argument('--no_kappa_plot', action="store_true", help="hide kappa plot")
     parser.add_argument('--color_data', help="specify colors in order that the data should have", type=str, nargs='*',
                         default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
     parser.add_argument('--color_fit', help="specify colors in order that the fits should have", type=str, nargs='*',
                         default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
     parser.add_argument('--color_vlines', help="specify colors in order that the vlines should have", type=str, nargs='*',
                         default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
-    parser.add_argument('--kappa_ypos', default=(0.75, 0.105, 1.55, 1.95, 2.35, 2.75, 3.15, 3.55), nargs='*', type=float, help="ypos of kappas in kappa plot, in order")
+    parser.add_argument('--kappa_ypos', default=(1.75, 1.45, 1.3, 1, 0.85), nargs='*', type=float, help="ypos of kappas in kappa plot, in order")
     parser.add_argument('--n_dummies', help="how many dummy entries to put in the legend in order to align things nicely", default=0, type=int)
     parser.add_argument('--ncol_legend', help="how many columns the legend should have", default=1, type=int)
 
@@ -272,24 +279,33 @@ def main():
         exit(1)
 
     model_str, model_func = get_model_params(args.model)
-    args.title = "$G/G_\\mathrm{norm}$ (" + args.title + model_str + ")"
+    args.title = model_str + args.title
     args.outputpath = set_output_path(args.outputpath, args.qcdtype, args.corr)
     nts = get_nts(args.conftype)
 
     # prepare plot canvas
     xlabel = r'$\tau T$' if not args.plot_in_lattice_units else r'$\tau/a$'
-    fig, _, _ = lpd.create_figure(figsize=(1.5*(3+3/8), (3+3/8 - 1/2.54)), UseTex=False, subplot=None, no_ax=True)
-    spec = gridspec.GridSpec(figure=fig, ncols=2, nrows=1, width_ratios=[3, 1], wspace=0)
-    _, ax, _ = lpd.create_figure(figsize=(1.5 * (3 + 3 / 8), 3 + 3 / 8 - 1 / 2.54), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel, xlabelpos=(0.97, 0.07),
-                                  ylabelpos=(0.08, 0.9), UseTex=False, fig=fig, subplot=spec[0])
-    _, ax_kappa, _ = lpd.create_figure(ylims=(0, 2.5), UseTex=False, fig=fig, subplot=spec[1])
-    ax_kappa.set_title("$\\kappa/T^3$", x=0.5, y=1, fontsize=7)
-    ax_kappa.set_xlim(args.xlims_kappa)
+
+    if not args.no_kappa_plot:
+        fig, _, _ = lpd.create_figure(figsize=(1.5 * (3 + 3 / 8), (3 + 3 / 8 - 1 / 2.54)), UseTex=False, subplot=None, no_ax=True)
+        spec = gridspec.GridSpec(figure=fig, ncols=2, nrows=1, width_ratios=[3, 1], wspace=0)
+        _, ax, _ = lpd.create_figure(figsize=(1.5 * (3 + 3 / 8), 3 + 3 / 8 - 1 / 2.54), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
+                                     xlabelpos=(0.97, 0.07),
+                                     ylabelpos=(0.03, 0.97), UseTex=False, fig=fig, subplot=spec[0])
+        _, ax_kappa, _ = lpd.create_figure(ylims=(0, 2.5), UseTex=False, fig=fig, subplot=spec[1])
+        ax_kappa.set_ylabel("$\\kappa/T^3$", x=0.05, y=0.05, fontsize=7)
+        ax_kappa.set_xlim(args.xlims_kappa)
+    else:
+        fig, _, _ = lpd.create_figure(figsize=((3 + 3 / 8), (3 + 3 / 8 - 1 / 2.54)), UseTex=False, subplot=None, no_ax=True)
+        _, ax, _ = lpd.create_figure(figsize=(1.5 * (3 + 3 / 8), 3 + 3 / 8 - 1 / 2.54), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
+                                     xlabelpos=(0.97, 0.07),
+                                     ylabelpos=(0.03, 0.97), UseTex=False, fig=fig)
+    ax.set_ylabel("$\\frac{G}{G^\\mathrm{norm}}$", fontsize=12)
 
     # plot dashed vlines
-    if not args.no_vlines:
+    if not args.no_vlines and args.tauT_vlines is not None and args.color_vlines is not None:
         for tauT, color in zip(args.tauT_vlines, args.color_vlines):
-            ax.axvline(tauT, **lpd.chmap(lpd.verticallinestyle, color=color))
+            ax.axvline(tauT, **lpd.chmap(lpd.verticallinestyle, color=color, alpha=1))
 
     xpoints_arr = []
     model_means = []
@@ -299,13 +315,14 @@ def main():
 
     posidx = 0
     pos = numpy.asarray(list(args.kappa_ypos))
-    pos = pos[:len(args.fitparam_files)]
 
     # plot fit corrs for all given fitparam and PhiUV files
-    if args.fitparam_files and args.model:
-        for fitparam_file, PhiUV_file, min_tauT_plot in zip(args.fitparam_files,
+    if args.fitparam_files and args.model and args.min_tauT_plot:
+        pos = pos[:len(args.fitparam_files)]
+        for fitparam_file, PhiUV_file, min_tauT_plot, temp in zip(args.fitparam_files,
                                                        args.PhiUV_files if len(args.PhiUV_files) > 1 else itertools.cycle(args.PhiUV_files),
-                                                       args.min_tauT_plot if len(args.min_tauT_plot) > 1 else itertools.cycle(args.min_tauT_plot)):
+                                                       args.min_tauT_plot if len(args.min_tauT_plot) > 1 else itertools.cycle(args.min_tauT_plot),
+                                                       args.temps if args.temps is not None else [None for _ in range(len(args.fitparam_files))]):
             if args.deduce_fitparam_files:
                 fitparam_file = args.fitparam_basepath + "/" + fitparam_file + "/params_" + fitparam_file + ".dat"
             else:
@@ -332,10 +349,23 @@ def main():
             params, err_left, err_right = numpy.loadtxt(fitparam_file, unpack=True)
             fitparams.append(numpy.column_stack((params, err_left, err_right)))
 
-            ax_kappa.errorbar(params[0], pos[posidx], xerr=[[err_left[0]], [err_right[0]]], color=args.color_fit[posidx], fmt='x-', fillstyle='none',
-                              markersize=3, mew=plotwidth, elinewidth=plotwidth, capsize=2.5, zorder=-10)
-            if posidx == 0:
-                ax_kappa.axvline(params[0], **lpd.chmap(lpd.verticallinestyle, color='k'))
+            if not args.no_kappa_plot:
+                if not args.plot_kappa_temp:
+                    ax_kappa.errorbar(params[0], pos[posidx], xerr=[[err_left[0]], [err_right[0]]], color=args.color_fit[posidx], fmt='x-', fillstyle='none',
+                                      markersize=2, mew=plotwidth, elinewidth=plotwidth, capsize=2, zorder=-10)
+                else:
+                    ax_kappa.errorbar(temp, params[0], yerr=[[err_left[0]], [err_right[0]]], color=args.color_fit[posidx], fmt='x-', fillstyle='none',
+                                      markersize=2, mew=plotwidth, elinewidth=plotwidth, capsize=2, zorder=-10)
+                    print(temp, r'{0:.2f}'.format(params[0]), r'{0:.2f}'.format(err_left[0]), r'{0:.2f}'.format(err_right[0]))
+                    ax_kappa.set_xlim((0, 400))
+                    ax_kappa.set_ylim(args.xlims_kappa)
+                    ax_kappa.set_xlabel("$T\\, \\mathrm{[MeV]}$", fontsize=8)
+                    ax_kappa.set_ylabel("$\\kappa/T^3$", fontsize=8)
+                    ax_kappa.xaxis.set_label_coords(0.8, 0.07)
+                    ax_kappa.yaxis.set_label_coords(0.07, 0.97)
+
+                if posidx == 0 and args.plot_quenched_extr:
+                    ax_kappa.axvline(params[0], **lpd.chmap(lpd.verticallinestyle, dashes=(2, 2), color='k', alpha=0.5))
 
             posidx += 1
             model_mean = []
@@ -353,15 +383,19 @@ def main():
             # ratios.append(ratio)
 
     # kappa plot
-    labels_plot = []
-    for mintauT in args.min_tauT:
-        labels_plot.append("$\\geq"+str(mintauT)+"$")
-    ax_kappa.text(0.02, 0.75, "Fit $\\tau T$", transform=ax_kappa.transAxes, fontsize=7, color='k', alpha=1, ha='left', va='center', rotation='0')
-    ax_kappa.set_yticks(pos)
-    ax_kappa.set_yticklabels(labels_plot)
-    for label in ax_kappa.yaxis.get_majorticklabels():
-        label.set_ha("left")
-    ax_kappa.tick_params(axis='y', length=0, direction='in', labelsize=7, pad=0)
+    if not args.plot_kappa_temp:
+        labels_plot = []
+        for mintauT in args.min_tauT:
+            labels_plot.append("$\\tau T\\geq"+str(mintauT)+"$")
+        if not args.no_kappa_plot:
+            ax_kappa.text(0.04, args.kappa_labelheight, "Fit range", transform=ax_kappa.transAxes, fontsize=7, color='k', alpha=1, ha='left', va='center', rotation='0')
+            ax_kappa.set_yticks(pos)
+            ax_kappa.set_yticklabels(labels_plot)
+            for label in ax_kappa.yaxis.get_majorticklabels():
+                label.set_ha("left")
+            ax_kappa.tick_params(axis='y', length=0, direction='in', labelsize=7, pad=-2)
+            from matplotlib.ticker import MaxNLocator
+            ax_kappa.xaxis.set_major_locator(MaxNLocator(3))
 
     plot_fit_corrs(ax, xpoints_arr, model_means, just_UVs, fitparams, args.color_fit, range(len(xpoints_arr)), nts, args.plot_in_lattice_units, args.no_just_UV, args.no_label)
 
@@ -369,15 +403,16 @@ def main():
 
     # TODO put this part under process_data, and just plot the corresponding corrs here?
     # find correlator at various fixed flowradiusBytauT
-    n = max(len(args.flowradiusBytauT), len(args.qcdtype), len(args.corr), len(args.conftype))
-    args.color_data = args.color_data[color_offset:color_offset + n]
     if args.qcdtype is not None and args.corr is not None and args.conftype is not None:
-        for flowradiusBytauT, qcdtype, corr, conftype, color in \
+        n = max(len(args.flowradiusBytauT), len(args.qcdtype), len(args.corr), len(args.conftype))
+        args.color_data = args.color_data[color_offset:color_offset + n]
+        for flowradiusBytauT, qcdtype, corr, conftype, color, label_suffix in \
                 zip(args.flowradiusBytauT if len(args.flowradiusBytauT) > 1 else itertools.cycle(args.flowradiusBytauT),
                     args.qcdtype if len(args.qcdtype) > 1 else itertools.cycle(args.qcdtype),
                     args.corr if len(args.corr) > 1 else itertools.cycle(args.corr),
                     args.conftype if len(args.conftype) > 1 else itertools.cycle(args.conftype),
-                    args.color_data):
+                    args.color_data,
+                    args.data_label_suffix if args.data_label_suffix is not None else ["" for _ in range(n)]):
             if flowradiusBytauT is not None:
                 inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype)
                 these_flowradii = numpy.loadtxt(inputfolder + "flowradii_" + conftype + ".dat")
@@ -396,14 +431,14 @@ def main():
                     y_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, ydata, k=3, ext=2, check_finite=True))
                     e_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, edata, k=3, ext=2, check_finite=True))
                 find_and_plot_and_save_relflow(flowradiusBytauT, these_tauT, y_int, e_int,
-                                               inputfolder, ax, color, r'N_\tau=' + str(nt), args.no_connection, int(-1000 * flowradiusBytauT),
-                                               nt if args.plot_in_lattice_units else None)
+                                               inputfolder, ax, color, str(nt), args.no_connection, int(-1000 * flowradiusBytauT),
+                                               nt if args.plot_in_lattice_units else None, label_suffix=label_suffix)
 
     # Legend
     for i in range(args.n_dummies):
         ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
-    lpd.legendstyle.update(dict(loc="lower right", bbox_to_anchor=(1.01, 0.07), labelspacing=0.6))
-    legend = ax.legend(**lpd.chmap(lpd.legendstyle, framealpha=0, bbox_to_anchor=(0.02, 1), loc='upper left', ncol=args.ncol_legend, columnspacing=1.2, handlelength=1.2, fontsize=7))
+    legend = ax.legend(**lpd.chmap(lpd.legendstyle, framealpha=0, bbox_to_anchor=args.leg_pos, loc='upper left', labelspacing=0.6, ncol=args.ncol_legend, columnspacing=1.2, handlelength=1.2, fontsize=6))
+    # legend.set_title("$(N_\\tau,\\: \\sqrt{\\! 8\\tau_F}/\\tau"+args.leg_title_suffix+")$", prop={'size': 6})
     texts = legend.get_texts()
     for text in texts:
         text.set_linespacing(0.85)
@@ -411,13 +446,15 @@ def main():
     ax.set_title(args.title, x=0.5, y=1, fontsize=7)
 
     # Watermark
-    ax.text(0.67, 0.2, 'HotQCD preliminary', transform=ax.transAxes,
-            fontsize=16, color='gray', alpha=0.2,
+
+    if not args.no_kappa_plot:
+        ax.text(0.67, 0.2, 'HotQCD preliminary', transform=ax.transAxes,
+            fontsize=16, color='gray', alpha=0.5,
             ha='center', va='center', rotation='20', zorder=-1000000)
 
-    ax_kappa.text(0.5, 0.2, 'HotQCD preliminary', transform=ax_kappa.transAxes,
-            fontsize=8, color='gray', alpha=0.2,
-            ha='center', va='center', rotation='20', zorder=-1000000)
+        ax_kappa.text(0.5, 0.2, 'HotQCD preliminary', transform=ax_kappa.transAxes,
+                fontsize=8, color='gray', alpha=0.5,
+                ha='center', va='center', rotation='20', zorder=-1000000)
 
     # save figure
     file = args.outputpath + "/EE_relflow" + args.suffix + ".pdf"
