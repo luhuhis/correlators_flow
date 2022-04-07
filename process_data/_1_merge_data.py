@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3.7m
 import numpy
-from os import listdir 
+from os import listdir
 import lib_process_data as lpd
 
 
@@ -13,9 +13,10 @@ def main():
     parser.add_argument('--basepath', help="override default base input path with this one", type=str)
     parser.add_argument('--n_discard', help="number of configurations, counted from the lowest conf_num, in each stream that should be ignored", type=int, default=0)
     parser.add_argument('--legacy', help="use legacy file names and legacy multiplicity factor of -3", action="store_true")
+    parser.add_argument('--excess_workaround', help="ignore additional flow times at the end of later files", action="store_true")
 
     args = parser.parse_args()
-   
+
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
     fermions, temp, flowtype = lpd.parse_qcdtype(args.qcdtype)
 
@@ -64,17 +65,21 @@ def main():
             datafiles.sort()
             discarded = 0
             for datafile in datafiles:
-                if datafile.startswith(full_prefix): 
+                if datafile.startswith(full_prefix):
                     path = inputfolder+"/"+stream_folder+"/"+datafile
                     print("reading "+datafile)
                     tmp = numpy.loadtxt(path)
                     if shape == (0, 0):
                         shape = tmp.shape
                     if shape != tmp.shape:
-                        print("error! shapes of input files don't match. ignoring this file.")
-                        print(shape, " (previous) vs ", tmp.shape, " (current file)")
-                        corrupt_files.append(path)
-                        continue
+                        if args.excess_workaround and tmp.shape != (0,) and tmp.shape[1] == shape[1] and tmp.shape[0] > shape[0]:
+                            print("INFO: discarding", tmp.shape[0]-shape[0], " flow times from the end")
+                            tmp = tmp[:shape[0]]
+                        else:
+                            print("error! shapes of input files don't match. ignoring this file.")
+                            print(shape, " (previous) vs ", tmp.shape, " (current file)")
+                            corrupt_files.append(datafile)
+                            continue
                     if discarded < args.n_discard:
                         discarded += 1
                         continue
@@ -95,7 +100,8 @@ def main():
     if len(corrupt_files) > 0:
         print("\n============================= \nWARNING!!!!!!!!!!")
         print("These files are corrupt and were skipped:")
-        print(*corrupt_files)
+        for file in corrupt_files:
+            print(file)
         print("================================\n")
     if n_datafiles == 0:
         print("Didn't find any files! Are the input parameters correct?", args.conftype, beta, ns, nt, nt_half, args.qcdtype, fermions, temp, flowtype, args.corr, args.acc_sts)
@@ -128,7 +134,7 @@ def main():
         outfile.write('# '+str(n_datafiles)+' confs in one file\n')
         outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
         lpd.write_flow_times(outfile, flow_times)
-        for conf in XX_numerator_real: 
+        for conf in XX_numerator_real:
             numpy.savetxt(outfile, conf)
             outfile.write('# \n')
 
@@ -139,7 +145,7 @@ def main():
         outfile.write('# '+str(n_datafiles)+' confs in one file\n')
         outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
         lpd.write_flow_times(outfile, flow_times)
-        for conf in XX_numerator_imag: 
+        for conf in XX_numerator_imag:
             numpy.savetxt(outfile, conf)
             outfile.write('# \n')
 
@@ -150,7 +156,7 @@ def main():
         outfile.write('# '+str(n_datafiles)+' confs in one file\n')
         outfile.write('# rows correspond to flow times\n')
         lpd.write_flow_times(outfile, flow_times)
-        for conf in polyakov_real: 
+        for conf in polyakov_real:
             numpy.savetxt(outfile, conf)
             outfile.write('# \n')
 
@@ -161,10 +167,10 @@ def main():
         outfile.write('# '+str(n_datafiles)+' confs in one file\n')
         outfile.write('# rows correspond to flow times\n')
         lpd.write_flow_times(outfile, flow_times)
-        for conf in polyakov_imag: 
+        for conf in polyakov_imag:
             numpy.savetxt(outfile, conf)
             outfile.write('# \n')
-            
+
     print("done with "+args.qcdtype+" "+args.conftype)
 
 
