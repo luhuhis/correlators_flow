@@ -1,99 +1,19 @@
 #!/usr/local/bin/python3.7m
 import lib_process_data as lpd
 import numpy
+import argparse
 
 
-def main():
-    parser, requiredNamed = lpd.get_parser()
-
-    parser.add_argument('--PathOutputFolder', help='the path of output folder like /a/b', type=str)
-    # parser.add_argument('--oldformat', help='read in data files of the old format', action="store_true")
-
-    # identify the run
-    requiredNamed.add_argument('--model', help='identify the spf model', type=int, choices=[2, 3, 4, 5], required=True)
-    requiredNamed.add_argument('--nsamples', help='identify file input. number of bootstrap samples', type=int, required=True)
-    requiredNamed.add_argument('--tol', help='identify file input. which tolerance was used', type=float)
-    requiredNamed.add_argument('--start_from_mean_fit', help="identify file input.", action="store_true")
-    parser.add_argument('--obs', help='whether to plot kappa or chisqdof', choices=["kappa", "chisqdof", "corr", "spf"], default="kappa")
-
-    # choose which data ensemble to plot
-    parser.add_argument('--min_tauT', help='only used to specify which ensemble of data to plot', type=str, default="0")
-    parser.add_argument('--add_suffix', help='only used to specify which ensemble of data to plot', type=str, default="")
-    parser.add_argument('--legacy', help='use legacy file naming conventions', action="store_true")
-
-    # plot settings
-    parser.add_argument('--wideaspect', action="store_true", help="use a wide aspect ratio (basically make the plots larger)")
-    parser.add_argument('--xlims', help='custom xlims for plot', nargs=2, type=float, default=None)
-    parser.add_argument('--ylims', help='custom ylims for plot', nargs=2, type=float, default=None)
-    parser.add_argument('--usetex', help='use latex to plot labels', action="store_true")
-    parser.add_argument('--plot_spf_err', help='usually one cant see anything when plotting these errors, but sometimes it may be helpful.', action="store_true")
-    parser.add_argument('--PhiUV_path', help='path to PhiUV file', type=str, required=True)
-
-    args = parser.parse_args()
-
-    # read in the normalized correlator
-    inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "")+"/spf/"
-
-    # file identifier
-    startstr = "_d" if not args.start_from_mean_fit else "_m"
-    suffix = "_" + str(args.nsamples) + "_" + '{:.0e}'.format(args.tol) + startstr+"_"+str(args.min_tauT) + "_" + args.add_suffix
-    if args.legacy:
-        startstr = ""
-        suffix = "_" + str(args.nsamples) + "_" + '{:.0e}'.format(args.tol) + startstr
-
-    # plot settings
-    ylabel = None
-    ylims = None
-    if args.obs == "kappa" or args.obs == "chisqdof":
-        if args.obs == "kappa":
-            xlims = (1.5, 12.5)
-            idx = 0
-            obslabel = r'\kappa/ T^3'
-            filelabel = "params_"
-            ylims = (0, 5)
-        if args.obs == "chisqdof":
-            xlims = (0, 9)
-            idx = -1
-            obslabel = r'\chi^2/\mathrm{d.o.f.}'
-            filelabel = "params_"
-            ylims = (0, 5)
-        xlabel = r'$\mathrm{median}(' + obslabel + r') \pm 34^{\mathrm{th}}\, \%$'
-        ylabelpos = None
-    if args.obs == "corr" or args.obs == "spf":
-        ylabelpos = (0.2, 0.9)
-        if args.obs == "corr":
-            filelabel = "corrfit_"
-            ylabel = r'$\frac{\mathrm{median}(G^\mathrm{model}) \pm 34^{\mathrm{th}}\, \%}{G^\mathrm{cont} \pm \delta G}$'
-            xlabel = r'$\tau T$'
-            xlims = (0.2, 0.52)
-        if args.obs == "spf":
-            obslabel = r'\frac{\rho}{\omega^2 T}'
-            xlabel = r'$\omega/T$'
-            xlims = (0.1, 100)
-            ylims = (1, 100)
-            filelabel = "spffit_"
-            # ylabel = r'$\mathrm{median}(' + obslabel + r') \pm 34^{\mathrm{th}}\, \%$'
-            ylabel = r'$' + obslabel + r'$'
-
-    if args.model == 2:
-        labels = ("2_a_s2_alpha_4",    "2_a_s2_alpha_5",    "2_a_s1_alpha_4",   "2_a_s1_alpha_5",     "2_a_s2_beta_4",    "2_a_s2_beta_5",    "2_a_s1_beta_4",
-                  "2_a_s1_beta_5")
-        labels_plot = (r'$s_2 \alpha a 4$', r'$s_2 \alpha a 5$', r'$s_1 \alpha a 4$', r'$s_1 \alpha a 5$', r'$s_2 \beta a 4$', r'$s_2 \beta a 5$',
-                       r'$s_1 \beta a 4$', r'$s_1 \beta a 5$')
-    elif args.model == 3 or args.model == 4 or args.model == 5:
-        labels = (str(args.model)+"_a",)
-        labels_plot = (r'$3a$',)
-    labels = [label+suffix for label in labels]
-
+def load_data(files, obs: str):
+    # === load data
     xdata = []
     ydata = []
     errorsleft = []
     errorsright = []
-    for label in labels:
+    for file in files:
         try:
-            file = inputfolder + "/"+label+"/" + filelabel + label + ".dat"
             data = numpy.loadtxt(file)
-            print("succes: read in", file, "\n")
+            print("success: read in", file, "\n")
         except OSError:
             print("fail: could not find ", file, "\n")
             xdata.append(numpy.nan)
@@ -101,39 +21,79 @@ def main():
             errorsleft.append(numpy.nan)
             errorsright.append(numpy.nan)
             continue
-        if args.obs == "kappa" or args.obs == "chisqdof":
+        if obs == "kappa" or obs == "chisqdof":
+            if obs == "kappa":
+                idx = 0
+            elif obs == "chisqdof":
+                idx = -1
             xdata.append(data[idx, 0])
             errorsleft.append(data[idx, 1])
             errorsright.append(data[idx, 2])
-        elif args.obs == "corr":
+        elif obs == "corr":
             ydata.append((data[:, 3]/data[:, 1]))
             xdata.append(data[:, 0])
             errorsleft.append(numpy.abs(ydata[-1]) * numpy.sqrt((data[:, 4]/data[:, 3])**2 + (data[:, 2]/data[:, 1])**2))
             errorsright.append(numpy.abs(ydata[-1]) * numpy.sqrt((data[:, 5]/data[:, 3])**2 + (data[:, 2]/data[:, 1])**2))
-        elif args.obs == "spf":
+        elif obs == "spf":
             ydata.append(data[:, 1])
             xdata.append(data[:, 0])
             errorsleft.append(data[:, 2])
             errorsright.append(data[:, 3])
+    return xdata, ydata, errorsleft, errorsright
 
-    figsize = (3 + 3 / 8, 3 + 3 / 8 - 1 / 2.54)
-    if args.wideaspect:
-        figsize = (1.5 * (3 + 3 / 8), 1.5 * (3 + 3 / 8) / 16 * 9)
-    if args.xlims:
-        xlims = args.xlims
-    if args.ylims:
-        ylims = args.ylims
-    fig, ax, plots = lpd.create_figure(figsize=figsize, xlabel=xlabel, ylabel=ylabel, ylabelpos=ylabelpos, xlims=xlims, xlabelpos=(0.5, -0.1), ylims=ylims, UseTex=args.usetex)
 
-    if args.obs == "kappa" or args.obs == "chisqdof":
-        pos = 0.3+numpy.asarray((0.45, 0.85, 1.25, 1.65, 2.65, 3.05, 3.45, 3.85))
-        colors = ('red', 'red', 'blue', 'blue', 'red', 'red', 'blue', 'blue')
-        for i, label in enumerate(labels):
+def get_plot_settings(obs: str):
+    ylabel = None
+    ylims = None
+    xlims = None
+    xlabel = None
+    ylabelpos = None
+    filelabel = ""
+
+    if obs == "kappa" or obs == "chisqdof":
+        if obs == "kappa":
+            xlims = (1.5, 12.5)
+            obslabel = r'\kappa/ T^3'
+            filelabel = "params_"
+            ylims = (0, 5)
+        if obs == "chisqdof":
+            xlims = (0, 9)
+            obslabel = r'\chi^2/\mathrm{d.o.f.}'
+            filelabel = "params_"
+            ylims = (0, 5)
+        xlabel = r'$\mathrm{median}(' + obslabel + r') \pm 34^{\mathrm{th}}\, \%$'
+        ylabelpos = None
+
+    if obs == "corr" or obs == "spf":
+        ylabelpos = (0.05, 0.95)
+        if obs == "corr":
+            filelabel = "corrfit_"
+            # ylabel = r'$\frac{\mathrm{median}(G^\mathrm{model}) \pm 34^{\mathrm{th}}\, \%}{G^\mathrm{cont} \pm \delta G}$'
+            ylabel = r'$\frac{G^\mathrm{model}}{G^\mathrm{cont}}$'
+            xlabel = r'$\tau T$'
+            xlims = (0.2, 0.52)
+            ylims = (0.95, 1.05)
+        if obs == "spf":
+            obslabel = r'\frac{\rho}{\omega T^2}'
+            xlabel = r'$\omega/T$'
+            xlims = (0.1, 100)
+            ylims = (1, 100)
+            filelabel = "spffit_"
+            # ylabel = r'$\mathrm{median}(' + obslabel + r') \pm 34^{\mathrm{th}}\, \%$'
+            ylabel = r'$' + obslabel + r'$'
+
+    return filelabel, xlabel, ylabel, xlims, ylims, ylabelpos
+
+
+def plot(obs, nfiles, xdata, ydata, errorsleft, errorsright, ax, plots, labels, PhiUV_file, plot_spf_err, pos, colors):
+    if obs == "kappa" or obs == "chisqdof":
+
+        for i in range(nfiles):
             if not numpy.isnan(xdata[i]).any():
                 ax.errorbar(xdata[i], pos[i], xerr=[[errorsleft[i]], [errorsright[i]]], color=colors[i], fmt='x-', fillstyle='none', markersize=5, mew=0.25, lw=0.8, elinewidth=0.5, capsize=1.2, zorder=-10)
         # custom yaxis
         ax.set_yticks(pos)
-        ax.set_yticklabels(labels_plot)
+        ax.set_yticklabels(labels)
         # vertical dashed lines
         currentxlims = ax.get_xlim()
         for i in range(0, int(currentxlims[1])):
@@ -141,34 +101,80 @@ def main():
 
     fmts = [val + "-" for val in lpd.markers]
 
-    if args.obs == "corr" or args.obs == "spf":
-        if args.obs == "corr":
-            for i, label in enumerate(labels):
+    if obs == "corr" or obs == "spf":
+        if obs == "corr":
+            for i in range(nfiles):
                 if not numpy.isnan(xdata[i]).any():
                     plots.append(ax.errorbar(xdata[i]+i*0.003, ydata[i], yerr=[errorsleft[i], errorsright[i]], fmt=fmts[i], fillstyle='none', markersize=2, mew=0.25, lw=0.2, elinewidth=0.2, capsize=1.2, zorder=-10))
-        if args.obs == "spf":
-            PhiUV = numpy.loadtxt(args.PhiUV_path)
-            PhiUV = PhiUV[:, 0:2]
+        if obs == "spf":
+            if PhiUV_file is not None:
+                PhiUV = numpy.loadtxt(PhiUV_file)
+                PhiUV = PhiUV[:, 0:2]
+                labels = (r'$\Phi^\mathrm{UV}$', *labels)
+                plots.append(ax.errorbar(PhiUV[:, 0], PhiUV[:, 1]/PhiUV[:, 0], fmt='-', lw=0.4))
             ax.set_yscale('log')
             ax.set_xscale('log')
-            plots.append(ax.errorbar(PhiUV[:, 0], PhiUV[:, 1]/PhiUV[:, 0], fmt='-', label=r'$\Phi_a^\mathrm{UV}$', lw=0.4))
-            for i, label in enumerate(labels):
+            for i in range(nfiles):
                 if not numpy.isnan(xdata[i]).any():
-                    if args.plot_spf_err:
+                    if plot_spf_err:
                         yerr = [errorsleft[i], errorsright[i]]
                     else:
                         yerr = None
                     plots.append(ax.errorbar(xdata[i]+i*0.003, ydata[i]/xdata[i],  yerr=yerr, fmt=fmts[i], fillstyle='none', markersize=0, mew=0.25, lw=0.2, elinewidth=0.2, capsize=1.2, zorder=-10))  # yerr=[errorsleft[i], errorsright[i]],
-        ax.legend(handles=plots, labels=(r'$\Phi^\mathrm{UV}$', *labels_plot), **lpd.legendstyle)
+        ax.legend(handles=plots, labels=labels, **lpd.legendstyle)
         ax.axhline(y=1, **lpd.horizontallinestyle)
 
-    # title
-    startstrplot = "naive" if not args.start_from_mean_fit else "mean"
-    # ax.set_title(r'$\mathrm{'+args.corr+r'},n_\mathrm{bs}='+str(args.nsamples)+r', \mathrm{tol}=\mathrm{'+'{:.0e}'.format(args.tol)+r'}, \mathrm{start}=\mathrm{'+startstrplot+r'}$')
 
-    outputfolder = "../" + lpd.get_plot_path(args.qcdtype, args.corr, "") + "/spf/"
-    lpd.create_folder(outputfolder)
-    outfile = outputfolder+"/"+args.obs+"_"+args.corr+suffix+".pdf"
+def main():
+    parser = argparse.ArgumentParser()
+    requiredNamed = parser.add_argument_group('required named arguments')
+
+    parser.add_argument('--outputpath', help='the path of output folder like /a/b', type=str, required=True)
+
+    parser.add_argument('--file_basepath', help="prepend this to each argument passed via --files", type=str, default="")
+    requiredNamed.add_argument('--files', help="files to plot", nargs='*', type=str, required=True)
+    parser.add_argument('--PhiUV_file', help='path to PhiUV file if you want to include it in the spf plot', type=str, default=None)
+
+    requiredNamed.add_argument('--labels', help="labels for the plots", nargs='*', type=str, required=True)
+    requiredNamed.add_argument('--obs', help='whether to plot kappa, chisqdof, corr or spf', choices=["kappa", "chisqdof", "corr", "spf"], required=True)
+    parser.add_argument('--suffix', help='append this to the output file name', type=str, default="")
+    parser.add_argument('--title', help='title of plot', type=str)
+
+    parser.add_argument('--colors', help="colors in order for each file", default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'), nargs='*', type=str)
+    parser.add_argument('--pos', help="y positions of kappas. only used when obs=kappa", default=0.3 + numpy.asarray((0.45, 0.85, 1.25, 1.65, 2.65, 3.05, 3.45, 3.85)), nargs='*')
+
+    parser.add_argument('--wideaspect', action="store_true", help="use a wide aspect ratio (basically make the plots larger)")
+    parser.add_argument('--xlims', help='custom xlims for plot', nargs=2, type=float, default=None)
+    parser.add_argument('--ylims', help='custom ylims for plot', nargs=2, type=float, default=None)
+    parser.add_argument('--plot_spf_err', help='usually one cant see anything when plotting these errors, but sometimes it may be helpful.', action="store_true")
+
+    args = parser.parse_args()
+
+    for i,  file in enumerate(args.files):
+        args.files[i] = args.file_basepath + "/" + file
+    nfiles = len(list(args.files))
+
+    filelabel, xlabel, ylabel, xlims, ylims, ylabelpos = get_plot_settings(args.obs)
+    xdata, ydata, errorsleft, errorsright = load_data(args.files, args.obs)
+
+    # setup figure
+    figsize = (3 + 3 / 8, 3 + 3 / 8 - 1 / 2.54)
+    if args.wideaspect:
+        figsize = (1.5 * (3 + 3 / 8), 1.5 * (3 + 3 / 8) / 16 * 9)
+    if args.xlims:
+        xlims = args.xlims
+    if args.ylims:
+        ylims = args.ylims
+    fig, ax, plots = lpd.create_figure(figsize=figsize, xlabel=xlabel, ylabel=ylabel, ylabelpos=ylabelpos, xlims=xlims, xlabelpos=(0.5, -0.1), ylims=ylims)
+
+    plot(args.obs, nfiles, xdata, ydata, errorsleft, errorsright, ax, plots, args.labels, args.PhiUV_file, args.plot_spf_err, args.pos, args.colors)
+
+    if args.title is not None:
+        ax.set_title(args.title)
+
+    # save figure
+    lpd.create_folder(args.outputpath)
+    outfile = args.outputpath+"/"+args.obs+"_"+args.suffix+".pdf"
     fig.savefig(outfile)
     print("saved ", outfile)
 
