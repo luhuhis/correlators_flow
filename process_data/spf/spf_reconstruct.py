@@ -299,10 +299,10 @@ def main():
 
     print("saving results into", outputfolder)
 
-    np.savetxt(outputfolder+"samples_structure_"+fileidentifier+".dat", structure, header='This file contains pairs (a,b) of indeces with which to split the array '
+    np.savetxt(outputfolder+"samples_structure.dat", structure, header='This file contains pairs (a,b) of indeces with which to split the array '
                                                                                           'in the samples.npy in the correct way. Example: Spf=samples(a:b). \n rows for (a,b) in order: fit_resx, Spf, '
                                                                                           'fit_corr, chisqdof', fmt='%i')
-    np.save(outputfolder+"samples_"+fileidentifier, samples)
+    np.save(outputfolder+"samples", samples)
 
     # extract the various quantities that have been stacked together due to bootstrap being limited to 1D arrays
     fit_resx = results[structure[0, 0]:structure[0, 1]]
@@ -324,16 +324,16 @@ def main():
     print(fitparams_chisqdof)
 
     # save reconstructed fit spf
-    np.savetxt(outputfolder + "/spffit_" + fileidentifier + ".dat", np.column_stack((PhiUV[:, 0], Spf, Spf_err)), fmt='%16.15e',
+    np.savetxt(outputfolder + "/spffit.dat", np.column_stack((PhiUV[:, 0], Spf, Spf_err)), fmt='%16.15e',
                header='omegaByT            SpfByT3               err(-/+)')
 
     # save fitparams and chisqdof
-    np.savetxt(outputfolder + "/params_" + fileidentifier + ".dat", fitparams_chisqdof, fmt='%22.15e',
+    np.savetxt(outputfolder + "/params.dat", fitparams_chisqdof, fmt='%22.15e',
                header="The first line contains kappa/T^3. The last line contains chisq/dof. In between are c_i.\n"
                       "param                  error_left                 error_right:")
 
     # save reconstructed correlator
-    np.savetxt(outputfolder + "/corrfit_" + fileidentifier + ".dat",
+    np.savetxt(outputfolder + "/corrfit.dat",
                np.column_stack((xdata, corr[:, 1], corr[:, 2], fit_corr, fit_corr_err)),
                fmt='%16.15e', header='tauT                corr(orig)            err(orig)             corr(fit)             err(-/+)')
 
