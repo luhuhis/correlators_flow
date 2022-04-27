@@ -117,15 +117,6 @@ def chmap(mydict, **kwargs):
 
 # === functions related to the EE correlator ===
 
-# improved tauTs from mathematica
-# tauT_improved = {16:(6.883194e-02, 1.085070e-01, 1.616768e-01, 2.247303e-01, 2.914720e-01, 3.571978e-01, 4.178695e-01, 4.527297e-01),
-# 20:(5.506555e-02, 8.680590e-02, 1.293465e-01, 1.798279e-01, 2.334154e-01, 2.867992e-01, 3.389318e-01, 3.894339e-01, 4.362603e-01, 4.632426e-01),
-# 24:(4.588796e-02, 7.233829e-02, 1.077897e-01, 1.498636e-01, 1.945462e-01, 2.391203e-01, 2.828289e-01, 3.257494e-01, 3.679753e-01, 4.092103e-01, 4.476142e-01, 4.697792e-01),
-# 28:(0.039332543108858704, 0.06200429713148807, 0.09239146163313365, 0.12845583966778362, 0.16676106589862263, 0.20498393407330573, 0.2424922712244153, 0.2793926631132959, 0.31587145378525494, 0.3520157792617203, 0.38777053007225404, 0.4227840462554289, 0.45543361809657334, 0.4742844242530861),
-# 30:(3.671037e-02, 5.787068e-02, 8.623207e-02, 1.198924e-01, 1.556450e-01, 1.913227e-01, 2.263377e-01, 2.607949e-01, 2.948799e-01, 3.287019e-01, 3.622833e-01, 3.955382e-01, 4.281210e-01, 4.585112e-01, 4.760585e-01),
-# 36:(0.030591978346158538, 0.048225570112454395, 0.07186010884057005, 0.0999106894769821, 0.12970558033931176, 0.15943980536845198, 0.1886256825235924, 0.2173546715249435, 0.24579006824642974, 0.2740405351256582, 0.302163599109069, 0.3301833888944985, 0.3580983972194321, 0.385875234263269, 0.41341447770969214, 0.44041363885624496, 0.46560294274945346, 0.480147821801901)}
-
-
 def get_tauTs(nt):
     return numpy.arange(1 / nt, 0.5001, 1 / nt)  # default tauT
     # return tauT_improved[nt] #tree-level improved tauT for XX correlators
@@ -208,9 +199,9 @@ legendstyle = dict(loc="center left", bbox_to_anchor=(1, 0.5), frameon=True, fra
                    labelspacing=0.1, borderpad=0.1, handletextpad=0.4, handlelength=1,
                    handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=1, yerr_size=0.3)})
 plotstyle_fill = dict(linewidth=0.5)
-xlabelstyle = dict(bbox=labelboxstyle, zorder=-1)  # horizontalalignment='right', verticalalignment='bottom', bbox=labelboxstyle)
+xlabelstyle = dict(bbox=labelboxstyle, zorder=-1, fontsize=fontsize)  # horizontalalignment='right', verticalalignment='bottom', bbox=labelboxstyle)
 ylabelstyle = dict(bbox=labelboxstyle, horizontalalignment='left', verticalalignment='top', rotation=0,
-                   zorder=-1)  # horizontalalignment='right', , rotation=0, bbox=labelboxstyle)
+                   zorder=-1, fontsize=fontsize)  # horizontalalignment='right', , rotation=0, bbox=labelboxstyle)
 titlestyle = dict(x=0.5, y=0.9, bbox=labelboxstyle, verticalalignment='top', zorder=99, fontsize=10)
 verticallinestyle = dict(ymin=0, ymax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4), lw=0.5)
 horizontallinestyle = dict(xmin=0, xmax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4), lw=0.5)
