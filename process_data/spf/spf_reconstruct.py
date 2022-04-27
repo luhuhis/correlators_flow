@@ -9,6 +9,7 @@ import scipy.interpolate
 from typing import NamedTuple
 from latqcdtools.statistics import bootstr
 import argparse
+import EE_UV_spf
 
 global args  # TODO make this nonglobal
 
@@ -34,34 +35,42 @@ def En(n, OmegaByT, mu):
 
 
 class SpfArgs(NamedTuple):
-    model: int
+    model: str
     mu: str
     constrain: bool
     PhiuvByT3: scipy.interpolate.InterpolatedUnivariateSpline
     n_max: int
+    OmegaByT_IR: float
+    OmegaByT_UV: float
+
+
+def PhiIR(OmegaByT, kappa):
+    return kappa / 2 * OmegaByT
 
 
 # ========= Spf models =========
+def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params):
+    if args.model == "max":
+        return np.maximum(fit_params[0][0] / 2 * OmegaByT, spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1])
+    if args.model == "smax":
+        return np.sqrt((fit_params[0][0] / 2 * OmegaByT) ** 2 + (spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1]) ** 2)
 
-def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params_0):
-    if args.model == 3:
-        return np.maximum(fit_params_0[0][0] / 2 * OmegaByT, spfargs.PhiuvByT3(OmegaByT)*fit_params_0[0][1])
-    if args.model == 4:
-        if OmegaByT >= np.pi * 2:
-            return spfargs.PhiuvByT3(OmegaByT) * fit_params_0[0][1]
-        else:
-            return fit_params_0[0][0] / 2 * OmegaByT
-    if args.model == 5:
-        return np.sqrt((fit_params_0[0][0] / 2 * OmegaByT)**2 + (spfargs.PhiuvByT3(OmegaByT) * fit_params_0[0][1])**2)
+    if args.model == "line":
+        return PhiIR(OmegaByT, fit_params[0][0]) * np.heaviside(spfargs.OmegaByT_IR, 0) \
+               + (((PhiIR(OmegaByT, fit_params[0][0]) - fit_params[0][1] * spfargs.PhiuvByT3(OmegaByT)) / (spfargs.OmegaByT_IR - spfargs.OmegaByT_UV)) \
+                  * (OmegaByT-spfargs.OmegaByT_IR) + PhiIR(OmegaByT, fit_params[0][0])) \
+               * np.heaviside(OmegaByT-spfargs.OmegaByT_IR, 0) * np.heaviside(spfargs.OmegaByT_UV-OmegaByT, 0) \
+               + fit_params[0][1] * spfargs.PhiuvByT3(OmegaByT) * np.heaviside(OmegaByT - spfargs.OmegaByT_UV, 0)
+
     if spfargs.constrain:
         coef_tmp = 1
         for i in range(1, spfargs.n_max + 1):
-            coef_tmp += fit_params_0[0][i] * En(i, MaxOmegaByT, spfargs.mu)
-        c_nmax = (spfargs.PhiuvByT3(MaxOmegaByT) / np.sqrt((0.5 * fit_params_0[0][0] * MaxOmegaByT) ** 2 + (spfargs.PhiuvByT3(MaxOmegaByT)) ** 2) - coef_tmp) / En(
+            coef_tmp += fit_params[0][i] * En(i, MaxOmegaByT, spfargs.mu)
+        c_nmax = (spfargs.PhiuvByT3(MaxOmegaByT) / np.sqrt((0.5 * fit_params[0][0] * MaxOmegaByT) ** 2 + (spfargs.PhiuvByT3(MaxOmegaByT)) ** 2) - coef_tmp) / En(
                 spfargs.n_max + 1, MaxOmegaByT, spfargs.mu)
     coef = 1
     for i in range(1, spfargs.n_max+1):
-        coef += fit_params_0[0][i]*En(i, OmegaByT, spfargs.mu)
+        coef += fit_params[0][i] * En(i, OmegaByT, spfargs.mu)
 
     if spfargs.constrain:
         coef += c_nmax * En(spfargs.n_max + 1, OmegaByT, spfargs.mu)
@@ -71,32 +80,32 @@ def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params_0):
             print("negative SPF")
         return np.inf
         # return np.inf  # this results in infinite chisq whenever the spf becomes zero.
-    return np.sqrt((0.5*fit_params_0[0][0]*OmegaByT)**2+(spfargs.PhiuvByT3(OmegaByT))**2)*coef
+    return np.sqrt((0.5 * fit_params[0][0] * OmegaByT) ** 2 + (spfargs.PhiuvByT3(OmegaByT)) ** 2) * coef
 
 
 # ==============================================================
 
 
-def Integrand(OmegaByT, tauT, MaxOmegaByT, spfargs, *fit_params_0):
-    return 1. / np.pi * Kernel(OmegaByT, tauT) * SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params_0)
+def Integrand(OmegaByT, tauT, MaxOmegaByT, spfargs, *fit_params):
+    return 1. / np.pi * Kernel(OmegaByT, tauT) * SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params)
 
 
-def TargetCorr(tauT, MinOmegaByT, MaxOmegaByT, spfargs, *fit_params_0):
+def TargetCorr(tauT, MinOmegaByT, MaxOmegaByT, spfargs, *fit_params):
     CorrTrial = []
     for i in range(len(tauT)):
         try:
-            CorrTrial.append(scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT[i], MaxOmegaByT, spfargs, *fit_params_0), MinOmegaByT, MaxOmegaByT)[0])
+            CorrTrial.append(scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT[i], MaxOmegaByT, spfargs, *fit_params), MinOmegaByT, MaxOmegaByT)[0])
         except OverflowError as e:
             print(str(e) + " for integration appears at tauT=" + str(tauT[i]))
             return np.inf
     return CorrTrial
 
 
-def chisq_dof(fit_params_0, xdata, ydata_sample, edata, MinOmegaByT, MaxOmegaByT, spfargs, verbose=False):
-    res = (ydata_sample - TargetCorr(xdata, MinOmegaByT, MaxOmegaByT, spfargs, fit_params_0)) / edata
-    chisqdof = np.sum(res ** 2) / (len(xdata) - len(fit_params_0))
+def chisq_dof(fit_params, xdata, ydata_sample, edata, MinOmegaByT, MaxOmegaByT, spfargs, verbose=False):
+    res = (ydata_sample - TargetCorr(xdata, MinOmegaByT, MaxOmegaByT, spfargs, fit_params)) / edata
+    chisqdof = np.sum(res ** 2) / (len(xdata) - len(fit_params))
     if verbose:
-        print(['{0:.7f} '.format(i) for i in fit_params_0], '{0:.4f}'.format(chisqdof))
+        print(['{0:.7f} '.format(i) for i in fit_params], '{0:.4f}'.format(chisqdof))
     return chisqdof
 
 
@@ -149,90 +158,79 @@ def get_results(ydata_sample, fit_params_0, xdata, edata, MinOmegaByT, MaxOmegaB
 def main():
     parser = argparse.ArgumentParser()
     requiredNamed = parser.add_argument_group('required named arguments')
-    requiredNamed.add_argument('--qcdtype', help="format doesnt matter, only used for finding data. example: quenched_1.50Tc_zeuthenFlow", required=True)
-    requiredNamed.add_argument('--corr', choices=['EE', 'EE_clover', 'BB', 'BB_clover'], help="choose from EE, EE_clover, BB, BB_clover", required=True)
 
-    requiredNamed.add_argument('--model', help='which model to use', choices=[2, 3, 4, 5], type=int, required=True)
-    requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str, required=True)
-    requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO (a) or NLO (b)', type=str, choices=["a", "b", "alatt"], required=True)
+    # file names
+    parser.add_argument('--output_path', help='the path of output folder like /a/b', type=str, required=True)
+    parser.add_argument('--add_suffix', help='add an extra suffix to the output files in order to not overwrite previous ones with similar parameters on a '
+                                             'different data set', type=str, default="")
+
+    # input corr
+    parser.add_argument('--input_corr', help='Path to input correlator data file. expects text file with three columns: tauT, G, err', type=str)
+    parser.add_argument('--min_tauT', help='ignore corr data below this tauT', type=float, default=0)
+    parser.add_argument('--error_exponent', default=0, type=int, help="increase errors for small tauT data like this: error*(0.5/tauT)^error_exponent")
+
+    # === spf model selection ===
+    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line"], type=str, required=True)
+    requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str)
+    requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO or NLO. if empty then its assumed that PathPhiUV is given.', type=str, choices=["LO", "NLO"])
+
+    # parameters for model 2
     parser.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str)
     parser.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', type=int, choices=[1, 2, 3, 4, 5, 6, 7])
     parser.add_argument('--constrain', help='force the spf to reach the UV limit at large omega', action="store_true")
 
-    parser.add_argument('--nsamples', help='number of bootstrap samples to draw from the gaussian distribution', default=200, type=int)
+    # parameters for line model
+    parser.add_argument('--OmegaByT_IR', type=float, help="three reasonable choices: 0.01, 0.4, 1")
+    parser.add_argument('--OmegaByT_UV', type=float, default=2.2, help="default value: vacuum NLO and HTL-resummed NLO agree down to omega/T=2.2")
 
-    parser.add_argument('--PathOutputFolder', help='the path of output folder like /a/b', type=str)
-    parser.add_argument('--PathInputFolder', help='the path of input folder like /a/b', type=str)
-
-    # parser.add_argument('--maxiter', help='maximum number of nelder-mead iterations', default=1000, type=int)
-    # parser.add_argument('--tol', help='subsequent iterations have to differ less than this for the function and param values', type=float, default=0.0001)
+    # miscellaneous
+    parser.add_argument('--nsamples', help='number of bootstrap samples to draw from the gaussian distribution', default=300, type=int)
     parser.add_argument('--nproc', help='number of processes for the parallel bootstrap', default=1, type=int)
     parser.add_argument('--verbose', help='output current fit parameters at each iteration', action="store_true")
-    parser.add_argument('--seed', help='seed for gaussian bootstrap sample drawings', default=None, type=int)
-    # parser.add_argument('--start_from_mean_fit', help='fit the mean first and use its fit params as the initial guess for all other fits', action="store_true")
-    parser.add_argument('--asym_err', help='get asymmetric errors from the bootstrap to better reflect the distribution', action="store_true")
-    parser.add_argument('--min_tauT', help='ignore corr data below this tauT', type=float, default=0)
-    parser.add_argument('--error_exponent', default=0, type=int, help="increase errors for small tauT data like this: error*(0.5/tauT)^error_exponent")
+    parser.add_argument('--seed', help='seed for gaussian bootstrap sample drawings', default=0, type=int)
 
-    parser.add_argument('--add_suffix', help='add an extra suffix to the output files in order to not overwrite previous ones with similar parameters on a '
-                                             'different data set', type=str, default="")
-    parser.add_argument('--input_corr', help='provide custom input correlator data. three columns: tauT, G, err', type=str)
-    # parser.add_argument('--data_is_not_normalized', action="store_true", help='multiply correlator by nt**4 and divide by Gnorm')
-    # parser.add_argument('--nt', type=int)
+    PhiUV_parser = parser.add_argument_group('arguments for PhiUV')
+    EE_UV_spf.add_args(PhiUV_parser)
 
     global args
     args = parser.parse_args()
 
-    # if args.data_is_not_normalized and not args.nt:
-    #     parser.error("--data_is_not_normalized need --nt")
-
-    if args.model == 2 and (not args.mu or not args.nmax):
+    if args.model == "2" and (not args.mu or not args.nmax):
         print("ERROR: Need mu and nmax for model 2.")
         return 1
 
     constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
-    # startstr = "_d" if not args.start_from_mean_fit else "_m"
-    if args.model == 2:
-        modelidentifier = str(args.model)+"_"+args.PhiUVtype+"_"+constrainstr+"_"+str(args.mu)+"_"+str(args.nmax)
-    elif args.model == 3 or args.model == 4 or args.model == 5:
+    if args.model == "2":
+        modelidentifier = args.model+"_"+args.PhiUVtype+"_"+constrainstr+"_"+str(args.mu)+"_"+str(args.nmax)
+    elif args.model == "max" or args.model == "smax" or args.model == "line":
         modelidentifier = str(args.model)+"_"+args.PhiUVtype
+
     if args.add_suffix:
         args.add_suffix = "_"+args.add_suffix
     fileidentifier = modelidentifier+"_"+str(args.nsamples)+"_"+str(args.min_tauT)+"_exp"+str(args.error_exponent) + args.add_suffix  # +'{:.0e}'.format(args.tol)  "_"+startstr
 
     # read in the normalized correlator:
-    inputfolder = "../"+lpd.get_merged_data_path(args.qcdtype, args.corr, "") if not args.PathInputFolder else args.PathInputFolder
-    if not args.input_corr:
-        corrfile = inputfolder+args.corr+"_flow_extr.txt"
-    else:
-        corrfile = args.input_corr
-    corr = np.loadtxt(corrfile)
+    corr = np.loadtxt(args.input_corr)
+    corr = corr[~np.isnan(corr).any(axis=1)]  # remove lines with NaN's:
+    corr = corr[corr[:, 0] >= args.min_tauT, :]  # filter out below min_tauT:
 
-    # remove lines with NaN's:
-    corr = corr[~np.isnan(corr).any(axis=1)]
-    # filter out below min_tauT:
-    corr = corr[corr[:, 0] >= args.min_tauT, :]
-
-    # beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
     NtauT = len(corr)
 
-    if args.PhiUVtype == "a" or args.PhiUVtype == "b":
-        #TODO directly calculate PHIUV here instead of having an extra script for this, so you can give PHIUV options to this script
+    g2, LO, NLO = EE_UV_spf.get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor, args.Npoints, args.Nloop)
+    if args.PhiUVtype == "LO":
+        PhiUV = LO
+    elif args.PhiUVtype == "NLO":
+        PhiUV = NLO
+    else:
         # read in the phiuv. columns in order: OmegaByT, PhiUVByT3, err
         PhiUV = np.loadtxt(args.PathPhiUV)
         PhiUV = PhiUV[:, 0:2]
 
-        # interpolate the UV spf for the integration
-        # spline order: 1 linear, 2 quadratic, 3 cubic ...
-        order = 3
-        PhiuvByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[:, 0], PhiUV[:, 1], k=order, ext=2)
-        MinOmegaByT = PhiUV[0][0]
-        MaxOmegaByT = PhiUV[-1][0]
-
-    elif args.PhiUVtype == "alatt":
-        print("NOT YET SUPPORTED!")
-        exit(1)
-        #TODO: implement this!!!
+    # interpolate the UV spf for the integration. spline order: 1 linear, 2 quadratic, 3 cubic ...
+    order = 3
+    PhiuvByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[:, 0], PhiUV[:, 1], k=order, ext=2)
+    MinOmegaByT = PhiUV[0][0]
+    MaxOmegaByT = PhiUV[-1][0]
 
     # get rid of the pert. normalization in the correlator data
     CorrByT4 = np.copy(corr)
@@ -250,25 +248,22 @@ def main():
     for i, val in enumerate(edata):
         edata_fit[i] = val * (0.5 / xdata[i])**args.error_exponent
 
-    # set up initial guess for the fitted parameters. the initial guess for kappa is 1, and for the c_n is 0. for model 3 we only have one other fit parameter
-    # (the overall coefficient for the UV part), whose initial guess is also 1.
-    if args.model == 3 or args.model == 4 or args.model == 5:
-        fit_params_0 = [1, 1]
-    else:
+    # set up initial guess for the fitted parameters.
+    # for model 2, the initial guess for kappa is 1, and for the c_n is 0.
+    # for other models we only have one other fit parameter which is the overall coefficient for the UV part, whose initial guess is 1.
+    if args.model == "2":
         fit_params_0 = [1.]
         if args.constrain:
             args.nmax -= 1
         for i in range(args.nmax):
             fit_params_0.append(0.)
+    else:
+        fit_params_0 = [1, 1]
 
     nparam = len(fit_params_0)
 
     # constant parameters only used by the function SpfByT3
-    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3, nparam-1)
-
-    # if args.start_from_mean_fit:
-    #     print("finding initial guess for fit params...")
-    #     mean_result = get_results(ydata, fit_params_0, xdata, edata_fit, MinOmegaByT, MaxOmegaByT, spfargs, PhiUV, NtauT, corr, args.model, verbose=True)
+    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3, nparam-1, args.OmegaByT_IR, args.OmegaByT_UV)
 
     nomega = len(PhiUV[:, 0])
     structure = np.asarray((
@@ -278,25 +273,18 @@ def main():
         (nparam+nomega+NtauT, nparam+nomega+NtauT+1)
     ), dtype=int)
 
-    # if args.start_from_mean_fit and not np.isnan(mean_result).any():
-    #     fit_params_0 = np.asarray(mean_result[structure[0, 0]:structure[0, 1]])
     print("Initial guess for fit params:", fit_params_0)
-
     samples, results, error = \
         bootstr.bootstr_from_gauss(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
-                                               useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=args.asym_err,
+                                               useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=True,
                                                args=(fit_params_0, xdata, edata_fit, MinOmegaByT, MaxOmegaByT, spfargs, PhiUV, NtauT, corr, args.model, args.verbose))
 
     # make handling of the left and right 68-quantiles easier
     error = np.asarray(error)
     error = np.swapaxes(error, 0, 1)
 
-    if args.PathOutputFolder:
-        outputfolder = args.PathOutputFolder+"/"+fileidentifier+"/"
-    else:
-        outputfolder = inputfolder+"/spf/"+fileidentifier+"/"
+    outputfolder = args.output_path+"/spf/"+fileidentifier+"/"
     lpd.create_folder(outputfolder)
-
     print("saving results into", outputfolder)
 
     np.savetxt(outputfolder+"samples_structure.dat", structure, header='This file contains pairs (a,b) of indeces with which to split the array '
