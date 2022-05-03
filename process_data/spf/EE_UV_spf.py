@@ -42,6 +42,9 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
     elif max_type == "hard":
         maxfunc = np.fmax
 
+    Nc = 3
+
+    mu_opt_T_term = np.exp(np.log(4*np.pi*T_in_GeV) - np.euler_gamma - (Nc - 8 * np.log(2) * Nf) / (2*(11 * Nc - 2 * Nf)))
     # check min_scale
     if min_scale == "piT":
         min_scale = np.pi * T_in_GeV
@@ -51,17 +54,33 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
         min_scale = 3 * np.pi * T_in_GeV
     elif min_scale == "4piT":
         min_scale = 4 * np.pi * T_in_GeV
+    elif min_scale == "opt":
+        min_scale = mu_opt_T_term
+    elif min_scale == "0.25opt":
+        min_scale = mu_opt_T_term / 4
+    elif min_scale == "0.5opt":
+        min_scale = mu_opt_T_term / 2
+    elif min_scale == "2opt":
+        min_scale = mu_opt_T_term * 2
     else:
         min_scale = float(min_scale)
 
-    Nc = 3
+    print("min_scale = ", min_scale)
 
     # check omega_prefactor
+    mu_opt_omega_term = 2 * np.exp(((24 * np.pi ** 2 - 149) * Nc + 20 * Nf) / (6 * (11 * Nc - 2 * Nf)))  # see eq. 4.17 of arXiv:1006.0867
     if omega_prefactor == "opt":
-        mu_opt_omega_term = ((24 * np.pi ** 2 - 149) * Nc + 20 * Nf) / (6 * (11 * Nc - 2 * Nf))  # see eq. 4.17 of arXiv:1006.0867
-        omega_prefactor = 2 * np.exp(mu_opt_omega_term)  # ~14
+        omega_prefactor = mu_opt_omega_term  # ~14 for Nf=3, ~7.6 for Nf=0
+    elif omega_prefactor == "0.25opt":
+        omega_prefactor = mu_opt_omega_term / 4
+    elif omega_prefactor == "0.5opt":
+        omega_prefactor = mu_opt_omega_term / 2
+    elif omega_prefactor == "2opt":
+        omega_prefactor = mu_opt_omega_term * 2
     else:
         omega_prefactor = float(omega_prefactor)
+
+    print("omega_prefactor = ", omega_prefactor)
 
     crd = rundec.CRunDec()
     r20 = Nc * (149. / 36. - 11. * np.log(2.) / 6. - 2 * np.pi ** 2 / 3.) - Nf * (5. / 9. - np.log(2.) / 3.)
