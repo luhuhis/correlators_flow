@@ -21,7 +21,7 @@ def scipy_linalg_expm_wrapper(arg):
 # this function has to be outside the ComputationClass class, as numba doesn't support calling other functions that contain "with numba.objmode" from
 # nested functions
 @numba.njit(cache=True)
-def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, lam=1):
+def flowed_correlator_matrix(gauge_action, flow_action, p1, p2, p3, p4, tau1, tau2, alpha=1, lam=1):
     # arguments: desired action, definition of flow, four-momentum, flow times, gauge fixing
 
     # define lattice momenta etc
@@ -53,11 +53,11 @@ def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, 
     gf_lambda_kernel = lam * np.array([[ps[i] * ps[j] for i in range(4)] for j in range(4)])
 
     # define which action kernel is used
-    if action == 'Wilson' or action == 'plaquette':  # if plaquette action
+    if gauge_action == 'Wilson' or gauge_action == 'plaquette':  # if plaquette action
         action_kernel = plaquette_kernel
-    elif action == 'rectangle':  # if rectangle action
+    elif gauge_action == 'rectangle':  # if rectangle action
         action_kernel = (1 / 8) * rectangle_kernel
-    elif action == 'LW' or action == 'Lüscher-Weisz' or action == 'Luscher-Weisz' or action == 'Luescher-Weisz':  # if Lüscher-Weisz action
+    elif gauge_action == 'LW' or gauge_action == 'Lüscher-Weisz' or gauge_action == 'Luscher-Weisz' or gauge_action == 'Luescher-Weisz':  # if Lüscher-Weisz action
         action_kernel = (5 / 3) * plaquette_kernel - (1 / 12) * rectangle_kernel
     # add gauge fixing term to action kernel
     action_kernel = action_kernel + gf_lambda_kernel
@@ -69,13 +69,13 @@ def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, 
     gf_alpha_kernel = alpha * np.array([[ps[i] * ps[j] for i in range(4)] for j in range(4)])
 
     # define which kernel to define flow is used
-    if flow == 'Wilson' or flow == 'plaquette':
+    if flow_action == 'Wilson' or flow_action == 'plaquette':
         flow_kernel = plaquette_kernel
-    elif flow == 'rectangle':
+    elif flow_action == 'rectangle':
         flow_kernel = (1 / 8) * rectangle_kernel
-    elif flow == 'LW' or flow == 'Lüscher-Weisz' or flow == 'Luscher-Weisz' or flow == 'Luescher-Weisz':  # if Lüscher-Weisz flow
+    elif flow_action == 'LW' or flow_action == 'Lüscher-Weisz' or flow_action == 'Luscher-Weisz' or flow_action == 'Luescher-Weisz':  # if Lüscher-Weisz flow
         flow_kernel = (5 / 3) * plaquette_kernel - (1 / 12) * rectangle_kernel
-    elif flow == 'Zeuthen':
+    elif flow_action == 'Zeuthen':
         Zpk = np.array([[psquared * delta(i, j) * ps[i] ** 2 - ps[i] ** 3 * ps[j] for i in range(4)]
                         for j in range(4)])  # Zeuthen extra term for plaquette
         Zeuthen_pk = plaquette_kernel - (1 / 12) * Zpk  # full Zeuthen flow expression for plaquette
@@ -105,15 +105,12 @@ def flowed_correlator_matrix(action, flow, p1, p2, p3, p4, tau1, tau2, alpha=1, 
 
 
 class ComputationClass:
-    def __init__(self, flow_times, flow_action, corr, ls_t, N_t, ls_space, N_space, factor_space, up, printprogress, nproc):
+    def __init__(self, flow_times, gauge_action, flow_action, corr, N_t, N_space, printprogress, nproc):
+        self._gauge_action = gauge_action
         self._flow_action = flow_action
         self._corr = corr
-        self._ls_t = ls_t
         self._N_t = N_t
-        self._ls_space = ls_space
         self._N_space = N_space
-        self._factor_space = factor_space
-        self._up = up
         self._flow_times = flow_times
         self._nproc = nproc
         self._printprogress = printprogress
@@ -131,11 +128,11 @@ class ComputationClass:
     def pass_argument_wrapper(self, tau_f):
         if self._printprogress:
             print(r'{0:.6f}'.format(tau_f), end=' ')
-        return self.actual_corr_computation(tau_f, self._flow_action, self._corr, self._ls_t, self._N_t, self._ls_space, self._N_space, self._factor_space, self._up)
+        return self.actual_corr_computation(tau_f, self._gauge_action, self._flow_action, self._corr, self._N_t, self._N_space)
 
     @staticmethod
     @numba.njit(cache=True)
-    def actual_corr_computation(tau_f, flow_action, corr, ls_t, N_t, ls_space, N_space, factor_space, up):
+    def actual_corr_computation(tau_f, gauge_action, flow_action, corr, N_t, N_space):
 
         # first define stuff needed for precise integration (shift, weight)
         SH_ONE = .2222726231881051504
@@ -169,9 +166,17 @@ class ComputationClass:
             else:
                 return WT_TWO
 
+        N_space *= 4  # the integration quadrature requires 4 intervals, so we need to make sure this is divisble by 4
+        up = np.pi  # upper limit of spatial integration
+        factor_space = up / N_space
+
         # starting correlator value at specific tau, tau_F that will be increased each step
         value = np.zeros(N_t)
         temp_seps = np.asarray([n / N_t for n in range(1, int(N_t / 2 + 1))])  # in the form \tau T
+
+        # list of all indices in temporal addition. Sum runs from 0 to args.N_t/2, will be accounted for by factor 2 if i \neq 0,args.N_t/2
+        ls_t = range(int(N_t / 2 + 1))
+        ls_space = range(N_space)  # list of all indices in spatial integration
 
         # iteration over all time momenta; i is temporal summation index
         for i in ls_t:
@@ -206,7 +211,7 @@ class ComputationClass:
                         if corr == "EE":
                             # actually calculate the integrand at this p_t,p_x,p_y,p_z
                             # calculate correlator matrix
-                            cm = 16 * flowed_correlator_matrix('Wilson', flow_action, p_t, p_x, p_y, p_z, tau_f, tau_f)
+                            cm = 16 * flowed_correlator_matrix(gauge_action, flow_action, p_t, p_x, p_y, p_z, tau_f, tau_f)
                             # first term of EE correlator
                             term1 = (px_hat ** 2 + py_hat ** 2 + pz_hat ** 2) * cm[0, 0] + pt_hat ** 2 * (cm[1, 1] + cm[2, 2] + cm[3, 3])
                             # second term of EE correlator
@@ -232,7 +237,7 @@ class ComputationClass:
                             operator_matrix = diago_term - nondiago_term
 
                             # calculate propagator matrix
-                            cm = 16 * flowed_correlator_matrix('Wilson', flow_action, p_t, p_x, p_y, p_z, tau_f, tau_f)
+                            cm = 16 * flowed_correlator_matrix(gauge_action, flow_action, p_t, p_x, p_y, p_z, tau_f, tau_f)
 
                             # put operator matrix and propagator together
                             val_at_pos = np.sum(operator_matrix * cm)
@@ -257,58 +262,56 @@ class ComputationClass:
         return np.asarray(self._result)
 
 
-def get_correlators(flow_times, flow_action, corr, ls_t, ls_space, N_t, N_space, factor_space, up, printprogress: bool, nproc: int):
+def get_correlators(flowtimes_file: str, gauge_action: str, flow_action: str, corr: str, N_t: int, N_space: int, printprogress: bool, nproc: int):
+    flow_times = np.loadtxt(flowtimes_file)
     correlators = np.empty((len(flow_times), int(N_t/2)), dtype=np.float64)
-    tmp = ComputationClass(flow_times, flow_action, corr, ls_t, N_t, ls_space, N_space, factor_space, up, printprogress, nproc)
+    tmp = ComputationClass(flow_times, gauge_action, flow_action, corr, N_t, N_space, printprogress, nproc)
     results = tmp.getResult()
     for g in range(int(N_t/2)):
         for f in range(len(flow_times)):
             correlators[f, g] = results[f, g]
+
+    if corr == "EE":
+        sign = -1
+    elif corr == "BB":
+        sign = 1
+
+    # overall normalization
+    overall_factor = sign * N_t ** 3 / (24 * np.pi ** 3)
+    correlators *= overall_factor
+
     return correlators
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--N_t', type=int, required=True, help='Temporal extent of lattice')
-    parser.add_argument('--N_space', type=int, default=8, help='1/8 of sampling points that will be used for the momentum integration in each'
+def add_args(parser):
+    """ arguments that are relevant for get_correlators() """
+    parser.add_argument('--Nt', type=int, required=True, help='Temporal extent of lattice')
+    parser.add_argument('--Nspace', type=int, default=8, help='1/8 of sampling points that will be used for the momentum integration in each'
                                                                ' direction')
-    parser.add_argument('--flowradii_file', type=str, required=True,
-                        help='path fo file that contains dimensionless flowradii sqrt(8tauF)T that shall be calculated')
+    parser.add_argument('--flowtimes_file', type=str, required=True,
+                        help='path fo file that contains dimensionless flowtimes tauF/a^2 that shall be calculated')
     parser.add_argument('--printprogress', action="store_true")
-    parser.add_argument('--outputpath', help='path to output folder', default='./', type=str, required=True)
+
     parser.add_argument('--nproc', default=1, type=int, help='max number of concurrently running processes')
-    parser.add_argument('--flow_action', choices=['Wilson', 'Zeuthen'], type=str, required=True)
+    parser.add_argument('--flow_action', choices=['Wilson', 'Zeuthen', 'rectangle', 'LW'], type=str, required=True)
+    parser.add_argument('--gauge_action', choices=['Wilson', 'rectangle', 'LW'], type=str, required=True)
     parser.add_argument('--corr', choices=['EE', 'BB'], type=str, required=True)
 
+
+def main():
+
+    # parse arguments
+    parser = argparse.ArgumentParser()
+    add_args(parser)
+    parser.add_argument('--outputpath', help='path to output folder', default='./', type=str, required=True)
     args = parser.parse_args()
 
-    # define flow times
-    tmp = np.loadtxt(args.flowradii_file)
-    flow_times = args.N_t ** 2 * tmp ** 2 / 8  # transform them into \tau_F/a^2
+    # compute correlators
+    correlators = get_correlators(args.flowtimes_file, args.gauge_action, args.flow_action, args.corr, args.Nt, args.Nspace, args.printprogress, args.nproc)
 
-    # upper limit of spatial integration
-    up = np.pi
-
-    N_IMP = 4
-    args.N_space *= N_IMP  # multiply this number by four
-
-    # list of all indices in temporal addition. Sum runs from 0 to args.N_t/2, will be accounted for by factor 2 if i \neq 0,args.N_t/2
-    ls_t = np.asarray(range(int(args.N_t / 2 + 1)))
-
-    # list of all indices in spatial integration
-    ls_space = np.asarray(range(args.N_space))
-
-    factor_space = up / args.N_space
-
-    correlators = get_correlators(flow_times, args.flow_action, args.corr, ls_t, ls_space, args.N_t, args.N_space, factor_space, up, args.printprogress, args.nproc)
-
-    # overall normalization
-    overall_factor = -args.N_t ** 3 / (24 * np.pi ** 3)
-    correlators *= overall_factor
-
-    # save data in .txt file
+    # save data in text file
     create_folder(args.outputpath)
-    np.savetxt(args.outputpath+"/"+args.corr+"_pert_latt_"+args.flow_action+"_Nt"+str(args.N_t)+".dat", correlators, header='rows are flow times, columns are temp seps')
+    np.savetxt(args.outputpath+"/"+args.corr+"_pert_latt_"+args.flow_action+"_"+args.gauge_action+"_Nt"+str(args.Nt)+"_Ns"+str(args.Nspace)+".dat", correlators, header='rows are flow times, columns are temp seps')
 
 
 def save_script_call(add_folder=None):
