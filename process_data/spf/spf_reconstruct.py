@@ -42,6 +42,7 @@ class SpfArgs(NamedTuple):
     n_max: int
     OmegaByT_IR: float
     OmegaByT_UV: float
+    p: float
 
 
 def PhiIR(OmegaByT, kappa):
@@ -55,12 +56,23 @@ def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params):
     if args.model == "smax":
         return np.sqrt((fit_params[0][0] / 2 * OmegaByT) ** 2 + (spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1]) ** 2)
 
+    if args.model == "pnorm":
+        return ((fit_params[0][0] / 2 * OmegaByT) ** spfargs.p + (spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1]) ** spfargs.p)**(1/spfargs.p)
+
     if args.model == "line":
-        return PhiIR(OmegaByT, fit_params[0][0]) * np.heaviside(spfargs.OmegaByT_IR, 0) \
-               + (((PhiIR(OmegaByT, fit_params[0][0]) - fit_params[0][1] * spfargs.PhiuvByT3(OmegaByT)) / (spfargs.OmegaByT_IR - spfargs.OmegaByT_UV)) \
-                  * (OmegaByT-spfargs.OmegaByT_IR) + PhiIR(OmegaByT, fit_params[0][0])) \
+        return PhiIR(OmegaByT, fit_params[0][0]) * np.heaviside(spfargs.OmegaByT_IR-OmegaByT, 1) \
+               + ((fit_params[0][1] * spfargs.PhiuvByT3(spfargs.OmegaByT_UV) - PhiIR(spfargs.OmegaByT_IR, fit_params[0][0])) / (spfargs.OmegaByT_UV - spfargs.OmegaByT_IR)
+                  * OmegaByT + (spfargs.OmegaByT_UV * PhiIR(spfargs.OmegaByT_IR, fit_params[0][0]) - spfargs.OmegaByT_IR * fit_params[0][1] * spfargs.PhiuvByT3(spfargs.OmegaByT_UV)) / (spfargs.OmegaByT_UV - spfargs.OmegaByT_IR))   \
                * np.heaviside(OmegaByT-spfargs.OmegaByT_IR, 0) * np.heaviside(spfargs.OmegaByT_UV-OmegaByT, 0) \
                + fit_params[0][1] * spfargs.PhiuvByT3(OmegaByT) * np.heaviside(OmegaByT - spfargs.OmegaByT_UV, 0)
+
+    if args.model == "step":
+        return PhiIR(OmegaByT, 2 * fit_params[0][0] * spfargs.PhiuvByT3(spfargs.OmegaByT_UV) / spfargs.OmegaByT_UV) * np.heaviside(spfargs.OmegaByT_UV - OmegaByT, 0) \
+               + fit_params[0][0] * spfargs.PhiuvByT3(OmegaByT) * np.heaviside(OmegaByT - spfargs.OmegaByT_UV, 1)
+
+    if args.model == "step_any":
+        return PhiIR(OmegaByT, 2 * fit_params[0][0] * spfargs.PhiuvByT3(fit_params[0][1]) / fit_params[0][1]) * np.heaviside(fit_params[0][1] - OmegaByT, 0) \
+               + fit_params[0][0] * spfargs.PhiuvByT3(OmegaByT) * np.heaviside(OmegaByT - fit_params[0][1], 1)
 
     if spfargs.constrain:
         coef_tmp = 1
@@ -170,7 +182,7 @@ def main():
     parser.add_argument('--error_exponent', default=0, type=int, help="increase errors for small tauT data like this: error*(0.5/tauT)^error_exponent")
 
     # === spf model selection ===
-    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line"], type=str, required=True)
+    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line", "step_any", "pnorm"], type=str, required=True)
     requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str)
     requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO or NLO. if empty then its assumed that PathPhiUV is given.', type=str, choices=["LO", "NLO"])
 
@@ -182,6 +194,9 @@ def main():
     # parameters for line model
     parser.add_argument('--OmegaByT_IR', type=float, help="three reasonable choices: 0.01, 0.4, 1")
     parser.add_argument('--OmegaByT_UV', type=float, default=2.2, help="default value: vacuum NLO and HTL-resummed NLO agree down to omega/T=2.2")
+
+    # parameters for pnorm
+    parser.add_argument('--p', type=float, help="parameter for pnorm model. p=2 is identical to smax. p=inf is identical to max.")
 
     # miscellaneous
     parser.add_argument('--nsamples', help='number of bootstrap samples to draw from the gaussian distribution', default=300, type=int)
@@ -195,15 +210,33 @@ def main():
     global args
     args = parser.parse_args()
 
+    # check for missing params
     if args.model == "2" and (not args.mu or not args.nmax):
+        print("ERROR: Need mu and nmax for model 2.")
+        return 1
+    if args.model == "line" and not args.OmegaByT_UV:
         print("ERROR: Need mu and nmax for model 2.")
         return 1
 
     constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
     if args.model == "2":
         modelidentifier = args.model+"_"+args.PhiUVtype+"_"+constrainstr+"_"+str(args.mu)+"_"+str(args.nmax)
-    elif args.model == "max" or args.model == "smax" or args.model == "line":
+    elif args.model == "pnorm":
+        modelidentifier = str(args.model) + str(args.p) + "_" + args.PhiUVtype
+    elif args.model == "line":
+        modelidentifier = str(args.model) + "_wIR" + str(args.OmegaByT_IR) + "_wUV" + str(args.OmegaByT_UV) + "_" + args.PhiUVtype
+    else:
         modelidentifier = str(args.model)+"_"+args.PhiUVtype
+
+    # PhiUV identifiers
+    if args.Nf:
+        modelidentifier = modelidentifier + "_Nf" + str(args.Nf)
+    if args.T_in_GeV:
+        modelidentifier = modelidentifier + "_T" + str(args.T_in_GeV)
+    if args.omega_prefactor:
+        modelidentifier = modelidentifier + "_min" + str(args.min_scale)
+    if args.min_scale:
+        modelidentifier = modelidentifier + "_w" + str(args.omega_prefactor)
 
     if args.add_suffix:
         args.add_suffix = "_"+args.add_suffix
@@ -257,13 +290,15 @@ def main():
             args.nmax -= 1
         for i in range(args.nmax):
             fit_params_0.append(0.)
+    elif args.model == "step":
+        fit_params_0 = [1, ]
     else:
         fit_params_0 = [1, 1]
 
     nparam = len(fit_params_0)
 
     # constant parameters only used by the function SpfByT3
-    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3, nparam-1, args.OmegaByT_IR, args.OmegaByT_UV)
+    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3, nparam-1, args.OmegaByT_IR, args.OmegaByT_UV, args.p)
 
     nomega = len(PhiUV[:, 0])
     structure = np.asarray((
@@ -310,6 +345,10 @@ def main():
     print("\nThe first line contains kappa/T^3. The last line contains chisq/dof. In between are c_i.\n"
           "param                  error_left    error_right:")
     print(fitparams_chisqdof)
+
+    # save the Phi UV
+    np.savetxt(outputfolder + "/phiUV.dat", np.column_stack((PhiUV[:, 0], PhiUV[:, 1])), fmt='%16.15e',
+               header='omegaByT            SpfByT3               err(-/+)')
 
     # save reconstructed fit spf
     np.savetxt(outputfolder + "/spffit.dat", np.column_stack((PhiUV[:, 0], Spf, Spf_err)), fmt='%16.15e',
