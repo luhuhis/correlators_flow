@@ -9,9 +9,7 @@ import scipy.interpolate
 from typing import NamedTuple
 from latqcdtools.statistics import bootstr
 import argparse
-import EE_UV_spf
-
-global args  # TODO make this nonglobal
+from process_data.spf.EE_UV_spf import get_spf, add_args
 
 
 def Gnorm(tauT):
@@ -51,26 +49,26 @@ def PhiIR(OmegaByT, kappa):
 
 # ========= Spf models =========
 def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params):
-    if args.model == "max":
+    if spfargs.model == "max":
         return np.maximum(fit_params[0][0] / 2 * OmegaByT, spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1])
-    if args.model == "smax":
+    if spfargs.model == "smax":
         return np.sqrt((fit_params[0][0] / 2 * OmegaByT) ** 2 + (spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1]) ** 2)
 
-    if args.model == "pnorm":
+    if spfargs.model == "pnorm":
         return ((fit_params[0][0] / 2 * OmegaByT) ** spfargs.p + (spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1]) ** spfargs.p)**(1/spfargs.p)
 
-    if args.model == "line":
+    if spfargs.model == "line":
         return PhiIR(OmegaByT, fit_params[0][0]) * np.heaviside(spfargs.OmegaByT_IR-OmegaByT, 1) \
                + ((fit_params[0][1] * spfargs.PhiuvByT3(spfargs.OmegaByT_UV) - PhiIR(spfargs.OmegaByT_IR, fit_params[0][0])) / (spfargs.OmegaByT_UV - spfargs.OmegaByT_IR)
                   * OmegaByT + (spfargs.OmegaByT_UV * PhiIR(spfargs.OmegaByT_IR, fit_params[0][0]) - spfargs.OmegaByT_IR * fit_params[0][1] * spfargs.PhiuvByT3(spfargs.OmegaByT_UV)) / (spfargs.OmegaByT_UV - spfargs.OmegaByT_IR))   \
                * np.heaviside(OmegaByT-spfargs.OmegaByT_IR, 0) * np.heaviside(spfargs.OmegaByT_UV-OmegaByT, 0) \
                + fit_params[0][1] * spfargs.PhiuvByT3(OmegaByT) * np.heaviside(OmegaByT - spfargs.OmegaByT_UV, 0)
 
-    if args.model == "step":
+    if spfargs.model == "step":
         return PhiIR(OmegaByT, 2 * fit_params[0][0] * spfargs.PhiuvByT3(spfargs.OmegaByT_UV) / spfargs.OmegaByT_UV) * np.heaviside(spfargs.OmegaByT_UV - OmegaByT, 0) \
                + fit_params[0][0] * spfargs.PhiuvByT3(OmegaByT) * np.heaviside(OmegaByT - spfargs.OmegaByT_UV, 1)
 
-    if args.model == "step_any":
+    if spfargs.model == "step_any":
         return PhiIR(OmegaByT, 2 * fit_params[0][0] * spfargs.PhiuvByT3(fit_params[0][1]) / fit_params[0][1]) * np.heaviside(fit_params[0][1] - OmegaByT, 0) \
                + fit_params[0][0] * spfargs.PhiuvByT3(OmegaByT) * np.heaviside(OmegaByT - fit_params[0][1], 1)
 
@@ -88,7 +86,7 @@ def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params):
         coef += c_nmax * En(spfargs.n_max + 1, OmegaByT, spfargs.mu)
 
     if coef < 0:
-        if args.verbose:
+        if spfargs.verbose:
             print("negative SPF")
         return np.inf
         # return np.inf  # this results in infinite chisq whenever the spf becomes zero.
@@ -167,6 +165,18 @@ def get_results(ydata_sample, fit_params_0, xdata, edata, MinOmegaByT, MaxOmegaB
         return result
 
 
+def get_model_str(model, PhiUVtype, mu, constrainstr, nmax, p, OmegaByT_IR, OmegaByT_UV):
+    if model == "2":
+        model_str = model+"_"+PhiUVtype+"_"+constrainstr+"_"+str(mu)+"_"+str(nmax)
+    elif model == "pnorm":
+        model_str = str(model) + str(p) + "_" + PhiUVtype
+    elif model == "line":
+        model_str = str(model) + "_wIR" + str(OmegaByT_IR) + "_wUV" + str(OmegaByT_UV) + "_" + PhiUVtype
+    else:
+        model_str = str(model)+"_"+PhiUVtype
+    return model_str
+
+
 def main():
     parser = argparse.ArgumentParser()
     requiredNamed = parser.add_argument_group('required named arguments')
@@ -205,9 +215,9 @@ def main():
     parser.add_argument('--seed', help='seed for gaussian bootstrap sample drawings', default=0, type=int)
 
     PhiUV_parser = parser.add_argument_group('arguments for PhiUV')
-    EE_UV_spf.add_args(PhiUV_parser)
+    add_args(PhiUV_parser)
 
-    global args
+    # global args
     args = parser.parse_args()
 
     # check for missing params
@@ -219,28 +229,21 @@ def main():
         return 1
 
     constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
-    if args.model == "2":
-        modelidentifier = args.model+"_"+args.PhiUVtype+"_"+constrainstr+"_"+str(args.mu)+"_"+str(args.nmax)
-    elif args.model == "pnorm":
-        modelidentifier = str(args.model) + str(args.p) + "_" + args.PhiUVtype
-    elif args.model == "line":
-        modelidentifier = str(args.model) + "_wIR" + str(args.OmegaByT_IR) + "_wUV" + str(args.OmegaByT_UV) + "_" + args.PhiUVtype
-    else:
-        modelidentifier = str(args.model)+"_"+args.PhiUVtype
+    model_str = get_model_str(args.model, args.PhiUVtype, args.mu, constrainstr, args.nmax, args.p, args.OmegaByT_IR, args.OmegaByT_UV)
 
     # PhiUV identifiers
     if args.Nf:
-        modelidentifier = modelidentifier + "_Nf" + str(args.Nf)
+        model_str = model_str + "_Nf" + str(args.Nf)
     if args.T_in_GeV:
-        modelidentifier = modelidentifier + "_T" + str(args.T_in_GeV)
+        model_str = model_str + "_T" + '{0:.3f}'.format(args.T_in_GeV)
     if args.omega_prefactor:
-        modelidentifier = modelidentifier + "_min" + str(args.min_scale)
+        model_str = model_str + "_min" + str(args.min_scale)
     if args.min_scale:
-        modelidentifier = modelidentifier + "_w" + str(args.omega_prefactor)
+        model_str = model_str + "_w" + str(args.omega_prefactor)
 
     if args.add_suffix:
         args.add_suffix = "_"+args.add_suffix
-    fileidentifier = modelidentifier+"_"+str(args.nsamples)+"_"+str(args.min_tauT)+"_exp"+str(args.error_exponent) + args.add_suffix  # +'{:.0e}'.format(args.tol)  "_"+startstr
+    fileidentifier = model_str+"_"+str(args.nsamples)+"_"+str(args.min_tauT)+"_exp"+str(args.error_exponent) + args.add_suffix  # +'{:.0e}'.format(args.tol)  "_"+startstr
 
     # read in the normalized correlator:
     corr = np.loadtxt(args.input_corr)
@@ -249,7 +252,7 @@ def main():
 
     NtauT = len(corr)
 
-    g2, LO, NLO = EE_UV_spf.get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor, args.Npoints, args.Nloop)
+    g2, LO, NLO = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor, args.Npoints, args.Nloop)
     if args.PhiUVtype == "LO":
         PhiUV = LO
     elif args.PhiUVtype == "NLO":
