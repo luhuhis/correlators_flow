@@ -8,7 +8,7 @@ def main():
 
     # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
-    requiredNamed.add_argument('--acc_sts', help="accuracy and stepsize. format: acc0.000010_sts0.000010", default="acc0.000010_sts0.000010", required=True)
+    parser.add_argument('--acc_sts', help="accuracy and stepsize. format: acc0.000010_sts0.000010")
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     parser.add_argument('--basepath', help="override default base input path with this one", type=str)
     parser.add_argument('--n_discard', help="number of configurations, counted from the lowest conf_num, in each stream that should be ignored", type=int, default=0)
@@ -34,7 +34,12 @@ def main():
     elif args.corr == "BB_clover":
         XX_label = "ColMagnCorrTimeSlices_clover_s"
 
-    flow_prefix = flowtype+"_"+args.acc_sts+"_"
+    if not args.acc_sts:
+        flow_prefix = flowtype+"_"
+    else:
+        flow_prefix = flowtype+"_"+args.acc_sts + "_"
+
+
 
     if args.basepath:
         inputfolder = args.basepath + "/" + args.qcdtype + "/" + args.conftype + "/"
