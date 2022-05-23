@@ -6,6 +6,7 @@ from collections import ChainMap
 import matplotlib
 from matplotlib import pyplot, cm, container, legend_handler
 import sys
+import scipy.interpolate
 
 
 def save_script_call(add_folder=None):
@@ -126,35 +127,35 @@ def EE_cont_LO(tauT):
     return math.pi ** 2 * (math.cos(math.pi * tauT) ** 2 / math.sin(math.pi * tauT) ** 4 + 1 / (3 * math.sin(math.pi * tauT) ** 2))
 
 
-EE_latt_LO_flow_storage = {}
+G_latt_LO_flow_storage = {}
 
 
-def EE_latt_LO_flow(Ntau, flowtype="wilson"):
-    global EE_latt_LO_flow_storage
-    if Ntau not in EE_latt_LO_flow_storage.keys():
-        tmp = numpy.loadtxt("/home/altenkort/work/correlators_flow/data/merged/quenched_pertLO_"+flowtype+"Flow/EE/EE_latt_flow_" + str(Ntau) + '.dat')
-        EE_latt_LO_flow_storage[Ntau] = tmp
-        return tmp
-    else:
-        return EE_latt_LO_flow_storage[Ntau]
+def G_latt_LO_flow(tau: int, flowtime, corr: str, Nt: int, flowaction: str, gaugeaction: str):
+    """This returns the perturbative LO EE or BB correlator under flow for various gauge and/or flow actions.
+    Data from numerical calculations is interpolated in flowtime to return any input flow time(s) (numpy arrays of flowtimes are supported).
+    Once one dataset is loaded and interpolated it is stored in a global dictonary for future access."""
 
+    identifier = str(Nt)+flowaction+gaugeaction
 
-# TODO: clean this up
-def improve_corr_factor(tauTindex, nt, flowindex=0, improve=True, improve_with_flow=False, flowtype="wilson"):
-    nt_half = int(nt / 2)
-    if improve:
-        if flowtype == "wilson":
-            if improve_with_flow:
-                return nt ** 4 / EE_latt_LO_flow(nt, flowtype)[tauTindex + nt_half * flowindex][2]  # here, "G_norm" is pert latt corr at zero flow time
-            else:
-                return nt ** 4 / EE_latt_LO_flow(nt, flowtype)[tauTindex][2]  # here, "G_norm" is pert latt corr at zero flow time
-        elif flowtype == "zeuthen":
-            if improve_with_flow:
-                return nt ** 4 / EE_latt_LO_flow(nt, flowtype)[flowindex, tauTindex]
-            else:
-                return nt ** 4 / EE_latt_LO_flow(nt, flowtype)[0, tauTindex]
-    else:
-        return nt ** 4 / EE_cont_LO(get_tauTs(nt)[tauTindex])
+    # store for future access
+    global G_latt_LO_flow_storage
+    if identifier not in G_latt_LO_flow_storage.keys():
+        #TODO make these paths an input instead of hard code
+        file = "/work/home/altenkort/work/correlators_flow/data/merged/pert_LO/"+corr+"_pert_latt_"+flowaction+"_"+gaugeaction+"_Nt"+str(Nt)+".dat"
+        flowtimes = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/pert_LO/flowtimes.dat")
+        try:
+            tmp = numpy.loadtxt(file)
+        except OSError:
+            print("Error in latt_LO_flow: could not load file ", file)
+            exit(1)
+        interpolations = []
+        for i in range(tmp.shape[1]):
+            interpolations.append(scipy.interpolate.InterpolatedUnivariateSpline(flowtimes, tmp[:, i], k=3, ext=2))
+        G_latt_LO_flow_storage[identifier] = interpolations
+
+    # return the corresponding flowtime-interpolated correlator evaluated at the given flowtime(s)
+    this_int = G_latt_LO_flow_storage[identifier][tau]
+    return this_int(flowtime)
 
 
 def lower_tauT_limit_(flowradius, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=1/20):  # note: sqrt(8*0.014) ~= 0.33
