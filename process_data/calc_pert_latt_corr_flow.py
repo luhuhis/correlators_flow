@@ -287,7 +287,7 @@ def add_args(parser):
     """ arguments that are relevant for get_correlators() """
     parser.add_argument('--Nt', type=int, required=True, help='Temporal extent of lattice')
     parser.add_argument('--Nspace', type=int, default=8, help='1/8 of sampling points that will be used for the momentum integration in each'
-                                                               ' direction')
+                                                               ' direction. default is 8 (using 16 changes results only after the ~6th decimal place).')
     parser.add_argument('--flowtimes_file', type=str, required=True,
                         help='path fo file that contains dimensionless flowtimes tauF/a^2 that shall be calculated')
     parser.add_argument('--printprogress', action="store_true")
@@ -311,7 +311,7 @@ def main():
 
     # save data in text file
     create_folder(args.outputpath)
-    np.savetxt(args.outputpath+"/"+args.corr+"_pert_latt_"+args.flow_action+"_"+args.gauge_action+"_Nt"+str(args.Nt)+"_Ns"+str(args.Nspace)+".dat", correlators, header='rows are flow times, columns are temp seps')
+    np.savetxt(args.outputpath+"/"+args.corr+"_pert_latt_"+args.flow_action+"_"+args.gauge_action+"_Nt"+str(args.Nt)+".dat", correlators, header='rows are flow times, columns are temp seps')
 
 
 def save_script_call(add_folder=None):
