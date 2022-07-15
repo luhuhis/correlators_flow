@@ -13,8 +13,8 @@ from process_data.spf.EE_UV_spf import get_spf, add_args
 
 
 def Gnorm(tauT):
-    norm = np.pi ** 2 * (np.cos(np.pi * tauT) ** 2 / np.sin(np.pi * tauT) ** 4 + 1 / (3 * np.sin(np.pi * tauT) ** 2))
-    return norm
+    return np.pi ** 2 * (np.cos(np.pi * tauT) ** 2 / np.sin(np.pi * tauT) ** 4 + 1 / (3 * np.sin(np.pi * tauT) ** 2))
+
 
 # ==============================================================
 
@@ -41,6 +41,8 @@ class SpfArgs(NamedTuple):
     OmegaByT_IR: float
     OmegaByT_UV: float
     p: float
+    MinOmegaByT: float
+    MaxOmegaByT: float
 
 
 def PhiIR(OmegaByT, kappa):
@@ -48,7 +50,7 @@ def PhiIR(OmegaByT, kappa):
 
 
 # ========= Spf models =========
-def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params):
+def SpfByT3(OmegaByT, spfargs, *fit_params):
     if spfargs.model == "max":
         return np.maximum(fit_params[0][0] / 2 * OmegaByT, spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1])
     if spfargs.model == "smax":
@@ -58,11 +60,28 @@ def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params):
         return ((fit_params[0][0] / 2 * OmegaByT) ** spfargs.p + (spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1]) ** spfargs.p)**(1/spfargs.p)
 
     if spfargs.model == "line":
-        return PhiIR(OmegaByT, fit_params[0][0]) * np.heaviside(spfargs.OmegaByT_IR-OmegaByT, 1) \
-               + ((fit_params[0][1] * spfargs.PhiuvByT3(spfargs.OmegaByT_UV) - PhiIR(spfargs.OmegaByT_IR, fit_params[0][0])) / (spfargs.OmegaByT_UV - spfargs.OmegaByT_IR)
-                  * OmegaByT + (spfargs.OmegaByT_UV * PhiIR(spfargs.OmegaByT_IR, fit_params[0][0]) - spfargs.OmegaByT_IR * fit_params[0][1] * spfargs.PhiuvByT3(spfargs.OmegaByT_UV)) / (spfargs.OmegaByT_UV - spfargs.OmegaByT_IR))   \
-               * np.heaviside(OmegaByT-spfargs.OmegaByT_IR, 0) * np.heaviside(spfargs.OmegaByT_UV-OmegaByT, 0) \
-               + fit_params[0][1] * spfargs.PhiuvByT3(OmegaByT) * np.heaviside(OmegaByT - spfargs.OmegaByT_UV, 0)
+        x = OmegaByT
+        y_IR = PhiIR(x, fit_params[0][0])
+        y_UV = fit_params[0][1] * spfargs.PhiuvByT3(x)
+        x2 = spfargs.OmegaByT_UV
+        x1 = spfargs.OmegaByT_IR
+        y2 = fit_params[0][1] * spfargs.PhiuvByT3(x2)
+        y1 = PhiIR(spfargs.OmegaByT_IR, fit_params[0][0])
+        slope = (y2-y1)/(x2-x1)
+        intercept = (y1*x2-y2*x1) / (x2-x1)
+        return y_IR*np.heaviside(x1-x, 1) + (slope*x+intercept)*np.heaviside(x-x1, 0)*np.heaviside(x2-x, 0) + y_UV*np.heaviside(x-x2, 0)
+
+    if spfargs.model == "plaw":
+        x = OmegaByT
+        y_IR = PhiIR(x, fit_params[0][0])
+        y_UV = fit_params[0][1] * spfargs.PhiuvByT3(x)
+        x2 = spfargs.OmegaByT_UV
+        x1 = spfargs.OmegaByT_IR
+        y2 = fit_params[0][1] * spfargs.PhiuvByT3(x2)
+        y1 = PhiIR(spfargs.OmegaByT_IR, fit_params[0][0])
+        exp = np.log(y1/y2)/np.log(x1/x2)
+        prefactor = y1/x1**exp
+        return y_IR*np.heaviside(x1-x, 1) + (prefactor*x**exp)*np.heaviside(x-x1, 0)*np.heaviside(x2-x, 0) + y_UV*np.heaviside(x-x2, 0)
 
     if spfargs.model == "step":
         return PhiIR(OmegaByT, 2 * fit_params[0][0] * spfargs.PhiuvByT3(spfargs.OmegaByT_UV) / spfargs.OmegaByT_UV) * np.heaviside(spfargs.OmegaByT_UV - OmegaByT, 0) \
@@ -72,61 +91,65 @@ def SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params):
         return PhiIR(OmegaByT, 2 * fit_params[0][0] * spfargs.PhiuvByT3(fit_params[0][1]) / fit_params[0][1]) * np.heaviside(fit_params[0][1] - OmegaByT, 0) \
                + fit_params[0][0] * spfargs.PhiuvByT3(OmegaByT) * np.heaviside(OmegaByT - fit_params[0][1], 1)
 
-    if spfargs.constrain:
-        coef_tmp = 1
-        for i in range(1, spfargs.n_max + 1):
-            coef_tmp += fit_params[0][i] * En(i, MaxOmegaByT, spfargs.mu)
-        c_nmax = (spfargs.PhiuvByT3(MaxOmegaByT) / np.sqrt((0.5 * fit_params[0][0] * MaxOmegaByT) ** 2 + (spfargs.PhiuvByT3(MaxOmegaByT)) ** 2) - coef_tmp) / En(
-                spfargs.n_max + 1, MaxOmegaByT, spfargs.mu)
-    coef = 1
-    for i in range(1, spfargs.n_max+1):
-        coef += fit_params[0][i] * En(i, OmegaByT, spfargs.mu)
+    if spfargs.model == "2015":
+        if spfargs.constrain:
+            coef_tmp = 1
+            for i in range(1, spfargs.n_max + 1):
+                coef_tmp += fit_params[0][i] * En(i, spfargs.MaxOmegaByT, spfargs.mu)
+            c_nmax = (spfargs.PhiuvByT3(spfargs.MaxOmegaByT) / np.sqrt((0.5 * fit_params[0][0] * spfargs.MaxOmegaByT) ** 2 + (spfargs.PhiuvByT3(spfargs.MaxOmegaByT)) ** 2) - coef_tmp) / En(
+                    spfargs.n_max + 1, spfargs.MaxOmegaByT, spfargs.mu)
+        coef = 1
+        for i in range(1, spfargs.n_max+1):
+            coef += fit_params[0][i] * En(i, OmegaByT, spfargs.mu)
 
-    if spfargs.constrain:
-        coef += c_nmax * En(spfargs.n_max + 1, OmegaByT, spfargs.mu)
+        if spfargs.constrain:
+            coef += c_nmax * En(spfargs.n_max + 1, OmegaByT, spfargs.mu)
 
-    if coef < 0:
-        if spfargs.verbose:
-            print("negative SPF")
-        return np.inf
-        # return np.inf  # this results in infinite chisq whenever the spf becomes zero.
-    return np.sqrt((0.5 * fit_params[0][0] * OmegaByT) ** 2 + (spfargs.PhiuvByT3(OmegaByT)) ** 2) * coef
+        if coef < 0:
+            if spfargs.verbose:
+                print("negative SPF")
+            return np.inf
+            # return np.inf  # this results in infinite chisq whenever the spf becomes zero.
+        return np.sqrt((0.5 * fit_params[0][0] * OmegaByT) ** 2 + (spfargs.PhiuvByT3(OmegaByT)) ** 2) * coef
+
+    print("Error: unknown spf model", spfargs.model)
+    exit(1)
 
 
 # ==============================================================
 
 
-def Integrand(OmegaByT, tauT, MaxOmegaByT, spfargs, *fit_params):
-    return 1. / np.pi * Kernel(OmegaByT, tauT) * SpfByT3(OmegaByT, MaxOmegaByT, spfargs, *fit_params)
+def Integrand(OmegaByT, tauT, spfargs, *fit_params):
+    return 1. / np.pi * Kernel(OmegaByT, tauT) * SpfByT3(OmegaByT, spfargs, *fit_params)
 
 
-def TargetCorr(tauT, MinOmegaByT, MaxOmegaByT, spfargs, *fit_params):
+def TargetCorr(tauT, spfargs, *fit_params):
     CorrTrial = []
     for i in range(len(tauT)):
         try:
-            CorrTrial.append(scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT[i], MaxOmegaByT, spfargs, *fit_params), MinOmegaByT, MaxOmegaByT)[0])
+            CorrTrial.append(scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT[i], spfargs, *fit_params), spfargs.MinOmegaByT, spfargs.MaxOmegaByT)[0])
         except OverflowError as e:
             print(str(e) + " for integration appears at tauT=" + str(tauT[i]))
             return np.inf
     return CorrTrial
 
 
-def chisq_dof(fit_params, xdata, ydata_sample, edata, MinOmegaByT, MaxOmegaByT, spfargs, verbose=False):
-    res = (ydata_sample - TargetCorr(xdata, MinOmegaByT, MaxOmegaByT, spfargs, fit_params)) / edata
+def chisq_dof(fit_params, xdata, ydata_sample, edata, spfargs, verbose=False):
+    res = (ydata_sample - TargetCorr(xdata, spfargs, fit_params)) / edata
     chisqdof = np.sum(res ** 2) / (len(xdata) - len(fit_params))
     if verbose:
         print(['{0:.7f} '.format(i) for i in fit_params], '{0:.4f}'.format(chisqdof))
     return chisqdof
 
 
-def get_results(ydata_sample, fit_params_0, xdata, edata, MinOmegaByT, MaxOmegaByT, spfargs, PhiUV, NtauT, corr, model, verbose=False):
+def get_results(ydata_sample, fit_params_0, xdata, edata, spfargs, PhiUV, NtauT, corr, model, verbose=False):
     if verbose:
         print("current correlator sample:", ydata_sample)
 
     # fun: The objective function to be minimized.
     # x0: Initial guess.
     # args: Extra arguments passed to the objective function
-    fit_res = scipy.optimize.minimize(fun=chisq_dof, x0=fit_params_0, args=(xdata, ydata_sample, edata, MinOmegaByT, MaxOmegaByT, spfargs, verbose), method='L-BFGS-B',
+    fit_res = scipy.optimize.minimize(fun=chisq_dof, x0=fit_params_0, args=(xdata, ydata_sample, edata, spfargs, verbose), method='L-BFGS-B',
                                       options={'disp': 0}, callback=None)  # 'maxiter': MaxIter,   bounds=[[0, np.inf], *([[-1, 1]]*spfargs.n_max)])  # , 'xatol': args.tol, 'fatol': args.tol
 
     # now use the fit results for the parameters to compute the fitted spectral function and correlator
@@ -134,7 +157,7 @@ def get_results(ydata_sample, fit_params_0, xdata, edata, MinOmegaByT, MaxOmegaB
     # spectral function
     Spf = []
     for i in range(len(PhiUV)):
-        Spf.append(SpfByT3(PhiUV[i][0], MaxOmegaByT, spfargs, fit_res.x))
+        Spf.append(SpfByT3(PhiUV[i][0], spfargs, fit_res.x))
     return_nan = False
     if any(n < 0 for n in Spf):
         print("negative spf for this sample. returning nan.")
@@ -147,12 +170,12 @@ def get_results(ydata_sample, fit_params_0, xdata, edata, MinOmegaByT, MaxOmegaB
             fit_res.x[0] = math.fabs(fit_res.x[0])
 
     # correlator
-    fit_corr = TargetCorr(xdata, MinOmegaByT, MaxOmegaByT, spfargs, fit_res.x)
+    fit_corr = TargetCorr(xdata, spfargs, fit_res.x)
     for i in range(NtauT):
         fit_corr[i] /= Gnorm(corr[i][0])
 
     # chisq
-    chisqdof = chisq_dof(fit_res.x, xdata, ydata_sample, edata, MinOmegaByT, MaxOmegaByT, spfargs, verbose)  # Note: this chisq_dof is appended to the end of Record!
+    chisqdof = chisq_dof(fit_res.x, xdata, ydata_sample, edata, spfargs, verbose)  # Note: this chisq_dof is appended to the end of Record!
 
     # stack the result into one long array, because the bootstrap is limited to 1D arrays. we'll need to accordingly extract this again later.
     result = np.hstack((fit_res.x, Spf, fit_corr, chisqdof))
@@ -170,7 +193,7 @@ def get_model_str(model, PhiUVtype, mu, constrainstr, nmax, p, OmegaByT_IR, Omeg
         model_str = model+"_"+PhiUVtype+"_"+constrainstr+"_"+str(mu)+"_"+str(nmax)
     elif model == "pnorm":
         model_str = str(model) + str(p) + "_" + PhiUVtype
-    elif model == "line":
+    elif model == "line" or model == "plaw":
         model_str = str(model) + "_wIR" + str(OmegaByT_IR) + "_wUV" + str(OmegaByT_UV) + "_" + PhiUVtype
     else:
         model_str = str(model)+"_"+PhiUVtype
@@ -187,12 +210,13 @@ def main():
                                              'different data set', type=str, default="")
 
     # input corr
+    # TODO add support for multiple input_corrs
     parser.add_argument('--input_corr', help='Path to input correlator data file. expects text file with three columns: tauT, G, err', type=str)
     parser.add_argument('--min_tauT', help='ignore corr data below this tauT', type=float, default=0)
     parser.add_argument('--error_exponent', default=0, type=int, help="increase errors for small tauT data like this: error*(0.5/tauT)^error_exponent")
 
     # === spf model selection ===
-    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line", "step_any", "pnorm"], type=str, required=True)
+    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line", "step_any", "pnorm", "plaw"], type=str, required=True)
     requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str)
     requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO or NLO. if empty then its assumed that PathPhiUV is given.', type=str, choices=["LO", "NLO"])
 
@@ -201,7 +225,7 @@ def main():
     parser.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', type=int, choices=[1, 2, 3, 4, 5, 6, 7])
     parser.add_argument('--constrain', help='force the spf to reach the UV limit at large omega', action="store_true")
 
-    # parameters for line model
+    # parameters for line,plaw model
     parser.add_argument('--OmegaByT_IR', type=float, help="three reasonable choices: 0.01, 0.4, 1")
     parser.add_argument('--OmegaByT_UV', type=float, default=2.2, help="default value: vacuum NLO and HTL-resummed NLO agree down to omega/T=2.2")
 
@@ -224,8 +248,8 @@ def main():
     if args.model == "2" and (not args.mu or not args.nmax):
         print("ERROR: Need mu and nmax for model 2.")
         return 1
-    if args.model == "line" and not args.OmegaByT_UV:
-        print("ERROR: Need mu and nmax for model 2.")
+    if (args.model == "line" or args.model == "plaw") and not args.OmegaByT_UV:
+        print("ERROR: Need OmegaByT_UV for model line or plaw.")
         return 1
 
     constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
@@ -301,7 +325,7 @@ def main():
     nparam = len(fit_params_0)
 
     # constant parameters only used by the function SpfByT3
-    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3, nparam-1, args.OmegaByT_IR, args.OmegaByT_UV, args.p)
+    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3, nparam-1, args.OmegaByT_IR, args.OmegaByT_UV, args.p, MinOmegaByT, MaxOmegaByT)
 
     nomega = len(PhiUV[:, 0])
     structure = np.asarray((
@@ -314,8 +338,8 @@ def main():
     print("Initial guess for fit params:", fit_params_0)
     samples, results, error = \
         bootstr.bootstr_from_gauss(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
-                                               useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=True,
-                                               args=(fit_params_0, xdata, edata_fit, MinOmegaByT, MaxOmegaByT, spfargs, PhiUV, NtauT, corr, args.model, args.verbose))
+                                   useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=True,
+                                   args=(fit_params_0, xdata, edata_fit, spfargs, PhiUV, NtauT, corr, args.model, args.verbose))
 
     # make handling of the left and right 68-quantiles easier
     error = np.asarray(error)
