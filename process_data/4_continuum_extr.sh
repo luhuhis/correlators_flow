@@ -17,16 +17,16 @@ done
 
 for ((i=min_flow_idx; i < max_flow_idx; i+=10)) ; do
   for corr in $corrs; do
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --tree_imp_flow zeuthen --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i)) $tex --custom_ylims 1.5 4   $max_FlowradiusBytauT $int &
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --tree_imp_flow zeuthen --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+1)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --tree_imp_flow zeuthen --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+2)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --tree_imp_flow zeuthen --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+3)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --tree_imp_flow zeuthen --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+4)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --tree_imp_flow zeuthen --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+5)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --tree_imp_flow zeuthen --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+6)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --tree_imp_flow zeuthen --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+7)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --tree_imp_flow zeuthen --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+8)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
-    /usr/local/bin/python3.7m -u _4_continuum_extr.py --tree_imp_flow zeuthen --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+9)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py  --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i)) $tex --custom_ylims 1.5 4   $max_FlowradiusBytauT $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py  --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+1)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py  --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+2)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py  --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+3)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py  --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+4)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py  --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+5)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py  --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+6)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py  --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+7)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py  --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+8)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
+    /usr/local/bin/python3.7m -u _4_continuum_extr.py  --qcdtype $qcdtype --conftypes $conftypes --corr $corr --flow_index $((i+9)) $tex --custom_ylims 1.5 4 $max_FlowradiusBytauT $int &
     wait
   done
 done
