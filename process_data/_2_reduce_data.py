@@ -75,6 +75,7 @@ def main():
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     parser.add_argument('--part_obs', help="only compute part of the observable", choices=['numerator', 'polyakovloop'])
     parser.add_argument('--n_samples', help='number of bootstrap samples', type=int, default='1000')
+    parser.add_argument('--BB_renorm', action="store_true", help="multiply corr with Z factor")
     args = parser.parse_args()
 
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
@@ -107,8 +108,8 @@ def main():
     XX_err = XX_err[0]  # this is the bootstrap estimate for the error of the mean of the correlator
 
     # add renormalization factor for BB correlator. errors for it are extremely small. FIXME abstract this
-    path = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
-    if args.corr == "BB":
+    if args.BB_renorm and args.corr == "BB":
+        path = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
         tfT2, Z2 = numpy.loadtxt(path + "Z2_" + str(nt) + ".dat", unpack=True)
         for i in range(XX_mean.shape[0]):
             for j in range(XX_mean.shape[1]):
@@ -139,7 +140,7 @@ def main():
 
         # add BB renorm
         Z = 1
-        if args.corr == "BB":
+        if args.BB_renorm and args.corr == "BB":
             Z = Z2[i]
 
         with open(filename, 'w') as outfile:
