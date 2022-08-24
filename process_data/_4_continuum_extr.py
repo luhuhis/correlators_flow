@@ -41,6 +41,7 @@ def main():
     requiredNamed.add_argument('--conftypes', nargs='*', required=True,
                                help="ORDERED list of conftypes (from coarse to fine), e.g. s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
 
+    #TODO fix tree imp args
     parser.add_argument('--no_tree_imp', action="store_false", default=True, help='do not use tree-level improvement')
     parser.add_argument('--tree_imp_flow', help='use flow time dependent tree-level improvement', choices=["wilson", "zeuthen"])
     parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=1000)
@@ -65,8 +66,19 @@ def main():
     if (args.int_only and not args.int_Nt) or (args.int_Nt and not args.int_only):
         parser.error("Error while parsing arguments. --int_only requires --int_Nt and vice versa.")
 
+    fermions, _, flowtype = lpd.parse_qcdtype(args.qcdtype)
+    if fermions == "hisq":
+        gaugeaction = "LW"
+    elif fermions == "quenched":
+        gaugeaction = "Wilson"
+    if flowtype == "zeuthenFlow":
+        flowaction = "Zeuthen"
+    elif flowtype == "wilsonFlow":
+        flowaction = "Wilson"
+
     # load flow radius
     flowradius = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/flowradii_"+args.conftypes[-1]+".dat")[args.flow_index]
+    flowtime = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/flowtimes_"+args.conftypes[-1]+".dat")[args.flow_index]
     flowradius_str = r'{0:.4f}'.format(flowradius)
 
     # set some params from args
@@ -94,9 +106,9 @@ def main():
         tauTs_fine = lpd.get_tauTs(nt_fine)
         print("INFO: lower tauT limit for this flow time and coarsest lattice: ", lower_tauT_lim)
         XX_finest = numpy.asarray(([tauT for tauT in tauTs_fine if tauT > lower_tauT_lim],
-                                   [val*lpd.improve_corr_factor(j, nt_fine, args.flow_index, args.no_tree_imp, True if args.tree_imp_flow else False, args.tree_imp_flow if args.tree_imp_flow else "wilson") for j, val in enumerate(XX_mean_finest[args.flow_index])
+                                   [val*nt_fine**4/lpd.G_latt_LO_flow(j, flowtime, args.corr, nt_fine, flowaction, gaugeaction) for j, val in enumerate(XX_mean_finest[args.flow_index])
                                     if tauTs_fine[j] > lower_tauT_lim],
-                                   [val*lpd.improve_corr_factor(j, nt_fine, args.flow_index, args.no_tree_imp, True if args.tree_imp_flow else False, args.tree_imp_flow if args.tree_imp_flow else "wilson") for j, val in enumerate(XX_err_finest[args.flow_index])
+                                   [val*nt_fine**4/lpd.G_latt_LO_flow(j, flowtime, args.corr, nt_fine, flowaction, gaugeaction) for j, val in enumerate(XX_err_finest[args.flow_index])
                                     if tauTs_fine[j] > lower_tauT_lim]))
     else:
         tauTs_fine = lpd.get_tauTs(args.int_Nt)
