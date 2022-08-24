@@ -16,7 +16,7 @@ def main():
     lpd.create_folder(outputpath)
     confdict = {"16": "s064t64_b0687361", "20": "s080t80_b0703500", "24": "s096t96_b0719200", "30": "s096t120_b0739400", "36": "s096t144_b0754400"}
     # confdict = {"64": "s064t64_b0687361", "80": "s080t80_b0703500", "96": "s096t96_b0719200", "120": "s096t120_b0739400", "144": "s096t144_b0754400"}
-    Nts = (16, 20, 24, 30, 36)
+    Nts = (20, 24, 30, 36)
     # Nts = (64, 80, 96, 120, 144)
     tauFT2_arr = []
     prefactor = 128 * numpy.pi ** 2 / 24
@@ -77,13 +77,15 @@ def main():
     fig2, ax2, plots2 = lpd.create_figure(xlabel=r'$\tau_F T^2$', xlabelpos=(1.1, 0.05), ylabelpos=(0.1, 0.9))  # xlims=(0, 0.0032)
     # ax2.set_yscale('log')
 
-    ax2.set_title(r'$Z_f^2, \quad T=1.5T_c$',  y=0.85)
+    ax2.set_title(r'$Z_f^2$',  y=0.85, x=0.12)
+    labeldict = {20: "7.035", 24: "7.192", 30: "7.394", 36: "7.544"}
+
 
     for i, Nt in enumerate(Nts):
-        ax2.errorbar(x_arr[i], Z2_arr[i], fmt='x-', lw=0.5, markersize=2, mew=0.3, capsize=1, label=str(Nt), zorder=-Nt)
+        ax2.errorbar(x_arr[i], Z2_arr[i], fmt='x-', lw=0.5, markersize=2, mew=0.3, capsize=1, label=labeldict[Nt], zorder=-Nt)
     ax2.axvline(x=lowtauFT2, **lpd.verticallinestyle)
     ax2.axhline(y=1, **lpd.horizontallinestyle)
-    ax2.legend(**lpd.legendstyle, title=r'$N_\tau$')
+    ax2.legend(**lpd.legendstyle, title=r'$\beta$')
     fig2.savefig(outputpath+"Zf2.pdf")
 
 
