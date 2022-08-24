@@ -93,8 +93,13 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
     LO_SPF = []
     NLO_SPF = []
     g2_arr = []
+    first = True
     for OmegaByT in np.logspace(-6, 3, Npoints, base=10):
-        mu = maxfunc(min_scale, omega_prefactor * OmegaByT * T_in_GeV)
+        scale = omega_prefactor * OmegaByT * T_in_GeV
+        mu = maxfunc(min_scale, scale)
+        if scale > min_scale and first:
+            print("scale > min_scale at OmegaByT=", OmegaByT)
+            first = False
         Alphas = crd.AlphasLam(Lambda_MSbar, mu, Nf, Nloop)
         g2 = 4. * np.pi * Alphas
         g2_arr.append([OmegaByT, g2])
