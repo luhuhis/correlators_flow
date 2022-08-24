@@ -4,6 +4,9 @@ from os import listdir
 import lib_process_data as lpd
 
 
+# TODO write basepath and conf numbers to file for future reference where the data came from
+
+
 def main():
 
     # parse cmd line arguments
@@ -11,7 +14,7 @@ def main():
     parser.add_argument('--acc_sts', help="accuracy and stepsize. format: acc0.000010_sts0.000010")
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     parser.add_argument('--basepath', help="override default base input path with this one", type=str)
-    parser.add_argument('--n_discard', help="number of configurations, counted from the lowest conf_num, in each stream that should be ignored", type=int, default=0)
+    parser.add_argument('--n_discard', help="number of configurations, counted from the lowest conf_num, in each stream that should be ignored", type=int, default=0, nargs='*')
     parser.add_argument('--legacy', help="use legacy file names and legacy multiplicity factor of -3", action="store_true")
     parser.add_argument('--excess_workaround', help="ignore additional flow times at the end of later files", action="store_true")
 
@@ -85,7 +88,8 @@ def main():
                             print(shape, " (previous) vs ", tmp.shape, " (current file)")
                             corrupt_files.append(datafile)
                             continue
-                    if discarded < args.n_discard:
+                    #TODO fix this for the default case!
+                    if discarded < args.n_discard[n_streams]:
                         discarded += 1
                         continue
                     if n_datafiles == 0:
@@ -120,12 +124,9 @@ def main():
         outfile.write(str(n_datafiles)+'\n')
         outfile.write('# number of streams for '+args.qcdtype+' '+args.conftype+'\n')
         outfile.write(str(n_streams)+'\n')
-        outfile.write('# stream identifiers:\n# ')
-        for strid in streamids:
-            outfile.write(strid+' ')
-        outfile.write('\n')
         outfile.write('# number of discarded confs from the beginning of each stream:\n')
-        outfile.write(str(args.n_discard) + '\n')
+        for ndisc, strid in zip(args.n_discard, streamids):
+            outfile.write(str(ndisc) + '  # ' + strid + '\n')
         numpy.savetxt(outfile, numpy.asarray(n_files_per_stream), header='number of confs contained in each stream respectively', fmt='%i')
     flow_times = [i for i in flow_times]
     flow_radii = [numpy.sqrt(i*8)/nt for i in flow_times]
