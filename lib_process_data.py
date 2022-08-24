@@ -85,16 +85,16 @@ def get_parser():
     return parser, requiredNamed
 
 
-def get_merged_data_path(qcdtype, corr, conftype):
-    return "../../data/merged/" + qcdtype + "/" + corr + "/" + conftype + "/"
+def get_merged_data_path(qcdtype, corr, conftype, basepath="../../data/merged/"):
+    return basepath + qcdtype + "/" + corr + "/" + conftype + "/"
 
 
-def get_raw_data_path(qcdtype, conftype):
-    return "../../data/raw/" + qcdtype + "/" + conftype + "/"
+def get_raw_data_path(qcdtype, conftype, basepath="../../data/raw/"):
+    return basepath + qcdtype + "/" + conftype + "/"
 
 
-def get_plot_path(qcdtype, corr, conftype):
-    return "../../plots/" + qcdtype + "/" + corr + "/" + conftype + "/"
+def get_plot_path(qcdtype, corr, conftype, basepath="../../plots/"):
+    return basepath + qcdtype + "/" + corr + "/" + conftype + "/"
 
 
 def create_folder(*paths):
@@ -130,10 +130,15 @@ def EE_cont_LO(tauT):
 G_latt_LO_flow_storage = {}
 
 
-def G_latt_LO_flow(tau: int, flowtime, corr: str, Nt: int, flowaction: str, gaugeaction: str):
+def G_latt_LO_flow(tau_index: int, flowtime, corr: str, Nt: int, flowaction: str, gaugeaction: str):
     """This returns the perturbative LO EE or BB correlator under flow for various gauge and/or flow actions.
     Data from numerical calculations is interpolated in flowtime to return any input flow time(s) (numpy arrays of flowtimes are supported).
-    Once one dataset is loaded and interpolated it is stored in a global dictonary for future access."""
+    Once one dataset is loaded and interpolated it is stored in a global dictonary for future access.
+
+    param tau_index
+        Min = 0 (--> tau/a=1), Max = Nt/2-1 (--> tau/a=Nt/2).
+
+    """
 
     identifier = str(Nt)+flowaction+gaugeaction
 
@@ -154,7 +159,7 @@ def G_latt_LO_flow(tau: int, flowtime, corr: str, Nt: int, flowaction: str, gaug
         G_latt_LO_flow_storage[identifier] = interpolations
 
     # return the corresponding flowtime-interpolated correlator evaluated at the given flowtime(s)
-    this_int = G_latt_LO_flow_storage[identifier][tau]
+    this_int = G_latt_LO_flow_storage[identifier][tau_index]
     return this_int(flowtime)
 
 
@@ -215,11 +220,12 @@ markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^',
 
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.03), ylabelpos=(0.01, 0.97), tickpad=2,
                   figsize=(3+3/8, 3+3/8 - 1/2.54), UseTex=True, fig=None, subplot=111, no_ax=False):
+    matplotlib.pyplot.rc('font', family='cmr10', size=fontsize)
     if UseTex:
         matplotlib.pyplot.rc('text', usetex=True)
         matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
-    matplotlib.pyplot.rc('font', family='cmr10', size=fontsize)
-    matplotlib.rcParams['mathtext.fontset'] = 'cm'
+    else:
+        matplotlib.rcParams['mathtext.fontset'] = 'cm'
     linewidth = 0.5
     matplotlib.rcParams['axes.linewidth'] = linewidth
     if fig is None:
