@@ -56,6 +56,7 @@ def main():
 
     ax.set_title(args.corr + ", $\\tau T = "+'{0:.3f}'.format(tauT)+"$")
     ax.axhline(y=1, **lpd.horizontallinestyle)
+    ax.axvline(x=tauT/3, **lpd.verticallinestyle)
     ax.legend(title="$S_\\mathrm{gauge}, S_\\mathrm{flow}$", **lpd.legendstyle)
 
     fig.savefig(args.outputpath + "/pert_latt_comparison_"+ args.corr + "_" + "Nt" + str(args.Nt) + "_" + '{0:.3f}'.format(tauT) + ".pdf")
