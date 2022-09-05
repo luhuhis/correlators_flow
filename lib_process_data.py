@@ -195,6 +195,7 @@ def get_color2(myarray, i, start=0, end=-1):
 fontsize = 10
 mylinewidth = 0.5
 figurestyle = dict(bbox_inches="tight", pad_inches=0)
+plotstyle_data = dict(fmt='x', linewidth=0.9, markersize=0, capsize=0.9, mew=0.9, fillstyle='none')
 plotstyle_points = dict(fmt='D-', linewidth=1, markersize=4, capsize=2, mew=0.5, fillstyle='none')
 plotstyle_lines = dict(fmt='-', linewidth=0.5, mew=0.25, mec='grey', markersize=2, capsize=3)
 plotstyle_add_point = dict(fmt='D-', fillstyle='none', markersize=5, mew=0.25, lw=0.5, elinewidth=0.25, capsize=1.2)
@@ -218,15 +219,15 @@ markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^',
            '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
 
 
-def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.03), ylabelpos=(0.01, 0.97), tickpad=2,
-                  figsize=(3+3/8, 3+3/8 - 1/2.54), UseTex=True, fig=None, subplot=111, no_ax=False):
+def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.03), ylabelpos=(0.01, 0.97), tickpad=1,
+                  figsize=(3, 2.5), UseTex=True, fig=None, subplot=111, no_ax=False):
     matplotlib.pyplot.rc('font', family='cmr10', size=fontsize)
     if UseTex:
         matplotlib.pyplot.rc('text', usetex=True)
         matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
     else:
         matplotlib.rcParams['mathtext.fontset'] = 'cm'
-    linewidth = 0.5
+    linewidth = 0.75
     matplotlib.rcParams['axes.linewidth'] = linewidth
     if fig is None:
         fig = matplotlib.pyplot.figure(figsize=figsize, constrained_layout=True)
@@ -237,12 +238,14 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,
         if ylabelpos is not None:
             ax.yaxis.set_label_coords(*ylabelpos)
         ax.minorticks_off()
-        ax.tick_params(direction='in', pad=tickpad, width=linewidth)
+        ax.tick_params(pad=tickpad, width=linewidth, direction="out")  # direction='in',
+        ax.xaxis.set_ticks_position('both')
+        ax.yaxis.set_ticks_position('both')
         if xlims is not None:
             ax.set_xlim(xlims)
         if ylims is not None:
             ax.set_ylim(ylims)
-        ax.set_xlabel(xlabel, **xlabelstyle)
+        ax.set_xlabel(xlabel, **xlabelstyle, horizontalalignment='right', verticalalignment='bottom')
         ax.set_ylabel(ylabel, **ylabelstyle)
     else:
         ax = None
