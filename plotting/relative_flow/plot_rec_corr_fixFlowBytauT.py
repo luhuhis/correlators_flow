@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7m -u
+#!/usr/bin/python3 -u
 
 import lib_process_data as lpd
 import numpy
@@ -10,7 +10,7 @@ import itertools
 from matplotlib import gridspec
 from process_data.spf.spf_reconstruct import SpfArgs, Gnorm, Integrand
 
-plotwidth = 0.8
+plotwidth = 0.9
 
 
 # ====================
@@ -18,7 +18,7 @@ plotwidth = 0.8
 
 # find continuum correlator at various fixed flowradiusBytauT
 def find_and_plot_and_save_relflow(corr, flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, ax, color, Glabel, no_connection, spfargs, params, norm_by_Gansatz=False, zorder=-10,
-                                   nt=None, label_suffix=""):
+                                   nt=None, lattice_spacing=None, label_suffix=""):
     relflow_edata = []
     relflow_ydata = []
     relflow_xdata = []
@@ -45,12 +45,19 @@ def find_and_plot_and_save_relflow(corr, flowradiusBytauT, possible_tauTs, y_int
         relflow_ydata = [val*Gnorm(relflow_xdata[i])/G_ansatz(spfargs, params, relflow_xdata[i]) for i, val in enumerate(relflow_ydata)]
         relflow_edata = [val*Gnorm(relflow_xdata[i])/G_ansatz(spfargs, params, relflow_xdata[i]) for i, val in enumerate(relflow_edata)]
 
-    ax.errorbar(relflow_xdata if nt is None else numpy.asarray(relflow_xdata) * nt, relflow_ydata, relflow_edata, zorder=zorder,
+    if lattice_spacing is None:
+        if nt is None:
+            xdata = relflow_xdata
+        else:
+            numpy.asarray(relflow_xdata) * nt
+    else:
+        xdata = numpy.asarray(relflow_xdata) * nt * lattice_spacing
+    ax.errorbar(xdata, relflow_ydata, relflow_edata, zorder=zorder,
                 **lpd.chmap(lpd.plotstyle_add_point, markersize=0, elinewidth=plotwidth, mew=plotwidth, fmt='_', color=color,
                             label="$" + Glabel + ", \\: " + flowstr + label_suffix + "$"))
     # TODO add custom labels
     if not no_connection:
-        ax.errorbar(relflow_xdata if nt is None else numpy.asarray(relflow_xdata) * nt, relflow_ydata, zorder=-100 * zorder,
+        ax.errorbar(xdata, relflow_ydata, zorder=-100 * zorder,
                     **lpd.chmap(lpd.plotstyle_add_point, markersize=0, lw=0.75 * plotwidth, alpha=0.5, fmt='-', color=color))
 
 
@@ -83,13 +90,15 @@ def set_output_path(outputpath, qcdtype, corr):
     return outputpath
 
 
-def plot_fit_corrs(ax, xpoints_arr, model_means, just_UVs, fitparams, color_fit, zorders, nts, plot_in_lattice_units, no_just_UV, no_label):
+def plot_fit_corrs(ax, xpoints_arr, model_means, just_UVs, fitparams, color_fit, zorders, nts, plot_in_lattice_units, lattice_spacings, no_just_UV, no_label):
     # plot reconstructed correlators
-    for xpoints, model_mean, just_UV, fitparam, color, zorder, nt in itertools.zip_longest(xpoints_arr, model_means, just_UVs, fitparams, color_fit,
-                                                                                           zorders, nts):
+    for xpoints, model_mean, just_UV, fitparam, color, zorder, nt, a in itertools.zip_longest(xpoints_arr, model_means, just_UVs, fitparams, color_fit,
+                                                                                           zorders, nts, lattice_spacings):
         if xpoints is not None:
             if plot_in_lattice_units:
                 xpoints = xpoints * nt
+            if a is not None:
+                xpoints = xpoints * nt * a
 
             if not no_label:
                 label = "$ \\kappa/T^3=" + "{0:.2f}".format(fitparam[0][0]) + "\\pm " + "{0:.2f}".format(numpy.fmax(fitparam[0][1], fitparam[0][2])) \
@@ -206,6 +215,7 @@ def main():
                                               "just for some text)", action="store_true")
 
     parser.add_argument('--plot_in_lattice_units', help="only works if the lattice spacing is constant across different conftypes", action="store_true")
+    parser.add_argument('--plot_in_fm', nargs='*', type=float, default=None, help="plot tau in fm. arguments here are the lattice spacings in order in fm.")
     parser.add_argument('--min_tauT', type=float, help='lower limits from which on the corr is fitted. appear in the kappa plot.', nargs='*')
     # parser.add_argument('--min_tauT_plot', type=float, help='lower limit from which tauT on the reconstructed corr is valid/should be plotted. '
     #                                                         'default is to parse it from fitparam file.', nargs='*', default=[0.05,])
@@ -286,27 +296,30 @@ def main():
         print("ERROR: need kappa_ypos")
         exit(1)
 
-    if len(args.min_tauT) != len(args.fitparam_files):
+    if args.fitparam_files is not None and args.min_tauT is not None and (len(args.min_tauT) != len(args.fitparam_files)):
         print("ERROR need the same number of arguments for min_tauT as for fitparam_files")
         exit(1)
-    if len(args.min_tauT) != len(args.fitparam_files):
-        print("ERROR need the same number of arguments for min_tauT as for fitparam_files")
+    if args.plot_in_lattice_units and args.plot_in_fm is not None:
+        print("ERROR choose either plot_in_lattice_units and plot_in_fm")
         exit(1)
-
 
     args.output_path = set_output_path(args.output_path, args.qcdtype, args.corr)
     nts = get_nts(args.conftype)
 
     # prepare plot canvas
-    xlabel = r'$\tau T$' if not args.plot_in_lattice_units else r'$\tau/a$'
-
-    xlabelpos = (0.97, 0.07)
-    ylabelpos = (0.08, 0.97)
+    if args.plot_in_lattice_units:
+        xlabel = r'$\tau/a$'
+    elif args.plot_in_fm is not None:
+        xlabel = r'$\tau \mathrm{[fm]}$'
+    else:
+        xlabel = r'$\tau T$'
+    xlabelpos = (0.99, 0.01)
+    ylabelpos = (0.01, 0.97)
 
     if not args.no_kappa_plot:
-        fig, _, _ = lpd.create_figure(figsize=(1.5 * (3 + 3 / 8), (3 + 3 / 8 - 1 / 2.54)), UseTex=args.usetex, subplot=None, no_ax=True)
+        fig, _, _ = lpd.create_figure(figsize=(3,2.5), UseTex=args.usetex, subplot=None, no_ax=True)
         spec = gridspec.GridSpec(figure=fig, ncols=2, nrows=1, width_ratios=[3, 1], wspace=0)
-        _, ax, _ = lpd.create_figure(figsize=(1.5 * (3 + 3 / 8), 3 + 3 / 8 - 1 / 2.54), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
+        _, ax, _ = lpd.create_figure(figsize=(3,2.5), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
                                      UseTex=args.usetex, fig=fig, subplot=spec[0])
         ax.set_xlabel(xlabel, **lpd.chmap(lpd.xlabelstyle, bbox=None))
         _, ax_kappa, _ = lpd.create_figure(ylims=(0, 2.5), UseTex=args.usetex, fig=fig, subplot=spec[1])
@@ -317,8 +330,8 @@ def main():
             ax_kappa.set_ylim(args.kappa_ylims)
 
     else:
-        fig, _, _ = lpd.create_figure(figsize=((3 + 3 / 8), (3 + 3 / 8 - 1 / 2.54)), UseTex=args.usetex, subplot=None, no_ax=True)
-        _, ax, _ = lpd.create_figure(figsize=(1.5 * (3 + 3 / 8), 3 + 3 / 8 - 1 / 2.54), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
+        fig, _, _ = lpd.create_figure(figsize=(3,2.5), UseTex=args.usetex, subplot=None, no_ax=True)
+        _, ax, _ = lpd.create_figure(figsize=(3,2.5), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
                                      UseTex=args.usetex, fig=fig)
     if args.norm_by_Gansatz:
         ax.set_ylabel("$\\frac{G^\\mathrm{imp}}{G^\\mathrm{ansatz}}$", fontsize=12)
@@ -487,18 +500,17 @@ def main():
             ax_kappa.axhline(4*numpy.pi/0.9, **lpd.horizontallinestyle)  # 4*numpy.pi/0.9 ~= 14
             ax_kappa.text(390, 4*numpy.pi/0.9*0.99, 'AdS/CFT estimate', fontsize=5, color='grey', alpha=0.8, ha='right', va='top')
 
-    plot_fit_corrs(ax, xpoints_arr, Gmodel_by_norm_arr, just_UVs, fitparams, args.color_fit, range(len(xpoints_arr)), nts, args.plot_in_lattice_units, args.no_just_UV, args.no_label)
+    plot_fit_corrs(ax, xpoints_arr, Gmodel_by_norm_arr, just_UVs, fitparams, args.color_fit, range(len(xpoints_arr)), nts, args.plot_in_lattice_units, args.plot_in_fm, args.no_just_UV, args.no_label)
 
     color_offset = plot_extrapolated_data(args.corr[0], ax, args.flowradiusBytauT[0], args.plot_quenched_extr, args.no_connection, args.color_data[1], args.norm_by_Gansatz)
 
     # TODO put this part under process_data, and just plot the corresponding corrs here?
     # TODO add option to only calculate these corrs, don't plot anything.
     # find correlator at various fixed flowradiusBytauT
-    # TODO add option
     if args.qcdtype is not None and args.corr is not None and args.conftype is not None:
         n = max(len(args.flowradiusBytauT), len(args.qcdtype), len(args.corr), len(args.conftype))
         args.color_data = args.color_data[color_offset:color_offset + n]
-        for flowradiusBytauT, qcdtype, corr, conftype, color, label_suffix, spfargs, params in \
+        for flowradiusBytauT, qcdtype, corr, conftype, color, label_suffix, spfargs, params, a in \
                 zip(args.flowradiusBytauT if len(args.flowradiusBytauT) > 1 else itertools.cycle(args.flowradiusBytauT),
                     args.qcdtype if len(args.qcdtype) > 1 else itertools.cycle(args.qcdtype),
                     args.corr if len(args.corr) > 1 else itertools.cycle(args.corr),
@@ -506,7 +518,8 @@ def main():
                     args.color_data,
                     args.leg_label_suffix if args.leg_label_suffix is not None else ["" for _ in range(n)],
                     spfargs_arr if len(spfargs_arr) > 0 else [None for _ in range(n)],
-                    params_ansatz_arr if len(params_ansatz_arr) > 0 else [None for _ in range(n)]):
+                    params_ansatz_arr if len(params_ansatz_arr) > 0 else [None for _ in range(n)],
+                    args.plot_in_fm if args.plot_in_fm is not None else [None for _ in range(n)]):
             if flowradiusBytauT is not None:
                 inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype, basepath="../../../data/merged/")
                 these_flowradii = numpy.loadtxt(inputfolder + "flowradii_" + conftype + ".dat")
@@ -539,12 +552,12 @@ def main():
                     y_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, ydata, k=3, ext=2, check_finite=True))
                     e_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, edata, k=3, ext=2, check_finite=True))
                 if args.leg_label_showNtinsteadofa:
-                    thislabel= str(nt)
+                    thislabel = str(nt)
                 else:
                     thislabel = "1/("+str(nt)+"T\,)"
                 find_and_plot_and_save_relflow(args.corr[0], flowradiusBytauT, these_tauT, y_int, e_int,
                                                inputfolder, ax, color, thislabel, args.no_connection, spfargs, params, args.norm_by_Gansatz, int(-1000 * flowradiusBytauT),
-                                               nt if args.plot_in_lattice_units else None, label_suffix)
+                                               nt if args.plot_in_lattice_units or args.plot_in_fm is not None else None, a, label_suffix)
 
     # flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, ax, color, Glabel, no_connection, spfargs, params, norm_by_Gansatz = False, zorder = -10,
     # nt = None, label_suffix = ""
@@ -552,12 +565,12 @@ def main():
     # Legend
     for i in range(args.leg_n_dummies):
         ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
-    legend = ax.legend(**lpd.chmap(lpd.legendstyle, edgecolor='black', frameon=True, framealpha=0, bbox_to_anchor=args.leg_pos, loc='upper left', labelspacing=0.6, ncol=args.leg_n_col, columnspacing=1.2, handlelength=1.2, fontsize=6))
+    legend = ax.legend(**lpd.chmap(lpd.legendstyle, edgecolor='black', frameon=True, framealpha=0, loc='lower right', bbox_to_anchor=args.leg_pos,  labelspacing=0, ncol=args.leg_n_col, columnspacing=1.2, handlelength=1.2, fontsize=6))
     if args.leg_label_showNtinsteadofa:
         legtitle_Nt_or_a = "N_\\tau"
     else:
         legtitle_Nt_or_a = "a"
-    legend.set_title("$\\quad \\quad "+legtitle_Nt_or_a+",  \\:\\: \\sqrt{\\! 8\\tau_\\mathrm{F}}/\\tau"+args.leg_title_suffix+"\\hspace{1}$", prop={'size': 7})
+    legend.set_title("$\\quad \\quad "+legtitle_Nt_or_a+",  \\:\\: \\sqrt{\\! 8\\tau_\\mathrm{F}}/\\tau"+args.leg_title_suffix+"\\hspace{1}$", prop={'size': 6})
     legend.get_frame().set_linewidth(0.5)
     texts = legend.get_texts()
     for text in texts:
