@@ -5,31 +5,6 @@
 import numpy
 import lib_process_data as lpd
 import scipy.interpolate
-import sys
-
-
-def filter_tauTs(flowradius, xdata, max_FlowradiusBytauT, max_FlowradiusBytauT_offset, int_left_tauT_offset):
-    """ remove datapoints that the flow has destroyed """
-    indices = numpy.asarray([k for k, j in enumerate(xdata) if j >= lpd.lower_tauT_limit_(flowradius, max_FlowradiusBytauT, max_FlowradiusBytauT_offset) - int_left_tauT_offset])
-    if len(indices) == 0:
-        sys.exit("Error at "+"flow_radius="+'{0:.4f}'.format(flowradius)+". There are no datapoints that the flow hasn't destroyed according to pert. flow limits.")
-    # min_ind = numpy.min(indices)
-    # add one helper point outside of flow limit to stabilize lower part of interpolation
-    # if min_ind >= 1:
-    #     indices = numpy.asarray([min_ind-1, *indices])
-    # if min_ind >= 2:
-    #     indices = numpy.asarray([min_ind-2, *indices])
-    xdata = numpy.asarray(xdata)
-    xdata = xdata[indices]
-    return xdata, indices
-
-
-def filter_corr_data(flowradius, xdata, ydata, max_FlowradiusBytauT, max_FlowradiusBytauT_offset, int_left_tauT_offset):
-    """ remove datapoints that the flow has destroyed """
-    xdata, indices = filter_tauTs(flowradius, xdata, max_FlowradiusBytauT, max_FlowradiusBytauT_offset, int_left_tauT_offset)
-    ydata = numpy.asarray(ydata)
-    ydata = ydata[indices]
-    return xdata, ydata
 
 
 def interpolate_XX_flow(xdata, ydata, ydata_norm, output_xdata1, output_xdata2):
@@ -46,8 +21,6 @@ def main():
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     requiredNamed.add_argument('--flow_index', help='which flow time to interpolate', type=int, required=True)
 
-    parser.add_argument('--no_tree_imp', action="store_false", default=True, help='do not use tree-level improvement')
-    parser.add_argument('--tree_imp_flow', help='use flow time dependent tree-level improvement', choices=["wilson", "zeuthen"])
     parser.add_argument('--nsamples', help="number of gaussian bootstrap samples that are contained in the input files", type=int, default=1000)
     parser.add_argument('--int_Nt', help='use tauT of this Nt as xdata for the interpolation output', type=int, default=36)
     parser.add_argument('--int_left_tauT_offset', help='include points <int_left_tauT_offset> below the lower tauT limit in the spline calculation. this helps '
@@ -59,6 +32,7 @@ def main():
     parser.add_argument('--max_FlowradiusBytauT_offset', type=float, default=1/20,
                         help='fixed offset to make lower_tauT_limit stricter (by e.g. one lattice spacing 1/Nt), as the 0.33 criterion is only valid in the '
                              'continuum. on the lattice one has to be stricter. 1/Nt_coarsest is a good value.')
+    parser.add_argument('--ylims', default=[-0.2, 4], nargs=2, type=float, help="custom ylims for plot")
 
     args = parser.parse_args()
 
@@ -97,11 +71,8 @@ def main():
                              if x >= lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset)])  # xdata[0]
 
     # this is only relevant for the plot
-    tauTs_used_in_int, _ = filter_tauTs(flowradius, lpd.get_tauTs(nt), args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset, args.int_left_tauT_offset)
-    xpointsplot = numpy.linspace(tauTs_used_in_int[0], xpoints[-1], 1000)
+    xpointsplot = numpy.linspace(0, xpoints[-1], 1000)
     theplotdata = []
-
-    # G_latt_LO_flow(tau: int, flowtime, corr: str, Nt: int, flowaction: str, gaugeaction: str):
 
     # perform spline fits for each sample
 
@@ -115,12 +86,7 @@ def main():
         for a in range(nt_half):
             # We use tf=0 here so that the interpolation works better. Afterwards we divide it out again.
             ydata[a] = ydata[a] * nt**4 / lpd.G_latt_LO_flow(a, 0, args.corr, nt, flowaction, gaugeaction)
-        # TODO: decide what to do with filter_corr_data. Remove?
-        # xdata, ydata = filter_corr_data(flowradius, lpd.get_tauTs(nt), ydata, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset, args.int_left_tauT_offset)
         output, plot_output = interpolate_XX_flow(lpd.get_tauTs(nt), ydata, ydata_norm, xpoints, xpointsplot)
-        # for i in range(nt):
-            # the index has to change here because xdata may now be smaller, because it got filtered three lines above.
-            # output[i] = output[i] / lpd.G_latt_LO_flow(nt_half-len(xdata)+i, 0, args.corr, nt, flowaction, gaugeaction) * lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction)
         theoutputdata.append(output)
         theplotdata.append(plot_output)
 
@@ -140,7 +106,7 @@ def main():
         ylabel = r'$'+displaystyle+r'\frac{ G^\mathrm{latt }_{\tau_F} (\tau)}{G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } }_{\tau_F = 0} (\tau)}$'
     else:
         ylabel = 'G'
-    fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=[-0.2, 4], xlabel=r'$\tau T$', ylabel=ylabel, xlabelpos=(0.95, 0.05), UseTex=UseTex)
+    fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=args.ylims, xlabel=r'$\tau T$', ylabel=ylabel, xlabelpos=(0.95, 0.05), UseTex=UseTex)
     ax.set_title(r'$ \sqrt{8\tau_F}T = $'+'{0:.3f}'.format(flowradius))  # +", nknots = "+nknot_str)
     ax.axvline(x=lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset), **lpd.verticallinestyle)
     ax.fill_between(xpointsplot, ypointsplot-epointsplot, ypointsplot+epointsplot, alpha=0.5)
