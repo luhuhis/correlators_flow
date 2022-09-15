@@ -13,10 +13,128 @@ from process_data.spf.spf_reconstruct import SpfArgs, Gnorm, Integrand
 plotwidth = 0.9
 
 
-# ====================
+def set_title(args, ax):
+
+    def get_scale_string(min_scale_str, run_scale_str):
+        return ', $\\:\\:\\mu=\\sqrt{[' + min_scale_str + ']^2+' + run_scale_str + '^2}$'
+
+    def get_model_str(model, PhiUV_label, min_scale_str, run_scale_str):
+        if model == "max":
+            model_str = r'Fit: $\:\rho(\omega)= \mathrm{max}[\kappa \omega /2T, \, c\: \phi_\mathrm{UV}^\mathrm{' + PhiUV_label + r'}(\mu)]$' + get_scale_string(
+                min_scale_str, run_scale_str)
+
+        elif model == "pnorm":
+            model_str = r'Dashed lines: fit with model $\rho(\omega)= \sqrt{[\kappa \omega /2T\,]^2 + [c\: \phi_\mathrm{UV}^\mathrm{' + PhiUV_label + r'}(\mu)]^2}$' + get_scale_string(
+                min_scale_str, run_scale_str)
+        elif model == "plaw":
+            model_str = r'Fit: $\:\rho(\omega)= \rho_{IR}(\kappa, \omega) + \rho_{line}(\omega) + \rho^\mathrm{' + PhiUV_label + r'}_{UV}(\omega, c, \mu)$' + get_scale_string(
+                min_scale_str, run_scale_str)
+        else:
+            # TODO add line model etc
+            model_str = ""
+        return model_str
+
+    # set title
+    model_str = get_model_str(args.model, args.PhiUV_label, args.min_scale, args.run_scale)
+    ax.set_title(model_str+args.title, x=0.5, y=1, fontsize=7)
 
 
-# find continuum correlator at various fixed flowradiusBytauT
+def set_text(args, ax, ax_kappa):
+    if args.plot_quenched_systematics:
+        ax_kappa.text((3.40024856+1.4370101)/2/4, 0.85, "total \n systematic\n uncertainty \n from model \n choice at \n $a\\rightarrow 0$,\n$\\tau_F\\rightarrow 0$", transform=ax_kappa.transAxes, fontsize=6, color='k', alpha=1, ha='center', va='center', rotation='0')
+        ax_kappa.fill_between([1.4370101, 3.40024856], [0, 0], [10, 10], zorder=-10000, color='k', alpha=0.15, lw=0)
+
+    if args.custom_text:
+        ax.text(0.35/0.5, 0.4, "Fit $\\tau T \\geq 0.35$", transform=ax.transAxes, fontsize=6,
+                color='k', alpha=1, ha='center', va='center', rotation='0', zorder=10, bbox=dict(facecolor='white', edgecolor='white'))
+
+
+def set_watermark(args, ax, ax_kappa):
+    # set watermark
+    if args.show_watermark and not args.no_kappa_plot:
+        ax.text(0.67, 0.2, 'HotQCD preliminary', transform=ax.transAxes,
+                fontsize=16, color='gray', alpha=0.5,
+                ha='center', va='center', rotation='20', zorder=-1000000)
+
+        ax_kappa.text(0.51, 0.2, 'HotQCD preliminary', transform=ax_kappa.transAxes,
+                      fontsize=8, color='gray', alpha=0.5,
+                      ha='center', va='center', rotation='20', zorder=-1000000)
+
+
+def set_legend(args, ax):
+    # Legend
+    for i in range(args.leg_n_dummies):
+        ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
+    legend = ax.legend(**lpd.chmap(lpd.legendstyle, edgecolor='black', frameon=True, framealpha=0, loc='lower right', bbox_to_anchor=args.leg_pos,  labelspacing=0, ncol=args.leg_n_col, columnspacing=1.2, handlelength=1.2, fontsize=6))
+    if args.leg_label_showNtinsteadofa:
+        legtitle_Nt_or_a = "N_\\tau"
+    else:
+        legtitle_Nt_or_a = "a"
+    legend.set_title("$\\quad \\quad "+legtitle_Nt_or_a+",  \\:\\: \\sqrt{\\! 8\\tau_\\mathrm{F}}/\\tau"+args.leg_title_suffix+"\\hspace{1}$", prop={'size': 6})
+    legend.get_frame().set_linewidth(0.5)
+    texts = legend.get_texts()
+    for text in texts:
+        text.set_linespacing(0.85)
+
+
+def plot_relative_flow(args, ax, color_offset, spfargs_arr, params_ansatz_arr):
+    # TODO put this part under process_data, and just plot the corresponding corrs here?
+    # TODO add option to only calculate these corrs, don't plot anything.
+    # find correlator at various fixed flowradiusBytauT
+    if args.qcdtype is not None and args.corr is not None and args.conftype is not None:
+        n = max(len(args.flowradiusBytauT), len(args.qcdtype), len(args.corr), len(args.conftype))
+        args.color_data = args.color_data[color_offset:color_offset + n]
+        for flowradiusBytauT, qcdtype, corr, conftype, color, label_suffix, spfargs, params, a in \
+                zip(args.flowradiusBytauT if len(args.flowradiusBytauT) > 1 else itertools.cycle(args.flowradiusBytauT),
+                    args.qcdtype if len(args.qcdtype) > 1 else itertools.cycle(args.qcdtype),
+                    args.corr if len(args.corr) > 1 else itertools.cycle(args.corr),
+                    args.conftype if len(args.conftype) > 1 else itertools.cycle(args.conftype),
+                    args.color_data,
+                    args.leg_label_suffix if args.leg_label_suffix is not None else ["" for _ in range(n)],
+                    spfargs_arr if len(spfargs_arr) > 0 else [None for _ in range(n)],
+                    params_ansatz_arr if len(params_ansatz_arr) > 0 else [None for _ in range(n)],
+                    args.plot_in_fm if args.plot_in_fm[0] is not None else [None for _ in range(n)]):
+            if flowradiusBytauT is not None:
+                inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype, basepath="../../../data/merged/")
+                these_flowradii = numpy.loadtxt(inputfolder + "flowradii_" + conftype + ".dat")
+                these_flowtimes = numpy.loadtxt(inputfolder + "flowtimes_" + conftype + ".dat")
+                XX = numpy.loadtxt(inputfolder + corr + "_" + conftype + ".dat")
+                XX_err = numpy.loadtxt(inputfolder + corr + "_err_" + conftype + ".dat")
+                beta, ns, nt, nt_half = lpd.parse_conftype(conftype)
+                these_tauT = numpy.arange(1 / nt, 0.501, 1 / nt)
+
+                fermions, temp, flowtype = lpd.parse_qcdtype(qcdtype)
+
+                if fermions == "hisq":
+                    gaugeaction = "LW"
+                elif fermions == "quenched":
+                    gaugeaction = "Wilson"
+
+                if flowtype == "zeuthenFlow":
+                    flowaction = "Zeuthen"
+                elif flowtype == "wilsonFlow":
+                    flowaction = "Wilson"
+
+                # interpolate between flow times
+                y_int = []
+                e_int = []
+                for i in range(len(these_tauT)):
+                    G_latt_LO_flow = lpd.G_latt_LO_flow(i, these_flowtimes, corr, nt, flowaction, gaugeaction)
+                    ydata = numpy.asarray(XX[:, i]) * nt ** 4 / G_latt_LO_flow
+                    edata = numpy.asarray(XX_err[:, i]) * nt ** 4 / G_latt_LO_flow
+                    xdata = these_flowradii
+                    y_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, ydata, k=3, ext=2, check_finite=True))
+                    e_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, edata, k=3, ext=2, check_finite=True))
+                if args.leg_label_showNtinsteadofa:
+                    thislabel = str(nt)
+                else:
+                    thislabel = "1/(" + str(nt) + r'T\,)'
+                find_and_plot_and_save_relflow(args.corr[0], flowradiusBytauT, these_tauT, y_int, e_int,
+                                               inputfolder, ax, color, thislabel, args.no_connection, spfargs, params, args.norm_by_Gansatz,
+                                               int(-1000 * flowradiusBytauT),
+                                               nt if args.plot_in_lattice_units else None, a, label_suffix)
+
+
 def find_and_plot_and_save_relflow(corr, flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, ax, color, Glabel, no_connection, spfargs, params, norm_by_Gansatz=False, zorder=-10,
                                    nt=None, lattice_spacing=None, label_suffix=""):
     relflow_edata = []
@@ -30,7 +148,7 @@ def find_and_plot_and_save_relflow(corr, flowradiusBytauT, possible_tauTs, y_int
                 relflow_ydata.append(y_int_list[i](wanted_flowradius))
                 relflow_xdata.append(tauT)
             except ValueError:
-                print("Warn: ValueError")
+                print("Warn: ValueError for flow radius", wanted_flowradius)
                 pass
     relflow_xdata = numpy.asarray(relflow_xdata)
     relflow_ydata = numpy.asarray(relflow_ydata)
@@ -49,7 +167,7 @@ def find_and_plot_and_save_relflow(corr, flowradiusBytauT, possible_tauTs, y_int
         if nt is None:
             xdata = relflow_xdata
         else:
-            numpy.asarray(relflow_xdata) * nt
+            xdata = numpy.asarray(relflow_xdata) * nt
     else:
         xdata = numpy.asarray(relflow_xdata) * nt * lattice_spacing
     ax.errorbar(xdata, relflow_ydata, relflow_edata, zorder=zorder,
@@ -61,101 +179,44 @@ def find_and_plot_and_save_relflow(corr, flowradiusBytauT, possible_tauTs, y_int
                     **lpd.chmap(lpd.plotstyle_add_point, markersize=0, lw=0.75 * plotwidth, alpha=0.5, fmt='-', color=color))
 
 
-def get_scale_string(min_scale_str, run_scale_str):
-    return ', $\\:\\:\\mu=\\sqrt{['+min_scale_str+']^2+'+run_scale_str+'^2}$'
+def plot_extrapolated_data(args, ax):
+    path = args.plot_extr
+    conftype = args.conftype[-1]
 
-
-def get_model_str(model, PhiUV_label, min_scale_str, run_scale_str):
-
-    if model == "max":
-        model_str = r'Fit: $\:\rho(\omega)= \mathrm{max}[\kappa \omega /2T, \, c\: \phi_\mathrm{UV}^\mathrm{'+PhiUV_label+r'}(\mu)]$'+get_scale_string(min_scale_str, run_scale_str)
-
-    elif model == "pnorm":
-        model_str = r'Dashed lines: fit with model $\rho(\omega)= \sqrt{[\kappa \omega /2T\,]^2 + [c\: \phi_\mathrm{UV}^\mathrm{'+PhiUV_label+r'}(\mu)]^2}$'+get_scale_string(min_scale_str, run_scale_str)
-    elif model == "plaw":
-        model_str = r'Fit: $\:\rho(\omega)= \rho_{IR}(\kappa, \omega) + \rho_{line}(\omega) + \rho^\mathrm{'+ PhiUV_label +'}_{UV}(\omega, c, \mu)$'+ get_scale_string(min_scale_str, run_scale_str)
-    else:
-        # TODO add line model etc
-        model_str = ""
-    return model_str
-
-
-def set_output_path(outputpath, qcdtype, corr):
-    if not outputpath:
-        if qcdtype:
-            outputpath = lpd.get_plot_path(qcdtype[0], "", "") + "/rel_flow/"
-        if qcdtype and corr:
-            outputpath = lpd.get_plot_path(qcdtype[0], corr[0], "") + "/rel_flow/"
-    lpd.create_folder(outputpath)
-    return outputpath
-
-
-def plot_fit_corrs(ax, xpoints_arr, model_means, just_UVs, fitparams, color_fit, zorders, nts, plot_in_lattice_units, lattice_spacings, no_just_UV, no_label):
-    # plot reconstructed correlators
-    for xpoints, model_mean, just_UV, fitparam, color, zorder, nt, a in itertools.zip_longest(xpoints_arr, model_means, just_UVs, fitparams, color_fit,
-                                                                                           zorders, nts, lattice_spacings):
-        if xpoints is not None:
-            if plot_in_lattice_units:
-                xpoints = xpoints * nt
-            if a is not None:
-                xpoints = xpoints * nt * a
-
-            if not no_label:
-                label = "$ \\kappa/T^3=" + "{0:.2f}".format(fitparam[0][0]) + "\\pm " + "{0:.2f}".format(numpy.fmax(fitparam[0][1], fitparam[0][2])) \
-                      + "$\n $ c=" + "{0:.2f}".format(fitparam[1][0]) + "\\pm " + "{0:.2f}".format(numpy.fmax(fitparam[1][1], fitparam[1][2])) + "$"
-                # "$ G_\\mathrm{fit}^{\\rho =\\mathrm{max(IR,c\\,UV_{a})}}$ \n "
-                # + "$\\chi^2/\\mathrm{dof}=" + "{0:.1f}".format(fitparam[2][0]) + " \\pm " + "{0:.1f}".format(numpy.fmax(fitparam[2][1], fitparam[2][2])) +"$",
-            else:
-                label = ""
-            ax.errorbar(xpoints, model_mean, color=color,
-                        label=label, **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='--', zorder=-10000+zorder, ))
-
-            if not no_just_UV:
-                ax.errorbar(xpoints, just_UV, color=color, alpha=0.25, **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='-.', zorder=-10000+zorder, ))
-
-
-def get_nts(conftypes):
-    nts = []
-    if conftypes is not None:
-        for conftype in conftypes:
-            _, _, nt, _ = lpd.parse_conftype(conftype)
-            nts.append(nt)
-    return nts
-
-
-def plot_extrapolated_data(corr, ax, flowradiusBytauT, plot_quenched_extr, no_connection, color, norm_by_Gansatz):
-    # TODO no hardcoded paths!!!
     color_offset = 0
-    # NOTE: This whole branch is hardcoded
-    if plot_quenched_extr:
+    if args.plot_extr:
         color_offset = 2
         # plot cont+flow extr. corr
         # TODO abstract this or make a flag to plot this or not?
-        XX_flow_extr = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr.txt", unpack=True)
-        ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2], zorder=-10000,
-                    **lpd.chmap(lpd.plotstyle_add_point, color='k', fmt='_', markersize=0,
-                                mew=plotwidth, elinewidth=plotwidth,
-                                label="$a\\rightarrow 0, \\:\\: \\tau_\\mathrm{F}\\rightarrow 0$"))
-        ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
-        if not no_connection:
-            ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], zorder=-100000, markersize=0, lw=0.75 * plotwidth, color='k', fmt='-', alpha=0.5)
+        file = path+"/EE_flow_extr.txt"
+        try:
+            XX_flow_extr = numpy.loadtxt(file, unpack=True)
+            ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2], zorder=-10000,
+                        **lpd.chmap(lpd.plotstyle_add_point, color='k', fmt='_', markersize=0,
+                                    mew=plotwidth, elinewidth=plotwidth,
+                                    label="$a\\rightarrow 0, \\:\\: \\tau_\\mathrm{F}\\rightarrow 0$"))
+            ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
+            if not args.no_connection:
+                ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], zorder=-100000, markersize=0, lw=0.75 * plotwidth, color='k', fmt='-', alpha=0.5)
+        except OSError:
+            print("WARN: skipping tf->0 extr., could not find ", file)
 
         # load continuum quenched data and interpolate it
         EE_cont_arr = []
-        flowradii = numpy.loadtxt(
-            "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/s144t36_b0754400/flowradii_s144t36_b0754400.dat")
+        # TODO remove "lpd.remove..."
+        flowradii = numpy.loadtxt(lpd.remove_right_of_last('/', path)+"/"+conftype+"/flowradii_"+conftype+".dat")
         min_idx = 0
         max_idx = 0
         stop = False
         for flowradius in flowradii:
             flowradius_str = r'{0:.4f}'.format(flowradius)
-            fitparam_file = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/cont_extr/EE_" + flowradius_str + "_cont.txt"
+            fitparam_file = path+"/cont_extr/EE_" + flowradius_str + "_cont.txt"
             try:
                 EE_cont_arr.append(numpy.loadtxt(fitparam_file, unpack=True))
                 stop = True
                 max_idx += 1
             except OSError:
-                # print("could not find ", file)
+                # print("could not find ", fitparam_file)
                 if not stop:
                     min_idx += 1
         max_idx += min_idx
@@ -172,30 +233,287 @@ def plot_extrapolated_data(corr, ax, flowradiusBytauT, plot_quenched_extr, no_co
             xdata = flowradii[mask]
             ydata = ydata[mask]
             edata = edata[mask]
-            if len(xdata) >= 3:
+            if len(xdata) >= 4:
                 cont_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, ydata, k=3, ext=2, check_finite=True))
                 cont_err_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, edata, k=3, ext=2, check_finite=True))
             else:
                 cont_int.append(None)
                 cont_err_int.append(None)
-        outfolder = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/cont_rel_flow/"
+        outfolder = path+"/cont_rel_flow/"
         lpd.create_folder(outfolder)
 
-        find_and_plot_and_save_relflow(corr, flowradiusBytauT, possible_tauTs, cont_int, cont_err_int, outfolder, ax, color, r'a\rightarrow 0',
-                                       no_connection, None, None, zorder=-9999, norm_by_Gansatz=norm_by_Gansatz)
+        find_and_plot_and_save_relflow(args.corr[0], args.flowradiusBytauT[0], possible_tauTs, cont_int, cont_err_int, outfolder, ax, args.color_data[1], r'a\rightarrow 0',
+                                       args.no_connection, None, None, zorder=-9999, norm_by_Gansatz=args.norm_by_Gansatz)
     return color_offset
+
+
+def plot_fit_corrs(args, ax, xpoints_arr, model_means, just_UVs, fitparams, nts):
+    zorders = range(len(xpoints_arr))
+    lattice_spacings = args.plot_in_fm
+
+    # plot reconstructed correlators
+    for xpoints, model_mean, just_UV, fitparam, color, zorder, nt, a in itertools.zip_longest(xpoints_arr, model_means, just_UVs, fitparams, args.color_fit,
+                                                                                              zorders, nts, lattice_spacings):
+        if xpoints is not None:
+            if args.plot_in_lattice_units:
+                xpoints = xpoints * nt
+            if a is not None:
+                xpoints = xpoints * nt * a
+
+            if not args.no_label:
+                label = "$ \\kappa/T^3=" + "{0:.2f}".format(fitparam[0][0]) + "\\pm " + "{0:.2f}".format(numpy.fmax(fitparam[0][1], fitparam[0][2])) \
+                      + "$\n $ c=" + "{0:.2f}".format(fitparam[1][0]) + "\\pm " + "{0:.2f}".format(numpy.fmax(fitparam[1][1], fitparam[1][2])) + "$"
+                # "$ G_\\mathrm{fit}^{\\rho =\\mathrm{max(IR,c\\,UV_{a})}}$ \n "
+                # + "$\\chi^2/\\mathrm{dof}=" + "{0:.1f}".format(fitparam[2][0]) + " \\pm " + "{0:.1f}".format(numpy.fmax(fitparam[2][1], fitparam[2][2])) +"$",
+            else:
+                label = ""
+            ax.errorbar(xpoints, model_mean, color=color,
+                        label=label, **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='--', zorder=-10000+zorder, ))
+
+            if not args.no_just_UV:
+                ax.errorbar(xpoints, just_UV, color=color, alpha=0.25, **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='-.', zorder=-10000+zorder, ))
 
 
 def G_ansatz(spfargs, params, tauT):
     return scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT, spfargs, params), spfargs.MinOmegaByT, spfargs.MaxOmegaByT)[0]
 
 
-def main():
+def plot_fits(args, ax, ax_kappa):
+
+    def get_nts(conftypes):
+        nts = []
+        if conftypes is not None:
+            for conftype in conftypes:
+                _, _, nt, _ = lpd.parse_conftype(conftype)
+                nts.append(nt)
+        return nts
+
+    nts = get_nts(args.conftype)
+
+    xpoints_arr = []
+    Gmodel_by_norm_arr = []
+    fitparams = []
+    just_UVs = []
+    spfargs_arr = []
+    params_ansatz_arr = []
+
+    if args.kappa_ypos and args.fitparam_files:
+        pos = numpy.asarray(list(args.kappa_ypos))
+        pos = pos[:len(args.fitparam_files)]
+
+    posidx = 0
+    # calculate fit corrs for all given fitparam and PhiUV files, and plot kappas
+    if args.fitparam_files and args.model:
+        if args.norm_by_Gansatz:
+            # fit kappa
+            xvalues = []
+            yvalues = []
+            evalues = []
+
+            for fitparam_file, temp in \
+                    zip(args.fitparam_files,
+                        args.kappa_temps if args.kappa_temps is not None else [None for _ in range(len(args.fitparam_files))]):
+
+                if args.deduce_fitparam_files:
+                    fitparam_file = args.fitparam_basepath + "/" + fitparam_file + "/params.dat"
+                else:
+                    fitparam_file = args.fitparam_basepath + "/" + fitparam_file
+
+                params, err_left, err_right = numpy.loadtxt(fitparam_file, unpack=True)
+                factor = (temp / 1000) ** 3
+                if not numpy.isnan(params[0]):
+                    xvalues.append(temp)
+                    yvalues.append(params[0] * factor)
+                    evalues.append(numpy.fmax(err_left[0], err_right[0]) * factor)
+
+            result = scipy.optimize.curve_fit(lambda _x, _m, _b: _m * _x + _b, xdata=xvalues, ydata=yvalues, sigma=evalues, p0=(0.001, -0.1))[0]
+            m = result[0]
+            b = result[1]
+
+            xline = numpy.linspace(0, 500, 5)
+            ax_kappa.errorbar(xline, m * xline + b, fmt=':', lw=0.5, color='gray', alpha=0.5)
+
+        for fitparam_file, PhiUV_file, temp in \
+                zip(args.fitparam_files,
+                    args.PhiUV_files if len(args.PhiUV_files) > 1 else itertools.cycle(args.PhiUV_files),
+                    args.kappa_temps if args.kappa_temps is not None else [None for _ in range(len(args.fitparam_files))]):
+
+            # kappa plot
+            if args.deduce_fitparam_files:
+                fitparam_file = args.fitparam_basepath + "/" + fitparam_file + "/params.dat"
+            else:
+                fitparam_file = args.fitparam_basepath + "/" + fitparam_file
+
+            # find out lower tauT based on file path
+            # tmp = lpd.remove_left_of_last('/', fitparam_file)
+            # tmp = lpd.remove_right_of_last('.dat', tmp)
+            # tmp = "0" + lpd.remove_left_of_first('_0', tmp)
+            # this_mintauT = float(lpd.remove_right_of_first('_', tmp))
+            # TODO, if min tauT is "detected" and it is the same as other min tauT, then display it in the title!?
+            # TODO, also do this for other properties of the SPF fit!!! look into plot_fit.py or so!
+
+            this_mintauT = 0.05
+
+            print("read in ", fitparam_file)
+            params, err_left, err_right = numpy.loadtxt(fitparam_file, unpack=True)
+            fitparams.append(numpy.column_stack((params, err_left, err_right)))
+
+            if args.norm_by_Gansatz:
+                params_ansatz = numpy.copy(params)
+                params_ansatz[0] = (m * temp + b) / (temp / 1000) ** 3
+                params_ansatz_arr.append(params_ansatz)
+
+            if not args.no_kappa_plot:
+                if not args.kappa_xaxis_temp:
+                    ax_kappa.errorbar(params[0], pos[posidx], xerr=[[err_left[0]], [err_right[0]]], color=args.color_fit[posidx], fmt='x-', fillstyle='none',
+                                      markersize=0, mew=plotwidth, elinewidth=plotwidth, capsize=1, zorder=-10)
+                else:
+                    factor = 1 if not args.kappa_in_GeV else (temp / 1000) ** 3
+                    ax_kappa.errorbar(temp, params[0] * factor, yerr=[[err_left[0] * factor], [err_right[0] * factor]], color=args.color_fit[posidx], fmt='x-',
+                                      fillstyle='none',
+                                      markersize=0, mew=plotwidth, elinewidth=plotwidth, capsize=1, zorder=-10)
+                    # print(temp, r'{0:.2f}'.format(params[0]), r'{0:.2f}'.format(err_left[0]), r'{0:.2f}'.format(err_right[0]))
+
+                # if posidx == 0 and args.plot_extr:
+                # ax_kappa.axvline(params[0], **lpd.chmap(lpd.verticallinestyle, dashes=(2, 2), color='k', alpha=0.5))
+
+            posidx += 1
+
+            # load PhiUV and calculate model correlators
+            PhiUV_file = args.PhiUV_basepath + PhiUV_file
+            print("read in ", PhiUV_file)
+            PhiUV = numpy.loadtxt(PhiUV_file, unpack=True)[0:3]
+            PhiUVByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[0], PhiUV[1], k=3, ext=2, check_finite=True)
+            MinOmegaByT = PhiUV[0][0]
+            MaxOmegaByT = PhiUV[0][-1]
+
+            Gmodel_by_norm = []
+            just_UV = []
+
+            spfargs = SpfArgs(args.model, "", False, PhiUVByT3, -1, args.OmegaByT_IR, args.OmegaByT_UV, args.p, MinOmegaByT, MaxOmegaByT)
+            spfargs_arr.append(spfargs)
+
+            xpoints_arr.append(numpy.linspace(this_mintauT, 0.5, args.npoints))
+            for tauT in xpoints_arr[-1]:
+
+                Gmodel = scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT, spfargs, params), MinOmegaByT, MaxOmegaByT)[0]
+
+                normalization = Gnorm(tauT)
+                if args.norm_by_Gansatz:
+                    normalization = G_ansatz(spfargs, params_ansatz, tauT)
+
+                Gmodel_by_norm.append(Gmodel / normalization)
+
+                UV_params = numpy.copy(params)
+                UV_params[0] = 0  # set kappa to zero
+                GmodelUV = scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT, spfargs, UV_params), MinOmegaByT, MaxOmegaByT)[0]
+                just_UV.append(GmodelUV / normalization)
+
+            Gmodel_by_norm_arr.append(Gmodel_by_norm)
+            just_UVs.append(just_UV)
+
+        # kappa plot fit range
+        # TODO add check in beginning for error when mintauT, kappa_pos and fitparam files have different number of arguments
+        if not args.no_kappa_plot and not args.kappa_xaxis_temp:
+            labels_plot = []
+            for mintauT in args.min_tauT:
+                labels_plot.append("$" + str(mintauT) + "$")
+                ax_kappa.text(0.02, args.kappa_labelheight, "Fit $\\tau T \\geq$", transform=ax_kappa.transAxes, fontsize=6, color='k', alpha=1, ha='left',
+                              va='center', rotation='0')
+                for label in ax_kappa.yaxis.get_majorticklabels():
+                    label.set_ha("left")
+                ax_kappa.tick_params(axis='y', length=0, direction='in', labelsize=7, pad=-2)
+                from matplotlib.ticker import MaxNLocator
+                ax_kappa.xaxis.set_major_locator(MaxNLocator(4))
+            ax_kappa.set_yticks(pos)
+            ax_kappa.set_yticklabels(labels_plot)
+
+        # kappa plot temp
+        if not args.no_kappa_plot and args.kappa_xaxis_temp:
+            ax_kappa.set_xlim((0, 400))
+            ax_kappa.set_ylim(args.kappa_xlims)
+            ax_kappa.set_xlabel("$T\\, \\mathrm{[MeV]}$", fontsize=8)
+            if args.kappa_in_GeV:
+                ax_kappa.set_ylabel("$\\kappa \\, [\\mathrm{GeV}^3]$", fontsize=8)
+            else:
+                ax_kappa.set_ylabel("$\\kappa /T^3$", fontsize=8)  # [\\mathrm{GeV}^3]
+            ax_kappa.xaxis.set_label_coords(0.8, 0.06)
+            ax_kappa.yaxis.set_label_coords(0.15, 0.99)  # 0.07
+            xpoints = numpy.linspace(0, 500, 100)
+            if args.kappa_in_GeV:
+                ax_kappa.errorbar(xpoints, 4 * numpy.pi / 0.9 * (xpoints / 1000) ** 3, fmt='--', color='grey', alpha=0.8)
+                ax_kappa.text(140, 0.25, 'AdS/CFT estimate', fontsize=5, color='grey', alpha=0.8, ha='left')
+                ax_kappa.text(270, 0.20, 'Linear fit', fontsize=5, color='grey', alpha=0.8)
+            else:
+                ax_kappa.axhline(4 * numpy.pi / 0.9, **lpd.horizontallinestyle)  # 4*numpy.pi/0.9 ~= 14
+                ax_kappa.text(390, 4 * numpy.pi / 0.9 * 0.99, 'AdS/CFT estimate', fontsize=5, color='grey', alpha=0.8, ha='right', va='top')
+
+        plot_fit_corrs(args, ax, xpoints_arr, Gmodel_by_norm_arr, just_UVs, fitparams, nts)
+
+    return spfargs_arr, params_ansatz_arr
+
+
+def prepare_plot_canvas(args):
+
+    # set xlabel
+    if args.plot_in_lattice_units:
+        xlabel = r'$\tau/a$'
+    elif args.plot_in_fm is not [None, ]:
+        xlabel = r'$\tau \mathrm{[fm]}$'
+    else:
+        xlabel = r'$\tau T$'
+
+    ax_kappa = None
+    if not args.no_kappa_plot:
+        fig, _, _ = lpd.create_figure(figsize=(3, 2.5), UseTex=args.usetex, subplot=None, no_ax=True)
+        spec = gridspec.GridSpec(figure=fig, ncols=2, nrows=1, width_ratios=[3, 1], wspace=0)
+        _, ax, _ = lpd.create_figure(figsize=(3, 2.5), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
+                                     UseTex=args.usetex, fig=fig, subplot=spec[0])
+        ax.set_xlabel(xlabel, **lpd.chmap(lpd.xlabelstyle, bbox=None))
+        _, ax_kappa, _ = lpd.create_figure(ylims=(0, 2.5), UseTex=args.usetex, fig=fig, subplot=spec[1])
+        kappa_ylabel = "$\\kappa /T^3$"
+        ax_kappa.set_ylabel(kappa_ylabel, x=0.7, y=0.1, fontsize=10)  #
+        ax_kappa.set_xlim(args.kappa_xlims)
+        if args.kappa_ylims:
+            ax_kappa.set_ylim(args.kappa_ylims)
+
+    else:
+        fig, _, _ = lpd.create_figure(figsize=(3, 2.5), UseTex=args.usetex, subplot=None, no_ax=True)
+        _, ax, _ = lpd.create_figure(figsize=(3, 2.5), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
+                                     UseTex=args.usetex, fig=fig)
+    if args.norm_by_Gansatz:
+        ax.set_ylabel("$\\frac{G^\\mathrm{imp}}{G^\\mathrm{ansatz}}$", fontsize=12)
+        ax.axhline(y=1, **lpd.horizontallinestyle)
+    else:
+        ax.set_ylabel("$\\frac{G}{G^\\mathrm{norm}}$", fontsize=12)
+
+    # plot dashed vlines
+    if not args.no_vlines and args.tauT_vlines is not None and args.color_vlines is not None:
+        for tauT, color in zip(args.tauT_vlines, args.color_vlines):
+            ax.axvline(tauT, **lpd.chmap(lpd.verticallinestyle, color=color, alpha=1))
+
+    xlabelpos = (0.99, 0.01)
+    ylabelpos = (0.01, 0.97)
+    ax.yaxis.set_label_coords(*ylabelpos)
+    ax.xaxis.set_label_coords(*xlabelpos)
+
+    return fig, ax, ax_kappa
+
+
+def parse_args():
+
+    def set_output_path(outputpath, qcdtype, corr):
+        if not outputpath:
+            if qcdtype:
+                outputpath = lpd.get_plot_path(qcdtype[0], "", "") + "/rel_flow/"
+            if qcdtype and corr:
+                outputpath = lpd.get_plot_path(qcdtype[0], corr[0], "") + "/rel_flow/"
+        lpd.create_folder(outputpath)
+        return outputpath
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--plot_quenched_extr', help='whether to plot the 1.5 Tc quenched continuum/flow-extr EE data',
-                        action="store_true")  # TODO soften hard code
+    parser.add_argument('--plot_extr', help='path to the continuum/flow-extr data. only try to plot this when specified.', default=None, type=str)
     parser.add_argument('--plot_quenched_systematics', action="store_true")  # TODO soften hard code
 
     parser.add_argument('--flowradiusBytauT', nargs='*', type=float, help='which sqrt(8tauF)/tauT to plot', required=True)
@@ -215,7 +533,7 @@ def main():
                                               "just for some text)", action="store_true")
 
     parser.add_argument('--plot_in_lattice_units', help="only works if the lattice spacing is constant across different conftypes", action="store_true")
-    parser.add_argument('--plot_in_fm', nargs='*', type=float, default=None, help="plot tau in fm. arguments here are the lattice spacings in order in fm.")
+    parser.add_argument('--plot_in_fm', nargs='*', type=float, default=[None, ], help="plot tau in fm. arguments here are the lattice spacings in order in fm.")
     parser.add_argument('--min_tauT', type=float, help='lower limits from which on the corr is fitted. appear in the kappa plot.', nargs='*')
     # parser.add_argument('--min_tauT_plot', type=float, help='lower limit from which tauT on the reconstructed corr is valid/should be plotted. '
     #                                                         'default is to parse it from fitparam file.', nargs='*', default=[0.05,])
@@ -285,7 +603,7 @@ def main():
     args = parser.parse_args()
 
     # check if arguments make sense
-    if args.plot_quenched_extr:
+    if args.plot_extr:
         if not all(element == args.flowradiusBytauT[0] for element in args.flowradiusBytauT):
             print("ERROR: when plotting the quenched cont/flow extr, all flowradiusBytauT have to be identical")
             exit(1)
@@ -304,301 +622,24 @@ def main():
         exit(1)
 
     args.output_path = set_output_path(args.output_path, args.qcdtype, args.corr)
-    nts = get_nts(args.conftype)
 
-    # prepare plot canvas
-    if args.plot_in_lattice_units:
-        xlabel = r'$\tau/a$'
-    elif args.plot_in_fm is not None:
-        xlabel = r'$\tau \mathrm{[fm]}$'
-    else:
-        xlabel = r'$\tau T$'
-    xlabelpos = (0.99, 0.01)
-    ylabelpos = (0.01, 0.97)
+    return args
 
-    if not args.no_kappa_plot:
-        fig, _, _ = lpd.create_figure(figsize=(3,2.5), UseTex=args.usetex, subplot=None, no_ax=True)
-        spec = gridspec.GridSpec(figure=fig, ncols=2, nrows=1, width_ratios=[3, 1], wspace=0)
-        _, ax, _ = lpd.create_figure(figsize=(3,2.5), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
-                                     UseTex=args.usetex, fig=fig, subplot=spec[0])
-        ax.set_xlabel(xlabel, **lpd.chmap(lpd.xlabelstyle, bbox=None))
-        _, ax_kappa, _ = lpd.create_figure(ylims=(0, 2.5), UseTex=args.usetex, fig=fig, subplot=spec[1])
-        kappa_ylabel = "$\\kappa /T^3$"
-        ax_kappa.set_ylabel(kappa_ylabel, x=0.7, y=0.1, fontsize=10)  #
-        ax_kappa.set_xlim(args.kappa_xlims)
-        if args.kappa_ylims:
-            ax_kappa.set_ylim(args.kappa_ylims)
 
-    else:
-        fig, _, _ = lpd.create_figure(figsize=(3,2.5), UseTex=args.usetex, subplot=None, no_ax=True)
-        _, ax, _ = lpd.create_figure(figsize=(3,2.5), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
-                                     UseTex=args.usetex, fig=fig)
-    if args.norm_by_Gansatz:
-        ax.set_ylabel("$\\frac{G^\\mathrm{imp}}{G^\\mathrm{ansatz}}$", fontsize=12)
-        ax.axhline(y=1, **lpd.horizontallinestyle)
-    else:
-        ax.set_ylabel("$\\frac{G}{G^\\mathrm{norm}}$", fontsize=12)
+def main():
 
-    # plot dashed vlines
-    if not args.no_vlines and args.tauT_vlines is not None and args.color_vlines is not None:
-        for tauT, color in zip(args.tauT_vlines, args.color_vlines):
-            ax.axvline(tauT, **lpd.chmap(lpd.verticallinestyle, color=color, alpha=1))
+    args = parse_args()
 
-    xpoints_arr = []
-    Gmodel_by_norm_arr = []
-    fitparams = []
-    just_UVs = []
-    spfargs_arr = []
-    params_ansatz_arr = []
+    fig, ax, ax_kappa = prepare_plot_canvas(args)
 
-    if args.kappa_ypos and args.fitparam_files:
-        pos = numpy.asarray(list(args.kappa_ypos))
-        pos = pos[:len(args.fitparam_files)]
+    spfargs_array, params_ansatz_array = plot_fits(args, ax, ax_kappa)  # we return some fit information, in case we want to normalize the relative flow correlators by some fit correlator.
+    color_offset = plot_extrapolated_data(args, ax)  # we return an offset, so that plot_relative_flow knows that something else has already been plotted, so that it can skip already used colors.
+    plot_relative_flow(args, ax, color_offset, spfargs_array, params_ansatz_array)
 
-    posidx = 0
-    # calculate fit corrs for all given fitparam and PhiUV files, and plot kappas
-    if args.fitparam_files and args.model:
-        if args.norm_by_Gansatz:
-            # fit kappa
-            xvalues = []
-            yvalues = []
-            evalues = []
-
-            for fitparam_file, temp in \
-                    zip(args.fitparam_files,
-                        args.kappa_temps if args.kappa_temps is not None else [None for _ in range(len(args.fitparam_files))]):
-
-                if args.deduce_fitparam_files:
-                    fitparam_file = args.fitparam_basepath + "/" + fitparam_file + "/params.dat"
-                else:
-                    fitparam_file = args.fitparam_basepath + "/" + fitparam_file
-
-                params, err_left, err_right = numpy.loadtxt(fitparam_file, unpack=True)
-                factor = (temp/1000)**3
-                if not numpy.isnan(params[0]):
-                    xvalues.append(temp)
-                    yvalues.append(params[0]*factor)
-                    evalues.append(numpy.fmax(err_left[0], err_right[0])*factor)
-
-            result = scipy.optimize.curve_fit(lambda x, m, b: m*x+b, xdata=xvalues, ydata=yvalues, sigma=evalues, p0=(0.001, -0.1))[0]
-            m = result[0]
-            b = result[1]
-
-            xline = numpy.linspace(0,500,5)
-            ax_kappa.errorbar(xline, m*xline+b, fmt=':', lw=0.5, color='gray', alpha=0.5)
-
-        for fitparam_file, PhiUV_file, temp in \
-                zip(args.fitparam_files,
-                    args.PhiUV_files if len(args.PhiUV_files) > 1 else itertools.cycle(args.PhiUV_files),
-                    args.kappa_temps if args.kappa_temps is not None else [None for _ in range(len(args.fitparam_files))]):
-
-            # kappa plot
-            if args.deduce_fitparam_files:
-                fitparam_file = args.fitparam_basepath + "/" + fitparam_file + "/params.dat"
-            else:
-                fitparam_file = args.fitparam_basepath + "/" + fitparam_file
-
-            # find out lower tauT based on file path
-            # tmp = lpd.remove_left_of_last('/', fitparam_file)
-            # tmp = lpd.remove_right_of_last('.dat', tmp)
-            # tmp = "0" + lpd.remove_left_of_first('_0', tmp)
-            # this_mintauT = float(lpd.remove_right_of_first('_', tmp))
-            # TODO, if min tauT is "detected" and it is the same as other min tauT, then display it in the title!?
-            # TODO, also do this for other properties of the SPF fit!!! look into plot_fit.py or so!
-
-            this_mintauT = 0.05
-
-            print("read in ", fitparam_file)
-            params, err_left, err_right = numpy.loadtxt(fitparam_file, unpack=True)
-            fitparams.append(numpy.column_stack((params, err_left, err_right)))
-
-            if args.norm_by_Gansatz:
-                params_ansatz = numpy.copy(params)
-                params_ansatz[0] = (m * temp + b) / (temp / 1000) ** 3
-                params_ansatz_arr.append(params_ansatz)
-
-            if not args.no_kappa_plot:
-                if not args.kappa_xaxis_temp:
-                    ax_kappa.errorbar(params[0], pos[posidx], xerr=[[err_left[0]], [err_right[0]]], color=args.color_fit[posidx], fmt='x-', fillstyle='none',
-                                      markersize=0, mew=plotwidth, elinewidth=plotwidth, capsize=1, zorder=-10)
-                else:
-                    factor = 1 if not args.kappa_in_GeV else (temp/1000)**3
-                    ax_kappa.errorbar(temp, params[0]*factor, yerr=[[err_left[0]*factor], [err_right[0]*factor]], color=args.color_fit[posidx], fmt='x-', fillstyle='none',
-                                      markersize=0, mew=plotwidth, elinewidth=plotwidth, capsize=1, zorder=-10)
-                    # print(temp, r'{0:.2f}'.format(params[0]), r'{0:.2f}'.format(err_left[0]), r'{0:.2f}'.format(err_right[0]))
-
-                # if posidx == 0 and args.plot_quenched_extr:
-                    # ax_kappa.axvline(params[0], **lpd.chmap(lpd.verticallinestyle, dashes=(2, 2), color='k', alpha=0.5))
-
-            posidx += 1
-
-            # load PhiUV and calculate model correlators
-            PhiUV_file = args.PhiUV_basepath + PhiUV_file
-            print("read in ", PhiUV_file)
-            PhiUV = numpy.loadtxt(PhiUV_file, unpack=True)[0:3]
-            PhiUVByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[0], PhiUV[1], k=3, ext=2, check_finite=True)
-            MinOmegaByT = PhiUV[0][0]
-            MaxOmegaByT = PhiUV[0][-1]
-
-            Gmodel_by_norm = []
-            just_UV = []
-
-            spfargs = SpfArgs(args.model, "", False, PhiUVByT3, -1, args.OmegaByT_IR, args.OmegaByT_UV, args.p, MinOmegaByT, MaxOmegaByT)
-            spfargs_arr.append(spfargs)
-
-            xpoints_arr.append(numpy.linspace(this_mintauT, 0.5, args.npoints))
-            for tauT in xpoints_arr[-1]:
-
-                Gmodel = scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT, spfargs, params), MinOmegaByT, MaxOmegaByT)[0]
-
-                normalization = Gnorm(tauT)
-                if args.norm_by_Gansatz:
-                    normalization = G_ansatz(spfargs, params_ansatz, tauT)
-
-                Gmodel_by_norm.append(Gmodel / normalization)
-
-                UV_params = numpy.copy(params)
-                UV_params[0] = 0  # set kappa to zero
-                GmodelUV = scipy.integrate.quad(lambda OmegaByT: Integrand(OmegaByT, tauT, spfargs, UV_params), MinOmegaByT, MaxOmegaByT)[0]
-                just_UV.append(GmodelUV / normalization)
-
-            Gmodel_by_norm_arr.append(Gmodel_by_norm)
-            just_UVs.append(just_UV)
-
-    # kappa plot fit range
-    # TODO add check in beginning for error when mintauT, kappa_pos and fitparam files have different number of arguments
-    if not args.no_kappa_plot and not args.kappa_xaxis_temp:
-        labels_plot = []
-        for mintauT in args.min_tauT:
-            labels_plot.append("$"+str(mintauT)+"$")
-            ax_kappa.text(0.02, args.kappa_labelheight, "Fit $\\tau T \\geq$", transform=ax_kappa.transAxes, fontsize=6, color='k', alpha=1, ha='left', va='center', rotation='0')
-            for label in ax_kappa.yaxis.get_majorticklabels():
-                label.set_ha("left")
-            ax_kappa.tick_params(axis='y', length=0, direction='in', labelsize=7, pad=-2)
-            from matplotlib.ticker import MaxNLocator
-            ax_kappa.xaxis.set_major_locator(MaxNLocator(4))
-        ax_kappa.set_yticks(pos)
-        ax_kappa.set_yticklabels(labels_plot)
-
-    # kappa plot temp
-    if not args.no_kappa_plot and args.kappa_xaxis_temp:
-        ax_kappa.set_xlim((0, 400))
-        ax_kappa.set_ylim(args.kappa_xlims)
-        ax_kappa.set_xlabel("$T\\, \\mathrm{[MeV]}$", fontsize=8)
-        if args.kappa_in_GeV:
-            ax_kappa.set_ylabel("$\\kappa \\, [\\mathrm{GeV}^3]$", fontsize=8)
-        else:
-            ax_kappa.set_ylabel("$\\kappa /T^3$", fontsize=8)  # [\\mathrm{GeV}^3]
-        ax_kappa.xaxis.set_label_coords(0.8, 0.06)
-        ax_kappa.yaxis.set_label_coords(0.15, 0.99)  # 0.07
-        xpoints = numpy.linspace(0, 500, 100)
-        if args.kappa_in_GeV:
-            ax_kappa.errorbar(xpoints, 4*numpy.pi/0.9 * (xpoints/1000) ** 3, fmt='--', color='grey', alpha=0.8)
-            ax_kappa.text(140, 0.25, 'AdS/CFT estimate', fontsize=5, color='grey', alpha=0.8, ha='left')
-            ax_kappa.text(270, 0.20, 'Linear fit', fontsize=5, color='grey', alpha=0.8)
-        else:
-            ax_kappa.axhline(4*numpy.pi/0.9, **lpd.horizontallinestyle)  # 4*numpy.pi/0.9 ~= 14
-            ax_kappa.text(390, 4*numpy.pi/0.9*0.99, 'AdS/CFT estimate', fontsize=5, color='grey', alpha=0.8, ha='right', va='top')
-
-    plot_fit_corrs(ax, xpoints_arr, Gmodel_by_norm_arr, just_UVs, fitparams, args.color_fit, range(len(xpoints_arr)), nts, args.plot_in_lattice_units, args.plot_in_fm, args.no_just_UV, args.no_label)
-
-    color_offset = plot_extrapolated_data(args.corr[0], ax, args.flowradiusBytauT[0], args.plot_quenched_extr, args.no_connection, args.color_data[1], args.norm_by_Gansatz)
-
-    # TODO put this part under process_data, and just plot the corresponding corrs here?
-    # TODO add option to only calculate these corrs, don't plot anything.
-    # find correlator at various fixed flowradiusBytauT
-    if args.qcdtype is not None and args.corr is not None and args.conftype is not None:
-        n = max(len(args.flowradiusBytauT), len(args.qcdtype), len(args.corr), len(args.conftype))
-        args.color_data = args.color_data[color_offset:color_offset + n]
-        for flowradiusBytauT, qcdtype, corr, conftype, color, label_suffix, spfargs, params, a in \
-                zip(args.flowradiusBytauT if len(args.flowradiusBytauT) > 1 else itertools.cycle(args.flowradiusBytauT),
-                    args.qcdtype if len(args.qcdtype) > 1 else itertools.cycle(args.qcdtype),
-                    args.corr if len(args.corr) > 1 else itertools.cycle(args.corr),
-                    args.conftype if len(args.conftype) > 1 else itertools.cycle(args.conftype),
-                    args.color_data,
-                    args.leg_label_suffix if args.leg_label_suffix is not None else ["" for _ in range(n)],
-                    spfargs_arr if len(spfargs_arr) > 0 else [None for _ in range(n)],
-                    params_ansatz_arr if len(params_ansatz_arr) > 0 else [None for _ in range(n)],
-                    args.plot_in_fm if args.plot_in_fm is not None else [None for _ in range(n)]):
-            if flowradiusBytauT is not None:
-                inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype, basepath="../../../data/merged/")
-                these_flowradii = numpy.loadtxt(inputfolder + "flowradii_" + conftype + ".dat")
-                these_flowtimes = numpy.loadtxt(inputfolder + "flowtimes_" + conftype + ".dat")
-                XX = numpy.loadtxt(inputfolder + corr + "_" + conftype + ".dat")
-                XX_err = numpy.loadtxt(inputfolder + corr + "_err_" + conftype + ".dat")
-                beta, ns, nt, nt_half = lpd.parse_conftype(conftype)
-                these_tauT = numpy.arange(1 / nt, 0.501, 1 / nt)
-
-                fermions, temp, flowtype = lpd.parse_qcdtype(qcdtype)
-
-                if fermions == "hisq":
-                    gaugeaction = "LW"
-                elif fermions == "quenched":
-                    gaugeaction = "Wilson"
-
-                if flowtype == "zeuthenFlow":
-                    flowaction = "Zeuthen"
-                elif flowtype == "wilsonFlow":
-                    flowaction = "Wilson"
-
-                # interpolate between flow times
-                y_int = []
-                e_int = []
-                for i in range(len(these_tauT)):
-                    G_latt_LO_flow = lpd.G_latt_LO_flow(i, these_flowtimes, corr, nt, flowaction, gaugeaction)
-                    ydata = numpy.asarray(XX[:, i]) * nt ** 4 / G_latt_LO_flow
-                    edata = numpy.asarray(XX_err[:, i]) * nt ** 4 / G_latt_LO_flow
-                    xdata = these_flowradii
-                    y_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, ydata, k=3, ext=2, check_finite=True))
-                    e_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, edata, k=3, ext=2, check_finite=True))
-                if args.leg_label_showNtinsteadofa:
-                    thislabel = str(nt)
-                else:
-                    thislabel = "1/("+str(nt)+"T\,)"
-                find_and_plot_and_save_relflow(args.corr[0], flowradiusBytauT, these_tauT, y_int, e_int,
-                                               inputfolder, ax, color, thislabel, args.no_connection, spfargs, params, args.norm_by_Gansatz, int(-1000 * flowradiusBytauT),
-                                               nt if args.plot_in_lattice_units or args.plot_in_fm is not None else None, a, label_suffix)
-
-    # flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, ax, color, Glabel, no_connection, spfargs, params, norm_by_Gansatz = False, zorder = -10,
-    # nt = None, label_suffix = ""
-
-    # Legend
-    for i in range(args.leg_n_dummies):
-        ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
-    legend = ax.legend(**lpd.chmap(lpd.legendstyle, edgecolor='black', frameon=True, framealpha=0, loc='lower right', bbox_to_anchor=args.leg_pos,  labelspacing=0, ncol=args.leg_n_col, columnspacing=1.2, handlelength=1.2, fontsize=6))
-    if args.leg_label_showNtinsteadofa:
-        legtitle_Nt_or_a = "N_\\tau"
-    else:
-        legtitle_Nt_or_a = "a"
-    legend.set_title("$\\quad \\quad "+legtitle_Nt_or_a+",  \\:\\: \\sqrt{\\! 8\\tau_\\mathrm{F}}/\\tau"+args.leg_title_suffix+"\\hspace{1}$", prop={'size': 6})
-    legend.get_frame().set_linewidth(0.5)
-    texts = legend.get_texts()
-    for text in texts:
-        text.set_linespacing(0.85)
-
-    model_str = get_model_str(args.model, args.PhiUV_label, args.min_scale, args.run_scale)
-    ax.set_title(model_str+args.title, x=0.5, y=1, fontsize=7)
-
-    # Watermark
-    if args.show_watermark and not args.no_kappa_plot:
-            ax.text(0.67, 0.2, 'HotQCD preliminary', transform=ax.transAxes,
-                    fontsize=16, color='gray', alpha=0.5,
-                    ha='center', va='center', rotation='20', zorder=-1000000)
-
-            ax_kappa.text(0.51, 0.2, 'HotQCD preliminary', transform=ax_kappa.transAxes,
-                          fontsize=8, color='gray', alpha=0.5,
-                          ha='center', va='center', rotation='20', zorder=-1000000)
-
-    ax.yaxis.set_label_coords(*ylabelpos)
-    ax.xaxis.set_label_coords(*xlabelpos)
-
-    if args.plot_quenched_systematics:
-        ax_kappa.text((3.40024856+1.4370101)/2/4, 0.85, "total \n systematic\n uncertainty \n from model \n choice at \n $a\\rightarrow 0$,\n$\\tau_F\\rightarrow 0$", transform=ax_kappa.transAxes, fontsize=6, color='k', alpha=1, ha='center', va='center', rotation='0')
-        ax_kappa.fill_between([1.4370101,3.40024856], [0,0], [10,10], zorder=-10000, color='k', alpha=0.15, lw=0)
-
-    if args.custom_text:
-        ax.text(0.35/0.5, 0.4, "Fit $\\tau T \\geq 0.35$", transform=ax.transAxes, fontsize=6,
-                  color='k', alpha=1, ha='center', va='center', rotation='0', zorder=10, bbox=dict(facecolor='white', edgecolor='white'))
+    set_legend(args, ax)
+    set_watermark(args, ax, ax_kappa)
+    set_text(args, ax, ax_kappa)
+    set_title(args, ax)
 
     # save figure
     file = args.output_path + "/"+args.corr[0]+"_relflow" + args.output_suffix + ".pdf"
