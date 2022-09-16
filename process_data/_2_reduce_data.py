@@ -22,8 +22,7 @@ def load_merged_data(qcdtype, corr, conftype):
 
     print("read  " + inputfolder + "n_datafiles_" + conftype + ".dat")
     metadata = numpy.loadtxt(inputfolder + "n_datafiles_" + conftype + ".dat")
-    n_datafiles, n_streams, n_discarded = [int(i) for i in metadata[0:3]]
-    n_conf_per_stream = [int(i) for i in metadata[3:]]
+    n_datafiles, n_streams = [int(i) for i in metadata[0:2]]
 
     print("read  "+inputfolder+corr+"_real_"+conftype+"_merged.dat")
     XX_numerator_real_tmp = numpy.loadtxt(inputfolder+corr+"_real_"+conftype+"_merged.dat")
