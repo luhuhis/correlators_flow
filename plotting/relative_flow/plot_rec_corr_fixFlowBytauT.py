@@ -129,14 +129,15 @@ def plot_relative_flow(args, ax, color_offset, spfargs_arr, params_ansatz_arr):
                     thislabel = str(nt)
                 else:
                     thislabel = "1/(" + str(nt) + r'T\,)'
-                find_and_plot_and_save_relflow(args.corr[0], flowradiusBytauT, these_tauT, y_int, e_int,
-                                               inputfolder, ax, color, thislabel, args.no_connection, spfargs, params, args.norm_by_Gansatz,
+                find_and_plot_and_save_relflow(args, ax, flowradiusBytauT, these_tauT, y_int, e_int,
+                                               inputfolder, color, thislabel, spfargs, params,
                                                int(-1000 * flowradiusBytauT),
                                                nt if args.plot_in_lattice_units else None, a, label_suffix)
 
 
-def find_and_plot_and_save_relflow(corr, flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, ax, color, Glabel, no_connection, spfargs, params, norm_by_Gansatz=False, zorder=-10,
+def find_and_plot_and_save_relflow(args, ax, flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, color, Glabel, spfargs, params, zorder=-10,
                                    nt=None, lattice_spacing=None, label_suffix=""):
+
     relflow_edata = []
     relflow_ydata = []
     relflow_xdata = []
@@ -155,11 +156,11 @@ def find_and_plot_and_save_relflow(corr, flowradiusBytauT, possible_tauTs, y_int
     relflow_edata = numpy.asarray(relflow_edata)
     flowstr = r'{0:.2f}'.format(flowradiusBytauT)
     lpd.create_folder(out_file_path + "/rel_flow/")
-    numpy.savetxt(out_file_path + "/rel_flow/"+corr+"_relflow_" + flowstr + ".dat",
+    numpy.savetxt(out_file_path + "/rel_flow/"+args.corr[0]+"_relflow_" + flowstr + ".dat",
                   numpy.column_stack((relflow_xdata, relflow_ydata, relflow_edata)),
                   header="tauT      G/Gnorm_sqrt(8tauF)/tau=" + flowstr + "       err")
 
-    if norm_by_Gansatz:
+    if args.norm_by_Gansatz:
         relflow_ydata = [val*Gnorm(relflow_xdata[i])/G_ansatz(spfargs, params, relflow_xdata[i]) for i, val in enumerate(relflow_ydata)]
         relflow_edata = [val*Gnorm(relflow_xdata[i])/G_ansatz(spfargs, params, relflow_xdata[i]) for i, val in enumerate(relflow_edata)]
 
@@ -174,14 +175,15 @@ def find_and_plot_and_save_relflow(corr, flowradiusBytauT, possible_tauTs, y_int
                 **lpd.chmap(lpd.plotstyle_add_point, markersize=0, elinewidth=plotwidth, mew=plotwidth, fmt='_', color=color,
                             label="$" + Glabel + ", \\: " + flowstr + label_suffix + "$"))
     # TODO add custom labels
-    if not no_connection:
+    if not args.no_connection:
         ax.errorbar(xdata, relflow_ydata, zorder=-100 * zorder,
                     **lpd.chmap(lpd.plotstyle_add_point, markersize=0, lw=0.75 * plotwidth, alpha=0.5, fmt='-', color=color))
 
 
+# TODO add leg_label_suffix
 def plot_extrapolated_data(args, ax):
     path = args.plot_extr
-    conftype = args.conftype[-1]
+    conftype = args.conftype[0]
 
     color_offset = 0
     if args.plot_extr:
@@ -242,8 +244,9 @@ def plot_extrapolated_data(args, ax):
         outfolder = path+"/cont_rel_flow/"
         lpd.create_folder(outfolder)
 
-        find_and_plot_and_save_relflow(args.corr[0], args.flowradiusBytauT[0], possible_tauTs, cont_int, cont_err_int, outfolder, ax, args.color_data[1], r'a\rightarrow 0',
-                                       args.no_connection, None, None, zorder=-9999, norm_by_Gansatz=args.norm_by_Gansatz)
+        find_and_plot_and_save_relflow(args, ax, args.flowradiusBytauT[0], possible_tauTs, cont_int, cont_err_int, outfolder, args.color_data[1], r'a\rightarrow 0',
+                                       None, None, zorder=-9999)
+
     return color_offset
 
 
@@ -458,7 +461,7 @@ def prepare_plot_canvas(args):
     # set xlabel
     if args.plot_in_lattice_units:
         xlabel = r'$\tau/a$'
-    elif args.plot_in_fm is not [None, ]:
+    elif args.plot_in_fm[0] is not None:
         xlabel = r'$\tau \mathrm{[fm]}$'
     else:
         xlabel = r'$\tau T$'
@@ -617,7 +620,7 @@ def parse_args():
     if args.fitparam_files is not None and args.min_tauT is not None and (len(args.min_tauT) != len(args.fitparam_files)):
         print("ERROR need the same number of arguments for min_tauT as for fitparam_files")
         exit(1)
-    if args.plot_in_lattice_units and args.plot_in_fm is not None:
+    if args.plot_in_lattice_units and args.plot_in_fm[0] is not None:
         print("ERROR choose either plot_in_lattice_units and plot_in_fm")
         exit(1)
 
