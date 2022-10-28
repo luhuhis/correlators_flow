@@ -14,8 +14,6 @@ if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     arr_conftypes=("s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
     arr_output_suffix=("" )
     ylims="1.5 4"
-    max_flow_idx=170
-    min_flow_idx=0
     corrs="EE" # BB_clover EE BB
     add_args=""
 elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
@@ -26,8 +24,6 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     "s064t20_b0757000 s064t24_b0777700 s096t36_b0824900_m002022_m01011")
     arr_output_suffix=("T220" "T251" "T296" "T196")
     ylims="0 12"
-    max_flow_idx=170
-    min_flow_idx=0
     corrs="EE" # BB_clover EE BB
 fi
 
@@ -44,12 +40,7 @@ for idx in "${!arr_conftypes[@]}" ; do
 
     args="$add_args --max_FlowradiusBytauT_offset 0 --max_FlowradiusBytauT 0.5  $sufargs ${arr_output_suffix[idx]} --qcdtype $qcdtype --conftypes ${arr_conftypes[idx]} --corr $corr --custom_ylims $ylims"
 
-    for ((i=min_flow_idx; i < max_flow_idx; i+=20)) ; do
-        for corr in $corrs; do
-            for ((j=0; j < ncpu; j+=1)) ; do
-                python3 -u _4_continuum_extr.py $args --flow_index $((i+j))   &
-            done
-            wait
-        done
+    for corr in $corrs; do
+        ../_4_continuum_extr.py $args
     done
 done

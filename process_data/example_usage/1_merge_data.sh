@@ -9,7 +9,7 @@ conftypes_quenched=(s064t16_b0687361 s080t20_b0703500 s096t24_b0719200 s120t30_b
 #--basepath /work/data/altenkort/gradientFlow
 
 for conftype in "${conftypes_quenched[@]}" ; do
-    /usr/local/bin/python3.7m -u _1_merge_data.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr BB --acc_sts sts0.150000 --conftype $conftype &
+    ../_1_merge_data.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr BB --acc_sts sts0.150000 --conftype $conftype &
 done
 wait
 

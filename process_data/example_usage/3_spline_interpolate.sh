@@ -36,12 +36,8 @@ for idx in "${!arr_conftypes[@]}"; do
 
         args="$add_args --ylims $ylims --qcdtype $qcdtype --conftype $conftype --corr $corr --int_Nt ${arr_int_Nt[idx]} --nsamples $nsamples"
 
-        for ((i=min_flow_idx; i < max_flow_idx; i+=ncpu)) ; do
-            for ((j=0; j < ncpu; j+=1)) ; do
-                python3 -u _3_spline_interpolate.py "$args" --flow_index $((i+j)) &
-            done
-            wait
-        done
+        ../_3_spline_interpolate.py "$args"
+
     done
 done
 
