@@ -7,6 +7,7 @@ import matplotlib
 from matplotlib import pyplot, cm, container, legend_handler
 import sys
 import scipy.interpolate
+import concurrent.futures
 
 
 def save_script_call(add_folder=None):
@@ -73,7 +74,21 @@ def parse_qcdtype(qcdtype):
     flowtype = remove_left_of_last('_', qcdtype)
     temp = remove_left_of_first('_', qcdtype)
     temp = remove_right_of_first('_', temp)
-    return fermions, temp, flowtype
+
+    if fermions == "hisq":
+        gaugeaction = "LW"
+    elif fermions == "quenched":
+        gaugeaction = "Wilson"
+    else:
+        gaugeaction = None
+    if flowtype == "zeuthenFlow":
+        flowaction = "Zeuthen"
+    elif flowtype == "wilsonFlow":
+        flowaction = "Wilson"
+    else:
+        flowaction = None
+
+    return fermions, temp, flowtype, gaugeaction, flowaction
 
 
 # === read and parse cmd line arguments ===
@@ -86,7 +101,7 @@ def get_parser():
 
 
 def get_merged_data_path(qcdtype, corr, conftype, basepath="../../data/merged/"):
-    return basepath + qcdtype + "/" + corr + "/" + conftype + "/"
+    return basepath + "/" + qcdtype + "/" + corr + "/" + conftype + "/"
 
 
 def get_raw_data_path(qcdtype, conftype, basepath="../../data/raw/"):
@@ -253,3 +268,51 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,
     matplotlib.rc('image', cmap='Set1')
     # fig.set_tight_layout(dict(pad=0.4))
     return fig, ax, plots
+
+
+# class that is used in parallel_function_eval down below
+class ComputationClass:
+    def __init__(self, function, input_array, nproc, *add_param):
+        self._nproc = nproc  # number of processes
+        self._input_array = input_array
+        self._function = function
+
+        # additional arguments for actual_computation
+        self._add_param = add_param
+
+        # compute the result when class is initialized
+        self._result = self.parallelization_wrapper()
+
+    def parallelization_wrapper(self):
+        with concurrent.futures.ProcessPoolExecutor(max_workers=self._nproc) as executor:
+            result = executor.map(self.pass_argument_wrapper, self._input_array)
+        return list(result)
+
+    def pass_argument_wrapper(self, single_input):
+        return self._function(single_input, *self._add_param)
+
+    def getResult(self):
+        return self._result
+
+
+# in parallel, compute function(input_array)
+def parallel_function_eval(function, input_array, nproc, *add_param):
+    computer = ComputationClass(function, input_array, nproc, *add_param)
+    return computer.getResult()
+
+
+def dev_by_dist(data, axis=0, percentile=68, return_both_q=False):
+    """Calculate the distance between the median and 68% quantiles. Returns the larger of the two distances. This
+    method is used sometimes to estimate error, for example in the bootstrap."""
+    data = numpy.asarray(data)
+    median = numpy.nanmedian(data, axis)
+    numb_data = data.shape[axis]
+    idx_dn = max(int(numpy.floor((numb_data-1) / 2 - percentile/100 * (numb_data-1) / 2)), 0)
+    idx_up = min(int(numpy.ceil((numb_data-1) / 2 + percentile/100 * (numb_data-1) / 2)), numb_data-1)
+    sorted_data = numpy.sort(data - numpy.expand_dims(median, axis), axis=axis)
+    q_l = numpy.take(sorted_data, idx_dn, axis)
+    q_r = numpy.take(sorted_data, idx_up, axis)
+    if return_both_q:
+        return numpy.abs(q_l), numpy.abs(q_r)
+    else:
+        return numpy.max(numpy.stack((numpy.abs(q_l), numpy.abs(q_r)), axis=0), axis=0)
