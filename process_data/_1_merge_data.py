@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7m
+#!/usr/bin/env python3
 import numpy
 from os import listdir
 import lib_process_data as lpd
@@ -17,11 +17,19 @@ def main():
     parser.add_argument('--n_discard', help="number of configurations, counted from the lowest conf_num, in each stream that should be ignored", type=int, default=0, nargs='*')
     parser.add_argument('--legacy', help="use legacy file names and legacy multiplicity factor of -3", action="store_true")
     parser.add_argument('--excess_workaround', help="ignore additional flow times at the end of later files", action="store_true")
+    parser.add_argument('--reference_flowradii', default=None, type=str,
+                        help="only consider flowradii contained in this file. "
+                             "the flowradii in this file have to be a subset of the ones you're trying to read in."
+                             "useful if you want to combine different runs which different max flow time, or when you made noncritical copy-paste mistake for a few"
+                             "flow times.")
+    parser.add_argument('--output_basepath', type=str, default="")
+
+    #TODO move discard to reduce_data, save info about conf number!!!!
 
     args = parser.parse_args()
 
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
-    fermions, temp, flowtype = lpd.parse_qcdtype(args.qcdtype)
+    fermions, temp, flowtype, _, _ = lpd.parse_qcdtype(args.qcdtype)
 
     multiplicity = 1
     if args.corr == "EE":
@@ -42,14 +50,12 @@ def main():
     else:
         flow_prefix = flowtype+"_"+args.acc_sts + "_"
 
-
-
     if args.basepath:
         inputfolder = args.basepath + "/" + args.qcdtype + "/" + args.conftype + "/"
     else:
         inputfolder = lpd.get_raw_data_path(args.qcdtype, args.conftype)
 
-    outputfolder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype)
+    outputfolder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype, args.output_basepath)
     lpd.create_folder(outputfolder)
 
     XX_numerator_real, XX_numerator_imag, polyakov_real, polyakov_imag, flow_times = ([] for _ in range(5))
@@ -65,17 +71,18 @@ def main():
     folders = listdir(inputfolder)
     folders.sort()
     corrupt_files = []
+    conf_nums = []
     for stream_folder in folders:
         n_files_this_stream = 0
         if stream_folder.startswith(args.conftype+"_"):
-            print(stream_folder)
+            print(stream_folder, end=', ')
             datafiles = listdir(inputfolder+"/"+stream_folder)
             datafiles.sort()
             discarded = 0
             for datafile in datafiles:
                 if datafile.startswith(full_prefix):
                     path = inputfolder+"/"+stream_folder+"/"+datafile
-                    print("reading "+datafile)
+                    # print("reading "+datafile)
                     tmp = numpy.loadtxt(path)
                     if shape == (0, 0):
                         shape = tmp.shape
@@ -94,10 +101,26 @@ def main():
                         continue
                     if n_datafiles == 0:
                         flow_times = tmp[:, 0]
-                    polyakov_real.append(tmp[:, 1])
-                    polyakov_imag.append(tmp[:, 2])
-                    XX_numerator_real.append(tmp[:, 3:int((3 + nt_half))] / multiplicity)
-                    XX_numerator_imag.append(tmp[:, int((3 + nt_half)):] / multiplicity)
+                        if args.reference_flowradii is not None:
+                            flowradii = numpy.sqrt(8*flow_times)/nt
+                            flowradii_ref = numpy.loadtxt(args.reference_flowradii)
+                            indices = []
+                            for f in range(len(flow_times)):
+                                for g in range(len(flowradii_ref)):
+                                    if numpy.isclose(flowradii[f], flowradii_ref[g]):  # TODO check whether tolerance of isclose is small enough for our stepsizes.
+                                        indices.append(f)
+                                        break
+                            indices = numpy.asarray(indices)
+                        else:
+                            indices = numpy.asarray(range(0, len(flow_times)))
+
+                        flow_times = flow_times[indices]
+                        print("nflow=", len(flow_times))
+                    polyakov_real.append(tmp[indices, 1])
+                    polyakov_imag.append(tmp[indices, 2])
+                    XX_numerator_real.append(tmp[indices, 3:int((3 + nt_half))] / multiplicity)
+                    XX_numerator_imag.append(tmp[indices, int((3 + nt_half)):] / multiplicity)
+                    conf_nums.append(int(lpd.remove_left_of_last('_U', path)))
                     n_datafiles += 1
                     n_files_this_stream += 1
             print("n_files_this_stream: ", n_files_this_stream)
@@ -116,7 +139,11 @@ def main():
         print("Didn't find any files! Are the input parameters correct?", args.conftype, beta, ns, nt, nt_half, args.qcdtype, fermions, temp, flowtype, args.corr, args.acc_sts)
         exit()
 
+    # TODO: save everything in ONE hdf5 file??
+
     # write merged data to files
+    # filename = outputfolder + 'conf_nums_' + args.conftype + '.dat'
+
     filename = outputfolder+'n_datafiles_'+args.conftype+'.dat'
     print("write "+filename)
     with open(filename, 'w') as outfile:
@@ -129,9 +156,9 @@ def main():
             outfile.write(str(ndisc) + '  # ' + strid + '\n')
         numpy.savetxt(outfile, numpy.asarray(n_files_per_stream), header='number of confs contained in each stream respectively', fmt='%i')
     flow_times = [i for i in flow_times]
-    flow_radii = [numpy.sqrt(i*8)/nt for i in flow_times]
+    # flow_radii = [numpy.sqrt(i*8)/nt for i in flow_times]
     numpy.savetxt(outputfolder+'flowtimes_'+args.conftype+'.dat', flow_times, header=r'flow times \tau_F for '+args.qcdtype+' '+args.conftype)
-    numpy.savetxt(outputfolder+'flowradii_'+args.conftype+'.dat', flow_radii, header=r'flow radii (\sqrt{8\tau_F}T) for '+args.qcdtype+' '+args.conftype)
+    # numpy.savetxt(outputfolder+'flowradii_'+args.conftype+'.dat', flow_radii, header=r'flow radii (\sqrt{8\tau_F}T) for '+args.qcdtype+' '+args.conftype)
 
     filename = outputfolder+args.corr+'_real_'+args.conftype+'_merged.dat'
     print("write "+filename)
