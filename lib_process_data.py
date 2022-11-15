@@ -115,7 +115,9 @@ def get_plot_path(qcdtype, corr, conftype, basepath="../../plots/"):
 def create_folder(*paths):
     from pathlib import Path
     for path in paths:
-        Path(path).mkdir(parents=True, exist_ok=True)
+        if not Path(path).is_dir():
+            print("Creating path ", path)
+            Path(path).mkdir(parents=True)  # exist_ok=True
     return
 
 
@@ -233,19 +235,24 @@ markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^',
            'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P',
            '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
 
+linewidth = 0.75
+
+
+def set_rc_params():
+    matplotlib.pyplot.rc('font', family='cmr10', size=fontsize)
+    matplotlib.rcParams['mathtext.fontset'] = 'cm'
+    matplotlib.rcParams['axes.linewidth'] = linewidth
+
 
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.03), ylabelpos=(0.01, 0.97), tickpad=1,
-                  figsize=(3, 2.5), UseTex=True, fig=None, subplot=111, no_ax=False):
-    matplotlib.pyplot.rc('font', family='cmr10', size=fontsize)
+                  figsize=(3, 2.5), UseTex=True, fig=None, subplot=111, no_ax=False, constrained_layout=True):
+    set_rc_params()
     if UseTex:
         matplotlib.pyplot.rc('text', usetex=True)
         matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
-    else:
-        matplotlib.rcParams['mathtext.fontset'] = 'cm'
-    linewidth = 0.75
-    matplotlib.rcParams['axes.linewidth'] = linewidth
+
     if fig is None:
-        fig = matplotlib.pyplot.figure(figsize=figsize, constrained_layout=True)
+        fig = matplotlib.pyplot.figure(figsize=figsize, constrained_layout=constrained_layout)
     if not no_ax:
         ax = fig.add_subplot(subplot)
         if xlabelpos is not None:
@@ -266,7 +273,6 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,
         ax = None
     plots = []
     matplotlib.rc('image', cmap='Set1')
-    # fig.set_tight_layout(dict(pad=0.4))
     return fig, ax, plots
 
 
@@ -284,9 +290,12 @@ class ComputationClass:
         self._result = self.parallelization_wrapper()
 
     def parallelization_wrapper(self):
+        results = []
         with concurrent.futures.ProcessPoolExecutor(max_workers=self._nproc) as executor:
-            result = executor.map(self.pass_argument_wrapper, self._input_array)
-        return list(result)
+            for result in executor.map(self.pass_argument_wrapper, self._input_array):
+                results.append(list(result))
+        results = list(map(list, zip(*results)))  # "transpose" the list to allow for multiple return values like a normal function.
+        return results
 
     def pass_argument_wrapper(self, single_input):
         return self._function(single_input, *self._add_param)
@@ -301,7 +310,7 @@ def parallel_function_eval(function, input_array, nproc, *add_param):
     return computer.getResult()
 
 
-def dev_by_dist(data, axis=0, percentile=68, return_both_q=False):
+def dev_by_dist(data, axis=0, return_both_q=False, percentile=68):
     """Calculate the distance between the median and 68% quantiles. Returns the larger of the two distances. This
     method is used sometimes to estimate error, for example in the bootstrap."""
     data = numpy.asarray(data)
