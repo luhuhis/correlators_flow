@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7 -u
+#!/usr/bin/env python3
 import lib_process_data as lpd
 import numpy
 import argparse
