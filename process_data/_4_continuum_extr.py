@@ -1,29 +1,19 @@
-#!/usr/local/bin/python3.7m -u
+#!/usr/bin/env python3
 
 import lib_process_data as lpd
 import numpy
 import matplotlib
 from matplotlib import container, legend_handler
-import re
 import scipy.optimize
-from latqcdtools.statistics import bootstr
-import sys
 from scipy.optimize import OptimizeWarning
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 # hide warning for fit when only having 2 data points.
 import warnings
-warnings.simplefilter("ignore", OptimizeWarning)
-
-# input
-#   XX_mean_finest = numpy.loadtxt(lpd.get_merged_data_path(qcdtype, conftypes[-1], corr)+"/"+corr+"_"+conftypes[-1]+".dat")
-#   lpd.tauT(nt_fine)
-#   lpd.get_merged_data_path+"/"+conftype+"/interpolations/EE_"+flowradius_str+"_interpolation.txt", for each conftype and flowradius
-
-# output
-#   lpd.inputfolder+"/cont_extr_quality/EE_"+flowradius_str+"_cont_quality.txt"
-#   lpd.outputfolder+"/cont_extr_quality/EE_"+flowradius_str+"_cont_quality.pdf"
-#   lpd.inputfolder+"/cont_extr/EE_"+flowradius_str+"_cont.txt"
-#   lpd.outputfolder+"/cont_extr/EE_"+flowradius_str+"_cont.pdf"
+# warnings.simplefilter("ignore", OptimizeWarning)
+# warnings.simplefilter('error', UserWarning)
+warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
 
 
 def extrapolation_ansatz(x, m, b):
@@ -32,27 +22,152 @@ def extrapolation_ansatz(x, m, b):
 
 def fit_sample(ydata, xdata, edata, start_params=None):
     if start_params is None:
-        start_params = [80, 3]
+        start_params = [0, 3]
     fitparams, _ = scipy.optimize.curve_fit(extrapolation_ansatz, xdata, ydata, p0=start_params, sigma=edata)
     return fitparams
 
 
-def main():
+def wrapper(index, flowtimes, samples, args, Nts, edatas):
 
+    nt_finest = numpy.max(Nts)
+    nt_coarsest = numpy.min(Nts)
+
+    flowtime = flowtimes[index]
+    flowradius = numpy.sqrt(flowtime*8)/nt_finest
+    flowradius_str = r'{0:.4f}'.format(flowradius)
+
+    # define some parameters
+    lower_tauT_lim = lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset)
+    tauTs_fine = lpd.get_tauTs(nt_finest)
+    valid_tauTs = [tauT for tauT in tauTs_fine if tauT > lower_tauT_lim]
+    n_valid_tauTs = len(valid_tauTs)
+    nt_half_fine = int(nt_finest/2)
+    offset = nt_half_fine-n_valid_tauTs
+
+    # declarations
+    nsamples = samples[0].shape[1]
+
+    # TODO if compute:
+
+    results = numpy.empty((nsamples, nt_half_fine, 2))
+    results[:] = numpy.nan
+
+    # at fixed flowtime, perform cont extr for each tauT for each sample
+    if flowradius >= args.min_flowradius:
+        for j, tauT in enumerate(tauTs_fine):
+            xdata = numpy.asarray([1/Ntau**2 for k, Ntau in enumerate(Nts)])
+
+            if tauT in valid_tauTs and len(xdata) >= 2:
+                for m in range(nsamples):
+                    ydata = [conftype_samples[index][m, j] for conftype_samples in samples]
+                    edata = [conftype_edata[index, j] for conftype_edata in edatas]
+
+                    results[m][j] = fit_sample(ydata, xdata, edata)
+
+    # TODO else: load data
+
+    # assemble data and calculate means in order to produce some intermediate plots
+
+    # mean and std of the original data samples
+    data_mean = numpy.nanmedian(samples, axis=2)[:, index, :]
+    data_std = lpd.dev_by_dist(samples, axis=2)[:, index, :]
+
+    # mean and std of the fit parameters
+    results_mean = numpy.nanmedian(results, axis=0)
+    results_std = lpd.dev_by_dist(results, axis=0)
+
+    # split the fit parameters into slope and intercept
+    slope_mean, continuum_mean = numpy.squeeze(numpy.split(results_mean, 2, axis=1))
+    slope_std, continuum_std = numpy.squeeze(numpy.split(results_std, 2, axis=1))
+
+    # merge continuum and data together into one object to pass it to the plot function
+    plot_data = numpy.transpose(numpy.stack([continuum_mean, *[tmp for tmp in data_mean]]))
+    plot_std = numpy.transpose(numpy.stack([continuum_std, *[tmp for tmp in data_std]]))
+
+    fig_corr = plot_corr(args, lpd.get_tauTs(nt_finest), continuum_mean, continuum_std, flowradius_str, lower_tauT_lim)
+
+    fig_extr = plot_extrapolation(args, Nts, plot_data, plot_std, results_mean, flowradius_str, tauTs_fine, valid_tauTs, offset)
+
+    return results, fig_corr, fig_extr
+
+
+def plot_extrapolation(args, xdata, ydata, edata, fitparams, flowradius_str, tauTs_fine, valid_tauTs, offset):
+
+    nt_half_fine = int(numpy.max(xdata)/2)
+    nt_coarse = numpy.min(xdata)
+
+    xdata = numpy.asarray([0, *[1/tmp**2 for tmp in xdata]])
+
+    ylims = (2.55, 3.75) if not args.custom_ylims else args.custom_ylims
+    fig, ax, plots = lpd.create_figure(xlims=[-0.0001, 1/nt_coarse**2*1.05], ylims=ylims, xlabel=r'$N_\tau^{-2}$', ylabel=r'$\frac{G}{G^\mathrm{norm}}$',
+                                       xlabelpos=(0.95, 0.07), ylabelpos=(0.08, 0.98), constrained_layout=False)
+    lpd.titlestyle.update(dict(y=0.95))
+    ax.set_title(r'$ \sqrt{8\tau_\mathrm{F}}T = '+flowradius_str+r'$', **lpd.titlestyle)
+
+    maxtauTindex_plot = 0
+    mintauTindex = None
+
+    for j in range(len(ydata)):
+        if tauTs_fine[j] in valid_tauTs:
+            # print(xdata.shape, ydata[j].shape, edata[j].shape)
+
+            # plot extrapolation
+            if mintauTindex is None:
+                mintauTindex = j
+            if j > maxtauTindex_plot:
+                maxtauTindex_plot = j
+            mycolor = lpd.get_color(tauTs_fine, nt_half_fine - 1 - j + offset, mintauTindex, nt_half_fine - 1)
+            lpd.plotstyle_add_point_single.update(dict(fmt=lpd.markers[j - nt_half_fine + len(lpd.markers)]))
+            plots.append(ax.errorbar(xdata, ydata[j], edata[j], **lpd.plotstyle_data, color=mycolor, zorder=-100 + j, label='{0:.3f}'.format(tauTs_fine[j])))  # color=mycolor
+            x = numpy.linspace(0, 0.1, 100)
+            ax.errorbar(x, extrapolation_ansatz(x, *fitparams[j]), color=mycolor, alpha=1, fmt=':', lw=0.5, zorder=-100)
+
+    # numpy.savetxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.output_suffix)+"/cont_extr/"+args.corr+"_"+flowradius_str+"_cont.txt", results,
+    #               header="tauT    G/G_norm    err")
+
+    # save continuum extrapolation quality plot for this flow time
+    lpd.plotstyle_add_point_single.update(dict(fmt='-'))
+    lpd.legendstyle.update(dict(loc="lower left", bbox_to_anchor=(-0.01, -0.01), columnspacing=0.1, labelspacing=0.25, handletextpad=0, borderpad=0,
+                                framealpha=0, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=0.4)}))
+    ax.legend(handles=plots)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[::-1], labels[::-1], title=r'$\tau T=$', **lpd.legendstyle, ncol=3)  # reverse ordering of legend
+    return fig
+
+
+def plot_corr(args, xdata, ydata, edata, flowradius_str, lower_tauT_lim):
+    # save plot of single continuum extrapolation for this flow time
+    if args.use_tex:
+        displaystyle = r'\displaystyle'
+        ylabel = r'$'+displaystyle+r'\frac{G^\mathrm{cont}}{ G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } }_{\tau_\mathrm{F} = 0} }$'
+    else:
+        ylabel = r'$\frac{G}{G^\mathrm{norm}}$'
+    ylims = (1.4, 4) if not args.custom_ylims else args.custom_ylims
+    fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=ylims, xlabel=r'$\tau T$',
+                                       ylabel=ylabel, UseTex=args.use_tex, constrained_layout=False)
+    ax.set_title(r'$ \sqrt{8\tau_\mathrm{F}}T = $'+flowradius_str, x=0.5, y=0.85)
+    ax.axvline(x=lower_tauT_lim, **lpd.verticallinestyle)
+    lpd.plotstyle_data.update(fmt='x')
+    # filter out nan's to suppress warnings in ax.errorbar
+    mask = ~numpy.isnan(ydata)
+    xdata = xdata[mask]
+    ydata = ydata[mask]
+    edata = edata[mask]
+    ax.errorbar(xdata, ydata, edata, color="black", **lpd.plotstyle_data)
+    return fig
+
+
+
+def main():
     # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
 
-    requiredNamed.add_argument('--flow_index', help='which flow time to interpolate', type=int, required=True)
     requiredNamed.add_argument('--conftypes', nargs='*', required=True,
                                help="ORDERED list of conftypes (from coarse to fine), e.g. s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
 
     parser.add_argument('--nsamples', help="number of artifical gaussian bootstrap samples to generate", type=int, default=1000)
     parser.add_argument('--use_tex', action="store_true", help="use LaTeX when plotting")
     parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
-    parser.add_argument('--int_only', help="load an interpolation of the finest lattice instead of the original non-interpolated data. useful if you have "
-                                           "interpolated the finest lattice to even smaller spaced tauT, and want to see how much that improves the fit",
-                        action="store_true")
-    parser.add_argument('--int_Nt', help="if --int_only, then specify the Nt, for whose tauT values the interpolations were saved at", type=int)
     parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
                         help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
                              'cannot be greater than 0.33*tauT, or that for each flow radius the tauT must be atleast 3*flowradius.')
@@ -61,199 +176,91 @@ def main():
                              'continuum. on the lattice one has to be stricter. 1/Nt_coarsest is a good value.')
     parser.add_argument('--output_suffix', default="", help="append this to the output folder name")
     parser.add_argument('--verbose', help='print out progress information', action="store_true")
+    parser.add_argument('--basepath', type=str, help="where to look for the data")
+    parser.add_argument('--basepath_plot', type=str, help="where to save the plots")
+    parser.add_argument('--min_flowradius', type=float, help="minimum flowradius for the extrapolation. default=1/min(Nts)", default=None)
+    parser.add_argument('--nproc', type=int, default=20, help="number of processes for parallelization")
 
     args = parser.parse_args()
 
-    if (args.int_only and not args.int_Nt) or (args.int_Nt and not args.int_only):
-        parser.error("Error while parsing arguments. --int_only requires --int_Nt and vice versa.")
-
-    fermions, _, flowtype = lpd.parse_qcdtype(args.qcdtype)
-    if fermions == "hisq":
-        gaugeaction = "LW"
-    elif fermions == "quenched":
-        gaugeaction = "Wilson"
-    if flowtype == "zeuthenFlow":
-        flowaction = "Zeuthen"
-    elif flowtype == "wilsonFlow":
-        flowaction = "Wilson"
 
     # load flow radius
-    flowradius = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/flowradii_"+args.conftypes[-1]+".dat")[args.flow_index]
-    flowtime = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/flowtimes_"+args.conftypes[-1]+".dat")[args.flow_index]
-    flowradius_str = r'{0:.4f}'.format(flowradius)
+    flowtimes = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1], args.basepath)+"/flowtimes_"+args.conftypes[-1]+".dat")
+    indices = range(0, len(flowtimes))
 
-    # set some params from args
+    _, _, _, gaugeaction, flowaction = lpd.parse_qcdtype(args.qcdtype)
+
+    # parse Nts
     Nts = []
     for conftype in args.conftypes:
-        dummy = re.sub(r'(^.*?)t', '', conftype)
-        Nts.append(int(re.sub(r'(^.*?)_b(.*)', r'\1', dummy)))
-    nt_coarse = Nts[0]
-    if not args.int_Nt:
-        nt_fine = Nts[-1]
-    else:
-        nt_fine = args.int_Nt
-    print("INFO: perform extrapolation using Nts:", Nts)
+        _, _, tmp_nt, _ = lpd.parse_conftype(conftype)
+        Nts.append(tmp_nt)
+    Nts = numpy.asarray(Nts)
+    nt_finest = numpy.max(Nts)
+    nt_coarsest = numpy.min(Nts)
 
-    if flowradius < 1/nt_coarse:
-        exit("ERROR: need at least a flow radius sqrt(8t)/a of 1/"+str(nt_coarse)+" to have enough flow for cont extr")
+    if args.min_flowradius is None:
+        args.min_flowradius = 1/nt_coarsest
 
-    lower_tauT_lim = lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset)
-    if not args.int_only:
-        # load finest lattice
-        XX_mean_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_"+args.conftypes[-1]+".dat")
-        XX_err_finest = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1])+"/"+args.corr+"_err_"+args.conftypes[-1]+".dat")
-
-        # --- only use points above the lower limit
-        tauTs_fine = lpd.get_tauTs(nt_fine)
-        print("INFO: lower tauT limit for this flow time and coarsest lattice: ", lower_tauT_lim)
-        XX_finest = numpy.asarray(([tauT for tauT in tauTs_fine if tauT > lower_tauT_lim],
-                                   [val*nt_fine**4/lpd.G_latt_LO_flow(j, flowtime, args.corr, nt_fine, flowaction, gaugeaction) for j, val in enumerate(XX_mean_finest[args.flow_index])
-                                    if tauTs_fine[j] > lower_tauT_lim],
-                                   [val*nt_fine**4/lpd.G_latt_LO_flow(j, flowtime, args.corr, nt_fine, flowaction, gaugeaction) for j, val in enumerate(XX_err_finest[args.flow_index])
-                                    if tauTs_fine[j] > lower_tauT_lim]))
-    else:
-        tauTs_fine = lpd.get_tauTs(args.int_Nt)
-
-    # --- load interpolations
-    XX_ints = []
+    # load data
+    print("load data...")
+    samples = []
     for conftype in args.conftypes:
-        if conftype == args.conftypes[-1] and not args.int_only:
-            XX_ints.append(XX_finest)
+        if conftype != args.conftypes[-1]:
+            path = lpd.get_merged_data_path(args.qcdtype, args.corr, conftype, args.basepath) + "/" + args.corr + "_" + conftype + "_interpolation_samples.npy"
+            tmp = numpy.load(path)
+            print(tmp.shape)
+            samples.append(tmp)
         else:
-            try:
-                tmp = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, conftype)+"/interpolations/"+args.corr+"_"+flowradius_str+"_interpolation.txt", unpack=True)
-            except OSError:
-                sys.exit("ERROR while reading "+lpd.get_merged_data_path(args.qcdtype, args.corr, conftype)+"/interpolations/"+args.corr+"_"+flowradius_str+"_interpolation.txt")
-            tmp2 = numpy.asarray(([tauT for tauT in tmp[0] if tauT in tauTs_fine],
-                                  [val for j, val in enumerate(tmp[1]) if tmp[0][j] in tauTs_fine],
-                                  [val for j, val in enumerate(tmp[2]) if tmp[0][j] in tauTs_fine]))
-            XX_ints.append(tmp2)
+            path = lpd.get_merged_data_path(args.qcdtype, args.corr, conftype, args.basepath) + "/" + args.corr + "_" + conftype + "_samples.npy"
+            tmp = numpy.load(path)
+            # TODO apply tree-level improvement BEFORE resampling is done!!
+            # add tree-level imp for finest lattice
+            for m in range(tmp.shape[0]):
+                for j in range(tmp.shape[1]):
+                    for k in range(tmp.shape[2]):
+                        tmp[m, j, k] *= nt_finest ** 4 / lpd.G_latt_LO_flow(k, flowtimes[j], args.corr, nt_finest, flowaction, gaugeaction)
+            tmp = numpy.swapaxes(tmp, 0, 1)
+            print(tmp.shape)
+            samples.append(tmp)
 
-    # define some parameters
-    if not args.int_only:
-        valid_tauTs = XX_finest[0]
-    else:
-        valid_tauTs = [tauT for tauT in XX_ints[-1][0] if tauT > lower_tauT_lim]
-        print(valid_tauTs)
-    n_valid_tauTs = len(valid_tauTs)
-    nt_half_fine = int(nt_fine/2)
-    offset = nt_half_fine-n_valid_tauTs
+    samples = numpy.stack([conftype_samples for conftype_samples in samples], 0)
+    print("Done. Data layout: (n_conftypes, n_flowtimes, n_samples, Nt/2): ", samples.shape)
 
-    if args.use_tex:
-        displaystyle = r'\displaystyle'
-        ylabel = r'$'+displaystyle+r'\frac{G^\mathrm{latt }} { G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } }_{\tau_\mathrm{F} = 0} } $'
-    else:
-        ylabel =  r'$\frac{G}{G^\mathrm{norm}}$'
+    # we use the sample deviation as weights for each sample fit
+    edatas = []
+    for sample_set in samples:
+        tmp = lpd.dev_by_dist(sample_set, axis=1)
+        edatas.append(tmp)
+    edatas = numpy.asarray(edatas)
 
-    # plot settings
-    ylims = (2.55, 3.75) if not args.custom_ylims else args.custom_ylims
-    fig, ax, plots = lpd.create_figure(xlims=[-0.0001, 1/nt_coarse**2*1.05], ylims=ylims, xlabel=r'$N_\tau^{-2}$', ylabel=ylabel,
-                                       xlabelpos=(0.95, 0.07), ylabelpos=(0.08, 0.98), UseTex=args.use_tex)
-    lpd.titlestyle.update(dict(y=0.95))
-    ax.set_title(r'$ \sqrt{8\tau_\mathrm{F}}T = '+flowradius_str+r'$', **lpd.titlestyle)
+    matplotlib.rcParams['figure.max_open_warning'] = 0  # suppress warning due to possibly large number of figures...
 
-    plotpath = lpd.get_plot_path(args.qcdtype, args.corr, args.output_suffix)
-    ceq_prefix = lpd.get_merged_data_path(args.qcdtype, args.corr, args.output_suffix)+"/cont_extr_quality/"+args.corr+"_"+flowradius_str
-    lpd.create_folder(plotpath+"/cont_extr_quality/",
-                      plotpath+"/cont_extr/",
-                      lpd.get_merged_data_path(args.qcdtype, args.corr, args.output_suffix)+"/cont_extr_quality/",
-                      lpd.get_merged_data_path(args.qcdtype, args.corr, args.output_suffix)+"/cont_extr/")
+    print("calculate extrapolation and create figures...")
+    fitparams, figs_corr, figs_extr = lpd.parallel_function_eval(wrapper, indices, args.nproc, flowtimes, samples, args, Nts, edatas)
 
-    # declarations
-    results = numpy.empty((nt_half_fine, 3))
-    results[:] = numpy.nan
-    maxtauTindex_plot = 0
-    mintauTindex = None
+    # save figures to pdf
+    print("save figures...")
+    lpd.set_rc_params()  # for some reason we need to repeat this here...
+    plotpath = lpd.get_plot_path(args.qcdtype, args.corr, args.output_suffix, args.basepath_plot)
+    lpd.create_folder(plotpath)
+    with PdfPages(plotpath + "/" + args.corr + "_cont.pdf") as pdf:
+        for fig in figs_corr:
+            pdf.savefig(fig, bbox_inches='tight', pad_inches=0.05)
+            matplotlib.pyplot.close(fig)
+    with PdfPages(plotpath + "/" + args.corr + "_cont_quality.pdf") as pdf:
+        for fig in figs_extr:
+            pdf.savefig(fig, bbox_inches='tight', pad_inches=0.05)
+            matplotlib.pyplot.close(fig)
 
-    with open(ceq_prefix+"_cont_quality.txt", 'w') as outfile:
-        outfile.write('# continuum extrapolation quality at fixed flowtime for all tauT of Ntau='+str(nt_fine)+r' \n')
-        outfile.write('# tauT    1/Ntau^2    G/G_norm     err \n')
-        with open(ceq_prefix+"_cont_quality_slope.txt", 'w') as outfile_slope:
-            outfile_slope.write('# continuum extrapolation slope at fixed flowtime for all tauT of Ntau='+str(nt_fine)+r' \n')
-            outfile_slope.write('# tauT     slope     slope_err \n')
-
-            # perform cont extr for each tauT at fixed flowtime
-            for j, tauT in enumerate(tauTs_fine):
-                xdata = numpy.asarray([1/Ntau**2 for k, Ntau in enumerate(Nts) if XX_ints[k] is not None])
-
-                # skip if flow time is too small
-                if tauT in valid_tauTs and len(xdata) >= 2:  # and args.flow_index >= flowstarts[j]:
-                    if args.verbose:
-                        print("working on flowtime ", flowradius_str, " tauT=", '{0:.4f}'.format(tauT))
-
-                    # actually perform extr
-                    # for m, XX_int in enumerate(XX_ints):
-                    # print("XX_int no ", m, "of length", len(XX_int[1]))
-
-                    ydata = [XX_int[1][j-offset] for XX_int in XX_ints if XX_int is not None]
-                    edata = [XX_int[2][j-offset] for XX_int in XX_ints if XX_int is not None]
-                    fitparams, fitparams_err = bootstr.bootstr_from_gauss(fit_sample, data=ydata, data_std_dev=edata, numb_samples=args.nsamples,
-                                                                          sample_size=1, return_sample=False, args=[xdata, edata], seed=0)
-
-                    # fitparams, fitparams_err = fit_sample(ydata, xdata, edata)
-
-                    results[j][0] = tauT
-                    results[j][1] = fitparams[1]
-                    results[j][2] = fitparams_err[1]
-                    # noinspection PyTypeChecker
-                    numpy.savetxt(outfile_slope, numpy.stack(([tauT], [fitparams[0]], [fitparams_err[0]]), axis=-1))
-
-                    # plot extrapolation
-                    if mintauTindex is None:
-                        mintauTindex = j
-                    if j > maxtauTindex_plot:
-                        maxtauTindex_plot = j
-                    mycolor = lpd.get_color(tauTs_fine, nt_half_fine-1-j+offset, mintauTindex, nt_half_fine-1)
-                    lpd.plotstyle_add_point_single.update(dict(fmt=lpd.markers[j-nt_half_fine+len(lpd.markers)]))
-                    plots.append(ax.errorbar(xdata, ydata, edata, **lpd.plotstyle_data, color=mycolor, zorder=-100+j, label='{0:.3f}'.format(tauT)))
-                    ax.errorbar(0, fitparams[1], fitparams_err[1], **lpd.plotstyle_data, color=mycolor, zorder=1)
-                    x = numpy.linspace(0, 0.1, 100)
-                    ax.errorbar(x, extrapolation_ansatz(x, *fitparams), color=mycolor, alpha=1, fmt=':', lw=0.5, zorder=-100)
-                else:
-                    results[j][0] = tauT
-                    results[j][1] = numpy.nan
-                    results[j][2] = numpy.nan
-                    # noinspection PyTypeChecker
-                    numpy.savetxt(outfile_slope, numpy.stack(([tauT], [numpy.nan], [numpy.nan]), axis=-1))
-                    continue
-                # save extrapolation to file
-                # noinspection PyTypeChecker
-                numpy.savetxt(outfile, numpy.stack(([tauT for _ in range(len(xdata)+1)], [0, *xdata], [results[j][1], *ydata], [results[j][2], *edata]), axis=-1))
-                outfile.write('# \n')
-    # lpd.verticallinestyle.update(dict())#, dashes=(4,1)) )
-    # noinspection PyTypeChecker
-    numpy.savetxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.output_suffix)+"/cont_extr/"+args.corr+"_"+flowradius_str+"_cont.txt", results,
-                  header="tauT    G/G_norm    err")
-
-    # save continuum extrapolation quality plot for this flow time
-    lpd.plotstyle_add_point_single.update(dict(fmt='-'))
-    #ax.axvline(x=0, ymin=((results[mintauTindex, 1]-ylims[0])/(ylims[1]-ylims[0])), ymax=((results[maxtauTindex_plot, 1]-ylims[0])/(ylims[1]-ylims[0])), alpha=1, color='grey',
-    #           zorder=-1000, lw=0.5, dashes=(5, 2))
-    lpd.legendstyle.update(dict(loc="lower left", bbox_to_anchor=(-0.01, -0.01), columnspacing=0.1, labelspacing=0.25, handletextpad=0, borderpad=0,
-                                framealpha=0, handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=0.4)}))
-    ax.legend(handles=plots)
-    handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[::-1], labels[::-1], title=r'$\tau T=$', **lpd.legendstyle, ncol=3)  # reverse ordering of legend
-    fig.savefig(plotpath+"/cont_extr_quality/"+args.corr+"_"+flowradius_str+"_cont_quality.pdf")
-    ax.lines.clear()
-    ax.collections.clear()
-    plots.clear()
-
-    # save plot of single continuum extrapolation for this flow time
-    if args.use_tex:
-        displaystyle = r'\displaystyle'
-        ylabel = r'$'+displaystyle+r'\frac{G^\mathrm{cont}}{ G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } }_{\tau_\mathrm{F} = 0} }$'
-    else:
-        ylabel = r'$\frac{G}{G^\mathrm{norm}}$'
-    ylims = (1.4, 4) if not args.custom_ylims else args.custom_ylims
-    fig, ax, plots = lpd.create_figure(xlims=[0.15, 0.51], ylims=ylims, xlabel=r'$\tau T$',
-                                       ylabel=ylabel, UseTex=args.use_tex)
-    ax.set_title(r'$ \sqrt{8\tau_\mathrm{F}}T = $'+flowradius_str, x=0.5, y=0.89)
-    ax.axvline(x=lower_tauT_lim, **lpd.verticallinestyle)
-    results = numpy.swapaxes(results, 0, 1)
-    lpd.plotstyle_data.update(fmt='x-')
-    ax.errorbar(results[0], results[1], results[2], color="black", **lpd.plotstyle_data)
-    fig.savefig(plotpath+"/cont_extr/"+args.corr+"_"+flowradius_str+"_cont.pdf")
+    # save fitparams to file
+    print("save extrapolation data...")
+    fitparams = numpy.asarray(fitparams)
+    fitparams = numpy.swapaxes(fitparams, 0, 1)
+    print("fitparams shape:", fitparams.shape)
+    folder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.output_suffix, args.basepath) + "/cont_extr/"
+    lpd.create_folder(folder)
+    numpy.save(folder + args.corr + "_cont_samples.npy", fitparams)
 
 
 if __name__ == '__main__':
