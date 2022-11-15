@@ -1,10 +1,12 @@
-#!/usr/local/bin/python3.7m -u
+#!/usr/bin/env python3
 
-# this script interpolates the XX correlator using interpolating (not smoothing!) third order splines. it does that for one single given flow time.
+# this script interpolates the XX correlator using interpolating (not smoothing!) third order splines.
 
 import numpy
 import lib_process_data as lpd
 import scipy.interpolate
+import matplotlib.pyplot
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 def interpolate_XX_flow(xdata, ydata, ydata_norm, output_xdata1, output_xdata2):
@@ -13,19 +15,69 @@ def interpolate_XX_flow(xdata, ydata, ydata_norm, output_xdata1, output_xdata2):
     return spline(output_xdata1)/norm(output_xdata1), spline(output_xdata2)/norm(output_xdata2)
 
 
+def plot(args, flowradius, xpointsplot, theplotdata, merged_data_path, index, flowtime, nt, flowaction, gaugeaction):
+    ypointsplot = numpy.median(theplotdata, axis=0)
+    epointsplot = lpd.dev_by_dist(theplotdata, axis=0)
+
+    # plot interpolations and underlying data points
+    ylabel = 'G'
+    fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=args.ylims, xlabel=r'$\tau T$', ylabel=ylabel, xlabelpos=(0.95, 0.05), constrained_layout=False)
+    ax.set_title(r'$ \sqrt{8\tau_F}T = $' + '{0:.3f}'.format(flowradius))
+    ax.axvline(x=lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset), **lpd.verticallinestyle)
+    ax.fill_between(xpointsplot, ypointsplot - epointsplot, ypointsplot + epointsplot, alpha=0.5)
+    ax.errorbar(xpointsplot, ypointsplot, fmt='-', lw=0.5, mew=0)
+    XX = numpy.loadtxt(merged_data_path + "/" + args.corr + "_" + args.conftype + ".dat")
+    XX_err = numpy.loadtxt(merged_data_path + "/" + args.corr + "_err_" + args.conftype + ".dat")
+    for a in range(len(XX[index])):
+        XX[index, a] = XX[index, a] * nt ** 4 / lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction)
+        XX_err[index, a] = XX_err[index, a] * nt ** 4 / lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction)
+    ax.errorbar(lpd.get_tauTs(nt), XX[index], XX_err[index], **lpd.plotstyle_add_point_single)
+
+    return fig
+
+
+def wrapper(index, flowtimes, XX_samples, args, merged_data_path):
+
+    beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
+    _, _, _, gaugeaction, flowaction = lpd.parse_qcdtype(args.qcdtype)
+
+    flowtime = flowtimes[index]
+    flowradius = numpy.sqrt(flowtimes[index]*8)/nt
+
+    # get interpolation of the tree-level improvement factor
+    ydata_norm = []
+    for a in range(nt_half):
+        ydata_norm.append(
+            lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction) / lpd.G_latt_LO_flow(a, 0, args.corr, nt, flowaction, gaugeaction))
+
+    theoutputdata = []
+    theplotdata = []
+    xpoints = lpd.get_tauTs(args.int_Nt)
+    xpointsplot = numpy.linspace(0, xpoints[-1], 1000)
+
+    # perform spline fits for each sample
+    for m in range(args.nsamples):
+        ydata = numpy.asarray(XX_samples[m, index])
+        for a in range(nt_half):
+            # We use tf=0 here so that the interpolation works better. Afterwards we divide it out again.
+            ydata[a] = ydata[a] * nt ** 4 / lpd.G_latt_LO_flow(a, 0, args.corr, nt, flowaction, gaugeaction)
+        output, plot_output = interpolate_XX_flow(lpd.get_tauTs(nt), ydata, ydata_norm, xpoints, xpointsplot)
+        theoutputdata.append(output)
+        theplotdata.append(plot_output)
+
+    fig = plot(args, flowradius, xpointsplot, theplotdata, merged_data_path, index, flowtime, nt, flowaction, gaugeaction)
+
+    return theoutputdata, fig
+
+
 def main():
 
     # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
 
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
-    requiredNamed.add_argument('--flow_index', help='which flow time to interpolate', type=int, required=True)
-
     parser.add_argument('--nsamples', help="number of gaussian bootstrap samples that are contained in the input files", type=int, default=1000)
     parser.add_argument('--int_Nt', help='use tauT of this Nt as xdata for the interpolation output', type=int, default=36)
-    parser.add_argument('--int_left_tauT_offset', help='include points <int_left_tauT_offset> below the lower tauT limit in the spline calculation. this helps '
-                                                       'to make the interpolation smooth/consistent across varying flow times. default is to always use all tauT.',
-                        default=1.0, type=float)
     parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
                         help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
                              'cannot be greater than 0.33*tauT, or that for each flow radius the tauT must be atleast 3*flowradius.')
@@ -33,93 +85,39 @@ def main():
                         help='fixed offset to make lower_tauT_limit stricter (by e.g. one lattice spacing 1/Nt), as the 0.33 criterion is only valid in the '
                              'continuum. on the lattice one has to be stricter. 1/Nt_coarsest is a good value.')
     parser.add_argument('--ylims', default=[-0.2, 4], nargs=2, type=float, help="custom ylims for plot")
+    parser.add_argument('--nproc', type=int, default=20, help="number of parallel processes (different flow times can be interpolated independently)")
+    parser.add_argument('--basepath', type=str, help="where to look for the data")
+    parser.add_argument('--basepath_plot', type=str, help="where to save the output plots")
 
     args = parser.parse_args()
 
-    beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
-    fermions, _, flowtype = lpd.parse_qcdtype(args.qcdtype)
-
-    #TODO incorporate that into parse_qcdtype()
-    if fermions == "hisq":
-        gaugeaction = "LW"
-    elif fermions == "quenched":
-        gaugeaction = "Wilson"
-    if flowtype == "zeuthenFlow":
-        flowaction = "Zeuthen"
-    elif flowtype == "wilsonFlow":
-        flowaction = "Wilson"
-
     # file paths
-    merged_data_path = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype)
+    merged_data_path = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype, args.basepath)
     outputfolder_data = merged_data_path+"/interpolations/"
-    outputfolder_plot = lpd.get_plot_path(args.qcdtype, args.corr, args.conftype)+"/interpolations/"
+    outputfolder_plot = lpd.get_plot_path(args.qcdtype, args.corr, args.conftype, args.basepath_plot)
     lpd.create_folder(outputfolder_plot, outputfolder_data)
 
-    # load and set flowradius
-    flowradius = numpy.loadtxt(merged_data_path+"/flowradii_"+args.conftype+".dat")[args.flow_index]
-    flowradiusstr = '{0:.4f}'.format(flowradius)
-    flowtime = numpy.loadtxt(merged_data_path + "/flowtimes_" + args.conftype + ".dat")[args.flow_index]
+    # load flow times
+    flowtimes = numpy.loadtxt(merged_data_path + "/flowtimes_" + args.conftype + ".dat")
+    indices = range(0, len(flowtimes))
 
     # load data
-    XX_samples = numpy.loadtxt(merged_data_path+"/btstrp_samples/"+args.corr+"_"+flowradiusstr+"_Nt"+str(nt)+"_btstrp_samples.dat")
+    XX_samples = numpy.load(merged_data_path+"/"+args.corr + "_" + args.conftype + "_samples.npy")
 
-    # result variables
-    theoutputdata = []
-    interpolation_points = numpy.arange(0, 0.5, 0.001)
-    xpoints = numpy.asarray([x for x in numpy.sort(numpy.unique([*interpolation_points, *lpd.get_tauTs(args.int_Nt), 0.5,
-                                                                 lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset)]))
-                             if x >= lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset)])  # xdata[0]
+    matplotlib.rcParams['figure.max_open_warning'] = 0  # suppress warning due to possibly large number of figures...
+    interpolations, figs = lpd.parallel_function_eval(wrapper, indices, args.nproc, flowtimes, XX_samples, args, merged_data_path)
 
-    # this is only relevant for the plot
-    xpointsplot = numpy.linspace(0, xpoints[-1], 1000)
-    theplotdata = []
-
-    # perform spline fits for each sample
-
-    # get interpolation of the tree-level improvement factor
-    ydata_norm = []
-    for a in range(nt_half):
-        ydata_norm.append(lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction)/lpd.G_latt_LO_flow(a, 0, args.corr, nt, flowaction, gaugeaction))
-
-    for m in range(args.nsamples):
-        ydata = numpy.asarray(XX_samples[m*nt_half:(m+1)*nt_half, 1])
-        for a in range(nt_half):
-            # We use tf=0 here so that the interpolation works better. Afterwards we divide it out again.
-            ydata[a] = ydata[a] * nt**4 / lpd.G_latt_LO_flow(a, 0, args.corr, nt, flowaction, gaugeaction)
-        output, plot_output = interpolate_XX_flow(lpd.get_tauTs(nt), ydata, ydata_norm, xpoints, xpointsplot)
-        theoutputdata.append(output)
-        theplotdata.append(plot_output)
-
-    # compute spline average over all samples at all desired tauT (xpoints) and save
-    ypoints = numpy.mean(theoutputdata, axis=0)
-    epoints = numpy.std(theoutputdata, axis=0)
-    numpy.savetxt(outputfolder_data+args.corr+"_"+'{0:.4f}'.format(flowradius)+"_interpolation.txt",
-                  numpy.stack((xpoints, ypoints, epoints), axis=-1), header="tauT     G_tauF(tau)/Gnorm      err")
-
-    ypointsplot = numpy.mean(theplotdata, axis=0)
-    epointsplot = numpy.std(theplotdata, axis=0)
-
-    # plot interpolations and underlying data points
-    UseTex = False
-    if UseTex:
-        displaystyle = r'\displaystyle'
-        ylabel = r'$'+displaystyle+r'\frac{ G^\mathrm{latt }_{\tau_F} (\tau)}{G^{\substack{ \text{\tiny  norm} \\[-0.4ex] \text{\tiny latt } } }_{\tau_F = 0} (\tau)}$'
-    else:
-        ylabel = 'G'
-    fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=args.ylims, xlabel=r'$\tau T$', ylabel=ylabel, xlabelpos=(0.95, 0.05), UseTex=UseTex)
-    ax.set_title(r'$ \sqrt{8\tau_F}T = $'+'{0:.3f}'.format(flowradius))  # +", nknots = "+nknot_str)
-    ax.axvline(x=lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset), **lpd.verticallinestyle)
-    ax.fill_between(xpointsplot, ypointsplot-epointsplot, ypointsplot+epointsplot, alpha=0.5)
-    ax.errorbar(xpointsplot, ypointsplot, fmt='-', lw=0.5, mew=0)
-    XX = numpy.loadtxt(merged_data_path+"/"+args.corr+"_"+args.conftype+".dat")
-    XX_err = numpy.loadtxt(merged_data_path+"/"+args.corr+"_err_"+args.conftype+".dat")
-    for a in range(len(XX[args.flow_index])):
-        XX[args.flow_index, a] = XX[args.flow_index, a] * nt**4 / lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction)
-        XX_err[args.flow_index, a] = XX_err[args.flow_index, a] * nt**4 / lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction)
-    ax.errorbar(lpd.get_tauTs(nt), XX[args.flow_index], XX_err[args.flow_index], **lpd.plotstyle_add_point_single)
-    filepath = outputfolder_plot+"/"+args.corr+"_"+'{0:.4f}'.format(flowradius)+"_interpolation.pdf"
+    filepath = outputfolder_plot + "/" + args.corr + "_interpolation.pdf"
     print("saving ", filepath)
-    fig.savefig(filepath)
+
+    lpd.set_rc_params()  # for some reason we need to call this here...
+    with PdfPages(filepath) as pdf:
+        for fig in figs:
+            pdf.savefig(fig, bbox_inches='tight', pad_inches=0.05)
+            matplotlib.pyplot.close(fig)
+
+    # save data
+    numpy.save(merged_data_path + args.corr + "_" + args.conftype + "_interpolation_samples.npy", numpy.asarray(interpolations))
 
 
 if __name__ == '__main__':
