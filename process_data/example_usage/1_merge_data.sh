@@ -1,8 +1,5 @@
 #!/bin/bash
 
-
-#!/bin/bash
-
 qcdtype=$1
 corr=$2
 if [ -z "$qcdtype" ] ; then
@@ -23,12 +20,6 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     "s064t20_b0770400" "s064t24_b0791300" "s096t32_b0824900_m002022_m01011"
     "s064t20_b0757000" "s064t24_b0777700" "s096t36_b0824900_m002022_m01011"
 )
-    arr_discards=(
-        "0 100 100 100" "0 0 0 0 0 0" "0 0 0"
-        "0 100 100 100" "0 0 0 0 0 0" "400 400 400 400"
-        "0 0 0 0 0 0" "0 200 200 200" "400 400"
-        "0 0 0 0 0 0" "0 100 100 100" "400 400 400 400"
-    )
     temps=(
         "296"
         "251"
@@ -47,10 +38,7 @@ fi
 for idx in "${!arr_conftypes[@]}" ; do
     conftype="${arr_conftypes[idx]}"
 
-    if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
-        discard="0 0 0 0 0 0 0 0 0 0"
-    elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
-        discard=${arr_discards[idx]}
+    if [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
         if [ "$conftype" == "s096t24_b0824900_m002022_m01011" ] ; then
             acc_sts=""
         else
@@ -63,32 +51,9 @@ for idx in "${!arr_conftypes[@]}" ; do
         fi
     fi
 
-
-    ../_1_merge_data.py ${flowradii_refs[idx/3]} --output_basepath ../../../data/merged/ --n_discard $discard $excess $add_args --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype
+    ../_1_merge_data.py ${flowradii_refs[idx/3]} --output_basepath ../../../data/merged/ $excess $add_args --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype &
 done
 wait
 
 
-#--n_discard 400
-#hisq_b8249_zeuthenFlow
-#
-#
-#
-
-
-
-
-#TODO update this and incorporate intersecting flowtimes
-
 # conftypes_hisq=${2:-s064t16_b07188_m00113_m0306 s064t16_b07010_m00132_m0357 s064t16_b07095_m00124_m0334 s064t16_b07130_m00119_m0322 s064t16_b07054_m00129_m0348 s064t16_b07156_m00116_m0314}
-# for conftype in $conftypes_hisq ; do
-#     #rm -rf ../data_merged/hisq/$conftype
-#     #rm -rf ../data_merged/hisq/$conftype/single_flow
-#     mkdir -p ../data_merged/hisq/$conftype
-#     beta=${conftype#*_b}; beta=${beta%%_*}; beta=`bc <<< "scale=5;$beta/1000"`
-#     ns=${conftype#s}; ns=${ns%%t*}
-#     nt=${conftype#*t}; nt=${nt%%_b*}
-#     python3 merge_raw_data.py hisq $conftype $beta $ns $nt &
-# done
-
-#wait
