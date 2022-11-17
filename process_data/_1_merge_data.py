@@ -14,7 +14,6 @@ def main():
     parser.add_argument('--acc_sts', help="accuracy and stepsize. format: acc0.000010_sts0.000010")
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     parser.add_argument('--basepath', help="override default base input path with this one", type=str)
-    parser.add_argument('--n_discard', help="number of configurations, counted from the lowest conf_num, in each stream that should be ignored", type=int, default=0, nargs='*')
     parser.add_argument('--legacy', help="use legacy file names and legacy multiplicity factor of -3", action="store_true")
     parser.add_argument('--excess_workaround', help="ignore additional flow times at the end of later files", action="store_true")
     parser.add_argument('--reference_flowradii', default=None, type=str,
@@ -24,7 +23,7 @@ def main():
                              "flow times.")
     parser.add_argument('--output_basepath', type=str, default="")
 
-    #TODO move discard to reduce_data, save info about conf number!!!!
+    #TODO save info about conf number!!!!
 
     args = parser.parse_args()
 
@@ -78,7 +77,6 @@ def main():
             print(stream_folder, end=', ')
             datafiles = listdir(inputfolder+"/"+stream_folder)
             datafiles.sort()
-            discarded = 0
             for datafile in datafiles:
                 if datafile.startswith(full_prefix):
                     path = inputfolder+"/"+stream_folder+"/"+datafile
@@ -95,10 +93,6 @@ def main():
                             print(shape, " (previous) vs ", tmp.shape, " (current file)")
                             corrupt_files.append(datafile)
                             continue
-                    #TODO fix this for the default case!
-                    if discarded < args.n_discard[n_streams]:
-                        discarded += 1
-                        continue
                     if n_datafiles == 0:
                         flow_times = tmp[:, 0]
                         if args.reference_flowradii is not None:
@@ -139,11 +133,7 @@ def main():
         print("Didn't find any files! Are the input parameters correct?", args.conftype, beta, ns, nt, nt_half, args.qcdtype, fermions, temp, flowtype, args.corr, args.acc_sts)
         exit()
 
-    # TODO: save everything in ONE hdf5 file??
-
-    # write merged data to files
-    # filename = outputfolder + 'conf_nums_' + args.conftype + '.dat'
-
+    # TODO this could be simplified by pickling a dict to disk
     filename = outputfolder+'n_datafiles_'+args.conftype+'.dat'
     print("write "+filename)
     with open(filename, 'w') as outfile:
@@ -151,58 +141,61 @@ def main():
         outfile.write(str(n_datafiles)+'\n')
         outfile.write('# number of streams for '+args.qcdtype+' '+args.conftype+'\n')
         outfile.write(str(n_streams)+'\n')
-        outfile.write('# number of discarded confs from the beginning of each stream:\n')
-        for ndisc, strid in zip(args.n_discard, streamids):
-            outfile.write(str(ndisc) + '  # ' + strid + '\n')
+        # outfile.write('# number of discarded confs from the beginning of each stream:\n')
+        # for ndisc, strid in zip(args.n_discard, streamids):
+        #     outfile.write(str(ndisc) + '  # ' + strid + '\n')
         numpy.savetxt(outfile, numpy.asarray(n_files_per_stream), header='number of confs contained in each stream respectively', fmt='%i')
+        outfile.write('# confnums, ordered by stream\n')
+        numpy.savetxt(outfile, numpy.asarray(conf_nums), fmt='%i')
     flow_times = [i for i in flow_times]
-    # flow_radii = [numpy.sqrt(i*8)/nt for i in flow_times]
     numpy.savetxt(outputfolder+'flowtimes_'+args.conftype+'.dat', flow_times, header=r'flow times \tau_F for '+args.qcdtype+' '+args.conftype)
-    # numpy.savetxt(outputfolder+'flowradii_'+args.conftype+'.dat', flow_radii, header=r'flow radii (\sqrt{8\tau_F}T) for '+args.qcdtype+' '+args.conftype)
 
-    filename = outputfolder+args.corr+'_real_'+args.conftype+'_merged.dat'
-    print("write "+filename)
-    with open(filename, 'w') as outfile:
-        outfile.write('# real part of numerator of '+args.corr+' correlator '+args.qcdtype+' '+args.conftype+'\n')
-        outfile.write('# '+str(n_datafiles)+' confs in one file\n')
-        outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
-        lpd.write_flow_times(outfile, flow_times)
-        for conf in XX_numerator_real:
-            numpy.savetxt(outfile, conf)
-            outfile.write('# \n')
+    # these have the following shape (nconf, nflow, Ntau/2)
+    numpy.save(lpd.print_var("write", outputfolder + args.corr + '_real_' + args.conftype + '_merged.npy'), XX_numerator_real)
+    numpy.save(lpd.print_var("write", outputfolder + args.corr + '_imag_' + args.conftype + '_merged.npy'), XX_numerator_imag)
+    numpy.save(lpd.print_var("write", outputfolder+'polyakov_real_'+args.conftype+'_merged.npy'), polyakov_real)
+    numpy.save(lpd.print_var("write", outputfolder+'polyakov_imag_'+args.conftype+'_merged.npy'), polyakov_imag)
 
-    filename = outputfolder+args.corr+'_imag_'+args.conftype+'_merged.dat'
-    print("write "+filename)
-    with open(filename, 'w') as outfile:
-        outfile.write('# imag part of numerator of '+args.corr+' correlator '+args.qcdtype+' '+args.conftype+'\n')
-        outfile.write('# '+str(n_datafiles)+' confs in one file\n')
-        outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
-        lpd.write_flow_times(outfile, flow_times)
-        for conf in XX_numerator_imag:
-            numpy.savetxt(outfile, conf)
-            outfile.write('# \n')
+    # with open(filename, 'w') as outfile:
+    #     outfile.write('# real part of numerator of '+args.corr+' correlator '+args.qcdtype+' '+args.conftype+'\n')
+    #     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
+    #     outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
+    #     lpd.write_flow_times(outfile, flow_times)
+    #     for conf in XX_numerator_real:
+    #         numpy.savetxt(outfile, conf)
+    #         outfile.write('# \n')
 
-    filename = outputfolder+'polyakov_real_'+args.conftype+'_merged.dat'
-    print("write "+filename)
-    with open(filename, 'w') as outfile:
-        outfile.write('# real part of polyakov loop '+args.qcdtype+' '+args.conftype+'\n')
-        outfile.write('# '+str(n_datafiles)+' confs in one file\n')
-        outfile.write('# rows correspond to flow times\n')
-        lpd.write_flow_times(outfile, flow_times)
-        for conf in polyakov_real:
-            numpy.savetxt(outfile, conf)
-            outfile.write('# \n')
 
-    filename = outputfolder+'polyakov_imag_'+args.conftype+'_merged.dat'
-    print("write "+filename)
-    with open(filename, 'w') as outfile:
-        outfile.write('# imag part of polyakov loop '+args.qcdtype+' '+args.conftype+'\n')
-        outfile.write('# '+str(n_datafiles)+' confs in one file\n')
-        outfile.write('# rows correspond to flow times\n')
-        lpd.write_flow_times(outfile, flow_times)
-        for conf in polyakov_imag:
-            numpy.savetxt(outfile, conf)
-            outfile.write('# \n')
+    # with open(filename, 'w') as outfile:
+    #     outfile.write('# imag part of numerator of '+args.corr+' correlator '+args.qcdtype+' '+args.conftype+'\n')
+    #     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
+    #     outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
+    #     lpd.write_flow_times(outfile, flow_times)
+    #     for conf in XX_numerator_imag:
+    #         numpy.savetxt(outfile, conf)
+    #         outfile.write('# \n')
+
+    # filename =
+    # print("write "+filename)
+    # with open(filename, 'w') as outfile:
+    #     outfile.write('# real part of polyakov loop '+args.qcdtype+' '+args.conftype+'\n')
+    #     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
+    #     outfile.write('# rows correspond to flow times\n')
+    #     lpd.write_flow_times(outfile, flow_times)
+    #     for conf in polyakov_real:
+    #         numpy.savetxt(outfile, conf)
+    #         outfile.write('# \n')
+    #
+    # filename = outputfolder+'polyakov_imag_'+args.conftype+'_merged.dat'
+    # print("write "+filename)
+    # with open(filename, 'w') as outfile:
+    #     outfile.write('# imag part of polyakov loop '+args.qcdtype+' '+args.conftype+'\n')
+    #     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
+    #     outfile.write('# rows correspond to flow times\n')
+    #     lpd.write_flow_times(outfile, flow_times)
+    #     for conf in polyakov_imag:
+    #         numpy.savetxt(outfile, conf)
+    #         outfile.write('# \n')
 
     print("done with "+args.qcdtype+" "+args.conftype)
 
