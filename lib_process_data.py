@@ -325,3 +325,8 @@ def dev_by_dist(data, axis=0, return_both_q=False, percentile=68):
         return numpy.abs(q_l), numpy.abs(q_r)
     else:
         return numpy.max(numpy.stack((numpy.abs(q_l), numpy.abs(q_r)), axis=0), axis=0)
+
+
+def print_var(prefix, var):
+    print(prefix, var)
+    return var
