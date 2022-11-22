@@ -20,7 +20,23 @@ if [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
 )
 fi
 
-for conftype in "${arr_conftypes[@]}"; do
-    ../_1_xestimate_autocorrelations.py --qcdtype $qcdtype --conftype $conftype --corr $corr --basepath ../../../data/merged/ --basepath_plot ../../../plots/ &
+#    min_trajs=(
+#        "0 0 0 0" "0 0 0 0 0 0" "0 0 0"
+#        "0 0 0 0" "200 0 130 100 0 0" "175 175 175 175"
+#        "0 0 0 0 0 0" "700 400 400 400" "150 150"
+#        "0 0 0 0 0 0" "200 200 200 200" "0 0 0 0"  # TODO remove <2000 data files because of gaps for nt=36
+#    )
+min_trajs=(
+        "0 0 0 0" "0 0 0 0 0 0" "0 0 0"
+        "0 0 0 0" "0 0 0 0 0 0" "0 0 0 0"
+        "0 0 0 0 0 0" "0 0 0 0" "0 0"
+        "0 0 0 0 0 0" "0 0 0 0" "0 0 0 0"  # TODO remove <2000 data files because of gaps for nt=36
+    )
+
+
+for idx in "${!arr_conftypes[@]}"; do
+    conftype=${arr_conftypes[idx]}
+    min_conf="--min_conf ${min_trajs[idx]}"
+    ../_1_xestimate_autocorrelations.py --suffix _test2 $min_conf --qcdtype $qcdtype --conftype $conftype --corr $corr --basepath ../../../data/merged/ --basepath_plot ../../../plots/ &
 done
 wait
