@@ -182,6 +182,8 @@ def find_and_plot_and_save_relflow(args, ax, flowradiusBytauT, possible_tauTs, y
 
 # TODO add leg_label_suffix
 def plot_extrapolated_data(args, ax):
+
+    # TODO add the option to give multiple extrapolations
     path = args.plot_extr
     conftype = args.conftype[0]
 
@@ -203,6 +205,8 @@ def plot_extrapolated_data(args, ax):
         except OSError:
             print("WARN: skipping tf->0 extr., could not find ", file)
 
+        # TODO add a flag for this finite-flowtime data here
+        # TODO update this for new sample-based format
         # load continuum quenched data and interpolate it
         EE_cont_arr = []
         # TODO remove "lpd.remove..."
@@ -635,8 +639,12 @@ def main():
 
     fig, ax, ax_kappa = prepare_plot_canvas(args)
 
-    spfargs_array, params_ansatz_array = plot_fits(args, ax, ax_kappa)  # we return some fit information, in case we want to normalize the relative flow correlators by some fit correlator.
-    color_offset = plot_extrapolated_data(args, ax)  # we return an offset, so that plot_relative_flow knows that something else has already been plotted, so that it can skip already used colors.
+    spfargs_array, params_ansatz_array = plot_fits(args, ax, ax_kappa)
+    # we return some fit information, in case we want to normalize the relative flow correlators by some fit correlator.
+
+    color_offset = plot_extrapolated_data(args, ax)
+    # we return an offset, so that plot_relative_flow knows that something else has already been plotted, so that it can skip already used colors.
+
     plot_relative_flow(args, ax, color_offset, spfargs_array, params_ansatz_array)
 
     set_legend(args, ax)
