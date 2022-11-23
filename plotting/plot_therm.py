@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7m
+#!/usr/bin/env python3
 import numpy
 import lib_process_data as lpd
 
@@ -98,7 +98,6 @@ def main():
     fig.savefig(outputfolder+"/"+"polyakovloop_"+args.suffix+".pdf")
     fig2.savefig(outputfolder+"/"+"polyakovloop_err_"+args.suffix+".pdf")
     fig3.savefig(outputfolder+"/"+"polyakovloop_mean_"+args.suffix+".pdf")
-
 
 
 if __name__ == '__main__':
