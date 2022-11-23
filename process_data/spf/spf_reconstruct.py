@@ -55,7 +55,8 @@ def SpfByT3(OmegaByT, spfargs, *fit_params):
         return np.maximum(fit_params[0][0] / 2 * OmegaByT, spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1])
     if spfargs.model == "smax":
         return np.sqrt((fit_params[0][0] / 2 * OmegaByT) ** 2 + (spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1]) ** 2)
-
+    if spfargs.model == "sum":
+        return (fit_params[0][0] / 2 * OmegaByT) + (spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1])
     if spfargs.model == "pnorm":
         return ((fit_params[0][0] / 2 * OmegaByT) ** spfargs.p + (spfargs.PhiuvByT3(OmegaByT) * fit_params[0][1]) ** spfargs.p)**(1/spfargs.p)
 
@@ -216,7 +217,7 @@ def main():
     parser.add_argument('--error_exponent', default=0, type=int, help="increase errors for small tauT data like this: error*(0.5/tauT)^error_exponent")
 
     # === spf model selection ===
-    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line", "step_any", "pnorm", "plaw"], type=str, required=True)
+    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line", "step_any", "pnorm", "plaw", "sum"], type=str, required=True)
     requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str)
     requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO or NLO. if empty then its assumed that PathPhiUV is given.', type=str, choices=["LO", "NLO"])
 
@@ -255,8 +256,15 @@ def main():
     constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
     model_str = get_model_str(args.model, args.PhiUVtype, args.mu, constrainstr, args.nmax, args.p, args.OmegaByT_IR, args.OmegaByT_UV)
 
+    # for corr, T_in_GeV in zip(args.corr, args.T_in_GeV):
+        # bootstrap can handle nd arrays -> make corr a 3d array. PhiUV becomes an array as well.
+        # think about organizing fitparameters differently.
+        # in chisq calculation, add together chisq's for each corr by looping over corrs.
+        # results become one more dimension.
+        # save results for each corr. indicate whether a combined fit was done.
+
     # PhiUV identifiers
-    if args.Nf:
+    if args.Nf is not None:
         model_str = model_str + "_Nf" + str(args.Nf)
     if args.T_in_GeV:
         model_str = model_str + "_T" + '{0:.3f}'.format(args.T_in_GeV)
@@ -282,10 +290,8 @@ def main():
     elif args.PhiUVtype == "NLO":
         PhiUV = NLO
     else:
-        # read in the phiuv. columns in order: OmegaByT, PhiUVByT3, err
-        PhiUV = np.loadtxt(args.PathPhiUV)
-        PhiUV = PhiUV[:, 0:2]
-
+        print("ERROR: unknown PhiUVtype")
+        exit(1)
     # interpolate the UV spf for the integration. spline order: 1 linear, 2 quadratic, 3 cubic ...
     order = 3
     PhiuvByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[:, 0], PhiUV[:, 1], k=order, ext=2)
