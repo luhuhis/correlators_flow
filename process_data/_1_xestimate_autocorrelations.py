@@ -256,7 +256,7 @@ def main():
 
         # bin data
         ndata = len(y_eq_spaced)-best_start
-        binlength = int(2*numpy.ceil(tau_int+tau_intbias))
+        binlength = int(2*numpy.ceil(tau_int))
         nbins = int(ndata/binlength)
         for b in range(nbins):
             y_binned.append(numpy.mean(y_eq_spaced[b*binlength:(b+1)*binlength], axis=0))
