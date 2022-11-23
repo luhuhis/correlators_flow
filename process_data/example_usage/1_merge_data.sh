@@ -45,13 +45,13 @@ for idx in "${!arr_conftypes[@]}" ; do
             acc_sts="--acc_sts sts0.150000"
         fi
         if [ "$conftype" == "s096t36_b0824900_m002022_m01011" ] ; then
-            excess="--excess_workaround"
+            even_more_args="--excess_workaround --min_conf_nr 2000"
         else
-            excess=""
+            even_more_args=""
         fi
     fi
 
-    ../_1_merge_data.py ${flowradii_refs[idx/3]} --output_basepath ../../../data/merged/ $excess $add_args --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype &
+    ../_1_merge_data.py ${flowradii_refs[idx/3]} --output_basepath ../../../data/merged/ $even_more_args $add_args --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype &
 done
 wait
 
