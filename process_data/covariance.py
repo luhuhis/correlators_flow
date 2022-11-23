@@ -1,15 +1,23 @@
-#!/usr/local/bin/python3.7m -u
+#!python3
 import numpy
 import lib_process_data as lpd
 import _2_reduce_data as rd
 from matplotlib.ticker import MaxNLocator
 from matplotlib import pyplot as plt
+from latqcdtools.statistics import bootstr
 
 
-def plot_correlation_matrix(data, idx, flow_radii, title, prefix):
-    # bring data in correct shape for numpy.cov
-    data = numpy.copy(data[:, :, idx])
-    data = numpy.swapaxes(data, 0, 1)
+def compute_XX_corr(data):
+    """
+    function for bootstrap routine that computes an XX correlator (with XX=EE or BB) normalized by the polyakov loop. numerator data (i.e. --X--X--) is first index, polyakov loop is second index of data.
+    """
+    numerator_mean = numpy.mean(data[0], axis=0)
+    denominator_mean = numpy.mean(data[1], axis=0)
+    XX = numerator_mean/denominator_mean
+    return XX
+
+
+def plot_correlation_matrix(data, flow_radii, title, prefix):
     data = numpy.corrcoef(data)
 
     fig, ax, _ = lpd.create_figure(xlims=[0, 0.3], ylims=[0, 0.3], xlabel=r'$\sqrt{8\tau_F}T$', ylabel=None, xlabelpos=(0.6, -0.2), ylabelpos=(-0.2, 1.15),
@@ -27,6 +35,7 @@ def plot_correlation_matrix(data, idx, flow_radii, title, prefix):
     ax.yaxis.set_major_locator(MaxNLocator(5))
 
     fig.savefig(prefix + "_correlation.pdf")
+    plt.close(fig)
 
 
 def main():
@@ -49,11 +58,27 @@ def main():
     EE_numerator = numpy.asarray(XX_data[0])
     polyakov_real = numpy.asarray(XX_data[1])
 
-    plot_correlation_matrix(polyakov_real, nt_half, flow_radii, r'$\mathrm{corr}[X(\tau_\mathrm{F}), X(\tau_\mathrm{F}\prime)], X= U(\beta, 0) $', "poly")
+    XX_samples, XX, XX_err = bootstr.bootstr(compute_XX_corr, XX_data, numb_samples=1000, sample_size=n_datafiles, conf_axis=1, return_sample=True,
+                                             same_rand_for_obs=False, parallelize=True, nproc=20, seed=0, err_by_dist=True)
+
+    print(numpy.asarray(XX))
+    print(numpy.asarray(XX_err))
+
+    XX_samples = numpy.asarray(XX_samples)
+    XX_samples = numpy.swapaxes(XX_samples, 0, 2)
+
+    # bring data in correct shape for numpy.cov
+    polyakov_real = numpy.copy(polyakov_real[:, :, 0])
+    polyakov_real = numpy.swapaxes(polyakov_real, 0, 1)
+    print(polyakov_real.shape)
+    plot_correlation_matrix(polyakov_real, flow_radii, r'$\mathrm{corr}[X(\tau_\mathrm{F}), X(\tau_\mathrm{F}\prime)], X= U(\beta, 0) $', "poly")
 
     for i in range(nt_half):
         label = '{0:.2f}'.format((i+1)/nt)
-        plot_correlation_matrix(EE_numerator, i, flow_radii, r'$\mathrm{corr}[X(\tau_\mathrm{F}), X(\tau_\mathrm{F}\prime)], X= U(\beta, \tau) E(\tau) U(\tau, 0) E(0), \tau T ='+label+r'$', "EE_tauT"+label)
+        data = numpy.copy(EE_numerator[:, :, i])
+        data = numpy.swapaxes(data, 0, 1)
+        plot_correlation_matrix(data, flow_radii, r'$\mathrm{corr}[X(\tau_\mathrm{F}), X(\tau_\mathrm{F}\prime)], X= U(\beta, \tau) E(\tau) U(\tau, 0) E(0), \tau T ='+label+r'$', "EE_tauT"+label)
+        plot_correlation_matrix(XX_samples[i], flow_radii, r'$\mathrm{corr}[G(\tau_\mathrm{F}), G(\tau_\mathrm{F}\prime)], \tau T ='+label+r'$', "EE_corr_tauT"+label)
 
 
 if __name__ == '__main__':
