@@ -21,9 +21,8 @@ def main():
                              "the flowradii in this file have to be a subset of the ones you're trying to read in."
                              "useful if you want to combine different runs which different max flow time, or when you made noncritical copy-paste mistake for a few"
                              "flow times.")
+    parser.add_argument('--min_conf_nr', help="ignore datafiles with conf number less than this.", default=0, type=int)
     parser.add_argument('--output_basepath', type=str, default="")
-
-    #TODO save info about conf number!!!!
 
     args = parser.parse_args()
 
@@ -81,42 +80,44 @@ def main():
                 if datafile.startswith(full_prefix):
                     path = inputfolder+"/"+stream_folder+"/"+datafile
                     # print("reading "+datafile)
-                    tmp = numpy.loadtxt(path)
-                    if shape == (0, 0):
-                        shape = tmp.shape
-                    if shape != tmp.shape:
-                        if args.excess_workaround and tmp.shape != (0,) and tmp.shape[1] == shape[1] and tmp.shape[0] > shape[0]:
-                            print("INFO: discarding", tmp.shape[0]-shape[0], " flow times from the end")
-                            tmp = tmp[:shape[0]]
-                        else:
-                            print("error! shapes of input files don't match. ignoring this file.")
-                            print(shape, " (previous) vs ", tmp.shape, " (current file)")
-                            corrupt_files.append(datafile)
-                            continue
-                    if n_datafiles == 0:
-                        flow_times = tmp[:, 0]
-                        if args.reference_flowradii is not None:
-                            flowradii = numpy.sqrt(8*flow_times)/nt
-                            flowradii_ref = numpy.loadtxt(args.reference_flowradii)
-                            indices = []
-                            for f in range(len(flow_times)):
-                                for g in range(len(flowradii_ref)):
-                                    if numpy.isclose(flowradii[f], flowradii_ref[g]):  # TODO check whether tolerance of isclose is small enough for our stepsizes.
-                                        indices.append(f)
-                                        break
-                            indices = numpy.asarray(indices)
-                        else:
-                            indices = numpy.asarray(range(0, len(flow_times)))
+                    confnum = int(lpd.remove_left_of_last('_U', path))
+                    if confnum >= args.min_conf_nr:
+                        tmp = numpy.loadtxt(path)
+                        if shape == (0, 0):
+                            shape = tmp.shape
+                        if shape != tmp.shape:
+                            if args.excess_workaround and tmp.shape != (0,) and tmp.shape[1] == shape[1] and tmp.shape[0] > shape[0]:
+                                print("INFO: discarding", tmp.shape[0]-shape[0], " flow times from the end")
+                                tmp = tmp[:shape[0]]
+                            else:
+                                print("error! shapes of input files don't match. ignoring this file.")
+                                print(shape, " (previous) vs ", tmp.shape, " (current file)")
+                                corrupt_files.append(datafile)
+                                continue
+                        if n_datafiles == 0:
+                            flow_times = tmp[:, 0]
+                            if args.reference_flowradii is not None:
+                                flowradii = numpy.sqrt(8*flow_times)/nt
+                                flowradii_ref = numpy.loadtxt(args.reference_flowradii)
+                                indices = []
+                                for f in range(len(flow_times)):
+                                    for g in range(len(flowradii_ref)):
+                                        if numpy.isclose(flowradii[f], flowradii_ref[g]):  # TODO check whether tolerance of isclose is small enough for our stepsizes.
+                                            indices.append(f)
+                                            break
+                                indices = numpy.asarray(indices)
+                            else:
+                                indices = numpy.asarray(range(0, len(flow_times)))
 
-                        flow_times = flow_times[indices]
-                        print("nflow=", len(flow_times))
-                    polyakov_real.append(tmp[indices, 1])
-                    polyakov_imag.append(tmp[indices, 2])
-                    XX_numerator_real.append(tmp[indices, 3:int((3 + nt_half))] / multiplicity)
-                    XX_numerator_imag.append(tmp[indices, int((3 + nt_half)):] / multiplicity)
-                    conf_nums.append(int(lpd.remove_left_of_last('_U', path)))
-                    n_datafiles += 1
-                    n_files_this_stream += 1
+                            flow_times = flow_times[indices]
+                            # print("nflow=", len(flow_times))
+                        polyakov_real.append(tmp[indices, 1])
+                        polyakov_imag.append(tmp[indices, 2])
+                        XX_numerator_real.append(tmp[indices, 3:int((3 + nt_half))] / multiplicity)
+                        XX_numerator_imag.append(tmp[indices, int((3 + nt_half)):] / multiplicity)
+                        conf_nums.append(confnum)
+                        n_datafiles += 1
+                        n_files_this_stream += 1
             print("n_files_this_stream: ", n_files_this_stream)
             if n_files_this_stream > 0:
                 n_files_per_stream.append(n_files_this_stream)
