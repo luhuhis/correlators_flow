@@ -24,7 +24,7 @@ def load_merged_data(qcdtype, corr, conftype, basepath, n_discard_per_stream):
     metadata = numpy.loadtxt(lpd.print_var("read", inputfolder + "n_datafiles_" + conftype + ".dat"))
     n_datafiles, n_streams = [int(i) for i in metadata[0:2]]
     if n_discard_per_stream is None:
-        print("INFO: setting n_discard_per_stream to 0 for all streams")
+        # TODO print("INFO: setting n_discard_per_stream to 0 for all streams")
         n_discard_per_stream = [0 for _ in range(n_streams)]
 
     n_files_per_stream = [int(i) for i in metadata[2:2+n_streams]]
@@ -79,6 +79,48 @@ def compute_only_denominator(data):
     return numpy.mean(data[1], axis=0), numpy.std(data[1], axis=0)
 
 
+def resample_and_save_data(reduce_function, XX_data, n_samples, n_datafiles, file_prefix, flow_times, qcdtype, conftype, corr, nt, BB_renorm, nproc, conf_axis):
+    XX_samples, XX, XX_err = bootstr.bootstr(reduce_function, XX_data, numb_samples=n_samples, sample_size=n_datafiles, conf_axis=conf_axis, return_sample=True, same_rand_for_obs=True, parallelize=True, nproc=nproc, seed=0, err_by_dist=True)
+    XX_samples = numpy.asarray(XX_samples)
+    print(XX_samples.shape)
+    # XX:     this is the bootstrap estimate for the mean of the correlator
+    # XX_err: this is the bootstrap estimate for the error of the mean of the correlator
+
+    # save samples
+    numpy.save(lpd.print_var("write", file_prefix + "_" + conftype + "_samples.npy"), XX_samples)
+
+    # add renormalization factor for BB correlator. errors for it are extremely small. FIXME abstract this
+    if BB_renorm and corr == "BB":
+        path = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
+        tfT2, Z2 = numpy.loadtxt(path + "Z2_" + str(nt) + ".dat", unpack=True)
+        for i in range(XX.shape[0]):
+            for j in range(XX.shape[1]):
+                XX[i, j] *= Z2[i]
+                XX_err[i, j] *= Z2[i]
+
+    # write XX and XX_err to file
+    with open(lpd.print_var("write", file_prefix+"_"+conftype+".dat"), 'w') as outfile:
+        outfile.write('# bootstrap mean of '+str(n_datafiles)+' measurements of '+corr+' correlator for '+qcdtype+' '+conftype+'\n')
+        outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
+        lpd.write_flow_times(outfile, flow_times)
+        numpy.savetxt(outfile, XX)
+
+    with open(lpd.print_var("write", file_prefix+"_err_"+conftype+".dat"), 'w') as outfile:
+        outfile.write('# bootstrap mean err of '+str(n_datafiles)+' measurements of '+corr+' correlator '+qcdtype+' '+conftype+'\n')
+        outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
+        lpd.write_flow_times(outfile, flow_times)
+        numpy.savetxt(outfile, XX_err)
+
+    # for each tau, compute flow correlation matrix.
+    XX_samples = numpy.swapaxes(XX_samples, 0, 2)  # change data structure such that numpy.cov understands it
+    pcov = []
+    for i in range(int(nt/2)):
+        pcov.append(numpy.corrcoef(XX_samples[i]))
+    pcov = numpy.asarray(pcov)
+    numpy.save(lpd.print_var("write", file_prefix + "_flow_cov_" + conftype + ".npy"), pcov)
+    print(pcov.shape)
+
+
 def main():
 
     # parse cmd line arguments
@@ -101,7 +143,6 @@ def main():
     flow_times, n_flow, n_datafiles, n_streams, n_files_per_stream, XX_data, confnums = load_merged_data(args.qcdtype, args.corr, args.conftype, args.basepath, args.n_discard)
     XX_data = numpy.asarray(XX_data)
     print(XX_data.shape)
-    n_samples = args.n_samples
 
     reduce_function = compute_XX_corr
     file_prefix = args.corr
@@ -113,50 +154,14 @@ def main():
             reduce_function = compute_only_denominator
             file_prefix += "_polyakovloop"
 
+    file_prefix = outputfolder+file_prefix
+
     # TODO add BB renorm Z factor in this step, not afterwards!
     # Z = 1
     # if args.BB_renorm and args.corr == "BB":
     #     Z = Z2[i]
 
-    XX_samples, XX, XX_err = bootstr.bootstr(reduce_function, XX_data, numb_samples=n_samples, sample_size=n_datafiles, conf_axis=1, return_sample=True, same_rand_for_obs=True, parallelize=True, nproc=args.nproc, seed=0, err_by_dist=True)
-    XX_samples = numpy.asarray(XX_samples)
-    print(XX_samples.shape)
-    # XX:     this is the bootstrap estimate for the mean of the correlator
-    # XX_err: this is the bootstrap estimate for the error of the mean of the correlator
-
-    # save samples
-    numpy.save(lpd.print_var("write", outputfolder + file_prefix + "_" + args.conftype + "_samples.npy"), XX_samples)
-
-    # add renormalization factor for BB correlator. errors for it are extremely small. FIXME abstract this
-    if args.BB_renorm and args.corr == "BB":
-        path = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
-        tfT2, Z2 = numpy.loadtxt(path + "Z2_" + str(nt) + ".dat", unpack=True)
-        for i in range(XX.shape[0]):
-            for j in range(XX.shape[1]):
-                XX[i, j] *= Z2[i]
-                XX_err[i, j] *= Z2[i]
-
-    # write XX and XX_err to file
-    with open(lpd.print_var("write", outputfolder+file_prefix+"_"+args.conftype+".dat"), 'w') as outfile:
-        outfile.write('# bootstrap mean of '+str(n_datafiles)+' measurements of '+args.corr+' correlator for '+args.qcdtype+' '+args.conftype+'\n')
-        outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
-        lpd.write_flow_times(outfile, flow_times)
-        numpy.savetxt(outfile, XX)
-
-    with open(lpd.print_var("write", outputfolder+file_prefix+"_err_"+args.conftype+".dat"), 'w') as outfile:
-        outfile.write('# bootstrap mean err of '+str(n_datafiles)+' measurements of '+args.corr+' correlator '+args.qcdtype+' '+args.conftype+'\n')
-        outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
-        lpd.write_flow_times(outfile, flow_times)
-        numpy.savetxt(outfile, XX_err)
-
-    # for each tau, compute flow correlation matrix.
-    XX_samples = numpy.swapaxes(XX_samples, 0, 2)  # change data structure such that numpy.cov understands it
-    pcov = []
-    for i in range(nt_half):
-        pcov.append(numpy.corrcoef(XX_samples[i]))
-    pcov = numpy.asarray(pcov)
-    numpy.save(lpd.print_var("write", outputfolder + file_prefix + "_flow_cov_" + args.conftype + ".npy"), pcov)
-    print(pcov.shape)
+    resample_and_save_data(reduce_function, XX_data, args.n_samples, n_datafiles, file_prefix, flow_times, args.qcdtype, args.conftype, args.corr, nt, args.BB_renorm, args.nproc, 1)
 
     print("done reducing data for "+args.conftype+" "+args.corr)
 
