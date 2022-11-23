@@ -49,6 +49,7 @@ def main():
                 corr = numpy.loadtxt(args.inputpath+"/"+args.corr+"_pert_latt_" + flow_action + "_" + gauge_action + "_Nt" + str(args.Nt) + ".dat")
                 # for i, tauT in enumerate(tauTs):
                 i = args.tau - 1
+                # TODO divide by flowed cont corr here!!!
                 ax.errorbar(numpy.sqrt(8*flowtimes)/args.Nt, numpy.fabs(corr[:, i]/Gnorm(tauT)), label=gauge_action+", "+flow_action, lw=1, fmt=fmts[counter])
                 counter += 1
             except OSError:
