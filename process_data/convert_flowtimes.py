@@ -43,7 +43,7 @@ def main():
             one_more = False
 
     print(numpy.asarray(flowtimes_output))
-    numpy.savetxt(args.output+"_"+str(args.output_Nt)+".txt", flowtimes_output, fmt='%.9f', newline=' ')
+    numpy.savetxt("flowtimes_"+args.output+"_Nt"+str(int(args.output_Nt))+".txt", flowtimes_output, fmt='%.9f', newline=' ')
 
     return
 
