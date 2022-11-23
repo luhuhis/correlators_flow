@@ -109,14 +109,16 @@ def plot(obs, nfiles, xdata, ydata, errorsleft, errorsright, ax, plots, labels, 
                     factor = 1
                     x = xdata[i] * factor
                     y = pos[i]
-                    ax.errorbar(x, y, xerr=[[errorsleft[i] * factor], [errorsright[i] * factor]], color=colors[i], fmt='x-', fillstyle='none', markersize=5,
-                                mew=0.25, lw=0.8, elinewidth=0.5, capsize=1.2, zorder=-10)
+                    ax.errorbar(x, y, xerr=[[errorsleft[i] * factor], [errorsright[i] * factor]], color=colors[i], fmt='x-', fillstyle='none', markersize=0,
+                                mew=1, lw=1, elinewidth=1, capsize=1.5, zorder=-10)
                     # custom yaxis
-                    ax.set_yticks(pos[0:nfiles])
-                    ax.set_yticklabels(labels)
+                    # TODO fix BB hard code
+                    ax.set_yticks((1.5,*pos[0:nfiles]))
+                    ax.set_yticklabels(("final \n estimate", *labels))
                     # currentxlims = ax.get_xlim()
                     # for i in range(0, int(currentxlims[1])):
                     #     ax.axvline(i, **(lpd.chmap(lpd.verticallinestyle, alpha=0.4)))
+
                 else:
                     factor = (pos[i]/1000)**3
                     x = pos[i]
@@ -125,9 +127,19 @@ def plot(obs, nfiles, xdata, ydata, errorsleft, errorsright, ax, plots, labels, 
                                 mew=0.25, lw=0.8, elinewidth=0.5, capsize=1.2, zorder=-10)
 
         if obs == "kappa" and kappa_swap_axes:
-            ax.axvline(14, **lpd.verticallinestyle)
+            # ax.axvline(14, **lpd.verticallinestyle)
+            # TODO soften hard code
+            # TODO BB undo
+            # ax.text(0.92, 0.5, "AdS/CFT", fontsize=6, ha='right', va='center',transform=ax.transAxes, color='gray', alpha=0.5, rotation='90', zorder=-1000000)
             ax.tick_params(axis='y', which='major', labelsize=6)
-
+            # TODO soften hard code
+            # TODO BB undo
+            # ax.text(-0.02, 0.96, "$ \\rho_\\mathrm{model},\\ \\rho_{UV}, \\frac{\\sqrt{8\\tau_\\mathrm{F}}}{\\tau}$", fontsize=6, ha='right', va='bottom',
+            ax.text(-0.02, 0.96, "$ \\rho_\\mathrm{model}$", fontsize=8, ha='right', va='bottom', transform=ax.transAxes)  # color='black', alpha=1, rotation='0', zorder=-1000000 ,
+            ax.xaxis.set_label_coords(0.8,0.2)
+            # TODO BB undo
+            ax.errorbar(1.06990167321908655, 1.5, xerr=[[0.4257769202921067], [0.4257769202921067]], color='k', fmt='x-', fillstyle='none', markersize=0, mew=1, lw=1, elinewidth=1, capsize=1.5, zorder=-10)
+            # ax.xaxis.set_label_coords(0.9, 0.075)
         if obs == "kappa" and not kappa_swap_axes:
             xpoints = numpy.linspace(0, 500, 100)
             ax.errorbar(xpoints, 14 * (xpoints / 1000) ** 3, fmt='--', color='grey', alpha=0.8)
@@ -224,6 +236,7 @@ def main():
     parser.add_argument('--OmegaByT_UV', type=float, default=-1, help="a dashed vertical line is drawn at this point for the spf plots.")
     parser.add_argument('--legtitle', default="", help="title of legend in spf plots.")
     parser.add_argument('--verbose', action="store_true", help="log debug output")
+    parser.add_argument('--usetex', action="store_true")
 
     args = parser.parse_args()
 
@@ -237,7 +250,9 @@ def main():
     xdata, ydata, errorsleft, errorsright = load_data(args.files, args.obs, args.verbose)
 
     # setup figure
-    figsize = (3 + 3 / 8, 3 + 3 / 8 - 1 / 2.54)
+    # figsize = (3 + 3 / 8, 3 + 3 / 8 - 1 / 2.54)
+    # TODO BB undo
+    figsize = (1.5, 1.5)
     if args.wideaspect:
         figsize = (1.5 * (3 + 3 / 8), 1.5 * (3 + 3 / 8) / 16 * 9)
     if args.xlims:
@@ -248,7 +263,7 @@ def main():
         xlabel = args.xlabel
     if args.ylabel:
         ylabel = args.ylabel
-    fig, ax, plots = lpd.create_figure(figsize=figsize, xlabel=xlabel, ylabel=ylabel, ylabelpos=ylabelpos, xlims=xlims, xlabelpos=(0.5, -0.1), ylims=ylims)
+    fig, ax, plots = lpd.create_figure(figsize=figsize, xlabel=xlabel, ylabel=ylabel, ylabelpos=ylabelpos, xlims=xlims, xlabelpos=(0.5, -0.1), ylims=ylims, UseTex=args.usetex)
 
     plot(args.obs, nfiles, xdata, ydata, errorsleft, errorsright, ax, plots, args.labels, args.PhiUV_file, args.plot_spf_err, args.pos, args.colors, args.Nts, args.kappa_swap_axes, args.OmegaByT_UV, args.legtitle)
 
