@@ -89,15 +89,15 @@ def get_equally_spaced_timeseries(x, y, MC_stepsize):
     return numpy.asarray(x_bin), numpy.asarray(y_bin)
 
 
-def get_start_and_tauint(x, y, min_conf, MC_stepsize, streamid, flowidx, tauidx):
+def get_start_and_tauint(x, y, min_conf, MC_stepsize, streamid, flowidx, tauidx, blocksize, tpickmax_increment):
 
     y = y[:, flowidx, tauidx]
     streamoffset = numpy.argmin(numpy.abs(x-min_conf*MC_stepsize))
     nconftotal = len(x)
-    best_index = streamoffset
+    best_start = streamoffset
     best_nconfeff = 0
     bestvals = [0, 0, 0, 0]
-    stepsize = 100
+    stepsize = blocksize
     for start in range(streamoffset, nconftotal-stepsize, stepsize):
         nconf = nconftotal-start
         diff = 0
@@ -112,24 +112,24 @@ def get_start_and_tauint(x, y, min_conf, MC_stepsize, streamid, flowidx, tauidx)
             tau_int, tau_inte, tau_intbias, itpick = stat.getTauInt(y[start:], nblocks, tpickmax, acoutfileName='acor.d', showPlot=False)
 
             diff = tpickmax-itpick
-            tpickmax += 5
+            tpickmax += tpickmax_increment
 
         nconf_eff = nconf/(tau_int+tau_intbias)  # maximize this quantity
         if nconf_eff > best_nconfeff:
             best_nconfeff = nconf_eff
-            best_index = start
+            best_start = start
             bestvals = [tau_int, tau_inte, tau_intbias, itpick]
             best_too_small = too_small
 
-    print("stream=", streamid, ", nconf=[", int(x[best_index]/MC_stepsize), ",", int(x[-1]/MC_stepsize), "]", " ---> tau_int=", r'{0:.0f}'.format(bestvals[0]), "+-", r'{0:.0f}'.format(bestvals[1]),
+    print("stream=", streamid, ", nconf=[", int(x[best_start]/MC_stepsize), ",", int(x[-1]/MC_stepsize), "]", " ---> tau_int=", r'{0:.0f}'.format(bestvals[0]), "+-", r'{0:.0f}'.format(bestvals[1]),
           " (+", r'{0:.0f}'.format(bestvals[2]), ") at n=", bestvals[3], ", nconfeff=", int(best_nconfeff), sep="", end="")
 
     if best_too_small:
-        print(", WARN: data set too small")
+        print(", WARN: data set too small to find a decrease of tau_int inside the largest possible jackknife block. very small number of blocks (3).")
     else:
         print("")
 
-    return [best_index, tau_int, tau_inte, tau_intbias, itpick]
+    return best_start, tau_int, tau_inte, tau_intbias, itpick
 
 
 def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta):
@@ -149,13 +149,13 @@ def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta
         thisx = x[k]
         thisy = y[k][:, flowidx, dataindex]
 
-        best_index = int(results[k][0])
+        best_start = int(results[k][0])
         bestvals = results[k][1:]
 
         if k in args.show_id:
-            ref = ax.errorbar(thisx[:best_index + 1] / args.MC_stepsize, thisy[:best_index + 1], fmt='-', lw=0.4, fillstyle='full', markersize=2.5, mew=0, alpha=0.25)
-            label = str(k) + ", " + r'{0:.0f}'.format(bestvals[0]) + ", " + str(int(thisx[best_index] / args.MC_stepsize))
-            ax.errorbar(thisx[best_index:] / args.MC_stepsize, thisy[best_index:], fmt='-', lw=0.4, fillstyle='full', markersize=2.5, mew=0, alpha=1,
+            ref = ax.errorbar(thisx[:best_start + 1] / args.MC_stepsize, thisy[:best_start + 1], fmt='-', lw=0.4, fillstyle='full', markersize=2.5, mew=0, alpha=0.25)
+            label = str(k) + ", " + r'{0:.0f}'.format(bestvals[0]) + ", " + str(int(thisx[best_start] / args.MC_stepsize))
+            ax.errorbar(thisx[best_start:] / args.MC_stepsize, thisy[best_start:], fmt='-', lw=0.4, fillstyle='full', markersize=2.5, mew=0, alpha=1,
                         color=ref.lines[0].get_color(), label=label)
 
     legendoptions = dict(edgecolor='none', fancybox=False, facecolor="w", columnspacing=0.1,
@@ -180,6 +180,19 @@ def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta
     matplotlib.pyplot.close(fig)
 
 
+def compute_XX_corr(data):
+    """
+    function for bootstrap routine that computes an XX correlator (with XX=EE or BB) normalized by the polyakov loop. numerator data (i.e. --X--X--) is first index, polyakov loop is second index of data.
+    """
+    nt = data.shape[-1]-1
+    numerator, denominator = numpy.split(data, [nt,], axis=2)
+    numerator_mean = numpy.mean(numerator, axis=0)
+    denominator_mean = numpy.mean(denominator, axis=0)
+    XX = numerator_mean/denominator_mean
+
+    return XX
+
+
 def main():
     parser, requiredNamed = lpd.get_parser()
     requiredNamed.add_argument('--conftype', help='format example: s096t32_b0824900_m002022_m01011', type=str, required=True)
@@ -191,6 +204,12 @@ def main():
     parser.add_argument('--basepath_plot', type=str, default="")
     parser.add_argument('--min_conf', help="ignore data below this conf number. nargs needs to be equal to nstreams.", nargs='*', default=[0,], type=int)
     parser.add_argument('--MC_stepsize', default=10, type=int)
+    parser.add_argument('--blocksize', default=50, type=int, help="iterate over removing i*<blocksize> configurations from the beginning, "
+                                                                   "then estimate tau_int and see if it improves the number of effective configurations.")
+    parser.add_argument('--tpickmax_increment', default=2, type=int, help="if the jackknife bin size (to estimate the tau_int error and bias) is too small, "
+                                                                           "then we never observe a decrease in the tau_int estimate and may underestimate tau_int."
+                                                                           "so we keep increasing the binsize by <tpickmax_increment> and try again until we do.")
+    parser.add_argument('--flowradius', default=0.075, type=float, help="at which flowtime tau_int should be calculated")
     args = parser.parse_args()
 
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
@@ -199,6 +218,8 @@ def main():
     flow_times, n_flow, n_datafiles, n_streams, n_files_per_stream, XX_data, confnums = rd.load_merged_data(args.qcdtype, args.corr, args.conftype, args.basepath, None)
     polyakov_real = XX_data[1]
     numerator_real = XX_data[0]
+
+    # TODO add option to just resample without estimating autocorrelations
     data = numpy.concatenate((numerator_real, polyakov_real), axis=2)
     index_selection = dict(polyakovloop=-1, numerator_at_largest_tau=-2)
     dataindex = index_selection["polyakovloop"]
@@ -209,35 +230,46 @@ def main():
         args.min_conf = [0 for _ in range(n_streams)]
 
     flowradii = numpy.sqrt(8*flow_times)/nt
-    flowidx = numpy.argmin(numpy.abs(flowradii-0.075))  # TODO make this an input
+    flowidx = numpy.argmin(numpy.abs(flowradii-args.flowradius))
 
     # separate data into streams
     x_eq_spaced_array = []
     y_eq_spaced_array = []
     results = []
     offset = 0
+
+    y_binned = []
+
     for k in range(n_streams):
         x = numpy.asarray(confnums[k])
         y = data[offset:offset + n_files_per_stream[k]]
         offset += n_files_per_stream[k]
 
-        x_bin, y_bin = get_equally_spaced_timeseries(x, y, args.MC_stepsize)
-        x_eq_spaced_array.append(x_bin)
-        y_eq_spaced_array.append(y_bin)
-        results.append(get_start_and_tauint(x_bin, y_bin, args.min_conf[k], args.MC_stepsize, k, flowidx, dataindex))
+        x_eq_spaced, y_eq_spaced = get_equally_spaced_timeseries(x, y, args.MC_stepsize)
+        x_eq_spaced_array.append(x_eq_spaced)
+        y_eq_spaced_array.append(y_eq_spaced)
+        best_start, tau_int, tau_inte, tau_intbias, itpick = get_start_and_tauint(x_eq_spaced, y_eq_spaced, args.min_conf[k], args.MC_stepsize, k, flowidx, dataindex, args.blocksize, args.tpickmax_increment)
+        results.append([best_start, tau_int, tau_inte, tau_intbias, itpick])
+
+        # reverse order
+        y_eq_spaced = numpy.flip(y_eq_spaced, axis=0)
+
+        # bin data
+        ndata = len(y_eq_spaced)-best_start
+        binlength = int(2*numpy.ceil(tau_int+tau_intbias))
+        nbins = int(ndata/binlength)
+        for b in range(nbins):
+            y_binned.append(numpy.mean(y_eq_spaced[b*binlength:(b+1)*binlength], axis=0))
+
+    y_binned = numpy.asarray(y_binned)
+    print(args.conftype, "reduced ", n_datafiles, "to ", len(y_binned))
 
     plot_MC_time(x_eq_spaced_array, y_eq_spaced_array, flowidx, dataindex, results, args, flow_times[flowidx], nt, ns, beta)
 
-    # ACTUALLY BIN DATA BASED ON THE RESULTS
+    outputfolder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype, args.basepath)
+    rd.resample_and_save_data(compute_XX_corr, y_binned, 1000, len(y_binned), outputfolder+"/"+args.corr, flow_times, args.qcdtype, args.conftype, args.corr, nt, False, 20, 0)
 
-    # TODO combine all streams to one again
-    newdata = numpy.concatenate([*y_eq_spaced_array])
-
-    # TODO resample binned data and save it
-
-    # TODO add plot that looks at binsize
-
-    print("done", args.conftype, newdata.shape)
+    print("done", args.conftype)
 
 
 if __name__ == '__main__':
