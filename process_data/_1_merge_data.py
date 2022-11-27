@@ -14,7 +14,7 @@ def main():
     parser.add_argument('--acc_sts', help="accuracy and stepsize. format: acc0.000010_sts0.000010")
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     parser.add_argument('--basepath', help="override default base input path with this one", type=str)
-    parser.add_argument('--legacy', help="use legacy file names and legacy multiplicity factor of -3", action="store_true")
+    parser.add_argument('--legacy', help="use legacy file names and legacy multiplicity factor", action="store_true")
     parser.add_argument('--excess_workaround', help="ignore additional flow times at the end of later files", action="store_true")
     parser.add_argument('--reference_flowradii', default=None, type=str,
                         help="only consider flowradii contained in this file. "
@@ -62,7 +62,7 @@ def main():
     streamids = []
 
     full_prefix = flow_prefix+XX_label
-    print("searching for files named "+inputfolder+full_prefix+"*")
+    print("searching in subfolders of "+inputfolder + "   for  ", full_prefix+"*")
 
     # read in data from many files
     shape = (0, 0)
