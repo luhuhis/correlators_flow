@@ -48,28 +48,28 @@ def get_equally_spaced_timeseries(x, y, MC_stepsize):
             y_bin.append(y[i])
             i += 1
         elif diff > MC_stepsize and xi_is_multiple_of_stepsize and diff_is_multiple_of_stepsize:
-            print(x[i], "WARNa: diff greater args.MC_stepsize:", diff, end=", ")
+            print(x[i], "WARNa: diff greater MC_stepsize:", diff, end=", ")
             nconfs_missing = int(diff / MC_stepsize) - 1
             for j in range(1, nconfs_missing + 1):
                 myapp(x_bin, x[i] + j * MC_stepsize)
                 y_bin.append((y[i + 1] + y[i]) / 2)
             i += 1
         elif diff > MC_stepsize and not xi_is_multiple_of_stepsize and diff_is_multiple_of_stepsize:
-            print("WARNb: diff greater args.MC_stepsize:", diff, end=", ")
+            print("WARNb: diff greater MC_stepsize:", diff, end=", ")
             nconfs_missing = int(diff / MC_stepsize)
             for j in range(1, nconfs_missing + 1):
                 myapp(x_bin, x[i] + half_MC_stepsize + (j - 1) * MC_stepsize)
                 y_bin.append((y[i + 1] + y[i]) / 2)
             i += 1
         elif diff > MC_stepsize and not xi_is_multiple_of_stepsize and not diff_is_multiple_of_stepsize:
-            print("WARNc: diff greater args.MC_stepsize:", diff, end=", ")
+            print("WARNc: diff greater MC_stepsize:", diff, end=", ")
             nconfs_missing = diff // MC_stepsize
             for j in range(1, nconfs_missing + 1):
                 myapp(x_bin, x[i] + half_MC_stepsize + (j - 1) * MC_stepsize)
                 y_bin.append((y[i + 1] + y[i]) / 2)
             i += 1
         elif diff > MC_stepsize and xi_is_multiple_of_stepsize and not diff_is_multiple_of_stepsize:
-            print("WARNd: diff greater args.MC_stepsize:", diff, end=", ")
+            print("WARNd: diff greater MC_stepsize:", diff, end=", ")
             nconfs_missing = diff // MC_stepsize
             myapp(x_bin, x[i])
             y_bin.append(y[i])
@@ -81,7 +81,7 @@ def get_equally_spaced_timeseries(x, y, MC_stepsize):
             print("WARN: There is a large gap in the time series! x[i]=", x[i], ", x_bin[i-1]=", x_bin[-1], sep="")
             i += 1
         else:
-            print("skipping", x[i], "diff=", diff, end=", ")
+            print("skipping ", x[i], ", diff=", diff, sep="", end=", ")
             i += 1
 
     # don't forget the last entry
@@ -91,8 +91,8 @@ def get_equally_spaced_timeseries(x, y, MC_stepsize):
     print("")
 
     if x_bin[-1] - x_bin[0] != (len(x_bin) - 1) * MC_stepsize:
-        print("ERROR: something went wrong when filtering the data, the MC time stepsize is not constant=args.MC_stepsize:")
-        print("x_bin[-1]-x_bin[0]=", x_bin[-1] - x_bin[0], "but (len(x_bin)-1)*args.MC_stepsize=", (len(x_bin) - 1) * MC_stepsize)
+        print("ERROR: something went wrong when filtering the data, the MC time stepsize is not constant=MC_stepsize:")
+        print("x_bin[-1]-x_bin[0]=", x_bin[-1] - x_bin[0], "but (len(x_bin)-1)*MC_stepsize=", (len(x_bin) - 1) * MC_stepsize)
 
     return numpy.asarray(x_bin), numpy.asarray(y_bin)
 
@@ -100,14 +100,13 @@ def get_equally_spaced_timeseries(x, y, MC_stepsize):
 def get_start_and_tauint(x, y, min_conf, MC_stepsize, streamid, flowidx, tauidx, blocksize, tpickmax_increment, include_bias):
 
     y = y[:, flowidx, tauidx]
-    streamoffset = numpy.argmin(numpy.abs(x-min_conf*MC_stepsize))
-    nconftotal = len(x)
-    best_start = streamoffset
+    index_offset = numpy.argmin(numpy.abs(x-min_conf*MC_stepsize))
+    index_max = len(x)
+    best_start_index = index_offset
     best_nconfeff = 0
     bestvals = [0, 0, 0, 0]
-    stepsize = blocksize
-    for start in range(streamoffset, nconftotal-stepsize, stepsize):
-        nconf = nconftotal-start
+    for index_start in range(index_offset, index_max-blocksize, blocksize):
+        nconf = index_max-index_start
         diff = 0
         tpickmax = 10
         too_small = False
@@ -117,7 +116,7 @@ def get_start_and_tauint(x, y, min_conf, MC_stepsize, streamid, flowidx, tauidx,
                 too_small = True
                 break
 
-            tau_int, tau_inte, tau_intbias, itpick = stat.getTauInt(y[start:], nblocks, tpickmax, acoutfileName='acor.d', showPlot=False)
+            tau_int, tau_inte, tau_intbias, itpick = stat.getTauInt(y[index_start:], nblocks, tpickmax, acoutfileName='acor.d', showPlot=False)
 
             diff = tpickmax-itpick
             tpickmax += tpickmax_increment
@@ -128,23 +127,24 @@ def get_start_and_tauint(x, y, min_conf, MC_stepsize, streamid, flowidx, tauidx,
             # don't use if you know that your time series is already stationary.
             nconf_eff = nconf/(tau_int+tau_intbias)
         else:
-            nconf_eff = nconf / (tau_int)
+            nconf_eff = nconf / tau_int
 
         if nconf_eff > best_nconfeff:
             best_nconfeff = nconf_eff
-            best_start = start
+            best_start_index = index_start
             bestvals = [tau_int, tau_inte, tau_intbias, itpick]
             best_too_small = too_small
 
-    print("stream=", streamid, ", nconf=[", int(x[best_start]/MC_stepsize), ",", int(x[-1]/MC_stepsize), "]", " ---> tau_int=", r'{0:.0f}'.format(bestvals[0]), "+-", r'{0:.0f}'.format(bestvals[1]),
-          " (+", r'{0:.0f}'.format(bestvals[2]), ") at n=", bestvals[3], ", nconfeff=", int(len(x[best_start:])/bestvals[0]), sep="", end="")
+    print(*bestvals)
+    print("stream=", streamid, ", nconf=[", int(x[best_start_index]/MC_stepsize), ",", int(x[-1]/MC_stepsize), "]", " ---> tau_int=", r'{0:.0f}'.format(bestvals[0]), "+-", r'{0:.0f}'.format(bestvals[1]),
+          " (+", r'{0:.0f}'.format(bestvals[2]), ") at n=", bestvals[3], ", nconfeff=", int((index_max-best_start_index)/bestvals[0]), sep="", end="")
 
     if best_too_small:
         print(", WARN: data set too small to find a decrease of tau_int inside the largest possible jackknife block. very small number of blocks (3).")
     else:
         print("")
 
-    return best_start, tau_int, tau_inte, tau_intbias, itpick
+    return best_start_index, tau_int, tau_inte, tau_intbias, itpick
 
 
 def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta):
