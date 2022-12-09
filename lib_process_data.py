@@ -4,7 +4,7 @@ import math
 import argparse
 from collections import ChainMap
 import matplotlib
-from matplotlib import pyplot, cm, container, legend_handler
+from matplotlib import pyplot, container, legend_handler
 import sys
 import scipy.interpolate
 import concurrent.futures
@@ -140,8 +140,21 @@ def get_tauTs(nt):
     # return tauT_improved[nt] #tree-level improved tauT for XX correlators
 
 
-def EE_cont_LO(tauT):
-    return math.pi ** 2 * (math.cos(math.pi * tauT) ** 2 / math.sin(math.pi * tauT) ** 4 + 1 / (3 * math.sin(math.pi * tauT) ** 2))
+def EE_cont_LO(tauT, flowradius=0):
+    EE_cont_zeroflow = math.pi ** 2 * (math.cos(math.pi * tauT) ** 2 / math.sin(math.pi * tauT) ** 4 + 1 / (3 * math.sin(math.pi * tauT) ** 2))
+    if numpy.isscalar(flowradius) and flowradius == 0:
+        return EE_cont_zeroflow
+    else:
+        flowradius = numpy.asarray(flowradius)
+        tmpsum = 0
+        with numpy.errstate(divide='ignore', invalid='ignore'):  # supress divide by 0 warnings.
+            for m in range(-4, 5):
+                tmpsum += 1/(tauT+m)**4 * ((tauT+m)**4/flowradius**4 + (tauT+m)**2/flowradius**2 + 1) * numpy.exp(-((tauT+m)**2/flowradius**2))
+            answer = numpy.asarray(-(1/numpy.pi**2) * tmpsum + EE_cont_zeroflow)
+        # fix flowradius=0 entries
+        indices = numpy.where(flowradius == 0)
+        answer[indices] = EE_cont_zeroflow
+        return answer
 
 
 G_latt_LO_flow_storage = {}
@@ -180,11 +193,11 @@ def G_latt_LO_flow(tau_index: int, flowtime, corr: str, Nt: int, flowaction: str
     return this_int(flowtime)
 
 
-def lower_tauT_limit_(flowradius, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=1/20):  # note: sqrt(8*0.014) ~= 0.33
+def lower_tauT_limit_(flowradius, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=0):  # note: sqrt(8*0.014) ~= 0.33
     return flowradius/max_FlowradiusBytauT + tauT_offset
 
 
-def upper_flowradius_limit_(tauT, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=1/20):  # note: sqrt(8*0.014) ~= 0.33
+def upper_flowradius_limit_(tauT, max_FlowradiusBytauT=numpy.sqrt(8*0.014), tauT_offset=0):  # note: sqrt(8*0.014) ~= 0.33
     return (tauT - tauT_offset) * max_FlowradiusBytauT
 
 
@@ -208,51 +221,63 @@ def get_color2(myarray, i, start=0, end=-1):
     return matplotlib.cm.viridis((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * 0.9)
 
 
-# styles
-fontsize = 10
-mylinewidth = 0.5
-figurestyle = dict(bbox_inches="tight", pad_inches=0)
-plotstyle_data = dict(fmt='x', linewidth=0.9, markersize=0, capsize=0.9, mew=0.9, fillstyle='none')
-plotstyle_points = dict(fmt='D-', linewidth=1, markersize=4, capsize=2, mew=0.5, fillstyle='none')
-plotstyle_lines = dict(fmt='-', linewidth=0.5, mew=0.25, mec='grey', markersize=2, capsize=3)
-plotstyle_add_point = dict(fmt='D-', fillstyle='none', markersize=5, mew=0.25, lw=0.5, elinewidth=0.25, capsize=1.2)
-plotstyle_add_point_single = plotstyle_add_point
-plotstyle_add_point_single.update(dict(fmt='D'))
-labelboxstyle = dict(boxstyle="Round", fc="w", ec="None", alpha=0.9, pad=0.1, zorder=99)
-legendstyle = dict(loc="center left", bbox_to_anchor=(1, 0.5), frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, facecolor="w", columnspacing=0.1,
-                   labelspacing=0.1, borderpad=0.1, handletextpad=0.4, handlelength=1,
-                   handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=1, yerr_size=0.3)})
-plotstyle_fill = dict(linewidth=0.5)
-xlabelstyle = dict(bbox=labelboxstyle, zorder=-1, fontsize=fontsize)  # horizontalalignment='right', verticalalignment='bottom', bbox=labelboxstyle)
-ylabelstyle = dict(bbox=labelboxstyle, horizontalalignment='left', verticalalignment='top', rotation=0,
-                   zorder=-1, fontsize=fontsize)  # horizontalalignment='right', , rotation=0, bbox=labelboxstyle)
-titlestyle = dict(x=0.5, y=0.9, bbox=labelboxstyle, verticalalignment='top', zorder=99, fontsize=10)
-verticallinestyle = dict(ymin=0, ymax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4), lw=0.5)
-horizontallinestyle = dict(xmin=0, xmax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4), lw=0.5)
-flowlimitplotstyle = dict(fmt='|', mew=0.7, markersize=5)
+def leg_err_size(x=1, y=0.3):
+    return dict(handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=x, yerr_size=y)})
 
+
+labelboxstyle = dict(boxstyle="Round", fc="w", ec="None", alpha=0.9, pad=0.1, zorder=99)
+verticallinestyle = dict(ymin=0, ymax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4))
+horizontallinestyle = dict(color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4))  # xmin=0, xmax=1,z
 markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8',
            'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P',
            '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
-
-linewidth = 0.75
+linewidth = 1.5
+axeslinewidth = 0.5
+plot_fontsize = 11
 
 
 def set_rc_params():
-    matplotlib.pyplot.rc('font', family='cmr10', size=fontsize)
+    matplotlib.pyplot.rc('font', family='cmr10', size=plot_fontsize)
+    matplotlib.pyplot.rc('axes', unicode_minus=False)
     matplotlib.rcParams['mathtext.fontset'] = 'cm'
-    matplotlib.rcParams['axes.linewidth'] = linewidth
+    matplotlib.rcParams['figure.constrained_layout.use'] = True
+    matplotlib.rcParams['axes.titlesize'] = plot_fontsize
+    matplotlib.rcParams['axes.linewidth'] = axeslinewidth
+    matplotlib.rcParams['lines.linewidth'] = linewidth
+    matplotlib.rcParams['lines.markeredgewidth'] = linewidth
+    matplotlib.rcParams['errorbar.capsize'] = 2*linewidth
+    matplotlib.rcParams['legend.handlelength'] = 0.2
+    matplotlib.rcParams['legend.frameon'] = True
+    matplotlib.rcParams['legend.framealpha'] = 0.8
+    matplotlib.rcParams['legend.edgecolor'] = 'none'
+    matplotlib.rcParams['legend.fancybox'] = False
+    matplotlib.rcParams['legend.facecolor'] = 'w'
+    matplotlib.rcParams['legend.labelspacing'] = 0.1
+    matplotlib.rcParams['legend.columnspacing'] = 0.1
+    matplotlib.rcParams['legend.borderpad'] = 0.1
+    matplotlib.rcParams['legend.handletextpad'] = 0.4
+    matplotlib.rcParams['legend.fontsize'] = plot_fontsize
+    matplotlib.rcParams['legend.title_fontsize'] = plot_fontsize
 
 
-def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99, 0.03), ylabelpos=(0.01, 0.97), tickpad=1,
-                  figsize=(3, 2.5), UseTex=True, fig=None, subplot=111, no_ax=False, constrained_layout=True):
+def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98, 0.01), ylabelpos=(0.01, 0.98), tickpad=1,
+                  figsize=(7, 7), UseTex=True, fig=None, subplot=111, no_ax=False, constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle):
+
     set_rc_params()
     if UseTex:
         matplotlib.pyplot.rc('text', usetex=True)
         matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
 
+    if figsize == "fullwidth":
+        figsize = (15, 7)
+    if figsize == "fullwidth_slim":
+        figsize = (15, 5)
+    if figsize == "wide":
+        figsize = (10.875, 7)  # 3/4 of the width
+
     if fig is None:
-        fig = matplotlib.pyplot.figure(figsize=figsize, constrained_layout=constrained_layout)
+        fig = matplotlib.pyplot.figure(figsize=[val*1/2.54 for val in figsize], constrained_layout=constrained_layout)
+        fig.set_constrained_layout_pads(w_pad=0.01*1/2.54, h_pad=0.01*1/2.54)  # set 0.1mm (instead of 0) padding to not clip any axes lines.
     if not no_ax:
         ax = fig.add_subplot(subplot)
         if xlabelpos is not None:
@@ -260,15 +285,13 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.99,
         if ylabelpos is not None:
             ax.yaxis.set_label_coords(*ylabelpos)
         ax.minorticks_off()
-        ax.tick_params(pad=tickpad, width=linewidth, direction="out")  # direction='in',
-        ax.xaxis.set_ticks_position('both')
-        ax.yaxis.set_ticks_position('both')
+        ax.tick_params(pad=tickpad, width=axeslinewidth, direction="out")
         if xlims is not None:
             ax.set_xlim(xlims)
         if ylims is not None:
             ax.set_ylim(ylims)
-        ax.set_xlabel(xlabel, **xlabelstyle, horizontalalignment='right', verticalalignment='bottom')
-        ax.set_ylabel(ylabel, **ylabelstyle)
+        ax.set_xlabel(xlabel, horizontalalignment='right', verticalalignment='bottom', bbox=xlabelbox)
+        ax.set_ylabel(ylabel, horizontalalignment='left', verticalalignment='top', rotation=0, bbox=ylabelbox)
     else:
         ax = None
     plots = []
@@ -291,11 +314,18 @@ class ComputationClass:
 
     def parallelization_wrapper(self):
         results = []
+        single_return_value = False
         with concurrent.futures.ProcessPoolExecutor(max_workers=self._nproc) as executor:
             for result in executor.map(self.pass_argument_wrapper, self._input_array):
-                results.append(list(result))
-        results = list(map(list, zip(*results)))  # "transpose" the list to allow for multiple return values like a normal function.
-        return results
+                if type(result) is tuple:
+                    results.append(list(result))
+                else:
+                    results.append(result)
+                    single_return_value = True
+        if single_return_value:
+            return results
+        else:
+            return list(map(list, zip(*results)))  # "transpose" the list to allow for multiple return values like a normal function.
 
     def pass_argument_wrapper(self, single_input):
         return self._function(single_input, *self._add_param)
@@ -308,6 +338,22 @@ class ComputationClass:
 def parallel_function_eval(function, input_array, nproc, *add_param):
     computer = ComputationClass(function, input_array, nproc, *add_param)
     return computer.getResult()
+
+
+def serial_function_eval(function, input_array, *add_param):
+    results = []
+    single_return_value = False
+    for i in input_array:
+        result = function(i, *add_param)
+        if type(result) is tuple:
+            results.append(list(result))
+        else:
+            results.append(result)
+            single_return_value = True
+    if single_return_value:
+        return results
+    else:
+        return list(map(list, zip(*results)))
 
 
 def dev_by_dist(data, axis=0, return_both_q=False, percentile=68):
@@ -328,5 +374,5 @@ def dev_by_dist(data, axis=0, return_both_q=False, percentile=68):
 
 
 def print_var(prefix, var):
-    print(prefix, var)
+    # print(prefix, var)
     return var
