@@ -1,4 +1,5 @@
-#!/usr/local/bin/python3.7 -u
+#!/usr/bin/env python3
+
 import lib_process_data as lpd
 import numpy
 import argparse
@@ -7,34 +8,27 @@ import argparse
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--test')
+    parser.add_argument('--outputfolder', default="/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/")
     args = parser.parse_args()
 
-    inputfolder = "/work/home/altenkort/2piTD/"
-    outputfolder = "/work/home/altenkort/2piTD/"
-
+    # TODO make this an input
     EE = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr.txt", unpack=True)
     BB = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr.txt", unpack=True)
 
-    plotstyle = dict(fmt='.', linewidth=1, markersize=0, capsize=2, mew=1, fillstyle='none')
+    plotstyle = dict(fmt='.', markersize=0, fillstyle='none')
 
-    fig, ax, plots = lpd.create_figure(xlims=(0.2,0.51), ylims=(2.5, 4), xlabel=r'$\tau T$', xlabelpos=(0.9,0.08), ylabel=r'', ylabelpos=(0.1,0.9), UseTex=True,
-                                       figsize=(2.75,2.5))
+    fig, ax, plots = lpd.create_figure(xlims=(0.2, 0.51), ylims=(2.5, 4.1), xlabel=r'$\tau T$', ylabel=r'')
 
-    ax.errorbar(EE[0], EE[1], EE[2], **plotstyle, label=r'$\displaystyle {G_E}/{G^\mathrm{norm}}$', color="k")
     ax.errorbar(BB[0], BB[1], BB[2], **plotstyle, label=r'$\displaystyle  {(G_B/Z^2_K)}/{G^\mathrm{norm}}$', color="C1")
+    ax.errorbar(EE[0], EE[1], EE[2], **plotstyle, label=r'$\displaystyle {G_E}/{G^\mathrm{norm}}$', color="k")
 
-    lpd.legendstyle.update(loc="upper left", bbox_to_anchor=(0, 1), fontsize=8, framealpha=0)
+    ax.legend(loc="upper left", bbox_to_anchor=(0, 1), **lpd.leg_err_size())
 
-    leg = ax.legend(**lpd.legendstyle)
+    # ax.text(0.85, 0.95, 'preliminary', transform=ax.transAxes,
+    #         fontsize=8, color='C1', alpha=1,
+    #         ha='center', va='top', rotation='0', zorder=-1000000)
 
-    ax.tick_params(axis='y', direction='out')
-
-    ax.text(0.85, 0.95, 'preliminary', transform=ax.transAxes,
-            fontsize=8, color='C1', alpha=1,
-            ha='center', va='top', rotation='0', zorder=-1000000)
-
-    filename = outputfolder + "/EEvsBB.pdf"
+    filename = args.outputfolder + "/EEvsBB.pdf"
     fig.savefig(filename)
     print("saved correlator plot", filename)
 

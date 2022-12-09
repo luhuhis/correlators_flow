@@ -52,7 +52,7 @@ def main():
                 flowradiitimesT = numpy.sqrt(8*flowtimes)/args.Nt
                 x = numpy.sqrt(8*flowtimes)/args.tau
                 if args.exp:
-                    y = numpy.exp(corr[:, i]) / numpy.exp(lpd.EE_cont_LO(tauT, flowradiitimesT))
+                    y = (numpy.exp(corr[:, i]) / numpy.exp(lpd.EE_cont_LO(tauT, flowradiitimesT)))
                 else:
                     y = (corr[:, i])/(lpd.EE_cont_LO(tauT, flowradiitimesT))
                 ax.errorbar(x, y, label=gauge_action+", "+flow_action, fmt=fmts[counter])
@@ -64,11 +64,11 @@ def main():
     ax.set_title(args.corr + ", $\\tau/a = "+str(args.tau)+"$")
     ax.axhline(y=1, **lpd.horizontallinestyle)
     ax.axvline(x=0.33, **lpd.verticallinestyle)
-    ax.legend(title="$S_\\mathrm{gauge}, S_\\mathrm{flow}$", **lpd.legendstyle)
+    ax.legend(title="$S_\\mathrm{gauge}, S_\\mathrm{flow}$")
     add_suffix = ""
     if args.exp:
         add_suffix = "_exp"
-    fig.savefig(args.outputpath + "/pert_latt_comparison_"+ args.corr + "_" + "Nt" + str(args.Nt) + "_" + str(args.tau) + add_suffix + ".pdf")
+    fig.savefig(args.outputpath + "/pert_latt_comparison_" + args.corr + "_" + "Nt" + str(args.Nt) + "_" + str(args.tau) + add_suffix + ".pdf")
 
 
 if __name__ == '__main__':

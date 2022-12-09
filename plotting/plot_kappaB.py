@@ -1,22 +1,17 @@
-#!/usr/local/bin/python3.7 -u
+#!/usr/bin/env python3
 import lib_process_data as lpd
-import numpy
 import argparse
 
 
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--test')
+    parser.add_argument('--outputfolder', type=str, required=True)
     args = parser.parse_args()
 
-    inputfolder = "/work/home/altenkort/2piTD/"
-    outputfolder = "/work/home/altenkort/2piTD/"
+    plotstyle = dict(fmt='.', markersize=0)
 
-    plotstyle = dict(fmt='.', linewidth=1, markersize=0, capsize=2, mew=1, fillstyle='none')
-
-    fig, ax, plots = lpd.create_figure(xlims=(1,2.5), ylims=(0, 3.5), xlabel=r'$T/T_c$', xlabelpos=(0.9,0.08), ylabel=r'', ylabelpos=(0.1,0.9), UseTex=True,
-                                       figsize=(2.75,2.5))
+    fig, ax, plots = lpd.create_figure(xlims=(1, 2.5), ylims=(0, 3.5), xlabel=r'$T/T_c$', xlabelpos=(0.9, 0.08), ylabel=r'', ylabelpos=(0.1, 0.9))
 
     banerjee = [[1.2, 1.8, 0.8], [1.5, 1.55, 0.55], [2.0, 1.2, 0.6]]
 
@@ -30,17 +25,13 @@ def main():
     ax.errorbar(altenkort[0], altenkort[1], altenkort[2], **plotstyle, color='C1',
                  label=r'$\kappa_B/(T^3Z_K^2)$, \textbf{Altenkort et al.}')
 
-    lpd.legendstyle.update(loc="upper left", bbox_to_anchor=(0, 1), fontsize=8, framealpha=0)
+    ax.legend(loc="upper left", bbox_to_anchor=(0, 1))
 
-    leg = ax.legend(**lpd.legendstyle)
+    # ax.text(0.5/1.5, 0.1, 'preliminary', transform=ax.transAxes,
+    #         fontsize=8, color='C1', alpha=1,
+    #         ha='center', va='center', rotation='0', zorder=-1000000)
 
-    ax.tick_params(axis='y', direction='out')
-
-    ax.text(0.5/1.5, 0.1, 'preliminary', transform=ax.transAxes,
-            fontsize=8, color='C1', alpha=1,
-            ha='center', va='center', rotation='0', zorder=-1000000)
-
-    filename = outputfolder + "/kappa_B.pdf"
+    filename = args.outputfolder + "/kappa_B.pdf"
     fig.savefig(filename)
     print("saved correlator plot", filename)
 

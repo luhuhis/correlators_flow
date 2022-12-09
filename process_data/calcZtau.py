@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7 -u
+#!/usr/bin/env python3
 import numpy
 from scipy import integrate
 import lib_process_data as lpd
@@ -41,7 +41,7 @@ def main():
     for i, Nt in enumerate(Nts):
         ax.errorbar(tauFT2_arr[i], integrand_arr[i], integrand_err_arr[i], fmt='x-', lw=0.5, markersize=2, mew=0.3, capsize=1, label=str(Nt), zorder=-Nt)
     ax.axvline(x=lowtauFT2, **lpd.verticallinestyle)
-    ax.legend(**lpd.legendstyle, title=r'$N_\tau$')
+    ax.legend(title=r'$N_\tau$')
     fig.savefig(outputpath+"integrand.pdf")
 
     Z2_arr = []
@@ -85,7 +85,7 @@ def main():
         ax2.errorbar(x_arr[i], Z2_arr[i], fmt='x-', lw=0.5, markersize=2, mew=0.3, capsize=1, label=labeldict[Nt], zorder=-Nt)
     ax2.axvline(x=lowtauFT2, **lpd.verticallinestyle)
     ax2.axhline(y=1, **lpd.horizontallinestyle)
-    ax2.legend(**lpd.legendstyle, title=r'$\beta$')
+    ax2.legend(title=r'$\beta$')
     fig2.savefig(outputpath+"Zf2.pdf")
 
 

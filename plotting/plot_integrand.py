@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7m -u
+#!/usr/bin/env python3
 
 import lib_process_data as lpd
 import numpy
@@ -11,11 +11,6 @@ def Kernel(OmegaByT, tauT):
     return numpy.cosh(OmegaByT / 2 - OmegaByT * tauT) / numpy.sinh(OmegaByT / 2)
 
 
-def Gnorm(tauT):
-    norm = numpy.pi ** 2 * (numpy.cos(numpy.pi * tauT) ** 2 / numpy.sin(numpy.pi * tauT) ** 4 + 1 / (3 * numpy.sin(numpy.pi * tauT) ** 2))
-    return norm
-
-
 def main():
 
     parser = argparse.ArgumentParser()
@@ -23,12 +18,11 @@ def main():
     parser.add_argument('--PathPhiUV', type=str, required=True)
     args = parser.parse_args()
 
-    fig, ax, _ = lpd.create_figure(figsize=(1*(3 + 3 / 8), (3 + 3 / 8 - 1 / 2.54)), ylims=[0.1, 500], xlims=[0, 40],
-                                   xlabel="$\\omega/T$", ylabel="$\\rho(\\omega) K(\\omega, \\tau) / T^2$", UseTex=False,
-                                   xlabelpos=[0.95, 0.07], ylabelpos=[0.03, 0.97])
+    fig, ax, _ = lpd.create_figure(ylims=[0.1, 500], xlims=[0, 45],
+                                   xlabel="$\\omega/T$", ylabel="$\\rho(\\omega) K(\\omega, \\tau) / T^2$")
+
 
     #ylims=[0.001, 100], xlims=[0.1, 100]
-
     PhiUV = numpy.loadtxt(args.PathPhiUV)
     PhiUV = PhiUV[:, 0:2]
     PhiuvByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[:, 0], PhiUV[:, 1], k=3, ext=2)
@@ -52,7 +46,9 @@ def main():
     #     ax.errorbar(tauTs, corr, fmt='-', label=str(maxomega), lw=0.5)
     #     # ax.errorbar(tauTs, Gnorm(tauTs), fmt='-', label="corr2", lw=0.5)
 
-    ax.legend(title="$\\frac{\\tau/a}{N_\\tau}=\\tau T$", **lpd.chmap(lpd.legendstyle, loc='upper right', bbox_to_anchor=(1, 0.84)))
+    #\\frac{\\tau/a}{N_\\tau}=
+
+    ax.legend(title="$\\tau T$", loc='upper right', bbox_to_anchor=(1, 0.84), handlelength=1)
 
     # ax.axvline(x=numpy.pi, **lpd.verticallinestyle)
 
