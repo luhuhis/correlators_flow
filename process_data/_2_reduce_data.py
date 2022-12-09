@@ -6,7 +6,7 @@ from latqcdtools.statistics import bootstr
 
 
 # TODO incorporate here how the data should be binned?
-def load_merged_data(qcdtype, corr, conftype, basepath, n_discard_per_stream):
+def load_merged_data(qcdtype, corr, conftype, basepath, n_discard_per_stream=None, only_metadata=False):
     """
     load and reorganize data
 
@@ -24,7 +24,7 @@ def load_merged_data(qcdtype, corr, conftype, basepath, n_discard_per_stream):
     metadata = numpy.loadtxt(lpd.print_var("read", inputfolder + "n_datafiles_" + conftype + ".dat"))
     n_datafiles, n_streams = [int(i) for i in metadata[0:2]]
     if n_discard_per_stream is None:
-        # TODO print("INFO: setting n_discard_per_stream to 0 for all streams")
+        print("INFO: setting n_discard_per_stream to 0 for all streams")
         n_discard_per_stream = [0 for _ in range(n_streams)]
 
     n_files_per_stream = [int(i) for i in metadata[2:2+n_streams]]
@@ -39,24 +39,28 @@ def load_merged_data(qcdtype, corr, conftype, basepath, n_discard_per_stream):
         print("ERROR: n_streams=", n_streams, "but len(n_discard_per_stream)=", len(n_discard_per_stream), "(should be equal)")
         exit(1)
 
-    XX_numerator_real_tmp = numpy.load(lpd.print_var("read", inputfolder+corr+"_real_"+conftype+"_merged.npy"))
-    polyakov_real_tmp = numpy.load(lpd.print_var("read", inputfolder + "polyakov_real_" + conftype + "_merged.npy"))
+    if not only_metadata:
+        XX_numerator_real_tmp = numpy.load(lpd.print_var("read", inputfolder+corr+"_real_"+conftype+"_merged.npy"))
+        polyakov_real_tmp = numpy.load(lpd.print_var("read", inputfolder + "polyakov_real_" + conftype + "_merged.npy"))
 
-    # discard data that is not thermalized
-    slices = []
-    counter_up = 0
-    counter_dn = n_discard_per_stream[0]
-    for i in range(len(n_files_per_stream)):
-        if i > 0:
-            counter_dn = counter_up + n_discard_per_stream[i]
-        counter_up += n_files_per_stream[i]
-        slices.append(slice(counter_dn, counter_up))
+        # discard data that is not thermalized
+        slices = []
+        counter_up = 0
+        counter_dn = n_discard_per_stream[0]
+        for i in range(len(n_files_per_stream)):
+            if i > 0:
+                counter_dn = counter_up + n_discard_per_stream[i]
+            counter_up += n_files_per_stream[i]
+            slices.append(slice(counter_dn, counter_up))
 
-    XX_numerator_real = numpy.concatenate([XX_numerator_real_tmp[thisslice] for thisslice in slices])
-    polyakov_real = numpy.expand_dims(numpy.concatenate([polyakov_real_tmp[thisslice] for thisslice in slices]), axis=2)
+        XX_numerator_real = numpy.concatenate([XX_numerator_real_tmp[thisslice] for thisslice in slices])
+        polyakov_real = numpy.expand_dims(numpy.concatenate([polyakov_real_tmp[thisslice] for thisslice in slices]), axis=2)
+        XX_data = (XX_numerator_real, polyakov_real)
+    else:
+        XX_data = None
 
     print("readin done")
-    XX_data = (XX_numerator_real, polyakov_real)
+
 
     return flow_times, n_flow, n_datafiles, n_streams, n_files_per_stream, XX_data, confnums
 
@@ -66,7 +70,7 @@ def compute_XX_corr(data):
     function for bootstrap routine that computes an XX correlator (with XX=EE or BB) normalized by the polyakov loop. numerator data (i.e. --X--X--) is first index, polyakov loop is second index of data.
     """
     numerator_mean = numpy.mean(data[0], axis=0)
-    denominator_mean = numpy.mean(data[1], axis=0)
+    denominator_mean = numpy.mean(data[1], axis=0)  # median?
     XX = numerator_mean/denominator_mean
     return XX
 
@@ -113,6 +117,7 @@ def resample_and_save_data(reduce_function, XX_data, n_samples, n_datafiles, fil
 
     # for each tau, compute flow correlation matrix.
     XX_samples = numpy.swapaxes(XX_samples, 0, 2)  # change data structure such that numpy.cov understands it
+    print(XX_samples.shape)
     pcov = []
     for i in range(int(nt/2)):
         pcov.append(numpy.corrcoef(XX_samples[i]))
