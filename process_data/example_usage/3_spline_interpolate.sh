@@ -8,7 +8,7 @@ if [ -z "$qcdtype" ] ; then
     exit
 fi
 
-nsamples=1000
+nsamples=10000
 
 if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     arr_conftypes=("s080t20_b0703500" "s096t24_b0719200" "s120t30_b0739400")

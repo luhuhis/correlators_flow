@@ -27,11 +27,11 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
         "220"
         "196"
         )
-    basepath="/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"
     add_args="--basepath /work/data/altenkort/gradientFlow"
+    flowradiusbasepath="/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"
     flowradii_refs=()
     for temp in "${temps[@]}"; do
-        flowradii_refs+=("--reference_flowradii $basepath/T${temp}/flowradii_T${temp}.dat")
+        flowradii_refs+=("--reference_flowradii $flowradiusbasepath/T${temp}/flowradii_T${temp}.dat")
     done
 fi
 

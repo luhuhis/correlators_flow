@@ -3,7 +3,7 @@
 
 qcdtype=$1
 corr=$2
-if [ -z "$qcdtype" ] ; then
+if [ -z "$qcdtype" ] || [ -z "$corr" ] ; then
     echo "Usage: $0 qcdtype corr"
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
     echo "choices for corr: EE BB EE_clover BB_clover"
@@ -50,6 +50,6 @@ fi
 for idx in "${!arr_conftypes[@]}"; do
     conftype=${arr_conftypes[idx]}
     min_conf="--min_conf ${min_trajs[idx]}"
-    ../_1_xestimate_autocorrelations.py $add_args --MC_stepsize $MC_stepsize --suffix _test2 $min_conf --qcdtype $qcdtype --conftype $conftype --corr $corr --basepath ../../../data/merged/ --basepath_plot ../../../plots/
+    ../_1_xestimate_autocorrelations.py $add_args --MC_stepsize $MC_stepsize $min_conf --qcdtype $qcdtype --conftype $conftype --corr $corr --basepath ../../../data/merged/ --basepath_plot ../../../plots/
 done
 wait
