@@ -7,6 +7,10 @@ import lib_process_data as lpd
 import scipy.interpolate
 import matplotlib.pyplot
 from matplotlib.backends.backend_pdf import PdfPages
+# import warnings
+# warnings.simplefilter("ignore", OptimizeWarning)
+# warnings.simplefilter('error', UserWarning)
+# warnings.filterwarnings('ignore', r'Calling figure.constrained_layout, but figure not setup to do constrained layout.*')
 
 
 def interpolate_XX_flow(xdata, ydata, ydata_norm, output_xdata1, output_xdata2):
@@ -15,24 +19,27 @@ def interpolate_XX_flow(xdata, ydata, ydata_norm, output_xdata1, output_xdata2):
     return spline(output_xdata1)/norm(output_xdata1), spline(output_xdata2)/norm(output_xdata2)
 
 
-def plot(args, flowradius, xpointsplot, theplotdata, merged_data_path, index, flowtime, nt, flowaction, gaugeaction):
-    ypointsplot = numpy.median(theplotdata, axis=0)
-    epointsplot = lpd.dev_by_dist(theplotdata, axis=0)
+def plot(args, flowradius, x, y, yerr, merged_data_path, index, flowtime, nt, flowaction, gaugeaction):
 
     # plot interpolations and underlying data points
-    ylabel = 'G'
-    fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=args.ylims, xlabel=r'$\tau T$', ylabel=ylabel, xlabelpos=(0.95, 0.05), constrained_layout=False)
-    ax.set_title(r'$ \sqrt{8\tau_F}T = $' + '{0:.3f}'.format(flowradius))
-    ax.axvline(x=lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset), **lpd.verticallinestyle)
-    ax.fill_between(xpointsplot, ypointsplot - epointsplot, ypointsplot + epointsplot, alpha=0.5)
-    ax.errorbar(xpointsplot, ypointsplot, fmt='-', lw=0.5, mew=0)
+    ylabel = r'$\displaystyle \frac{G}{G^\mathrm{norm}}$'
+    fig, ax, plots = lpd.create_figure(xlims=[0, 0.52], ylims=args.ylims, xlabel=r'$\tau T$', ylabel=ylabel, constrained_layout=True)
+    ax.text(0.99, 0.99, r'$ \sqrt{8\tau_F}T = ' + '{0:.3f}'.format(flowradius)+'$', ha='right', va='top', transform=ax.transAxes, zorder=-1000, bbox=lpd.labelboxstyle)
+    lower_limit = lpd.lower_tauT_limit_(flowradius, 0.33, 0)
+    min_index = numpy.fabs(x-lower_limit).argmin()
+    ax.axvline(x=lower_limit, **lpd.verticallinestyle)
+    ax.text(lower_limit, 1, r'$ 3\sqrt{8\tau_F}T$', ha='right', va='center', zorder=-1000, bbox=lpd.labelboxstyle)
+    ax.fill_between(x[min_index:], y[min_index:] - yerr[min_index:], y[min_index:] + yerr[min_index:], alpha=0.5)
+    ax.errorbar(x[min_index:], y[min_index:], fmt='-', zorder=-10, alpha=0.5)
     XX = numpy.loadtxt(merged_data_path + "/" + args.corr + "_" + args.conftype + ".dat")
     XX_err = numpy.loadtxt(merged_data_path + "/" + args.corr + "_err_" + args.conftype + ".dat")
     for a in range(len(XX[index])):
         XX[index, a] = XX[index, a] * nt ** 4 / lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction)
         XX_err[index, a] = XX_err[index, a] * nt ** 4 / lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction)
-    ax.errorbar(lpd.get_tauTs(nt), XX[index], XX_err[index], **lpd.plotstyle_add_point_single)
-
+    x = lpd.get_tauTs(nt)
+    min_index = numpy.fabs(x - lower_limit).argmin()
+    ax.errorbar(x[min_index:], XX[index][min_index:], XX_err[index][min_index:], fmt='|')
+    ax.set_xticks((0.0, 0.1, 0.2, 0.3, 0.4, 0.5))
     return fig
 
 
@@ -65,9 +72,12 @@ def wrapper(index, flowtimes, XX_samples, args, merged_data_path):
         theoutputdata.append(output)
         theplotdata.append(plot_output)
 
-    fig = plot(args, flowradius, xpointsplot, theplotdata, merged_data_path, index, flowtime, nt, flowaction, gaugeaction)
+    yplot = numpy.mean(theplotdata, axis=0)
+    eplot = numpy.std(theplotdata, axis=0)
 
-    return theoutputdata, fig
+    fig = plot(args, flowradius, xpointsplot, yplot, eplot, merged_data_path, index, flowtime, nt, flowaction, gaugeaction)
+
+    return theoutputdata, fig, yplot
 
 
 def main():
@@ -93,9 +103,8 @@ def main():
 
     # file paths
     merged_data_path = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype, args.basepath)
-    outputfolder_data = merged_data_path+"/interpolations/"
     outputfolder_plot = lpd.get_plot_path(args.qcdtype, args.corr, args.conftype, args.basepath_plot)
-    lpd.create_folder(outputfolder_plot, outputfolder_data)
+    lpd.create_folder(outputfolder_plot)
 
     # load flow times
     flowtimes = numpy.loadtxt(merged_data_path + "/flowtimes_" + args.conftype + ".dat")
@@ -105,7 +114,7 @@ def main():
     XX_samples = numpy.load(merged_data_path+"/"+args.corr + "_" + args.conftype + "_samples.npy")
 
     matplotlib.rcParams['figure.max_open_warning'] = 0  # suppress warning due to possibly large number of figures...
-    interpolations, figs = lpd.parallel_function_eval(wrapper, indices, args.nproc, flowtimes, XX_samples, args, merged_data_path)
+    interpolations, figs, interpolation_mean_for_plotting = lpd.parallel_function_eval(wrapper, indices, args.nproc, flowtimes, XX_samples, args, merged_data_path)
 
     filepath = outputfolder_plot + "/" + args.corr + "_interpolation.pdf"
     print("saving ", filepath)
@@ -113,11 +122,15 @@ def main():
     lpd.set_rc_params()  # for some reason we need to call this here...
     with PdfPages(filepath) as pdf:
         for fig in figs:
-            pdf.savefig(fig, bbox_inches='tight', pad_inches=0.05)
+            pdf.savefig(fig)
             matplotlib.pyplot.close(fig)
 
     # save data
-    numpy.save(merged_data_path + args.corr + "_" + args.conftype + "_interpolation_samples.npy", numpy.asarray(interpolations))
+    interpolations = numpy.asarray(interpolations)
+    interpolation_mean_for_plotting = numpy.asarray(interpolation_mean_for_plotting)
+    print(interpolation_mean_for_plotting.shape)
+    numpy.save(merged_data_path + args.corr + "_" + args.conftype + "_interpolation_samples.npy", interpolations)
+    numpy.save(merged_data_path + args.corr + "_" + args.conftype + "_interpolation_mean.npy", interpolation_mean_for_plotting)
 
 
 if __name__ == '__main__':
