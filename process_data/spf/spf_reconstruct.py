@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7m -u
+#!/usr/bin/env python3
 
 import lib_process_data as lpd
 import numpy as np
@@ -201,7 +201,55 @@ def get_model_str(model, PhiUVtype, mu, constrainstr, nmax, p, OmegaByT_IR, Omeg
     return model_str
 
 
-def main():
+def get_fileidentifier(args):
+
+    constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
+    model_str = get_model_str(args.model, args.PhiUVtype, args.mu, constrainstr, args.nmax, args.p, args.OmegaByT_IR, args.OmegaByT_UV)
+
+    # PhiUV identifiers
+    if args.Nf is not None:
+        model_str = model_str + "_Nf" + str(args.Nf)
+    if args.T_in_GeV:
+        model_str = model_str + "_T" + '{0:.3f}'.format(args.T_in_GeV)
+    if args.omega_prefactor:
+        model_str = model_str + "_min" + str(args.min_scale)
+    if args.min_scale:
+        model_str = model_str + "_w" + str(args.omega_prefactor)
+
+    if args.add_suffix:
+        args.add_suffix = "_" + args.add_suffix
+    fileidentifier = model_str + "_" + str(args.nsamples) + "_" + str(args.min_tauT) + "_exp" + str(
+        args.error_exponent) + args.add_suffix  # +'{:.0e}'.format(args.tol)  "_"+startstr
+
+    return fileidentifier
+
+
+def readin_corr_data(args):
+
+    # read in the normalized correlator:
+
+    if args.mock_bootstrap:
+        corr = np.loadtxt(args.input_corr)
+        corr = corr[~np.isnan(corr).any(axis=1)]  # remove lines with NaN's:
+        corr = corr[corr[:, 0] >= args.min_tauT, :]  # filter out below min_tauT:
+
+        NtauT = len(corr)
+        # get rid of the pert. normalization in the correlator data
+        CorrByT4 = np.copy(corr)
+        for i in range(NtauT):
+            CorrByT4[i][2] = corr[i][2] * Gnorm(corr[i][0])
+            CorrByT4[i][1] = corr[i][1] * Gnorm(corr[i][0])
+
+        xdata = CorrByT4[:, 0]
+        ydata = CorrByT4[:, 1]
+        edata = CorrByT4[:, 2]
+    else:
+        # TODO
+
+    return corr, xdata, ydata, edata, NtauT
+
+
+def parse_args():
     parser = argparse.ArgumentParser()
     requiredNamed = parser.add_argument_group('required named arguments')
 
@@ -214,12 +262,15 @@ def main():
     # TODO add support for multiple input_corrs
     parser.add_argument('--input_corr', help='Path to input correlator data file. expects text file with three columns: tauT, G, err', type=str)
     parser.add_argument('--min_tauT', help='ignore corr data below this tauT', type=float, default=0)
-    parser.add_argument('--error_exponent', default=0, type=int, help="increase errors for small tauT data like this: error*(0.5/tauT)^error_exponent")
+    parser.add_argument('--mock_bootstrap', help="if input_corr already contains mean and error values instead of bootstrap samples, "
+                                                 "then do a mock bootstrap instead of a real one.", default=False, action="store_true")
 
     # === spf model selection ===
-    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line", "step_any", "pnorm", "plaw", "sum"], type=str, required=True)
+    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line", "step_any", "pnorm", "plaw", "sum"], type=str,
+                               required=True)
     requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str)
-    requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO or NLO. if empty then its assumed that PathPhiUV is given.', type=str, choices=["LO", "NLO"])
+    requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO or NLO. if empty then its assumed that PathPhiUV is given.', type=str,
+                               choices=["LO", "NLO"])
 
     # parameters for model 2
     parser.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str)
@@ -234,7 +285,7 @@ def main():
     parser.add_argument('--p', type=float, help="parameter for pnorm model. p=2 is identical to smax. p=inf is identical to max.")
 
     # miscellaneous
-    parser.add_argument('--nsamples', help='number of bootstrap samples to draw from the gaussian distribution', default=300, type=int)
+    parser.add_argument('--nsamples', help='number of bootstrap samples to draw from the gaussian distribution', type=int, default=None)
     parser.add_argument('--nproc', help='number of processes for the parallel bootstrap', default=1, type=int)
     parser.add_argument('--verbose', help='output current fit parameters at each iteration', action="store_true")
     parser.add_argument('--seed', help='seed for gaussian bootstrap sample drawings', default=0, type=int)
@@ -245,45 +296,22 @@ def main():
     # global args
     args = parser.parse_args()
 
+    if args.nsamples is not None and not args.mock_bootstrap:
+        print("ERROR: --nsamples only works together with --mock_bootstrap.")
+        exit(1)
+
     # check for missing params
     if args.model == "2" and (not args.mu or not args.nmax):
         print("ERROR: Need mu and nmax for model 2.")
-        return 1
+        exit(1)
     if (args.model == "line" or args.model == "plaw") and not args.OmegaByT_UV:
         print("ERROR: Need OmegaByT_UV for model line or plaw.")
-        return 1
+        exit(1)
 
-    constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
-    model_str = get_model_str(args.model, args.PhiUVtype, args.mu, constrainstr, args.nmax, args.p, args.OmegaByT_IR, args.OmegaByT_UV)
+    return args
 
-    # for corr, T_in_GeV in zip(args.corr, args.T_in_GeV):
-        # bootstrap can handle nd arrays -> make corr a 3d array. PhiUV becomes an array as well.
-        # think about organizing fitparameters differently.
-        # in chisq calculation, add together chisq's for each corr by looping over corrs.
-        # results become one more dimension.
-        # save results for each corr. indicate whether a combined fit was done.
 
-    # PhiUV identifiers
-    if args.Nf is not None:
-        model_str = model_str + "_Nf" + str(args.Nf)
-    if args.T_in_GeV:
-        model_str = model_str + "_T" + '{0:.3f}'.format(args.T_in_GeV)
-    if args.omega_prefactor:
-        model_str = model_str + "_min" + str(args.min_scale)
-    if args.min_scale:
-        model_str = model_str + "_w" + str(args.omega_prefactor)
-
-    if args.add_suffix:
-        args.add_suffix = "_"+args.add_suffix
-    fileidentifier = model_str+"_"+str(args.nsamples)+"_"+str(args.min_tauT)+"_exp"+str(args.error_exponent) + args.add_suffix  # +'{:.0e}'.format(args.tol)  "_"+startstr
-
-    # read in the normalized correlator:
-    corr = np.loadtxt(args.input_corr)
-    corr = corr[~np.isnan(corr).any(axis=1)]  # remove lines with NaN's:
-    corr = corr[corr[:, 0] >= args.min_tauT, :]  # filter out below min_tauT:
-
-    NtauT = len(corr)
-
+def load_PhiUV(args):
     g2, LO, NLO = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor, args.Npoints, args.Nloop)
     if args.PhiUVtype == "LO":
         PhiUV = LO
@@ -298,22 +326,10 @@ def main():
     MinOmegaByT = PhiUV[0][0]
     MaxOmegaByT = PhiUV[-1][0]
 
-    # get rid of the pert. normalization in the correlator data
-    CorrByT4 = np.copy(corr)
-    for i in range(NtauT):
-        CorrByT4[i][2] = corr[i][2] * Gnorm(corr[i][0])
-        CorrByT4[i][1] = corr[i][1] * Gnorm(corr[i][0])
+    return PhiuvByT3, PhiUV, MinOmegaByT, MaxOmegaByT
 
-    xdata = CorrByT4[:, 0]
-    ydata = CorrByT4[:, 1]
-    edata = CorrByT4[:, 2]
 
-    edata_fit = np.zeros(len(edata))
-
-    # change errors (i.e. inverse fit weights) depending on tauT
-    for i, val in enumerate(edata):
-        edata_fit[i] = val * (0.5 / xdata[i])**args.error_exponent
-
+def get_initial_guess(args):
     # set up initial guess for the fitted parameters.
     # for model 2, the initial guess for kappa is 1, and for the c_n is 0.
     # for other models we only have one other fit parameter which is the overall coefficient for the UV part, whose initial guess is 1.
@@ -327,11 +343,16 @@ def main():
         fit_params_0 = [1, ]
     else:
         fit_params_0 = [1, 1]
+    print("Initial guess for fit params:", fit_params_0)
+    return fit_params_0
 
-    nparam = len(fit_params_0)
 
-    # constant parameters only used by the function SpfByT3
-    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3, nparam-1, args.OmegaByT_IR, args.OmegaByT_UV, args.p, MinOmegaByT, MaxOmegaByT)
+def save_results(args, fileidentifier, results, error, samples, xdata, corr, PhiUV, nparam, NtauT):
+
+
+    # make handling of the left and right 68-quantiles easier
+    error = np.asarray(error)
+    error = np.swapaxes(error, 0, 1)
 
     nomega = len(PhiUV[:, 0])
     structure = np.asarray((
@@ -341,24 +362,15 @@ def main():
         (nparam+nomega+NtauT, nparam+nomega+NtauT+1)
     ), dtype=int)
 
-    print("Initial guess for fit params:", fit_params_0)
-    samples, results, error = \
-        bootstr.bootstr_from_gauss(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
-                                   useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=True,
-                                   args=(fit_params_0, xdata, edata_fit, spfargs, PhiUV, NtauT, corr, args.model, args.verbose))
-
-    # make handling of the left and right 68-quantiles easier
-    error = np.asarray(error)
-    error = np.swapaxes(error, 0, 1)
-
-    outputfolder = args.output_path+"/spf/"+fileidentifier+"/"
+    fileidentifier = get_fileidentifier(args)
+    outputfolder = args.output_path + "/spf/" + fileidentifier + "/"
     lpd.create_folder(outputfolder)
     print("saving results into", outputfolder)
 
-    np.savetxt(outputfolder+"samples_structure.dat", structure, header='This file contains pairs (a,b) of indeces with which to split the array '
-                                                                                          'in the samples.npy in the correct way. Example: Spf=samples(a:b). \n rows for (a,b) in order: fit_resx, Spf, '
-                                                                                          'fit_corr, chisqdof', fmt='%i')
-    np.save(outputfolder+"samples", samples)
+    np.savetxt(outputfolder + "samples_structure.dat", structure, header='This file contains pairs (a,b) of indeces with which to split the array '
+                                                                         'in the samples.npy in the correct way. Example: Spf=samples(a:b). \n rows for (a,b) in order: fit_resx, Spf, '
+                                                                         'fit_corr, chisqdof', fmt='%i')
+    np.save(outputfolder + "samples", samples)
 
     # extract the various quantities that have been stacked together due to bootstrap being limited to 1D arrays
     fit_resx = results[structure[0, 0]:structure[0, 1]]
@@ -398,7 +410,48 @@ def main():
                fmt='%16.15e', header='tauT                corr(orig)            err(orig)             corr(fit)             err(-/+)')
 
 
+
+def main():
+
+    args = parse_args()
+
+
+    PhiuvByT3, PhiUV, MinOmegaByT, MaxOmegaByT = load_PhiUV(args)
+    corr, xdata, ydata, edata, NtauT = readin_corr_data(args)
+    edata_fit = np.zeros(len(edata))  # TODO what is the purpose of this line??
+
+    fit_params_0 = get_initial_guess(args)
+    nparam = len(fit_params_0)
+
+    # constant parameters only used by the function SpfByT3
+    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3, nparam-1, args.OmegaByT_IR, args.OmegaByT_UV, args.p, MinOmegaByT, MaxOmegaByT)
+
+    if args.mock_bootstrap:
+        samples, results, results_error = \
+            bootstr.bootstr_from_gauss(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
+                                   useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=True,
+                                   args=(fit_params_0, xdata, edata_fit, spfargs, PhiUV, NtauT, corr, args.model, args.verbose))
+    else:
+        samples, results, results_error = \
+            bootstr.boostr(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
+                                   useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=True,
+                                   args=(fit_params_0, xdata, edata_fit, spfargs, PhiUV, NtauT, corr, args.model, args.verbose))
+
+    save_results(args, results, results_error, samples, xdata, corr, PhiUV, nparam, NtauT)
+
+
+
 if __name__ == '__main__':
     lpd.print_script_call()
     main()
     lpd.save_script_call()
+
+
+
+    # TODO multi-corr fits. something like this:
+    # for corr, T_in_GeV in zip(args.corr, args.T_in_GeV):
+        # bootstrap can handle nd arrays -> make corr a 3d array. PhiUV becomes an array as well.
+        # think about organizing fitparameters differently.
+        # in chisq calculation, add together chisq's for each corr by looping over corrs.
+        # results become one more dimension.
+        # save results for each corr. indicate whether a combined fit was done.
