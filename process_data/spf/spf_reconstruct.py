@@ -143,7 +143,15 @@ def chisq_dof(fit_params, xdata, ydata_sample, edata, spfargs, verbose=False):
     return chisqdof
 
 
-def get_results(ydata_sample, fit_params_0, xdata, edata, spfargs, PhiUV, NtauT, corr, model, verbose=False):
+def fit_single_sample_wrapper(index, ydata, fit_params_0, xdata, edata, spfargs, PhiUV, model, verbose):
+    # wrapper for the true bootstrap
+    ydata_sample = ydata[index]
+    result = fit_single_sample(ydata_sample, fit_params_0, xdata, edata, spfargs, PhiUV, model, verbose)
+    print("done ", index)
+    return result
+
+
+def fit_single_sample(ydata_sample, fit_params_0, xdata, edata, spfargs, PhiUV, model, verbose=False):
     if verbose:
         print("current correlator sample:", ydata_sample)
 
@@ -151,7 +159,7 @@ def get_results(ydata_sample, fit_params_0, xdata, edata, spfargs, PhiUV, NtauT,
     # x0: Initial guess.
     # args: Extra arguments passed to the objective function
     fit_res = scipy.optimize.minimize(fun=chisq_dof, x0=fit_params_0, args=(xdata, ydata_sample, edata, spfargs, verbose), method='L-BFGS-B',
-                                      options={'disp': 0}, callback=None)  # 'maxiter': MaxIter,   bounds=[[0, np.inf], *([[-1, 1]]*spfargs.n_max)])  # , 'xatol': args.tol, 'fatol': args.tol
+                                      options={'disp': 0, 'ftol': 1.0e-05}, bounds=[[0, np.inf], *[[None, None] for _ in range(len(fit_params_0)-1)]], callback=None)  # 'maxiter': MaxIter,   , *([[-1, 1]]*spfargs.n_max)])  # , 'xatol': args.tol, 'fatol': args.tol
 
     # now use the fit results for the parameters to compute the fitted spectral function and correlator
 
@@ -172,8 +180,8 @@ def get_results(ydata_sample, fit_params_0, xdata, edata, spfargs, PhiUV, NtauT,
 
     # correlator
     fit_corr = TargetCorr(xdata, spfargs, fit_res.x)
-    for i in range(NtauT):
-        fit_corr[i] /= Gnorm(corr[i][0])
+    for i in range(len(xdata)):  # TODO check whether this change works as intended
+        fit_corr[i] /= Gnorm(xdata[i])
 
     # chisq
     chisqdof = chisq_dof(fit_res.x, xdata, ydata_sample, edata, spfargs, verbose)  # Note: this chisq_dof is appended to the end of Record!
@@ -189,19 +197,18 @@ def get_results(ydata_sample, fit_params_0, xdata, edata, spfargs, PhiUV, NtauT,
         return result
 
 
-def get_model_str(model, PhiUVtype, mu, constrainstr, nmax, p, OmegaByT_IR, OmegaByT_UV):
-    if model == "2":
-        model_str = model+"_"+PhiUVtype+"_"+constrainstr+"_"+str(mu)+"_"+str(nmax)
-    elif model == "pnorm":
-        model_str = str(model) + str(p) + "_" + PhiUVtype
-    elif model == "line" or model == "plaw":
-        model_str = str(model) + "_wIR" + str(OmegaByT_IR) + "_wUV" + str(OmegaByT_UV) + "_" + PhiUVtype
-    else:
-        model_str = str(model)+"_"+PhiUVtype
-    return model_str
-
-
 def get_fileidentifier(args):
+
+    def get_model_str(model, PhiUVtype, mu, constrainstr, nmax, p, OmegaByT_IR, OmegaByT_UV):
+        if model == "2":
+            model_str = model + "_" + PhiUVtype + "_" + constrainstr + "_" + str(mu) + "_" + str(nmax)
+        elif model == "pnorm":
+            model_str = str(model) + str(p) + "_" + PhiUVtype
+        elif model == "line" or model == "plaw":
+            model_str = str(model) + "_wIR" + str(OmegaByT_IR) + "_wUV" + str(OmegaByT_UV) + "_" + PhiUVtype
+        else:
+            model_str = str(model) + "_" + PhiUVtype
+        return model_str
 
     constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
     model_str = get_model_str(args.model, args.PhiUVtype, args.mu, constrainstr, args.nmax, args.p, args.OmegaByT_IR, args.OmegaByT_UV)
@@ -218,8 +225,7 @@ def get_fileidentifier(args):
 
     if args.add_suffix:
         args.add_suffix = "_" + args.add_suffix
-    fileidentifier = model_str + "_" + str(args.nsamples) + "_" + str(args.min_tauT) + "_exp" + str(
-        args.error_exponent) + args.add_suffix  # +'{:.0e}'.format(args.tol)  "_"+startstr
+    fileidentifier = model_str + "_" + str(args.nsamples) + "_" + str(args.min_tauT) + "_exp" + args.add_suffix  # +'{:.0e}'.format(args.tol)  "_"+startstr
 
     return fileidentifier
 
@@ -230,85 +236,39 @@ def readin_corr_data(args):
 
     if args.mock_bootstrap:
         corr = np.loadtxt(args.input_corr)
-        corr = corr[~np.isnan(corr).any(axis=1)]  # remove lines with NaN's:
-        corr = corr[corr[:, 0] >= args.min_tauT, :]  # filter out below min_tauT:
+        corr = corr[~np.isnan(corr).any(axis=1)]  # remove lines with NaN's
+        corr = corr[corr[:, 0] >= args.min_tauT, :]  # filter out below min_tauT
 
-        NtauT = len(corr)
-        # get rid of the pert. normalization in the correlator data
-        CorrByT4 = np.copy(corr)
+        NtauT = len(corr)  # number of data points we can actually consider. this is NOT the actual nt.
+
+        xdata = corr[:, 0]
+        ydata_norm_mean = corr[:, 1]
+
+        # get rid of the pert. normalization in the data
         for i in range(NtauT):
-            CorrByT4[i][2] = corr[i][2] * Gnorm(corr[i][0])
-            CorrByT4[i][1] = corr[i][1] * Gnorm(corr[i][0])
+            corr[:, 1:3] *= Gnorm(xdata[i])
 
-        xdata = CorrByT4[:, 0]
-        ydata = CorrByT4[:, 1]
-        edata = CorrByT4[:, 2]
+        ydata = corr[:, 1]
+        edata = corr[:, 2]
+
     else:
-        # TODO
+        ydata = np.load(args.input_corr)[:, :, 1]
+        nt_half = ydata.shape[1]
+        xdata = lpd.get_tauTs(int(nt_half * 2))
 
-    return corr, xdata, ydata, edata, NtauT
+        mask = np.logical_and(~np.isnan(ydata[0]), xdata >= args.min_tauT)  # filter out NaN's and filter out below min_tauT
 
+        xdata = xdata[mask]
+        ydata = ydata[:, mask]
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    requiredNamed = parser.add_argument_group('required named arguments')
+        NtauT = len(xdata)
 
-    # file names
-    parser.add_argument('--output_path', help='the path of output folder like /a/b', type=str, required=True)
-    parser.add_argument('--add_suffix', help='add an extra suffix to the output files in order to not overwrite previous ones with similar parameters on a '
-                                             'different data set', type=str, default="")
+        ydata_norm_mean = np.mean(ydata, axis=0)
+        for i in range(NtauT):
+            ydata[:, i] *= Gnorm(xdata[i])
+        edata = np.std(ydata, axis=0)
 
-    # input corr
-    # TODO add support for multiple input_corrs
-    parser.add_argument('--input_corr', help='Path to input correlator data file. expects text file with three columns: tauT, G, err', type=str)
-    parser.add_argument('--min_tauT', help='ignore corr data below this tauT', type=float, default=0)
-    parser.add_argument('--mock_bootstrap', help="if input_corr already contains mean and error values instead of bootstrap samples, "
-                                                 "then do a mock bootstrap instead of a real one.", default=False, action="store_true")
-
-    # === spf model selection ===
-    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line", "step_any", "pnorm", "plaw", "sum"], type=str,
-                               required=True)
-    requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str)
-    requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO or NLO. if empty then its assumed that PathPhiUV is given.', type=str,
-                               choices=["LO", "NLO"])
-
-    # parameters for model 2
-    parser.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str)
-    parser.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', type=int, choices=[1, 2, 3, 4, 5, 6, 7])
-    parser.add_argument('--constrain', help='force the spf to reach the UV limit at large omega', action="store_true")
-
-    # parameters for line,plaw model
-    parser.add_argument('--OmegaByT_IR', type=float, help="three reasonable choices: 0.01, 0.4, 1")
-    parser.add_argument('--OmegaByT_UV', type=float, default=2.2, help="default value: vacuum NLO and HTL-resummed NLO agree down to omega/T=2.2")
-
-    # parameters for pnorm
-    parser.add_argument('--p', type=float, help="parameter for pnorm model. p=2 is identical to smax. p=inf is identical to max.")
-
-    # miscellaneous
-    parser.add_argument('--nsamples', help='number of bootstrap samples to draw from the gaussian distribution', type=int, default=None)
-    parser.add_argument('--nproc', help='number of processes for the parallel bootstrap', default=1, type=int)
-    parser.add_argument('--verbose', help='output current fit parameters at each iteration', action="store_true")
-    parser.add_argument('--seed', help='seed for gaussian bootstrap sample drawings', default=0, type=int)
-
-    PhiUV_parser = parser.add_argument_group('arguments for PhiUV')
-    add_args(PhiUV_parser)
-
-    # global args
-    args = parser.parse_args()
-
-    if args.nsamples is not None and not args.mock_bootstrap:
-        print("ERROR: --nsamples only works together with --mock_bootstrap.")
-        exit(1)
-
-    # check for missing params
-    if args.model == "2" and (not args.mu or not args.nmax):
-        print("ERROR: Need mu and nmax for model 2.")
-        exit(1)
-    if (args.model == "line" or args.model == "plaw") and not args.OmegaByT_UV:
-        print("ERROR: Need OmegaByT_UV for model line or plaw.")
-        exit(1)
-
-    return args
+    return xdata, ydata, edata, ydata_norm_mean
 
 
 def load_PhiUV(args):
@@ -347,9 +307,8 @@ def get_initial_guess(args):
     return fit_params_0
 
 
-def save_results(args, fileidentifier, results, error, samples, xdata, corr, PhiUV, nparam, NtauT):
-
-
+def save_results(args, results, error, samples, xdata, ydata_norm_mean, edata, PhiUV, nparam):
+    NtauT = len(xdata)
     # make handling of the left and right 68-quantiles easier
     error = np.asarray(error)
     error = np.swapaxes(error, 0, 1)
@@ -391,13 +350,16 @@ def save_results(args, fileidentifier, results, error, samples, xdata, corr, Phi
           "param                  error_left    error_right:")
     print(fitparams_chisqdof)
 
+    # TODO change this to npy files?
     # save the Phi UV
-    np.savetxt(outputfolder + "/phiUV.dat", np.column_stack((PhiUV[:, 0], PhiUV[:, 1])), fmt='%16.15e',
-               header='omegaByT            SpfByT3               err(-/+)')
+    data = np.column_stack((PhiUV[:, 0], PhiUV[:, 1]))
+    print(data.shape)
+    np.save(outputfolder + "/phiUV.npy", data)  # format: omegaByT, SpfByT3
 
     # save reconstructed fit spf
-    np.savetxt(outputfolder + "/spffit.dat", np.column_stack((PhiUV[:, 0], Spf, Spf_err)), fmt='%16.15e',
-               header='omegaByT            SpfByT3               err(-/+)')
+    data = np.column_stack((PhiUV[:, 0], Spf, Spf_err))
+    print(data.shape)
+    np.save(outputfolder + "/spffit.npy", data)  # format omegaByT, SpfByT3, err-, err+
 
     # save fitparams and chisqdof
     np.savetxt(outputfolder + "/params.dat", fitparams_chisqdof, fmt='%22.15e',
@@ -406,19 +368,74 @@ def save_results(args, fileidentifier, results, error, samples, xdata, corr, Phi
 
     # save reconstructed correlator
     np.savetxt(outputfolder + "/corrfit.dat",
-               np.column_stack((xdata, corr[:, 1], corr[:, 2], fit_corr, fit_corr_err)),
+               np.column_stack((xdata, ydata_norm_mean, edata, fit_corr, fit_corr_err)),
                fmt='%16.15e', header='tauT                corr(orig)            err(orig)             corr(fit)             err(-/+)')
 
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    requiredNamed = parser.add_argument_group('required named arguments')
+
+    # file names
+    parser.add_argument('--output_path', help='the path of output folder like /a/b', type=str, required=True)
+    parser.add_argument('--add_suffix', help='add an extra suffix to the output files in order to not overwrite previous ones with similar parameters on a '
+                                             'different data set', type=str, default="")
+
+    # input corr
+    # TODO add support for multiple input_corrs
+    parser.add_argument('--input_corr', help='Path to input correlator data file. expects text file with three columns: tauT, G, err', type=str)
+    parser.add_argument('--min_tauT', help='ignore corr data below this tauT', type=float, default=0)
+    parser.add_argument('--mock_bootstrap', help="if input_corr already contains mean and error values instead of bootstrap samples, "
+                                                 "then do a mock bootstrap instead of a real one.", default=False, action="store_true")
+
+    # === spf model selection ===
+    requiredNamed.add_argument('--model', help='which model to use', choices=["2", "max", "smax", "line", "step_any", "pnorm", "plaw", "sum"], type=str,
+                               required=True)
+    requiredNamed.add_argument('--PathPhiUV', help='the full path of the input phiuv in omega/T phi/T^3', type=str)
+    requiredNamed.add_argument('--PhiUVtype', help='specify it this is LO or NLO. if empty then its assumed that PathPhiUV is given.', type=str,
+                               choices=["LO", "NLO"])
+
+    # parameters for model 2
+    parser.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str)
+    parser.add_argument('--nmax', help='what nmax to use. valid only for model 1,2.', type=int, choices=[1, 2, 3, 4, 5, 6, 7])
+    parser.add_argument('--constrain', help='force the spf to reach the UV limit at large omega', action="store_true")
+
+    # parameters for line,plaw model
+    parser.add_argument('--OmegaByT_IR', type=float, help="three reasonable choices: 0.01, 0.4, 1")
+    parser.add_argument('--OmegaByT_UV', type=float, default=2.2, help="default value: vacuum NLO and HTL-resummed NLO agree down to omega/T=2.2")
+
+    # parameters for pnorm
+    parser.add_argument('--p', type=float, help="parameter for pnorm model. p=2 is identical to smax. p=inf is identical to max.")
+
+    # miscellaneous
+    parser.add_argument('--nsamples', help='number of bootstrap samples to draw/consider.', type=int, default=None)
+    parser.add_argument('--nproc', help='number of processes for the parallel bootstrap', default=1, type=int)
+    parser.add_argument('--verbose', help='output current fit parameters at each iteration', action="store_true")
+    parser.add_argument('--seed', help='seed for gaussian bootstrap sample drawings', default=0, type=int)
+
+    PhiUV_parser = parser.add_argument_group('arguments for PhiUV')
+    add_args(PhiUV_parser)
+
+    # global args
+    args = parser.parse_args()
+
+    # check for missing params
+    if args.model == "2" and (not args.mu or not args.nmax):
+        print("ERROR: Need mu and nmax for model 2.")
+        exit(1)
+    if (args.model == "line" or args.model == "plaw") and not args.OmegaByT_UV:
+        print("ERROR: Need OmegaByT_UV for model line or plaw.")
+        exit(1)
+
+    return args
 
 
 def main():
 
     args = parse_args()
 
-
     PhiuvByT3, PhiUV, MinOmegaByT, MaxOmegaByT = load_PhiUV(args)
-    corr, xdata, ydata, edata, NtauT = readin_corr_data(args)
-    edata_fit = np.zeros(len(edata))  # TODO what is the purpose of this line??
+    xdata, ydata, edata, ydata_norm_mean = readin_corr_data(args)
 
     fit_params_0 = get_initial_guess(args)
     nparam = len(fit_params_0)
@@ -427,26 +444,28 @@ def main():
     spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiuvByT3, nparam-1, args.OmegaByT_IR, args.OmegaByT_UV, args.p, MinOmegaByT, MaxOmegaByT)
 
     if args.mock_bootstrap:
-        samples, results, results_error = \
-            bootstr.bootstr_from_gauss(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
-                                   useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=True,
-                                   args=(fit_params_0, xdata, edata_fit, spfargs, PhiUV, NtauT, corr, args.model, args.verbose))
+        samples, results_mean, results_mean_err = \
+            bootstr.bootstr_from_gauss(fit_single_sample, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
+                                       useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=True,
+                                       args=(fit_params_0, xdata, edata, spfargs, PhiUV, args.model, args.verbose))
     else:
-        samples, results, results_error = \
-            bootstr.boostr(get_results, ydata, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed, err_by_dist=True,
-                                   useCovariance=False, parallelize=True, nproc=args.nproc, asym_err=True,
-                                   args=(fit_params_0, xdata, edata_fit, spfargs, PhiUV, NtauT, corr, args.model, args.verbose))
+        if args.nsamples is None:
+            args.nsamples = len(ydata)
+        else:
+            print("WARN: only using", args.nsamples, "of", len(ydata), "samples.")
+        results = lpd.parallel_function_eval(fit_single_sample_wrapper, range(0, args.nsamples), args.nproc, ydata, fit_params_0, xdata, edata, spfargs, PhiUV, args.model, args.verbose)
+        results = np.asarray(results)
+        results_mean = np.mean(results, axis=0)
+        results_mean_err = lpd.dev_by_dist(results, axis=0, return_both_q=True)
+        samples = ydata
 
-    save_results(args, results, results_error, samples, xdata, corr, PhiUV, nparam, NtauT)
-
+    save_results(args, results_mean, results_mean_err, samples, xdata, ydata_norm_mean, edata, PhiUV, nparam)
 
 
 if __name__ == '__main__':
     lpd.print_script_call()
     main()
     lpd.save_script_call()
-
-
 
     # TODO multi-corr fits. something like this:
     # for corr, T_in_GeV in zip(args.corr, args.T_in_GeV):
