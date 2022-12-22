@@ -28,18 +28,24 @@ def plot(args, flowradius, x, y, yerr, merged_data_path, index, flowtime, nt, fl
     lower_limit = lpd.lower_tauT_limit_(flowradius, 0.33, 0)
     min_index = numpy.fabs(x-lower_limit).argmin()
     ax.axvline(x=lower_limit, **lpd.verticallinestyle)
-    ax.text(lower_limit, 1, r'$ 3\sqrt{8\tau_F}T$', ha='right', va='center', zorder=-1000, bbox=lpd.labelboxstyle)
-    ax.fill_between(x[min_index:], y[min_index:] - yerr[min_index:], y[min_index:] + yerr[min_index:], alpha=0.5)
-    ax.errorbar(x[min_index:], y[min_index:], fmt='-', zorder=-10, alpha=0.5)
+    ax.text(lower_limit, args.lower_limit_text_pos, r'$ 3\sqrt{8\tau_F}T$', ha='center', va='center', zorder=-1000, bbox=lpd.labelboxstyle)
+    ax.set_xticks((0.0, 0.1, 0.2, 0.3, 0.4, 0.5))
+
+    # interpolations
+    ax.fill_between(x[min_index:], y[min_index:] - yerr[min_index:], y[min_index:] + yerr[min_index:], label="int.")
+    ax.errorbar(x[min_index:], y[min_index:], fmt='-', zorder=-10)
+
+    # data
     XX = numpy.loadtxt(merged_data_path + "/" + args.corr + "_" + args.conftype + ".dat")
     XX_err = numpy.loadtxt(merged_data_path + "/" + args.corr + "_err_" + args.conftype + ".dat")
     for a in range(len(XX[index])):
         XX[index, a] = XX[index, a] * nt ** 4 / lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction)
-        XX_err[index, a] = XX_err[index, a] * nt ** 4 / lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction)
+        XX_err[index, a] = XX_err[index, a] * nt ** 4 / numpy.fabs(lpd.G_latt_LO_flow(a, flowtime, args.corr, nt, flowaction, gaugeaction))
     x = lpd.get_tauTs(nt)
-    min_index = numpy.fabs(x - lower_limit).argmin()
-    ax.errorbar(x[min_index:], XX[index][min_index:], XX_err[index][min_index:], fmt='|')
-    ax.set_xticks((0.0, 0.1, 0.2, 0.3, 0.4, 0.5))
+    min_index = numpy.ceil(numpy.fabs(x*nt - lower_limit*nt)).argmin()+1
+    ax.errorbar(x[min_index:], XX[index][min_index:], XX_err[index][min_index:], fmt='|', label="data")
+
+    ax.legend(loc="center right", bbox_to_anchor=(0.99, 0.25), **lpd.leg_err_size())
     return fig
 
 
@@ -98,6 +104,7 @@ def main():
     parser.add_argument('--nproc', type=int, default=20, help="number of parallel processes (different flow times can be interpolated independently)")
     parser.add_argument('--basepath', type=str, help="where to look for the data")
     parser.add_argument('--basepath_plot', type=str, help="where to save the output plots")
+    parser.add_argument('--lower_limit_text_pos', type=float)
 
     args = parser.parse_args()
 
