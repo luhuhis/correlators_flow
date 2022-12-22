@@ -14,7 +14,7 @@ warnings.filterwarnings('ignore', r'(.*?)converting a masked element to nan.')
 warnings.filterwarnings('ignore', r'(.*?)More than 20 figures have been opened.(.*?)')
 
 
-def plot_single_flowtime(index, flowradii, args, tauT, XX, XX_err, labels, ylims):
+def plot_single_flowtime(index, flowradii, args, tauT, XX, XX_err, labels, ylims, xlims):
 
     nplot = len(XX)
     colors = ['k', *[cm.tab10(i) for i in range(nplot)]]
@@ -27,7 +27,7 @@ def plot_single_flowtime(index, flowradii, args, tauT, XX, XX_err, labels, ylims
         displaystyle = r''
     ylabel = r'$ ' + displaystyle + r'\frac{G}{G^\mathrm{norm}}$'
 
-    fig, ax, plots = lpd.create_figure(xlims=[0.15, 0.52], ylims=ylims, xlabel=r'$\tau T$', ylabel=ylabel, UseTex=args.use_tex)
+    fig, ax, plots = lpd.create_figure(xlims=xlims, ylims=ylims, xlabel=r'$\tau T$', ylabel=ylabel, UseTex=args.use_tex)
 
     ax.text(0.99, 0.99, r'$\sqrt{8\tau_\mathrm{F}} T=$ ' + '{0:.3f}'.format(flowradii[index]), ha='right', va='top', transform=ax.transAxes, bbox=lpd.labelboxstyle)
 
@@ -38,12 +38,12 @@ def plot_single_flowtime(index, flowradii, args, tauT, XX, XX_err, labels, ylims
 
     ax.legend(handles=plots)
     handles, labels = ax.get_legend_handles_labels()
-    leg = ax.legend(handles[::-1], labels[::-1], title="", loc="lower right", bbox_to_anchor=(1.01, 0.1), framealpha=0.5, handlelength=1, **lpd.leg_err_size(1, 0.3))
-    leg.set_zorder(-1)
-    # for line in leg.get_lines():
-    #     line.set_linewidth(4.0)
+    leg = ax.legend(handles[::-1], labels[::-1], title=r'$N_\tau$', loc="lower right", bbox_to_anchor=(1.01, 0.1), **lpd.leg_err_size(1, 0.3))
+    leg.set_zorder(100)
     if index != 0:
-        ax.axvline(x=lpd.lower_tauT_limit_(flowradii[index]), **lpd.verticallinestyle)
+        lower_limit = lpd.lower_tauT_limit_(flowradii[index])
+        ax.axvline(x=lower_limit, **lpd.verticallinestyle)
+        ax.text(lower_limit, args.lower_limit_text_pos, r'$ 3\sqrt{8\tau_F}T$', ha='center', va='center', bbox=lpd.labelboxstyle)
 
     return fig
 
@@ -70,8 +70,10 @@ def main():
     parser.add_argument('--corr', choices=["EE", "BB"], required=True)
     parser.add_argument('--basepath', type=str, default="../../data/merged/")  # TODO add help
     parser.add_argument('--ylims', type=float, nargs=2, default=None)
+    parser.add_argument('--xlims', type=float, nargs=2, default=[0.15, 0.52])
     parser.add_argument('--outputfolder', type=str, default=None)
     parser.add_argument('--hide_cont', default=False, action="store_true")
+    parser.add_argument('--lower_limit_text_pos', type=float)
     args = parser.parse_args()
 
     fermions, temp, flowtype, gaugeaction, flowaction = lpd.parse_qcdtype(args.qcdtype)
@@ -103,7 +105,7 @@ def main():
 
         tauT.append(lpd.get_tauTs(nt))
 
-    labels = [r'$N_\tau = ' + str(nt) + r'$' for nt in Ntaus]
+    labels = [r'$' + str(nt) + r'$' for nt in Ntaus]
 
     # add cont
     if not args.hide_cont:
@@ -118,7 +120,7 @@ def main():
         indices = range(*args.flow_index_range)
 
     matplotlib.rcParams['figure.max_open_warning'] = 0  # suppress warning due to possibly large number of figures...
-    figs = lpd.parallel_function_eval(plot_single_flowtime, indices, args.nproc, numpy.sqrt(8*flowtimesT2), args, tauT, XX, XX_err, labels, args.ylims)
+    figs = lpd.parallel_function_eval(plot_single_flowtime, indices, args.nproc, numpy.sqrt(8*flowtimesT2), args, tauT, XX, XX_err, labels, args.ylims, args.xlims)
 
     # save figures to pdf
     print("save figures...")
