@@ -66,7 +66,7 @@ def plot_extrapolation(xdata, ydata, edata, ydata_extr, edata_extr, indices, arg
             mycolor = lpd.get_color(tauTs, i, mintauTindex, finest_Nt_half - 1)
 
             # plot fit result at tf=0
-            plots.append(ax.errorbar(0, ydata_extr[i][1], edata_extr[i][1], fmt='o', markersize=0, alpha=1, color=mycolor, zorder=1, label='{0:.3f}'.format(tauT)))
+            plots.append(ax.errorbar(0, ydata_extr[i][1], edata_extr[i][1], fmt='|', color=mycolor, zorder=1, label='{0:.3f}'.format(tauT)))
 
             # plot linear fit line
             x = numpy.asarray([0, xdataplot[-1]])
@@ -76,7 +76,7 @@ def plot_extrapolation(xdata, ydata, edata, ydata_extr, edata_extr, indices, arg
             ax.fill_between(xdataplot, ydata[i]-edata[i], ydata[i]+edata[i], facecolor=mycolor, alpha=0.5, zorder=-300+i)
 
             # plot data points used in extrapolation
-            ax.errorbar(xdataplot[indices[i]], ydata[i][indices[i]], fmt='o', markersize=1, color=mycolor, alpha=1)
+            ax.errorbar(xdataplot[indices[i]], ydata[i][indices[i]], edata[i][indices[i]], fmt='|', color=mycolor)
 
     # second x-axis for flow radius
     ax2 = ax.twiny()
@@ -91,8 +91,7 @@ def plot_extrapolation(xdata, ydata, edata, ydata_extr, edata_extr, indices, arg
     # legend
     ax.legend(handles=plots)
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles[::-1], labels[::-1], title=r'$\tau T$', loc="center left", bbox_to_anchor=(1.01, 0.5), columnspacing=0.5, handlelength=0.75, labelspacing=0.1, handletextpad=0.2,
-                                borderpad=0, **lpd.leg_err_size(1, 0.2)).set_zorder(-1)
+    ax.legend(handles[::-1], labels[::-1], title=r'$\tau T$', loc="center left", bbox_to_anchor=(1.01, 0.5), **lpd.leg_err_size(1, 0.2))
     # ax.xaxis.set_label_coords(0.98, 0.02)
 
     # TODO uncomment for BB
@@ -280,7 +279,7 @@ def main():
     file = basepath + "/" + args.corr + "_flow_extr.npy"
     print("saving all samples in", file)
     numpy.save(file, results)
-    print(results.shape)
+    print("results shape:", results.shape)
 
     # TODO save correlation matrices
     # XX_samples = numpy.swapaxes(XX_samples, 0, 2)  # change data structure such that numpy.cov understands it
