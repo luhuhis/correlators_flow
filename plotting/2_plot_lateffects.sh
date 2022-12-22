@@ -17,7 +17,8 @@ if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     continuum="../../data/merged/quenched_1.50Tc_zeuthenFlow/EE/cont_extr/EE_cont.dat"
     continuum_err="../../data/merged/quenched_1.50Tc_zeuthenFlow/EE/cont_extr/EE_cont_err.dat"
     flowtimesT2="../../data/merged/quenched_1.50Tc_zeuthenFlow/EE/cont_extr/EE_cont_flowtimesT2.dat"
-    ylims="2 4"
+    ylims="2 4.1"
+    add_args="--hide_cont --xlims 0 0.52 --lower_limit_text_pos 3.5"
 elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
 
     # TODO make plots for hisq
@@ -27,8 +28,9 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     "s064t20_b0770400 s064t24_b0791300 s096t32_b0824900_m002022_m01011"
     "s064t20_b0757000 s064t24_b0777700 s096t36_b0824900_m002022_m01011")
     arr_output_suffix=("T296" "T251" "T220" "T196")
-    ylims_arr=("3.5 9.9" "3.5 9.9" "3.5 9.9" "3.5 9.9")
+    ylims_arr=("3.5 10.5" "3.5 10.5" "3.5 10.5" "3.5 10.5")
     basepath="../../data/merged/hisq_ms5_zeuthenFlow/EE"
+    add_args="--hide_cont --lower_limit_text_pos 8"
 fi
 
 
@@ -41,7 +43,6 @@ for idx in "${!arr_conftypes[@]}" ; do
         continuum_err="${basepath}/${temp}/cont_extr/EE_cont_err.dat"
         outputfolder="--outputfolder ../../plots/$qcdtype/EE/$temp/"
         ylims=${ylims_arr[idx]}
-        add_args="--hide_cont"
     fi
 
 ./2_plot_lateffects.py \
