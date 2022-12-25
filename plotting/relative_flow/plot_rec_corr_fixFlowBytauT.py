@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -u
+#!/usr/bin/env python3
 
 import lib_process_data as lpd
 import numpy
@@ -7,11 +7,14 @@ import scipy.interpolate
 import scipy.optimize
 import argparse
 import itertools
+import matplotlib
 from matplotlib import gridspec
 from process_data.spf.spf_reconstruct import SpfArgs, Gnorm, Integrand
+from matplotlib.backends.backend_pdf import PdfPages
 
-plotwidth = 0.9
 
+
+# TODO change phiUV to npy file
 
 def set_title(args, ax):
 
@@ -36,7 +39,9 @@ def set_title(args, ax):
 
     # set title
     model_str = get_model_str(args.model, args.PhiUV_label, args.min_scale, args.run_scale)
-    ax.set_title(model_str+args.title, x=0.5, y=1, fontsize=7)
+    title = model_str+args.title
+    if title != "":
+        ax.text(0.5, 1, title, transform=ax.transAxes, ha='center', va='bottom')
 
 
 def set_text(args, ax, ax_kappa):
@@ -44,9 +49,19 @@ def set_text(args, ax, ax_kappa):
         ax_kappa.text((3.40024856+1.4370101)/2/4, 0.85, "total \n systematic\n uncertainty \n from model \n choice at \n $a\\rightarrow 0$,\n$\\tau_F\\rightarrow 0$", transform=ax_kappa.transAxes, fontsize=6, color='k', alpha=1, ha='center', va='center', rotation='0')
         ax_kappa.fill_between([1.4370101, 3.40024856], [0, 0], [10, 10], zorder=-10000, color='k', alpha=0.15, lw=0)
 
-    if args.custom_text:
-        ax.text(0.35/0.5, 0.4, "Fit $\\tau T \\geq 0.35$", transform=ax.transAxes, fontsize=6,
-                color='k', alpha=1, ha='center', va='center', rotation='0', zorder=10, bbox=dict(facecolor='white', edgecolor='white'))
+    if args.custom_text is not None:
+        x = float(args.custom_text[0])
+        y = float(args.custom_text[1])
+        text = args.custom_text[2]
+        ha = args.custom_text[3]
+        va = args.custom_text[4]
+        transform = None
+        if args.custom_text[5] == "rel":
+            transform = ax.transAxes
+
+        ax.text(x, y, text, ha=ha, va=va, transform=transform)
+        # ax.text(0.35/0.5, 0.4, "Fit $\\tau T \\geq 0.35$", transform=ax.transAxes, fontsize=6,
+        #         color='k', alpha=1, ha='center', va='center', rotation='0', zorder=10, bbox=dict(facecolor='white', edgecolor='white'))
 
 
 def set_watermark(args, ax, ax_kappa):
@@ -62,19 +77,45 @@ def set_watermark(args, ax, ax_kappa):
 
 
 def set_legend(args, ax):
+    ax.legend()
+    handles, labels = ax.get_legend_handles_labels()
+    n = len(handles)
+    n2 = int(n/2)
+
+    if args.leg_interleave:
+        index = numpy.asarray([(i, i+n2) for i in range(0, n2)], dtype=int).flatten()
+    else:
+        index = range(n)
+
+    legend = ax.legend([handles[i] for i in index], [labels[i] for i in index],
+                       loc=args.leg_loc, bbox_to_anchor=args.leg_pos, ncol=args.leg_n_col, **lpd.leg_err_size())
+
     # Legend
     for i in range(args.leg_n_dummies):
         ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
-    legend = ax.legend(**lpd.chmap(lpd.legendstyle, edgecolor='black', frameon=True, framealpha=0, loc='lower right', bbox_to_anchor=args.leg_pos,  labelspacing=0, ncol=args.leg_n_col, columnspacing=1.2, handlelength=1.2, fontsize=6))
-    if args.leg_label_showNtinsteadofa:
-        legtitle_Nt_or_a = "N_\\tau"
-    else:
-        legtitle_Nt_or_a = "a"
-    legend.set_title("$\\quad \\quad "+legtitle_Nt_or_a+",  \\:\\: \\sqrt{\\! 8\\tau_\\mathrm{F}}/\\tau"+args.leg_title_suffix+"\\hspace{1}$", prop={'size': 6})
-    legend.get_frame().set_linewidth(0.5)
-    texts = legend.get_texts()
-    for text in texts:
-        text.set_linespacing(0.85)
+    legend.set_title(args.leg_title)
+    # texts = legend.get_texts()
+    # for text in texts:
+    #     text.set_linespacing(0.85)
+    # legend._handler_map
+    # legend._legend_box.sep = 5  # separation between legend title and entries
+    # legend._legend_box.align = "left"
+
+
+def plot_error_interpolation(xdata, ydata, edata, y_int, e_int, tauT):
+
+    x_int = numpy.linspace(xdata[0], xdata[-1], 1000)
+
+    fig, ax, _ = lpd.create_figure()
+    ax.set_xlim(0, tauT/2)
+    ax.set_ylim(0, 12)
+    ax.errorbar(xdata, ydata, edata, color='k', zorder=10)
+    ax.fill_between(x_int, y_int(x_int)-e_int(x_int), y_int(x_int)+e_int(x_int), zorder=9)
+
+    ax.text(0.99, 0.99, lpd.format_float(tauT), ha='right', va='top', transform=ax.transAxes)
+
+    return fig
+
 
 
 def plot_relative_flow(args, ax, color_offset, spfargs_arr, params_ansatz_arr):
@@ -84,59 +125,63 @@ def plot_relative_flow(args, ax, color_offset, spfargs_arr, params_ansatz_arr):
     if args.qcdtype is not None and args.corr is not None and args.conftype is not None:
         n = max(len(args.flowradiusBytauT), len(args.qcdtype), len(args.corr), len(args.conftype))
         args.color_data = args.color_data[color_offset:color_offset + n]
-        for flowradiusBytauT, qcdtype, corr, conftype, color, label_suffix, spfargs, params, a in \
+        args.markers = args.markers[color_offset:color_offset + n]
+        args.fillstyle = args.fillstyle[color_offset:color_offset + n]
+        args.leg_labels = args.leg_labels[color_offset:color_offset + n]
+        for flowradiusBytauT, qcdtype, corr, conftype, color, marker, fillstyle, label_suffix, spfargs, params, a in \
                 zip(args.flowradiusBytauT if len(args.flowradiusBytauT) > 1 else itertools.cycle(args.flowradiusBytauT),
                     args.qcdtype if len(args.qcdtype) > 1 else itertools.cycle(args.qcdtype),
                     args.corr if len(args.corr) > 1 else itertools.cycle(args.corr),
                     args.conftype if len(args.conftype) > 1 else itertools.cycle(args.conftype),
                     args.color_data,
-                    args.leg_label_suffix if args.leg_label_suffix is not None else ["" for _ in range(n)],
+                    args.markers if len(args.markers) > 1 else itertools.cycle(args.markers),
+                    args.fillstyle if len(args.fillstyle) > 1 else itertools.cycle(args.fillstyle),
+                    args.leg_labels if args.leg_labels is not None else ["" for _ in range(n)],
                     spfargs_arr if len(spfargs_arr) > 0 else [None for _ in range(n)],
                     params_ansatz_arr if len(params_ansatz_arr) > 0 else [None for _ in range(n)],
                     args.plot_in_fm if args.plot_in_fm[0] is not None else [None for _ in range(n)]):
             if flowradiusBytauT is not None:
                 inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype, basepath="../../../data/merged/")
-                these_flowradii = numpy.loadtxt(inputfolder + "flowradii_" + conftype + ".dat")
                 these_flowtimes = numpy.loadtxt(inputfolder + "flowtimes_" + conftype + ".dat")
                 XX = numpy.loadtxt(inputfolder + corr + "_" + conftype + ".dat")
                 XX_err = numpy.loadtxt(inputfolder + corr + "_err_" + conftype + ".dat")
                 beta, ns, nt, nt_half = lpd.parse_conftype(conftype)
+                these_flowradii = numpy.sqrt(8 * these_flowtimes) / nt
                 these_tauT = numpy.arange(1 / nt, 0.501, 1 / nt)
 
-                fermions, temp, flowtype = lpd.parse_qcdtype(qcdtype)
-
-                if fermions == "hisq":
-                    gaugeaction = "LW"
-                elif fermions == "quenched":
-                    gaugeaction = "Wilson"
-
-                if flowtype == "zeuthenFlow":
-                    flowaction = "Zeuthen"
-                elif flowtype == "wilsonFlow":
-                    flowaction = "Wilson"
+                fermions, temp, flowtype, gaugeaction, flowaction = lpd.parse_qcdtype(qcdtype)
 
                 # interpolate between flow times
                 y_int = []
                 e_int = []
+                figs = []
                 for i in range(len(these_tauT)):
                     G_latt_LO_flow = lpd.G_latt_LO_flow(i, these_flowtimes, corr, nt, flowaction, gaugeaction)
                     ydata = numpy.asarray(XX[:, i]) * nt ** 4 / G_latt_LO_flow
-                    edata = numpy.asarray(XX_err[:, i]) * nt ** 4 / G_latt_LO_flow
+                    edata = numpy.asarray(XX_err[:, i]) * nt ** 4 / numpy.fabs(G_latt_LO_flow)
                     xdata = these_flowradii
-                    y_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, ydata, k=3, ext=2, check_finite=True))
-                    e_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata, edata, k=3, ext=2, check_finite=True))
-                if args.leg_label_showNtinsteadofa:
-                    thislabel = str(nt)
-                else:
-                    thislabel = "1/(" + str(nt) + r'T\,)'
+                    min_index = numpy.fabs(these_flowradii-args.min_flowradius).argmin()
+                    y_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata[min_index:], ydata[min_index:], k=3, ext=2, check_finite=True))
+                    e_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata[min_index:], edata[min_index:], k=3, ext=2, check_finite=True))
+
+                    # figs.append(plot_error_interpolation(xdata[min_index:], ydata[min_index:], edata[min_index:], y_int[i], e_int[i], (i+1)/nt))
+
+                # save figures to pdf
+                # print("save figures...")
+                # lpd.set_rc_params()
+                # with PdfPages(args.output_path + "EE_" + conftype + "_relflow_int.pdf") as pdf:
+                #     for fig in figs:
+                #         pdf.savefig(fig)
+                #         matplotlib.pyplot.close(fig)
+
                 find_and_plot_and_save_relflow(args, ax, flowradiusBytauT, these_tauT, y_int, e_int,
-                                               inputfolder, color, thislabel, spfargs, params,
+                                               inputfolder, color, marker, fillstyle, spfargs, params,
                                                int(-1000 * flowradiusBytauT),
                                                nt if args.plot_in_lattice_units else None, a, label_suffix)
 
 
-def find_and_plot_and_save_relflow(args, ax, flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, color, Glabel, spfargs, params, zorder=-10,
-                                   nt=None, lattice_spacing=None, label_suffix=""):
+def find_and_plot_and_save_relflow(args, ax, flowradiusBytauT, possible_tauTs, y_int_list, e_int_list, out_file_path, color, marker, fillstyle,
+                                   spfargs, params, zorder=-10, nt=None, lattice_spacing=None, label=""):
 
     relflow_edata = []
     relflow_ydata = []
@@ -171,49 +216,47 @@ def find_and_plot_and_save_relflow(args, ax, flowradiusBytauT, possible_tauTs, y
             xdata = numpy.asarray(relflow_xdata) * nt
     else:
         xdata = numpy.asarray(relflow_xdata) * nt * lattice_spacing
-    ax.errorbar(xdata, relflow_ydata, relflow_edata, zorder=zorder,
-                **lpd.chmap(lpd.plotstyle_add_point, markersize=0, elinewidth=plotwidth, mew=plotwidth, fmt='_', color=color,
-                            label="$" + Glabel + ", \\: " + flowstr + label_suffix + "$"))
+    ax.errorbar(xdata, relflow_ydata, relflow_edata, zorder=zorder, fmt=marker, color=color, fillstyle=fillstyle,
+                label=label, markeredgewidth=0.75, elinewidth=0.75, markersize=4)  # TODO remove
     # TODO add custom labels
     if not args.no_connection:
-        ax.errorbar(xdata, relflow_ydata, zorder=-100 * zorder,
-                    **lpd.chmap(lpd.plotstyle_add_point, markersize=0, lw=0.75 * plotwidth, alpha=0.5, fmt='-', color=color))
+        ax.errorbar(xdata, relflow_ydata, zorder=-100 * zorder,  markersize=0, alpha=0.5, fmt='-', color=color)
 
 
-# TODO add leg_label_suffix
-def plot_extrapolated_data(args, ax):
+def plot_extrapolated_data(args, ax, color_offset):
+    if args.plot_flow_extr is not None:
+        for i, path in enumerate(args.plot_flow_extr):
+            try:
+                XX_flow_extr = numpy.loadtxt(path, unpack=True)
+                ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2],
+                            zorder=-10000, color=args.color_data[i], fmt='_', markersize=0,
+                            label=args.leg_labels[i])
+                if not args.no_connection:
+                    ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], zorder=-100000, markersize=0, color=args.color_data[i], fmt='-', alpha=0.5)
+                color_offset += 1
+            except OSError:
+                print("WARN: skipping tf->0 extr., could not find ", path)
+    return color_offset
 
-    # TODO add the option to give multiple extrapolations
-    path = args.plot_extr
-    conftype = args.conftype[0]
 
-    color_offset = 0
-    if args.plot_extr:
-        color_offset = 2
-        # plot cont+flow extr. corr
-        # TODO abstract this or make a flag to plot this or not?
-        file = path+"/EE_flow_extr.txt"
-        try:
-            XX_flow_extr = numpy.loadtxt(file, unpack=True)
-            ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2], zorder=-10000,
-                        **lpd.chmap(lpd.plotstyle_add_point, color='k', fmt='_', markersize=0,
-                                    mew=plotwidth, elinewidth=plotwidth,
-                                    label="$a\\rightarrow 0, \\:\\: \\tau_\\mathrm{F}\\rightarrow 0$"))
-            ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
-            if not args.no_connection:
-                ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], zorder=-100000, markersize=0, lw=0.75 * plotwidth, color='k', fmt='-', alpha=0.5)
-        except OSError:
-            print("WARN: skipping tf->0 extr., could not find ", file)
+# TODO fix this
+def plot_relflow_continuum_data(args, ax, color_offset):
 
-        # TODO add a flag for this finite-flowtime data here
+    for datapath, flowpath in zip(args.plot_cont_extr, args.cont_flowtimes):
+        color_offset += 1
+        conftype = args.conftype[0]  # TODO fix conftype
+
         # TODO update this for new sample-based format
         # load continuum quenched data and interpolate it
         EE_cont_arr = []
-        # TODO remove "lpd.remove..."
-        flowradii = numpy.loadtxt(lpd.remove_right_of_last('/', path)+"/"+conftype+"/flowradii_"+conftype+".dat")
+        flowtimes = numpy.loadtxt(flowpath)
+        flowradii = numpy.sqrt(8*flowtimes)
         min_idx = 0
         max_idx = 0
         stop = False
+
+        # TODO replace this loop over flowradius with one line that loads the npy file containing all flow and all samples.
+        # TODO then compute the mean+std and use that further down the line
         for flowradius in flowradii:
             flowradius_str = r'{0:.4f}'.format(flowradius)
             fitparam_file = path+"/cont_extr/EE_" + flowradius_str + "_cont.txt"
@@ -274,11 +317,10 @@ def plot_fit_corrs(args, ax, xpoints_arr, model_means, just_UVs, fitparams, nts)
                 # + "$\\chi^2/\\mathrm{dof}=" + "{0:.1f}".format(fitparam[2][0]) + " \\pm " + "{0:.1f}".format(numpy.fmax(fitparam[2][1], fitparam[2][2])) +"$",
             else:
                 label = ""
-            ax.errorbar(xpoints, model_mean, color=color,
-                        label=label, **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='--', zorder=-10000+zorder, ))
+            ax.errorbar(xpoints, model_mean, color=color, label=label, fmt='--', zorder=-10000+zorder)
 
             if not args.no_just_UV:
-                ax.errorbar(xpoints, just_UV, color=color, alpha=0.25, **lpd.chmap(lpd.plotstyle_add_point, lw=plotwidth, fmt='-.', zorder=-10000+zorder, ))
+                ax.errorbar(xpoints, just_UV, color=color, alpha=0.25, fmt='-.', zorder=-10000+zorder)
 
 
 def G_ansatz(spfargs, params, tauT):
@@ -373,12 +415,12 @@ def plot_fits(args, ax, ax_kappa):
             if not args.no_kappa_plot:
                 if not args.kappa_xaxis_temp:
                     ax_kappa.errorbar(params[0], pos[posidx], xerr=[[err_left[0]], [err_right[0]]], color=args.color_fit[posidx], fmt='x-', fillstyle='none',
-                                      markersize=0, mew=plotwidth, elinewidth=plotwidth, capsize=1, zorder=-10)
+                                      markersize=0, zorder=-10)
                 else:
                     factor = 1 if not args.kappa_in_GeV else (temp / 1000) ** 3
                     ax_kappa.errorbar(temp, params[0] * factor, yerr=[[err_left[0] * factor], [err_right[0] * factor]], color=args.color_fit[posidx], fmt='x-',
                                       fillstyle='none',
-                                      markersize=0, mew=plotwidth, elinewidth=plotwidth, capsize=1, zorder=-10)
+                                      markersize=0, zorder=-10)
                     # print(temp, r'{0:.2f}'.format(params[0]), r'{0:.2f}'.format(err_left[0]), r'{0:.2f}'.format(err_right[0]))
 
                 # if posidx == 0 and args.plot_extr:
@@ -439,11 +481,11 @@ def plot_fits(args, ax, ax_kappa):
         if not args.no_kappa_plot and args.kappa_xaxis_temp:
             ax_kappa.set_xlim((0, 400))
             ax_kappa.set_ylim(args.kappa_xlims)
-            ax_kappa.set_xlabel("$T\\, \\mathrm{[MeV]}$", fontsize=8)
+            ax_kappa.set_xlabel("$T\\, \\mathrm{[MeV]}$") #fontsize=fontsize
             if args.kappa_in_GeV:
-                ax_kappa.set_ylabel("$\\kappa \\, [\\mathrm{GeV}^3]$", fontsize=8)
+                ax_kappa.set_ylabel("$\\kappa \\, [\\mathrm{GeV}^3]$")  #, fontsize=fontsize
             else:
-                ax_kappa.set_ylabel("$\\kappa /T^3$", fontsize=8)  # [\\mathrm{GeV}^3]
+                ax_kappa.set_ylabel("$\\kappa /T^3$")  #, fontsize=fontsize # [\\mathrm{GeV}^3]
             ax_kappa.xaxis.set_label_coords(0.8, 0.06)
             ax_kappa.yaxis.set_label_coords(0.15, 0.99)  # 0.07
             xpoints = numpy.linspace(0, 500, 100)
@@ -470,39 +512,35 @@ def prepare_plot_canvas(args):
     else:
         xlabel = r'$\tau T$'
 
+    if args.norm_by_Gansatz:
+        ylabel = "$\\frac{G^\\mathrm{imp}}{G^\\mathrm{ansatz}}$"
+    else:
+        ylabel = "$\\dfrac{G}{G^\\mathrm{norm}}$"
+
     ax_kappa = None
     if not args.no_kappa_plot:
-        fig, _, _ = lpd.create_figure(figsize=(3, 2.5), UseTex=args.usetex, subplot=None, no_ax=True)
+        fig, _, _ = lpd.create_figure(figsize=args.figsize, UseTex=args.usetex, subplot=None, no_ax=True)
         spec = gridspec.GridSpec(figure=fig, ncols=2, nrows=1, width_ratios=[3, 1], wspace=0)
-        _, ax, _ = lpd.create_figure(figsize=(3, 2.5), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
+        _, ax, _ = lpd.create_figure(xlims=args.xlims, ylims=args.ylims, xlabel=xlabel, ylabel=ylabel,
                                      UseTex=args.usetex, fig=fig, subplot=spec[0])
-        ax.set_xlabel(xlabel, **lpd.chmap(lpd.xlabelstyle, bbox=None))
+        ax.set_xlabel(xlabel)
         _, ax_kappa, _ = lpd.create_figure(ylims=(0, 2.5), UseTex=args.usetex, fig=fig, subplot=spec[1])
         kappa_ylabel = "$\\kappa /T^3$"
-        ax_kappa.set_ylabel(kappa_ylabel, x=0.7, y=0.1, fontsize=10)  #
+        ax_kappa.set_ylabel(kappa_ylabel, x=0.7, y=0.1)
         ax_kappa.set_xlim(args.kappa_xlims)
         if args.kappa_ylims:
             ax_kappa.set_ylim(args.kappa_ylims)
 
     else:
-        fig, _, _ = lpd.create_figure(figsize=(3, 2.5), UseTex=args.usetex, subplot=None, no_ax=True)
-        _, ax, _ = lpd.create_figure(figsize=(3, 2.5), xlims=args.xlims, ylims=args.ylims, xlabel=xlabel,
-                                     UseTex=args.usetex, fig=fig)
+        fig, ax, _ = lpd.create_figure(figsize=args.figsize, UseTex=args.usetex, xlims=args.xlims, xlabel=xlabel, ylims=args.ylims, ylabel=ylabel)
+
     if args.norm_by_Gansatz:
-        ax.set_ylabel("$\\frac{G^\\mathrm{imp}}{G^\\mathrm{ansatz}}$", fontsize=12)
         ax.axhline(y=1, **lpd.horizontallinestyle)
-    else:
-        ax.set_ylabel("$\\frac{G}{G^\\mathrm{norm}}$", fontsize=12)
 
     # plot dashed vlines
     if not args.no_vlines and args.tauT_vlines is not None and args.color_vlines is not None:
         for tauT, color in zip(args.tauT_vlines, args.color_vlines):
             ax.axvline(tauT, **lpd.chmap(lpd.verticallinestyle, color=color, alpha=1))
-
-    xlabelpos = (0.99, 0.01)
-    ylabelpos = (0.01, 0.97)
-    ax.yaxis.set_label_coords(*ylabelpos)
-    ax.xaxis.set_label_coords(*xlabelpos)
 
     return fig, ax, ax_kappa
 
@@ -520,10 +558,14 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--plot_extr', help='path to the continuum/flow-extr data. only try to plot this when specified.', default=None, type=str)
+    parser.add_argument('--plot_flow_extr', help='paths to files containing flow-extr data.', default=None, type=str, nargs='*')
+    parser.add_argument('--plot_cont_extr', help='paths to files containing continuum-extr data.', default=None, type=str, nargs='*')
+    parser.add_argument('--cont_flowtimes', help='paths to files containing continuum flowtimes in temperature units', default=None, type=str, nargs='*')
+
     parser.add_argument('--plot_quenched_systematics', action="store_true")  # TODO soften hard code
 
-    parser.add_argument('--flowradiusBytauT', nargs='*', type=float, help='which sqrt(8tauF)/tauT to plot', required=True)
+    parser.add_argument('--flowradiusBytauT', nargs='*', type=float, help='which sqrt(8tauF)/tauT to plot')
+    parser.add_argument('--min_flowradius', default=0.075, type=float, help="set to at least one lattice spacing of the coarsest lattice.")
 
     # fitparam options
     parser.add_argument('--fitparam_files', nargs='*', help='plot model 3 spf for these fit params')
@@ -534,10 +576,10 @@ def parse_args():
     # general plot options
     parser.add_argument('--usetex', action="store_true")
     parser.add_argument('--ylims', help='custom ylims', nargs=2, type=float, default=(-0.03, 4))
-    parser.add_argument('--xlims', help='custom xlims', nargs=2, type=float, default=(-0.01, 0.51))
+    parser.add_argument('--xlims', help='custom xlims', nargs=2, type=float, default=(-0.01, 0.55))
     parser.add_argument('--title', help='title prefix of plot', default="", type=str)
     parser.add_argument('--custom_text', help="show some custom text. modify this script to customize it. (i dont feel like adding 10 more parameters "
-                                              "just for some text)", action="store_true")
+                                              "just for some text)", nargs='*')
 
     parser.add_argument('--plot_in_lattice_units', help="only works if the lattice spacing is constant across different conftypes", action="store_true")
     parser.add_argument('--plot_in_fm', nargs='*', type=float, default=[None, ], help="plot tau in fm. arguments here are the lattice spacings in order in fm.")
@@ -549,14 +591,19 @@ def parse_args():
     parser.add_argument('--norm_by_Gansatz', help="normalize by G_ansatz instead of Gnorm", action="store_true")
 
     # legend options
-    parser.add_argument('--leg_label_showNtinsteadofa', help="show Nt instead of a in the legend labels", action="store_true")
     parser.add_argument('--leg_pos', nargs=2, default=(0.02, 1), type=float, help="where to put the upper left corner of the legend")
+    parser.add_argument('--leg_loc', type=str, default='lower right', help="anchor point of the legend")
     parser.add_argument('--leg_n_dummies', help="how many dummy entries to put in the legend in order to align things nicely", default=0, type=int)
     parser.add_argument('--leg_n_col', help="how many columns the legend should have", default=1, type=int)
-    parser.add_argument('--leg_title_suffix', help="Put this at end of legend title", type=str, default="")
-    parser.add_argument('--leg_label_suffix', help="additional strings to put after the Ntau in the labels in legend", nargs='*', type=str)
+    parser.add_argument('--leg_title', help="Put this at end of legend title", type=str, default="")
+    parser.add_argument('--leg_labels', help="additional strings to put after the Ntau in the labels in legend", nargs='*', type=str)
+    parser.add_argument('--leg_interleave', help="whether to interleave the given data in the legend. this is useful if you want to pair extrapolated data with nonextrapolated data.",
+                        default=False, action="store_true")
 
-    # plot colors
+    # plot styling
+    parser.add_argument('--figsize', help="size of the figure", default=None, nargs='*')
+    parser.add_argument('--markers', nargs='*', default='|', type=str, help="fmt keywords for the plots")
+    parser.add_argument('--fillstyle', nargs='*', default='none', type=str, help="fillstyle keywords for the plots")
     parser.add_argument('--color_data', help="specify colors in order that the data should have", type=str, nargs='*',
                         default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
     parser.add_argument('--color_fit', help="specify colors in order that the fits should have", type=str, nargs='*',
@@ -568,7 +615,6 @@ def parse_args():
     parser.add_argument('--no_vlines', help="hide vertical lines that indicate lower fit limit", action="store_true")
     parser.add_argument('--no_connection', help="hide connections between data points", action="store_true")
     parser.add_argument('--no_label', help="hide labels of fit corrs", action="store_true")
-    parser.add_argument('--no_kappa_plot', action="store_true", help="hide kappa plot")
     parser.add_argument('--no_just_UV', action="store_true", help="do not plot dash-dotted UV parts")
 
     # SPF options
@@ -586,6 +632,7 @@ def parse_args():
     parser.add_argument('--run_scale', default="", type=str, help='will appear in title of plot')
 
     # options for kappa plot (kappa on x-axis, fit range on y-axis)
+    parser.add_argument('--no_kappa_plot', action="store_true", help="hide kappa plot")
     parser.add_argument('--show_watermark', action="store_true")
     parser.add_argument('--kappa_labelheight', help="how high the label that says Fit tauT is in the plot", default=0.75, type=float)
     parser.add_argument('--kappa_ypos', nargs='*', type=float, help="ypos of kappas in kappa plot, in order")
@@ -610,8 +657,9 @@ def parse_args():
     args = parser.parse_args()
 
     # check if arguments make sense
-    if args.plot_extr:
+    if args.plot_cont_extr is not None:
         if not all(element == args.flowradiusBytauT[0] for element in args.flowradiusBytauT):
+            # TODO remove this limitation
             print("ERROR: when plotting the quenched cont/flow extr, all flowradiusBytauT have to be identical")
             exit(1)
     if args.fitparam_files and not args.model:
@@ -628,12 +676,17 @@ def parse_args():
         print("ERROR choose either plot_in_lattice_units and plot_in_fm")
         exit(1)
 
+    if args.conftype is not None and args.flowradiusBytauT is None:
+        print("ERROR: need flowradiusBytauT")
+        exit(1)
     args.output_path = set_output_path(args.output_path, args.qcdtype, args.corr)
 
     return args
 
 
 def main():
+
+    # TODO load flowtime instead of flowradius file
 
     args = parse_args()
 
@@ -642,8 +695,10 @@ def main():
     spfargs_array, params_ansatz_array = plot_fits(args, ax, ax_kappa)
     # we return some fit information, in case we want to normalize the relative flow correlators by some fit correlator.
 
-    color_offset = plot_extrapolated_data(args, ax)
+    color_offset = plot_extrapolated_data(args, ax, color_offset=0)
     # we return an offset, so that plot_relative_flow knows that something else has already been plotted, so that it can skip already used colors.
+
+    # color_offset = plot_relflow_continuum_data(args, ax, color_offset)
 
     plot_relative_flow(args, ax, color_offset, spfargs_array, params_ansatz_array)
 
@@ -656,6 +711,7 @@ def main():
     file = args.output_path + "/"+args.corr[0]+"_relflow" + args.output_suffix + ".pdf"
     print("saving ", file)
     fig.savefig(file)
+    matplotlib.pyplot.close(fig)
 
 
 if __name__ == '__main__':
