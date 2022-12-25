@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7 -u
+#!/usr/bin/env python3
 
 import argparse
 import sys
@@ -312,6 +312,7 @@ def main():
     # save data in text file
     create_folder(args.outputpath)
     np.savetxt(args.outputpath+"/"+args.corr+"_pert_latt_"+args.flow_action+"_"+args.gauge_action+"_Nt"+str(args.Nt)+".dat", correlators, header='rows are flow times, columns are temp seps')
+    # TODO also copy flowtimes file to the output folder
 
 
 def save_script_call(add_folder=None):
