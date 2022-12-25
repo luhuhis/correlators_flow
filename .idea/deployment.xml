@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="On explicit save action" serverName="influx" createEmptyFolders="true" exclude=".svn;.cvs;.DS_Store;.hg;*.hprof;*.pyc;venv*" confirmBeforeUploading="false" autoUploadExternalChanges="true" showAutoUploadSettingsWarning="false">
+  <component name="PublishConfigData" autoUpload="On explicit save action" serverName="influx (project level)" createEmptyFolders="true" exclude=".svn;.cvs;.DS_Store;.hg;*.hprof;*.pyc;venv*" confirmBeforeUploading="false" autoUploadExternalChanges="true" showAutoUploadSettingsWarning="false">
     <option name="confirmBeforeUploading" value="false" />
     <serverData>
-      <paths name="influx">
+      <paths name="influx (project level)">
         <serverdata>
           <mappings>
             <mapping deploy="/home/altenkort/work/correlators_flow/scripts" local="$PROJECT_DIR$" web="/" />

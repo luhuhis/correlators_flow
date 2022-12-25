@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="SshConfigs">
-    <configs>
-      <sshConfig host="influx2.physik.uni-bielefeld.de" id="4875741d-1af2-425c-b6aa-ff58f69789ca" keyPath="$USER_HOME$/.ssh/id_rsa" port="22" nameFormat="DESCRIPTIVE" username="altenkort" useOpenSSHConfig="true" />
-    </configs>
-  </component>
-</project>
