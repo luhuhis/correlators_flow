@@ -91,11 +91,7 @@ def plot1(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
     filename = outputfolder + args.conftype + "_" + args.corr + prefix + "_T.pdf"
     fig.savefig(filename)
     print("SAVED correlator plot \n", filename)
-
-    # clear canvas
-    ax.lines.clear()
-    ax.collections.clear()
-    plots.clear()
+    matplotlib.pyplot.close(fig)
 
 
 def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_half, flow_str, outputfolder,
@@ -184,10 +180,7 @@ def plot2(XX, XX_err, args, prefix, flow_selection, flow_var, xdata_plot, nt_hal
     fig.savefig(filename)
     print("SAVED correlator plot\n", filename)
 
-    # clear canvas
-    ax.lines.clear()
-    ax.collections.clear()
-    plots.clear()
+    matplotlib.pyplot.close(fig)
 
 
 def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfolder: str, fermions: str, valid_flowtimes, tauT, flow_radius, flowend: int):
@@ -433,11 +426,7 @@ def plot3(XX, XX_err, args, prefix, flow_var, xdata_plot, nt_half: int, outputfo
     fig.savefig(filename)
     print("SAVED flow effect plot\n", filename)
 
-    # clear canvas
-    ax.lines.clear()
-    ax.collections.clear()
-    plots.clear()
-
+    matplotlib.pyplot.close(fig)
 
 def get_args():
     """ parse cmd line arguments """
