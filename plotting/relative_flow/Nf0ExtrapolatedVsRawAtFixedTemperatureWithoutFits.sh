@@ -17,7 +17,7 @@
 #--no_kappa_plot \
 #--leg_pos 0.15 1
 
-
+# TODO change phiUV to npy file
 ./plot_rec_corr_fixFlowBytauT.py  \
 --output_suffix _quenched_corrs_withFits \
 --conftype s144t36_b0754400 s080t20_b0703500 \

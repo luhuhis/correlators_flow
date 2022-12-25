@@ -6,7 +6,7 @@
 ./process_data/plot_pert_latt.py --Nt 20 --corr EE --flowtime_file ../data/merged/pert_LO/flowtimes.dat --outputpath ../plots/pertLO/ --inputpath ../data/merged/pert_LO/ --tau 5
 ./process_data/plot_pert_latt.py --Nt 20 --corr EE --flowtime_file ../data/merged/pert_LO/flowtimes.dat --outputpath ../plots/pertLO/ --inputpath ../data/merged/pert_LO/ --tau 5 --exp
 
-
+# TODO change input phiUV to npy file
 ./plotting/plot_integrand.py --outputpath ../plots/ --PathPhiUV ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/max_LO_T0.472_min2piT_w1_500_0.0_exp0_quenched_cont_f0/phiUV.dat
 
 ./plotting/plot_EEvsBB.py
