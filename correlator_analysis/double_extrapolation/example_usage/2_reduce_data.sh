@@ -32,7 +32,7 @@ for idx in "${!arr_conftypes[@]}" ; do
     elif [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
         discard="--n_discard 0 0 0 0 0 0 0 0 0 0"
     fi
-        ../_2_reduce_data.py  $discard --qcdtype "$qcdtype" --corr EE --conftype "$conftype" --basepath ../../../data/merged/ --nproc 5 &
+        ../_2_reduce_data.py  $discard --qcdtype "$qcdtype" --corr EE --conftype "$conftype" --basepath ../../../../data/merged/ --nproc 5 &
 
 done
 wait

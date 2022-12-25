@@ -50,6 +50,6 @@ fi
 for idx in "${!arr_conftypes[@]}"; do
     conftype=${arr_conftypes[idx]}
     min_conf="--min_conf ${min_trajs[idx]}"
-    ../_1_xestimate_autocorrelations.py $add_args --MC_stepsize $MC_stepsize $min_conf --qcdtype $qcdtype --conftype $conftype --corr $corr --basepath ../../../data/merged/ --basepath_plot ../../../plots/
+    ../_1_xestimate_autocorrelations.py $add_args --MC_stepsize $MC_stepsize $min_conf --qcdtype $qcdtype --conftype $conftype --corr $corr --basepath ../../../../data/merged/ --basepath_plot ../../../../plots/
 done
 wait

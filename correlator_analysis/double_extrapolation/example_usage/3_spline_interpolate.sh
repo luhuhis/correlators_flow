@@ -30,7 +30,7 @@ for idx in "${!arr_conftypes[@]}"; do
 #        rm -f /home/altenkort/work/correlators_flow/plots/$qcdtype/$corr/$conftype/interpolations/*interpolation.pdf
 #        rm -f /home/altenkort/work/correlators_flow//data/merged/$qcdtype/$corr/$conftype/interpolations/*interpolation.txt
 
-        args="--basepath ../../../data/merged/ --basepath_plot ../../../plots/ $add_args --ylims $ylims --qcdtype $qcdtype --conftype $conftype --corr $corr --int_Nt ${arr_int_Nt[idx]} --nsamples $nsamples"
+        args="--basepath ../../../../data/merged/ --basepath_plot ../../../../plots/ $add_args --ylims $ylims --qcdtype $qcdtype --conftype $conftype --corr $corr --int_Nt ${arr_int_Nt[idx]} --nsamples $nsamples"
 
         ../_3_spline_interpolate.py $args
 

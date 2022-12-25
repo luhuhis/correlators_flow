@@ -44,9 +44,9 @@ for idx in "${!arr_conftypes[@]}" ; do
     done
 
     for corr in $corrs; do
-#        ../find_common_flowtimes.py --basepath ../../../data/merged/$qcdtype/$corr/ --files $files --output ../../../data/merged/$qcdtype/$corr/${arr_output_suffix[idx]}/flowradii_${arr_output_suffix[idx]}.dat
-        args="$add_args --use_tex --nproc $ncpu --min_flowradius $min_flowradius --basepath ../../../data/merged/
-        --basepath_plot ../../../plots/ --max_FlowradiusBytauT_offset 0 --max_FlowradiusBytauT 0.4  $sufargs ${arr_output_suffix[idx]}
+#        ../find_common_flowtimes.py --basepath ../../../../data/merged/$qcdtype/$corr/ --files $files --output ../../../../data/merged/$qcdtype/$corr/${arr_output_suffix[idx]}/flowradii_${arr_output_suffix[idx]}.dat
+        args="$add_args --use_tex --nproc $ncpu --min_flowradius $min_flowradius --basepath ../../../../data/merged/
+        --basepath_plot ../../../../plots/ --max_FlowradiusBytauT_offset 0 --max_FlowradiusBytauT 0.4  $sufargs ${arr_output_suffix[idx]}
         --qcdtype $qcdtype --conftypes ${arr_conftypes[idx]} --corr $corr --custom_ylims $ylims"
         ../_4_continuum_extr.py $args
 

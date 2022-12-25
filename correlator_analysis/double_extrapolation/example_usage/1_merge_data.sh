@@ -13,7 +13,7 @@ fi
 if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     arr_conftypes=("s064t16_b0687361" "s080t20_b0703500" "s096t24_b0719200" "s120t30_b0739400" "s144t36_b0754400")
     acc_sts="--acc_sts acc0.000010_sts0.000010"
-    add_args="--legacy --basepath ../../../data/raw/"
+    add_args="--legacy --basepath ../../../../data/raw/"
 elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     arr_conftypes=(
     "s064t20_b0803600" "s064t22_b0814700" "s096t24_b0824900_m002022_m01011"
@@ -52,7 +52,7 @@ for idx in "${!arr_conftypes[@]}" ; do
         fi
     fi
 
-    ../_1_merge_data.py ${flowradii_refs[idx/3]} --output_basepath ../../../data/merged/ $even_more_args $add_args --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype &
+    ../_1_merge_data.py ${flowradii_refs[idx/3]} --output_basepath ../../../../data/merged/ $even_more_args $add_args --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype &
 done
 wait
 
