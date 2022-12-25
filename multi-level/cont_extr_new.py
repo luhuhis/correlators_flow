@@ -3,7 +3,7 @@ import numpy
 from latqcdtools.statistics import bootstr
 import lib_process_data as lpd
 
-import process_data._4_continuum_extr as ce
+import correlator_analysis.double_extrapolation._4_continuum_extr as ce
 import scipy
 
 

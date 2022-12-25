@@ -9,7 +9,7 @@ import argparse
 import itertools
 import matplotlib
 from matplotlib import gridspec
-from process_data.spf.spf_reconstruct import SpfArgs, Gnorm, Integrand
+from correlator_analysis.spf.spf_reconstruct import SpfArgs, Gnorm, Integrand
 from matplotlib.backends.backend_pdf import PdfPages
 
 
@@ -119,7 +119,7 @@ def plot_error_interpolation(xdata, ydata, edata, y_int, e_int, tauT):
 
 
 def plot_relative_flow(args, ax, color_offset, spfargs_arr, params_ansatz_arr):
-    # TODO put this part under process_data, and just plot the corresponding corrs here?
+    # TODO put this part under correlator_analysis, and just plot the corresponding corrs here?
     # TODO add option to only calculate these corrs, don't plot anything.
     # find correlator at various fixed flowradiusBytauT
     if args.qcdtype is not None and args.corr is not None and args.conftype is not None:

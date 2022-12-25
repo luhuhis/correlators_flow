@@ -8,7 +8,7 @@ import scipy.interpolate
 from typing import NamedTuple
 from latqcdtools.statistics import bootstr
 import argparse
-from process_data.spf.EE_UV_spf import get_spf, add_args
+from correlator_analysis.spf.EE_UV_spf import get_spf, add_args
 import numba
 
 @numba.njit(cache=True)

@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import numpy
 import lib_process_data as lpd
-import _2_reduce_data as rd
+from correlator_analysis.double_extrapolation import _2_reduce_data as rd
 from matplotlib.ticker import MaxNLocator
 import matplotlib
-from latqcdtools.statistics import bootstr
 import cmasher
-import _1_xestimate_autocorrelations as est
 from matplotlib.backends.backend_pdf import PdfPages
 
 def compute_XX_corr(data):
