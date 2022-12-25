@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.7m -u
+#!/usr/bin/env python3
 import rundec
 import numpy as np
 import argparse
@@ -20,7 +20,7 @@ def add_args(parser):
                              "correlators we know that going to lower than 1.3 GeV is probably unreasonable for Nf=3.")
     parser.add_argument("--omega_prefactor", help="mu = prefactor * omega. choices: opt, or any number.", default=1)
     parser.add_argument("--max_type", choices=["smooth", "hard"], help="whether to use max(a,b) (hard) or sqrt(a^2+b^2) (smooth) maximum to determine the scale",
-                        default="smooth")
+                        default="hard")
 
     parser.add_argument("--Npoints", default=100000, type=int, help="number of points between min and max OmegaByT")
     parser.add_argument("--Nloop", help="number of loops", type=int, default=5)
@@ -65,7 +65,7 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
     else:
         min_scale = float(min_scale)
 
-    print("min_scale = ", min_scale)
+    print("min_scale = ", lpd.format_float(min_scale))
 
     # check omega_prefactor
     mu_opt_omega_term = 2 * np.exp(((24 * np.pi ** 2 - 149) * Nc + 20 * Nf) / (6 * (11 * Nc - 2 * Nf)))  # see eq. 4.17 of arXiv:1006.0867
@@ -80,16 +80,15 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
     else:
         omega_prefactor = float(omega_prefactor)
 
-    print("omega_prefactor = ", omega_prefactor)
+    print("omega_prefactor = ", lpd.format_float(omega_prefactor))
 
     crd = rundec.CRunDec()
     r20 = Nc * (149. / 36. - 11. * np.log(2.) / 6. - 2 * np.pi ** 2 / 3.) - Nf * (5. / 9. - np.log(2.) / 3.)
     r21 = (11. * Nc - 2. * Nf) / 12.
     C_F = (Nc ** 2 - 1) / 2 / Nc
 
-    # mu_opt_T_term = - np.euler_gamma - (Nc - 8 * np.log(2) * args.Nf) / (2*(11 * Nc - 2 * args.Nf))
-
     # calculation
+    OmegaByT_arr = []
     LO_SPF = []
     NLO_SPF = []
     g2_arr = []
@@ -98,19 +97,21 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
         scale = omega_prefactor * OmegaByT * T_in_GeV
         mu = maxfunc(min_scale, scale)
         if scale > min_scale and first:
-            print("scale > min_scale at OmegaByT=", OmegaByT)
+            print("scale > min_scale at OmegaByT=", lpd.format_float(OmegaByT))
             first = False
         Alphas = crd.AlphasLam(Lambda_MSbar, mu, Nf, Nloop)
         g2 = 4. * np.pi * Alphas
-        g2_arr.append([OmegaByT, g2])
+        g2_arr.append(g2)
         lo_spf = g2 * C_F * OmegaByT ** 3 / 6. / np.pi
         l = np.log((mu / T_in_GeV) ** 2 / OmegaByT ** 2)
-        LO_SPF.append([OmegaByT, lo_spf])
-        NLO_SPF.append([OmegaByT, lo_spf * (1 + (r20 + r21 * l) * Alphas / np.pi)])
+        OmegaByT_arr.append(OmegaByT)
+        LO_SPF.append(lo_spf)
+        NLO_SPF.append(lo_spf * (1 + (r20 + r21 * l) * Alphas / np.pi))
+    OmegaByT_arr = np.asarray(OmegaByT_arr)
     g2_arr = np.asarray(g2_arr)
     LO_SPF = np.array(LO_SPF)
     NLO_SPF = np.array(NLO_SPF)
-    return g2_arr, LO_SPF, NLO_SPF
+    return OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF
 
 
 def main():
@@ -123,7 +124,7 @@ def main():
 
     args = parser.parse_args()
 
-    g2_arr, LO_SPF, NLO_SPF = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor, args.Npoints, args.Nloop)
+    OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor, args.Npoints, args.Nloop)
 
     # prepare file names
     try:
@@ -150,15 +151,15 @@ def main():
     # save files
     file = prefix + "g2_" + middle_part + args.suffix + ".dat"
     print("saving ", file)
-    np.savetxt(file, np.column_stack((g2_arr[:, 0], g2_arr[:, 1])), fmt='%10.9e', header='omega/T g^2')
+    np.savetxt(file, np.column_stack((OmegaByT_arr, g2_arr)), fmt='%10.9e', header='omega/T g^2')
 
     file = prefix + "SPF_LO_"+middle_part + args.suffix+".dat"
     print("saving ", file)
-    np.savetxt(file, np.column_stack((LO_SPF[:, 0], LO_SPF[:, 1])), fmt='%10.9e', header='omega/T rho/T^3')
+    np.savetxt(file, np.column_stack((OmegaByT_arr, LO_SPF)), fmt='%10.9e', header='omega/T rho/T^3')
 
     file = prefix + "SPF_NLO_"+middle_part + args.suffix+".dat"
     print("saving ", file)
-    np.savetxt(file, np.column_stack((NLO_SPF[:, 0], NLO_SPF[:, 1])), fmt='%10.9e', header='omega/T rho/T^3')
+    np.savetxt(file, np.column_stack((OmegaByT_arr, NLO_SPF)), fmt='%10.9e', header='omega/T rho/T^3')
 
 
 if __name__ == '__main__':
