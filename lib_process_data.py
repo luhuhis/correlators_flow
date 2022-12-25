@@ -10,6 +10,11 @@ import scipy.interpolate
 import concurrent.futures
 
 
+def format_float(number, digits=3):
+    thisformat = '{0:.'+str(int(digits))+'f}'
+    return thisformat.format(number)
+
+
 def save_script_call(add_folder=None):
     """ save full script call in logfile """
     import datetime
@@ -221,12 +226,17 @@ def get_color2(myarray, i, start=0, end=-1):
     return matplotlib.cm.viridis((myarray[i] - myarray[start]) / (myarray[end] - myarray[start]) * 0.9)
 
 
+def get_discrete_color(i):
+    i = i % 10
+    return "C"+str(i)
+
+
 def leg_err_size(x=1, y=0.3):
     return dict(handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=x, yerr_size=y)})
 
 
 labelboxstyle = dict(boxstyle="Round", fc="w", ec="None", alpha=0.9, pad=0.1, zorder=99)
-verticallinestyle = dict(ymin=0, ymax=1, color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4))
+verticallinestyle = dict(color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4))  # ymin=0, ymax=1,
 horizontallinestyle = dict(color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4))  # xmin=0, xmax=1,z
 markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8',
            'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P',
@@ -252,7 +262,7 @@ def set_rc_params():
     matplotlib.rcParams['legend.edgecolor'] = 'none'
     matplotlib.rcParams['legend.fancybox'] = False
     matplotlib.rcParams['legend.facecolor'] = 'w'
-    matplotlib.rcParams['legend.labelspacing'] = 0.1
+    matplotlib.rcParams['legend.labelspacing'] = 0.15
     matplotlib.rcParams['legend.columnspacing'] = 0.1
     matplotlib.rcParams['legend.borderpad'] = 0.1
     matplotlib.rcParams['legend.handletextpad'] = 0.4
@@ -261,7 +271,7 @@ def set_rc_params():
 
 
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98, 0.01), ylabelpos=(0.01, 0.98), tickpad=1,
-                  figsize=(7, 7), UseTex=True, fig=None, subplot=111, no_ax=False, constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle):
+                  figsize=None, UseTex=True, fig=None, subplot=111, no_ax=False, constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle):
 
     set_rc_params()
     if UseTex:
@@ -270,10 +280,14 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98,
 
     if figsize == "fullwidth":
         figsize = (15, 7)
-    if figsize == "fullwidth_slim":
+    elif figsize == "fullwidth_slim":
         figsize = (15, 5)
-    if figsize == "wide":
+    elif figsize == "wide" or figsize == ['wide']:
         figsize = (10.875, 7)  # 3/4 of the width
+    elif figsize is None:
+        figsize = (7, 7)
+    elif len(figsize) == 2:
+        figsize = (float(figsize[0]), float(figsize[1]))
 
     if fig is None:
         fig = matplotlib.pyplot.figure(figsize=[val*1/2.54 for val in figsize], constrained_layout=constrained_layout)
