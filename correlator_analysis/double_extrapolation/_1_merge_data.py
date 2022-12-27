@@ -3,6 +3,7 @@ import numpy
 from os import listdir
 import lib_process_data as lpd
 
+from natsort import natsorted
 
 # TODO write basepath and conf numbers to file for future reference where the data came from
 
@@ -67,7 +68,7 @@ def main():
     # read in data from many files
     shape = (0, 0)
     folders = listdir(inputfolder)
-    folders.sort()
+    folders = natsorted(folders)
     corrupt_files = []
     conf_nums = []
     for stream_folder in folders:
@@ -75,7 +76,7 @@ def main():
         if stream_folder.startswith(args.conftype+"_"):
             print(stream_folder, end=', ')
             datafiles = listdir(inputfolder+"/"+stream_folder)
-            datafiles.sort()
+            datafiles = natsorted(datafiles)
             for datafile in datafiles:
                 if datafile.startswith(full_prefix):
                     path = inputfolder+"/"+stream_folder+"/"+datafile

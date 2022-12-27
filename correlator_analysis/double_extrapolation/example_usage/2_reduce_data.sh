@@ -29,10 +29,10 @@ elif  [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     )
 #    add_args="--include_bias"  # only do this once to get a sense for thermalization, then adjust manually.
     min_trajs=(
-        "0 100 100 100" "0 0 0 0 0 0" "0 0 0"
-        "0 0 0 0" "0 0 0 0 0 0" "200 200 200 200"
-        "0 0 0 0 0 0" "700 100 400 400" "175 175"
-        "0 0 0 0 0 0" "200 300 100 100" "0 0 0 0"
+        "0 100 100 100"                 "  0   0   0   0 0 0 0 0 0 0 0 0" "  0   0   0"
+        "0   0   0   0"                 "  0   0   0   0 0 0 0 0 0 0 0 0" "200 200 200 200"
+        "0   0   0   0 0 0 0 0 0 0 0 0" "700 100 400 400"                 "175 175"
+        "0   0   0   0 0 0 0 0 0 0 0 0" "200 300 100 100"                 "  0   0   0   0"
     )
     MC_stepsize=10
     # TODO switch back to using these, simply because bias estimate is not reliable.

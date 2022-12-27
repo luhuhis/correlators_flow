@@ -13,7 +13,7 @@ def myapp(vec, val):
 
 
 def resample_and_save_data(reduce_function, XX_data, n_samples, n_datafiles, file_prefix, flow_times, qcdtype, conftype, corr, nt, BB_renorm, nproc, conf_axis):
-    XX_samples, XX, XX_err = stat.bootstr(reduce_function, XX_data, numb_samples=n_samples, sample_size=n_datafiles, conf_axis=conf_axis, return_sample=True, same_rand_for_obs=True, parallelize=True, nproc=nproc, seed=0, err_by_dist=True)
+    XX_samples, XX, XX_err = bootstr.bootstr(reduce_function, XX_data, numb_samples=n_samples, sample_size=n_datafiles, conf_axis=conf_axis, return_sample=True, same_rand_for_obs=True, parallelize=True, nproc=nproc, seed=0, err_by_dist=True)
     XX_samples = numpy.asarray(XX_samples)
     print(XX_samples.shape)
     # XX:     this is the bootstrap estimate for the mean of the correlator
@@ -55,7 +55,7 @@ def resample_and_save_data(reduce_function, XX_data, n_samples, n_datafiles, fil
     print(pcov.shape)
 
 
-# TODO incorporate here how the data should be binned?
+# TODO remove n_discard_per_stream? I think it's not used anywhere right now.
 def load_merged_data(qcdtype, corr, conftype, basepath, n_discard_per_stream=None, only_metadata=False):
     """
     load and reorganize data
@@ -155,9 +155,12 @@ def get_equally_spaced_timeseries(x, y, MC_stepsize):
         elif diff > MC_stepsize and xi_is_multiple_of_stepsize and diff_is_multiple_of_stepsize:
             print(x[i], "WARNa: diff greater MC_stepsize:", diff, end=", ")
             nconfs_missing = int(diff / MC_stepsize) - 1
-            for j in range(1, nconfs_missing + 1):
-                myapp(x_bin, x[i] + j * MC_stepsize)
-                y_bin.append((y[i + 1] + y[i]) / 2)
+            if nconfs_missing < 3:
+                for j in range(1, nconfs_missing + 1):
+                    myapp(x_bin, x[i] + j * MC_stepsize)
+                    y_bin.append((y[i + 1] + y[i]) / 2)
+            else:
+                print("ERROR: more than 2 confs missing:", nconfs_missing)
             i += 1
         elif diff > MC_stepsize and not xi_is_multiple_of_stepsize and diff_is_multiple_of_stepsize:
             print("WARNb: diff greater MC_stepsize:", diff, end=", ")
@@ -196,8 +199,8 @@ def get_equally_spaced_timeseries(x, y, MC_stepsize):
     print("")
 
     if x_bin[-1] - x_bin[0] != (len(x_bin) - 1) * MC_stepsize:
-        print("ERROR: something went wrong when filtering the data, the MC time stepsize is not constant=MC_stepsize:")
-        print("x_bin[-1]-x_bin[0]=", x_bin[-1] - x_bin[0], "but (len(x_bin)-1)*MC_stepsize=", (len(x_bin) - 1) * MC_stepsize)
+        print("ERROR: MC time stepsize is NOT constant=", MC_stepsize, sep="")
+        print("x_bin[-1]-x_bin[0]=", x_bin[-1] - x_bin[0], " but (len(x_bin)-1)*MC_stepsize=", (len(x_bin) - 1) * MC_stepsize, sep="")
 
     return numpy.asarray(x_bin), numpy.asarray(y_bin)
 
@@ -205,8 +208,13 @@ def get_equally_spaced_timeseries(x, y, MC_stepsize):
 def find_reliable_tauint(index_max, index_start, y, tpickmax_increment):
     nconf = index_max - index_start
     diff = 0
-    tpickmax = 10
+    tpickmax = 2
     too_small = False
+
+    # first run, such that we always get a tau_int, even when nblocks is <3 on the first iteration.
+    nblocks = int(nconf / tpickmax)
+    tau_int, tau_inte, tau_intbias, itpick = stat.getTauInt(y[index_start:], nblocks, tpickmax, acoutfileName='acor.d', showPlot=False)
+
     while diff < 1:
         nblocks = int(nconf / tpickmax)
         if nblocks < 3:
@@ -250,7 +258,7 @@ def get_start_and_tauint(x, y, index_offset, MC_stepsize, streamid, blocksize, t
     else:
         print("")
 
-    return best_start_index, tau_int, tau_inte, tau_intbias, itpick
+    return [best_start_index, *bestvals]
 
 
 def print_result(streamid, x, best_start_index, MC_stepsize, tau_int, tau_inte, tau_intbias, itpick, index_max):

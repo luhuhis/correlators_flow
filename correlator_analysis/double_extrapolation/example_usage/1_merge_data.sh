@@ -52,7 +52,7 @@ for idx in "${!arr_conftypes[@]}" ; do
         fi
     fi
 
-    ../_1_merge_data.py ${flowradii_refs[idx/3]} --output_basepath ../../../../data/merged/ $even_more_args $add_args --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype &
+    ../_1_merge_data.py ${flowradii_refs[idx/3]} --output_basepath ../../../../data/merged/ $even_more_args $add_args --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype
 done
 wait
 
