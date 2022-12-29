@@ -20,7 +20,7 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     for idx in "${!temps[@]}" ; do
         ../_5_flowtime_extr.py --corr EE --qcdtype $qcdtype --custom_ylims ${ylims[idx]} --coarsest_Nt $coarse_Nt --finest_Nt ${fine_Nts[idx]} \
         --flowtimes_finest /work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/s096t${fine_Nts[idx]}_b0824900_m002022_m01011/flowtimes_s096t${fine_Nts[idx]}_b0824900_m002022_m01011.dat \
-        --plot_all_flowtimes --temp_subfolder T${temps[idx]} --max_FlowradiusBytauT_offset 0 --max_FlowradiusBytauT 0.33 --min_FlowradiusBytauT 0.25 \
+        --plot_all_flowtimes --temp_subfolder T${temps[idx]} --max_FlowradiusBytauT_offset 0 --max_FlowradiusBytauT 0.3 --min_FlowradiusBytauT 0.25 \
         --basepath ../../../../data/merged/ --basepath_plot ../../../../plots/ --use_tex
     done
 
