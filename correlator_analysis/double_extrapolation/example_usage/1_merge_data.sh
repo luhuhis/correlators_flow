@@ -2,7 +2,7 @@
 
 qcdtype=$1
 corr=$2
-if [ -z "$qcdtype" ] ; then
+if [ -z "$qcdtype" ] || [ -z "$corr" ] ; then
     echo "Usage: $0 qcdtype corr"
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
     echo "choices for corr: EE BB EE_clover BB_clover"
@@ -52,9 +52,9 @@ for idx in "${!arr_conftypes[@]}" ; do
         fi
     fi
 
-    ../_1_merge_data.py ${flowradii_refs[idx/3]} --output_basepath ../../../../data/merged/ $even_more_args $add_args --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype
+    ../_1_merge_data.py \
+    ${flowradii_refs[idx/3]} \
+    --output_basepath ../../../../data/merged/ \
+    $even_more_args $add_args \
+    --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype
 done
-wait
-
-
-# conftypes_hisq=${2:-s064t16_b07188_m00113_m0306 s064t16_b07010_m00132_m0357 s064t16_b07095_m00124_m0334 s064t16_b07130_m00119_m0322 s064t16_b07054_m00129_m0348 s064t16_b07156_m00116_m0314}
