@@ -7,15 +7,14 @@ from latqcdtools.statistics import bootstr
 import matplotlib
 
 
-def myapp(vec, val):
-    # print(val)
+def myapp_verbose(vec, val):
+    print(val, end=", ")
     vec.append(val)
 
 
 def resample_and_save_data(reduce_function, XX_data, n_samples, n_datafiles, file_prefix, flow_times, qcdtype, conftype, corr, nt, BB_renorm, nproc, conf_axis):
     XX_samples, XX, XX_err = bootstr.bootstr(reduce_function, XX_data, numb_samples=n_samples, sample_size=n_datafiles, conf_axis=conf_axis, return_sample=True, same_rand_for_obs=True, parallelize=True, nproc=nproc, seed=0, err_by_dist=True)
     XX_samples = numpy.asarray(XX_samples)
-    print(XX_samples.shape)
     # XX:     this is the bootstrap estimate for the mean of the correlator
     # XX_err: this is the bootstrap estimate for the error of the mean of the correlator
 
@@ -46,16 +45,13 @@ def resample_and_save_data(reduce_function, XX_data, n_samples, n_datafiles, fil
 
     # for each tau, compute flow correlation matrix.
     XX_samples = numpy.swapaxes(XX_samples, 0, 2)  # change data structure such that numpy.cov understands it
-    print(XX_samples.shape)
     pcov = []
     for i in range(int(nt/2)):
         pcov.append(numpy.corrcoef(XX_samples[i]))
     pcov = numpy.asarray(pcov)
     numpy.save(lpd.print_var("write", file_prefix + "_flow_cov_" + conftype + ".npy"), pcov)
-    print(pcov.shape)
 
 
-# TODO remove n_discard_per_stream? I think it's not used anywhere right now.
 def load_merged_data(qcdtype, corr, conftype, basepath, n_discard_per_stream=None, only_metadata=False):
     """
     load and reorganize data
@@ -74,7 +70,6 @@ def load_merged_data(qcdtype, corr, conftype, basepath, n_discard_per_stream=Non
     metadata = numpy.loadtxt(lpd.print_var("read", inputfolder + "n_datafiles_" + conftype + ".dat"))
     n_datafiles, n_streams = [int(i) for i in metadata[0:2]]
     if n_discard_per_stream is None:
-        print("INFO: setting n_discard_per_stream to 0 for all streams")
         n_discard_per_stream = [0 for _ in range(n_streams)]
 
     n_files_per_stream = [int(i) for i in metadata[2:2+n_streams]]
@@ -109,15 +104,14 @@ def load_merged_data(qcdtype, corr, conftype, basepath, n_discard_per_stream=Non
     else:
         XX_data = None
 
-    print("readin done")
-
-
     return flow_times, n_flow, n_datafiles, n_streams, n_files_per_stream, XX_data, confnums
 
 
-
-
 def get_equally_spaced_timeseries(x, y, MC_stepsize):
+
+    def errormessage(this_nconfs_missing, x1, x2):
+        print("ERROR: missing", this_nconfs_missing, "confs between", x1, "and", x2)
+
     # clean data such that trajectory spacing is constant=args.MC_stepsize.
     # 1. filter out confnums that are not divisible by *half* the MC stepsize
     # 2. average pairs of confs spaced out by only by *half* the stepsize to get one conf with spacing one full MC_stepsize.
@@ -136,66 +130,72 @@ def get_equally_spaced_timeseries(x, y, MC_stepsize):
         diff = x[i + 1] - x[i]
         xi_is_multiple_of_stepsize = numpy.mod(x[i], MC_stepsize) == 0
         diff_is_multiple_of_stepsize = numpy.mod(diff, MC_stepsize) == 0
-        if xi_is_multiple_of_stepsize and diff == half_MC_stepsize:
 
-            val = (y[i])  # TODO use mean here (y[i+1]+y[i])/2  ?
-            y_bin.append(val)
+        y_interpolated = (y[i + 1] + y[i]) / 2
 
-            myapp(x_bin, x[i])
-            if i < len(x) - 2 and x[i + 2] - x[i + 1] == MC_stepsize:
-                print("add missing", end=", ")
-                myapp(x_bin, x[i + 1] + half_MC_stepsize)
-                y_bin.append(y[i + 2])
-                i += 1
-            i += 2
-        elif xi_is_multiple_of_stepsize and diff == MC_stepsize:
-            myapp(x_bin, x[i])
+        if xi_is_multiple_of_stepsize and diff == MC_stepsize:  # this is the default case where nothing special happens.
+            x_bin.append(x[i])
             y_bin.append(y[i])
-            i += 1
+        elif xi_is_multiple_of_stepsize and diff == half_MC_stepsize:  # in this case we do an extra increase of i and thus skip the half step.
+            y_bin.append(y[i])
+            x_bin.append(x[i])
+            if i < len(x) - 2 and x[i + 2] - x[i + 1] == MC_stepsize:  # this fixes a case like this: 1000 1005 1015 1020 --> 1000 1010 1020
+                print("WARNe: ", end="")
+                myapp_verbose(x_bin, x[i + 1] + half_MC_stepsize)
+                y_bin.append((y[i + 2]+y[i + 1])/2)
+                i += 1
+            i += 1  # this skips the half MC step
         elif diff > MC_stepsize and xi_is_multiple_of_stepsize and diff_is_multiple_of_stepsize:
-            print(x[i], "WARNa: diff greater MC_stepsize:", diff, end=", ")
+            x_bin.append(x[i])
+            y_bin.append(y[i])
+            print(x[i], ": WARNa diff=", diff, end=", ", sep="")
             nconfs_missing = int(diff / MC_stepsize) - 1
             if nconfs_missing < 3:
                 for j in range(1, nconfs_missing + 1):
-                    myapp(x_bin, x[i] + j * MC_stepsize)
-                    y_bin.append((y[i + 1] + y[i]) / 2)
+                    myapp_verbose(x_bin, x[i] + j * MC_stepsize)
+                    y_bin.append(y_interpolated)
             else:
-                print("ERROR: more than 2 confs missing:", nconfs_missing)
-            i += 1
+                errormessage(nconfs_missing, x[i], x[i+1])
         elif diff > MC_stepsize and not xi_is_multiple_of_stepsize and diff_is_multiple_of_stepsize:
-            print("WARNb: diff greater MC_stepsize:", diff, end=", ")
+            print(x[i], ": WARNb: diff=", diff, end=", ", sep="")
             nconfs_missing = int(diff / MC_stepsize)
-            for j in range(1, nconfs_missing + 1):
-                myapp(x_bin, x[i] + half_MC_stepsize + (j - 1) * MC_stepsize)
-                y_bin.append((y[i + 1] + y[i]) / 2)
-            i += 1
+            if nconfs_missing < 3:
+                for j in range(1, nconfs_missing + 1):
+                    myapp_verbose(x_bin, x[i] + half_MC_stepsize + (j - 1) * MC_stepsize)
+                    y_bin.append(y_interpolated)
+            else:
+                errormessage(nconfs_missing, x[i], x[i+1])
         elif diff > MC_stepsize and not xi_is_multiple_of_stepsize and not diff_is_multiple_of_stepsize:
-            print("WARNc: diff greater MC_stepsize:", diff, end=", ")
+            print(x[i], ": WARNc: diff=", diff, end=", ", sep="")
             nconfs_missing = diff // MC_stepsize
-            for j in range(1, nconfs_missing + 1):
-                myapp(x_bin, x[i] + half_MC_stepsize + (j - 1) * MC_stepsize)
-                y_bin.append((y[i + 1] + y[i]) / 2)
-            i += 1
+            if nconfs_missing < 3:
+                for j in range(1, nconfs_missing + 1):
+                    myapp_verbose(x_bin, x[i] + half_MC_stepsize + (j - 1) * MC_stepsize)
+                    y_bin.append(y_interpolated)
+            else:
+                errormessage(nconfs_missing, x[i], x[i+1])
         elif diff > MC_stepsize and xi_is_multiple_of_stepsize and not diff_is_multiple_of_stepsize:
-            print("WARNd: diff greater MC_stepsize:", diff, end=", ")
+            print(x[i], ": WARNd: diff=", diff, end=", ", sep="")
             nconfs_missing = diff // MC_stepsize
-            myapp(x_bin, x[i])
+            myapp_verbose(x_bin, x[i])
             y_bin.append(y[i])
-            for j in range(1, nconfs_missing + 1):
-                myapp(x_bin, x[i] + j * MC_stepsize)
-                y_bin.append((y[i + 1] + y[i]) / 2)
-            i += 1
-        elif i > 0 and x[i] - x_bin[-1] > MC_stepsize:
+            if nconfs_missing < 3:
+                for j in range(1, nconfs_missing + 1):
+                    myapp_verbose(x_bin, x[i] + j * MC_stepsize)
+                    y_bin.append(y_interpolated)
+            else:
+                errormessage(nconfs_missing, x[i], x[i+1])
+        elif i > 0 and (x[i] - x_bin[-1]) > MC_stepsize:
             print("WARN: There is a large gap in the time series! x[i]=", x[i], ", x_bin[i-1]=", x_bin[-1], sep="")
-            i += 1
         else:
-            print("skipping ", x[i], ", diff=", diff, sep="", end=", ")
-            i += 1
+            print("ignore ", x[i], sep="", end=", ")
+
+        i += 1
 
     # don't forget the last entry
     if x[-1] - x_bin[-1] == MC_stepsize:
         y_bin.append(y[-1])
-        myapp(x_bin, x[-1])
+        x_bin.append(x[-1])
     print("")
 
     if x_bin[-1] - x_bin[0] != (len(x_bin) - 1) * MC_stepsize:
@@ -229,7 +229,7 @@ def find_reliable_tauint(index_max, index_start, y, tpickmax_increment):
     return tau_int, tau_inte, tau_intbias, itpick, too_small, nconf
 
 
-def get_start_and_tauint(x, y, index_offset, MC_stepsize, streamid, blocksize, tpickmax_increment, include_bias):
+def get_optimized_start_and_tauint(x, y, index_offset, MC_stepsize, streamid, blocksize, tpickmax_increment, include_bias):
     index_max = len(x)
     best_start_index = index_offset
     best_nconfeff = 0
@@ -267,10 +267,8 @@ def print_result(streamid, x, best_start_index, MC_stepsize, tau_int, tau_inte, 
           " (+", r'{0:.0f}'.format(tau_intbias), ") at n=", itpick, ", nconfeff=", int((index_max - best_start_index) / tau_int), sep="", end="")
 
 
-
-
 def print_too_small_warning():
-    print(", WARN: data set too small to find a decrease of tau_int inside the largest possible jackknife block. very small number of blocks (3).")
+    print(", WARN: data set too small to find a decrease of tau_int inside the largest possible jackknife block. very small number of blocks (2).")
 
 
 def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta):
@@ -292,7 +290,7 @@ def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta
         if k in args.show_id:
             ref = ax.errorbar(thisx[:best_start + 1] / args.MC_stepsize, thisy[:best_start + 1], fmt='-', lw=0.4, fillstyle='full', markersize=2.5, mew=0,
                               alpha=0.25)
-            label = str(k)  # + ", " + str(int(bestvals[0])) + ", " + str(int(thisx[best_start] / args.MC_stepsize)
+            label = str(k+1)  # + ", " + str(int(bestvals[0])) + ", " + str(int(thisx[best_start] / args.MC_stepsize)
             ax.errorbar(thisx[best_start:] / args.MC_stepsize, thisy[best_start:], fmt='-', lw=0.4, fillstyle='full', markersize=2.5, mew=0, alpha=1,
                         color=ref.lines[0].get_color(), label=label)
 
@@ -331,7 +329,24 @@ def compute_XX_corr(data):
     return XX
 
 
-def main():
+def get_start_and_tauint(args, x, y, x_eq_spaced, y_eq_spaced, flowidx, dataindex, index_offset, stream_index):
+    if args.blocksize:
+        print("trying to optimize effective number of independent measurements, that is, nconf/tau_int.")
+        best_start, tau_int, tau_inte, tau_intbias, itpick = get_optimized_start_and_tauint(
+            x_eq_spaced, y_eq_spaced[:, flowidx, dataindex], index_offset, args.MC_stepsize, stream_index, args.blocksize, args.tpickmax_increment, args.include_bias)
+    else:
+        tau_int, tau_inte, tau_intbias, itpick, too_small, nconf = find_reliable_tauint(len(y_eq_spaced), index_offset, y[:, flowidx, dataindex],
+                                                                                        args.tpickmax_increment)
+        print_result(stream_index + 1, x, index_offset, args.MC_stepsize, tau_int, tau_inte, tau_intbias, itpick, len(y_eq_spaced))
+        if too_small:
+            print_too_small_warning()
+        else:
+            print("")
+        best_start = index_offset
+    return best_start, tau_int, tau_inte, tau_intbias, itpick
+
+
+def parse_args():
     # TODO sort arguments according to their purpose
 
     # TODO add custom ylims here
@@ -354,7 +369,7 @@ def main():
     parser.add_argument('--MC_stepsize', default=10, type=int)
     parser.add_argument('--blocksize', default=0, type=int, help="iterate over removing i*<blocksize> configurations from the beginning, "
                                                                  "then estimate tau_int and see if it improves the number of effective configurations (nconf/tau_int).")
-    parser.add_argument('--tpickmax_increment', default=2, type=int, help="if the jackknife bin size (to estimate the tau_int error and bias) is too small, "
+    parser.add_argument('--tpickmax_increment', default=1, type=int, help="if the jackknife bin size (to estimate the tau_int error and bias) is too small, "
                                                                           "then we never observe a decrease in the tau_int estimate and may underestimate tau_int."
                                                                           "so we keep increasing the binsize by <tpickmax_increment> and try again until we do.")
     parser.add_argument('--flowradius', default=0.075, type=float, help="at which flowtime tau_int should be calculated")
@@ -362,6 +377,13 @@ def main():
     parser.add_argument('--n_proc', default=20, type=int, help="number of processes for parallelization")
 
     args = parser.parse_args()
+
+    return args
+
+
+def main():
+
+    args = parse_args()
 
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
 
@@ -393,7 +415,9 @@ def main():
 
     y_binned = []
 
+    print("=========")
     for k in range(n_streams):
+        print(k+1)
         x = numpy.asarray(confnums[k])
         y = data[offset:offset + n_files_per_stream[k]]
         offset += n_files_per_stream[k]
@@ -406,35 +430,24 @@ def main():
         x_eq_spaced_array.append(x_eq_spaced)
         y_eq_spaced_array.append(y_eq_spaced)
 
-        index_offset = numpy.argmin(numpy.abs(x - args.min_conf[k] * args.MC_stepsize))
-
-        if args.blocksize:
-            print("trying to optimize effective number of independent measurements, that is nconf/tau_int.")
-            best_start, tau_int, tau_inte, tau_intbias, itpick = get_start_and_tauint(
-                x_eq_spaced, y_eq_spaced[:, flowidx, dataindex], index_offset, args.MC_stepsize, k, args.blocksize, args.tpickmax_increment, args.include_bias)
-        else:
-            tau_int, tau_inte, tau_intbias, itpick, too_small, nconf = find_reliable_tauint(len(y_eq_spaced), index_offset, y[:, flowidx, dataindex], args.tpickmax_increment)
-            print_result(k, x, index_offset, args.MC_stepsize, tau_int, tau_inte, tau_intbias, itpick, len(y_eq_spaced))
-            if too_small:
-                print_too_small_warning()
-            else:
-                print("")
-            best_start = index_offset
+        index_offset = numpy.argmin(numpy.abs(x_eq_spaced - args.min_conf[k] * args.MC_stepsize))
+        best_start, tau_int, tau_inte, tau_intbias, itpick = get_start_and_tauint(args, x, y, x_eq_spaced, y_eq_spaced, flowidx, dataindex, index_offset, k)
 
         results.append([best_start, tau_int, tau_inte, tau_intbias, itpick])
 
         # reverse order
         y_eq_spaced = numpy.flip(y_eq_spaced, axis=0)
 
-        if args.skip_binning:  # don't bin
+        if args.skip_binning:
             for val in y_eq_spaced:
                 y_binned.append(val)
-        else:  # bin data
+        else:
             ndata = len(y_eq_spaced) - best_start
             binlength = int(tau_int)
             nbins = int(ndata / binlength)
             for b in range(nbins):
                 y_binned.append(numpy.mean(y_eq_spaced[b * binlength:(b + 1) * binlength], axis=0))
+        print("=========")
 
     y_binned = numpy.asarray(y_binned)
     if len(y_binned) < n_datafiles:
