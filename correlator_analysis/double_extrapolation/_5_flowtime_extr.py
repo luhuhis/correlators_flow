@@ -36,16 +36,6 @@ def chisq(params, args):
     return r.T @ corr_inv @ (r * density_weight)
 
 
-def do_fit(ydata, xdata, edata, this_cov_inv):
-    fitparams = scipy.optimize.minimize(chisq, x0=numpy.asarray([-65, 3]), args=[xdata, ydata, edata, this_cov_inv])
-    return fitparams.x
-
-
-def fit_sample(ydata, xdata, edata):
-    fitparams, _ = scipy.optimize.curve_fit(extrapolation_ansatz, xdata, ydata, p0=[-64, 3], sigma=edata, maxfev=2000, method='lm', ftol=1e-12, xtol=1e-12, gtol=1e-12)
-    return fitparams
-
-
 def plot_extrapolation(xdata, ydata, edata, ydata_extr, edata_extr, indices, args, mintauTindex, plotbasepath):
 
     finest_Nt_half = int(args.finest_Nt/2)
@@ -155,7 +145,7 @@ def do_flow_extr(index, tauTs, cont_samples, data_std, n_samples, args, flowtime
             if len(xdata) >= 3:  # minimum amount for linear fit
 
                 if not args.no_extr:
-                    fitparams = scipy.optimize.minimize(chisq, x0=numpy.asarray([0, 3]), args=[xdata, ydata, edata, None])
+                    fitparams = scipy.optimize.minimize(chisq, x0=numpy.asarray([0, 3]), bounds=((-4, -1), (None, None)), args=[xdata, ydata, edata, None])
                     fitparams = fitparams.x
 
                     results[n] = fitparams
@@ -221,7 +211,7 @@ def main():
     ntauT = len(finest_tauTs)
 
     if args.input_type == "cont":
-        cont_samples = numpy.load(basepath+"/cont_extr/" + args.corr + "_cont_samples.npy")[:, :, :, 1]
+        cont_samples = numpy.load(basepath+"/cont_extr/" + args.corr + "_cont_samples.npy")[:, :, :, 0]  # TODO change this back to 0, then rerun quenched analysis but change the continuum extr back to have a slope.
         n_samples = len(cont_samples)
         cont_samples = numpy.swapaxes(cont_samples, 1, 2)
         data_std = lpd.dev_by_dist(cont_samples, axis=0)
@@ -276,6 +266,7 @@ def main():
                 mintauTindex = i
 
     results = numpy.swapaxes(numpy.asarray(fitparams), 0, 1)
+
     file = basepath + "/" + args.corr + "_flow_extr.npy"
     print("saving all samples in", file)
     numpy.save(file, results)
@@ -295,7 +286,7 @@ def main():
 
     results_mean = numpy.median(results, axis=0)
     results_std = lpd.dev_by_dist(results, axis=0)
-
+    print(results_mean[-1], results_std[-1])
     xdata = finest_tauTs
 
     plot_extrapolation(flowtimes, data_mean, data_std, results_mean, results_std, indices, args, mintauTindex, plotbasepath)
