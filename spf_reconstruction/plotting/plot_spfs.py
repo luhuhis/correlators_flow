@@ -48,7 +48,8 @@ def parse_args():
     parser.add_argument('--outputpath', type=str)
     parser.add_argument('--suffix', type=str)
     parser.add_argument('--corr', type=str, choices=["EE", "BB"])
-
+    parser.add_argument('--leg_pos', nargs=2, default=(0.45, 1))
+    parser.add_argument('--leg_loc', default="upper center")
     parser.add_argument('--plot_spf_err', action="store_true")
 
     args = parser.parse_args()
@@ -72,7 +73,7 @@ def main():
     ax.set_xscale('log')
 
     if args.colors is None:
-        args.colors = [lpd.get_discrete_color(i) for i in range(nfiles)]
+        args.colors = [lpd.get_discrete_color(int(i/2)) for i in range(nfiles)]
 
     for i in range(nfiles):
         if not numpy.isnan(xdata[i]).any():
@@ -80,12 +81,15 @@ def main():
             y = ydata[i]*factor
             if args.plot_spf_err:
                 yerr = [errorsleft[i]*factor, errorsright[i]*factor]
-                ax.fill_between(xdata[i][::10], y[::10]-yerr[0][::10], y[::10]+yerr[1][::10], facecolor=args.colors[i], alpha=0.5, zorder=-100)
-            ax.errorbar(xdata[i], y, fmt='--', label=args.labels[i], color=args.colors[i])
+                ax.fill_between(xdata[i][::10], y[::10]-yerr[0][::10], y[::10]+yerr[1][::10], facecolor=args.colors[i], alpha=0.25, zorder=-100)
+
+            fmt='--' if i % 2 == 0 else ':'
+
+            ax.errorbar(xdata[i], y, fmt=fmt, label=args.labels[i], color=args.colors[i])
             # ax.axvline(x=1, **lpd.verticallinestyle)
             # ax.axvline(x=omegaUV, **lpd.verticallinestyle)
 
-    ax.legend(loc="center left", bbox_to_anchor=(0, 0.6), title="model", handlelength=1)
+    ax.legend(loc=args.leg_loc, bbox_to_anchor=args.leg_pos, title="model", handlelength=1, fontsize=10)
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/"+args.corr+"_spf" + args.suffix + ".pdf"
