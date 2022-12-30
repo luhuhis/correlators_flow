@@ -16,15 +16,34 @@ warnings.filterwarnings('ignore', r'Calling figure.constrained_layout, but figur
 warnings.filterwarnings('ignore', r'constrained_layout not applied*')
 
 
-def extrapolation_ansatz(x, m, b):
+def linear_ansatz(x, b, m, chisq_dof=None):
     return m * x + b
 
 
-def fit_sample(ydata, xdata, edata, start_params=None):
-    if start_params is None:
-        start_params = [0, 3]
-    fitparams, _ = scipy.optimize.curve_fit(extrapolation_ansatz, xdata, ydata, p0=start_params, sigma=edata)
-    return fitparams
+def constant_ansatz(x, b, m=None, chisq_dof=None):
+    return b
+
+
+def chisq_dof(fitparams, ydata, xdata, edata, extrapolation_ansatz):
+    ndata = len(ydata)
+    chisq = 0
+    for i in range(ndata):
+        chisq += (extrapolation_ansatz(xdata[i], *fitparams) - ydata[i])**2 / edata[i]**2
+
+    nfitparams = len(fitparams)
+    chisqdof = chisq / (ndata-nfitparams)
+    return chisqdof
+
+
+def fit_sample(ydata, xdata, edata, extrapolation_ansatz):
+    start_params = [3, 0]
+
+    if not numpy.isnan(ydata).any():
+        fitparams, _ = scipy.optimize.curve_fit(extrapolation_ansatz, xdata, ydata, p0=start_params, sigma=edata)
+        chisqdof = chisq_dof(fitparams, ydata, xdata, edata, extrapolation_ansatz)
+        return [*fitparams, chisqdof]
+    else:
+        return [numpy.nan]*(len(start_params)+1)
 
 
 def wrapper(index, flowtimes, samples, args, Nts, edatas):
@@ -48,7 +67,7 @@ def wrapper(index, flowtimes, samples, args, Nts, edatas):
     nsamples = samples[0].shape[1]
     # TODO if compute:
 
-    results = numpy.empty((nsamples, nt_half_fine, 2))
+    results = numpy.empty((nsamples, nt_half_fine, 3))  # TODO change back to 3
     results[:] = numpy.nan
 
     # at fixed flowtime, perform cont extr for each tauT for each sample
@@ -56,12 +75,21 @@ def wrapper(index, flowtimes, samples, args, Nts, edatas):
         for j, tauT in enumerate(tauTs_fine):
             xdata = numpy.asarray([1/Ntau**2 for k, Ntau in enumerate(Nts)])
 
+            extrapolation_ansatz = linear_ansatz
+            if args.ansatz == "constant":
+                extrapolation_ansatz = constant_ansatz
+            elif args.ansatz == "custom" and tauT >= 0.33:
+                extrapolation_ansatz = constant_ansatz
+
             if tauT in valid_tauTs and len(xdata) >= 2:
+
                 for m in range(nsamples):
                     ydata = [conftype_samples[index][m, j] for conftype_samples in samples]
                     edata = [conftype_edata[index, j] for conftype_edata in edatas]
 
-                    results[m][j] = fit_sample(ydata, xdata, edata)
+                    results[m][j] = fit_sample(ydata, xdata, edata, extrapolation_ansatz)
+            if extrapolation_ansatz == constant_ansatz:
+                results[:][j][1] = 0  # slope
 
     # TODO else: load data
 
@@ -75,15 +103,19 @@ def wrapper(index, flowtimes, samples, args, Nts, edatas):
     results_mean = numpy.nanmedian(results, axis=0)
     results_std = lpd.dev_by_dist(results, axis=0)
 
-    # split the fit parameters into slope and intercept
-    slope_mean, continuum_mean = numpy.squeeze(numpy.split(results_mean, 2, axis=1))
-    slope_std, continuum_std = numpy.squeeze(numpy.split(results_std, 2, axis=1))
+    continuum_mean = results_mean[:, 0]
+    continuum_std = results_std[:, 0]
+    chisqdof_mean = results_mean[:, -1]
+    chisqdof_std = results_std[:, -1]
+
+    # if flowradius >= args.min_flowradius:
+    #     print(flowradius, numpy.column_stack((chisqdof_mean, chisqdof_std)))
 
     # merge continuum and data together into one object to pass it to the plot function
     plot_data = numpy.transpose(numpy.stack([continuum_mean, *[tmp for tmp in data_mean]]))
     plot_std = numpy.transpose(numpy.stack([continuum_std, *[tmp for tmp in data_std]]))
 
-    fig_corr = plot_corr(args, lpd.get_tauTs(nt_finest), continuum_mean, continuum_std, flowradius_str, lower_tauT_lim)
+    fig_corr = plot_corr(args, lpd.get_tauTs(nt_finest), continuum_mean, continuum_std, flowradius_str, lpd.lower_tauT_limit_(flowradius, 0.33))
     fig_extr = plot_extrapolation(args, Nts, plot_data, plot_std, results_mean, flowradius_str, tauTs_fine, valid_tauTs, offset)
 
     return results, fig_corr, fig_extr
@@ -115,7 +147,7 @@ def plot_extrapolation(args, xdata, ydata, edata, fitparams, flowradius_str, tau
             mycolor = lpd.get_color(tauTs_fine, nt_half_fine - 1 - j + offset, mintauTindex, nt_half_fine - 1)
             plots.append(ax.errorbar(xdata, ydata[j], edata[j], fmt='|', color=mycolor, zorder=-100 + j, label='{0:.3f}'.format(tauTs_fine[j])))  # lpd.markers[j - nt_half_fine + len(lpd.markers)]
             x = numpy.linspace(0, 0.1, 100)
-            ax.errorbar(x, extrapolation_ansatz(x, *fitparams[j]), color=mycolor, fmt=':', zorder=-100)
+            ax.errorbar(x, linear_ansatz(x, *fitparams[j]), color=mycolor, fmt=':', zorder=-100)
 
     # numpy.savetxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.output_suffix)+"/cont_extr/"+args.corr+"_"+flowradius_str+"_cont.txt", results,
     #               header="tauT    G/G_norm    err")
@@ -177,12 +209,13 @@ def main():
     parser.add_argument('--nproc', type=int, default=20, help="number of processes for parallelization")
     parser.add_argument('--flow_index_range', default=(0,-1), type=int, nargs=2,
                         help="which flow indices to consider (default considers all). useful if youre only interested in some speficic ones.")
+    parser.add_argument('--ansatz', type=str, choices=["linear", "constant", "custom"], default="linear")
 
     args = parser.parse_args()
 
     # load flow times from finest lattice
     flowtimes = numpy.loadtxt(lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1], args.basepath)+"/flowtimes_"+args.conftypes[-1]+".dat")
-    if args.flow_index_range == (0,-1):
+    if args.flow_index_range == (0, -1):
         indices = range(0, len(flowtimes))
     else:
         indices = range(*args.flow_index_range)
@@ -234,6 +267,7 @@ def main():
     print("calculate extrapolation and create figures...")
 
     # fitparams, figs_corr, figs_extr = lpd.serial_function_eval(wrapper, indices, flowtimes, samples, args, Nts, edatas)
+
     fitparams, figs_corr, figs_extr = lpd.parallel_function_eval(wrapper, indices, args.nproc, flowtimes, samples, args, Nts, edatas)
 
     # save figures to pdf
@@ -263,12 +297,12 @@ def main():
     with open(folder + args.corr + "_cont.dat", 'w') as outfile:
         outfile.write('# bootstrap mean of continuum '+args.corr+' correlator for '+args.qcdtype+'\n')
         outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2} of the finest lattice that entered the extrapolation\n')
-        cont_mean = numpy.mean(fitparams, axis=0)[:, :, 1]
+        cont_mean = numpy.mean(fitparams, axis=0)[:, :, 0]
         numpy.savetxt(outfile, cont_mean)
     with open(folder + args.corr + "_cont_err.dat", 'w') as outfile:
         outfile.write('# bootstrap err of mean of continuum '+args.corr+' correlator for '+args.qcdtype+'\n')
         outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2} of the finest lattice that entered the extrapolation\n')
-        cont_std = numpy.std(fitparams, axis=0)[:, :, 1]
+        cont_std = numpy.std(fitparams, axis=0)[:, :, 0]
         numpy.savetxt(outfile, cont_std)
     numpy.savetxt(folder+args.corr+"_cont_flowtimesT2.dat", flowtimes/nt_finest**2, header='# tau_F T^2')
 

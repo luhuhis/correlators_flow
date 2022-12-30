@@ -15,7 +15,7 @@ if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     arr_output_suffix=("" )
     ylims="1.5 4"
     corrs="EE" # BB_clover EE BB
-#    add_args="--flow_index_range 50 150"
+    add_args=""
     min_flowradius=0.055
 elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     arr_conftypes=(\
@@ -24,9 +24,10 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     "s064t20_b0770400 s064t24_b0791300 s096t32_b0824900_m002022_m01011"
     "s064t20_b0757000 s064t24_b0777700 s096t36_b0824900_m002022_m01011")
     arr_output_suffix=("T296" "T251" "T220" "T196")
-    arr_ylims=("3.5 10.5" "3.5 10.5" "3.5 10.5" "3.5 10.5")
+    arr_ylims=("0 10.5" "0 10.5" "0 10.5" "0 10.5")
     min_flowradius=0.055
     corrs="EE" # BB_clover EE BB
+    add_args="--ansatz custom"
 fi
 
 for idx in "${!arr_conftypes[@]}" ; do

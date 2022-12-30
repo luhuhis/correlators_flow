@@ -8,7 +8,7 @@ import scipy.interpolate
 from typing import NamedTuple
 from latqcdtools.statistics import bootstr
 import argparse
-from correlator_analysis.spf.EE_UV_spf import get_spf, add_args
+from spf_reconstruction.model_fitting.EE_UV_spf import get_spf, add_args
 import numba
 
 @numba.njit(cache=True)
@@ -253,12 +253,13 @@ def readin_corr_data(args):
 
         NtauT = len(xdata)
 
-        ydata_norm_mean = np.mean(ydata, axis=0)
+        ydata_norm_mean = np.nanmedian(ydata, axis=0)
+        edata_of_ydata_norm_mean = lpd.dev_by_dist(ydata, axis=0)
         for i in range(NtauT):
             ydata[:, i] *= Gnorm(xdata[i])
-        edata = np.std(ydata, axis=0)
+        edata = lpd.dev_by_dist(ydata, axis=0)
 
-    return xdata, ydata, edata, ydata_norm_mean
+    return xdata, ydata, edata, ydata_norm_mean, edata_of_ydata_norm_mean
 
 
 def load_PhiUV(args):
@@ -297,7 +298,7 @@ def get_initial_guess(args):
     return fit_params_0
 
 
-def save_results(args, results, error, samples, xdata, ydata_norm_mean, edata, OmegaByT_arr, PhiUVByT3, nparam):
+def save_results(args, results, error, samples, xdata, ydata_norm_mean, edata_of_ydata_norm_mean, OmegaByT_arr, PhiUVByT3, nparam):
     NtauT = len(xdata)
     # make handling of the left and right 68-quantiles easier
     error = np.asarray(error)
@@ -317,7 +318,7 @@ def save_results(args, results, error, samples, xdata, ydata_norm_mean, edata, O
     lpd.create_folder(outputfolder)
     print("saving results into", outputfolder)
 
-    np.savetxt(outputfolder + "samples_structure.dat", structure, header='This file contains pairs (a,b) of indeces with which to split the array '
+    np.savetxt(outputfolder + "samples_structure.dat", structure, header='This file contains pairs (a,b) of indices with which to split the array '
                                                                          'in the samples.npy in the correct way. Example: Spf=samples(a:b). \n rows for (a,b) in order: fit_resx, Spf, '
                                                                          'fit_corr, chisqdof', fmt='%i')
     np.save(outputfolder + "samples", samples)
@@ -356,7 +357,7 @@ def save_results(args, results, error, samples, xdata, ydata_norm_mean, edata, O
 
     # save reconstructed correlator
     np.savetxt(outputfolder + "/corrfit.dat",
-               np.column_stack((xdata, ydata_norm_mean, edata, fit_corr, fit_corr_err)),
+               np.column_stack((xdata, ydata_norm_mean, edata_of_ydata_norm_mean, fit_corr, fit_corr_err)),
                fmt='%16.15e', header='tauT                corr(orig)            err(orig)             corr(fit)             err(-/+)')
 
 
@@ -423,7 +424,7 @@ def main():
     args = parse_args()
 
     OmegaByT_arr, PhiUVByT3_interpolation, PhiUVByT3, MinOmegaByT, MaxOmegaByT = load_PhiUV(args)
-    xdata, ydata, edata, ydata_norm_mean = readin_corr_data(args)
+    xdata, ydata, edata, ydata_norm_mean, edata_of_ydata_norm_mean = readin_corr_data(args)
 
     fit_params_0 = get_initial_guess(args)
     nparam = len(fit_params_0)
@@ -447,7 +448,7 @@ def main():
         results_mean_err = lpd.dev_by_dist(results, axis=0, return_both_q=True)
         samples = ydata
 
-    save_results(args, results_mean, results_mean_err, samples, xdata, ydata_norm_mean, edata, OmegaByT_arr, PhiUVByT3, nparam)
+    save_results(args, results_mean, results_mean_err, samples, xdata, ydata_norm_mean, edata_of_ydata_norm_mean, OmegaByT_arr, PhiUVByT3, nparam)
 
 
 if __name__ == '__main__':
