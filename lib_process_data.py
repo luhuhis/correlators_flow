@@ -231,6 +231,22 @@ def get_discrete_color(i):
     return "C"+str(i)
 
 
+def get_marker(i):
+    mymarkers = ['o', 's', 'D', 'H', 'p']
+    return mymarkers[i]
+
+
+def lighten_color(color, amount=0.5):
+    import matplotlib.colors as mc
+    import colorsys
+    try:
+        c = mc.cnames[color]
+    except:
+        c = color
+    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+    return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
+
+
 def leg_err_size(x=1, y=0.3):
     return dict(handler_map={matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(xerr_size=x, yerr_size=y)})
 
