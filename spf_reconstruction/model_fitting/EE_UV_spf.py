@@ -70,7 +70,7 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
     # check omega_prefactor
     mu_opt_omega_term = 2 * np.exp(((24 * np.pi ** 2 - 149) * Nc + 20 * Nf) / (6 * (11 * Nc - 2 * Nf)))  # see eq. 4.17 of arXiv:1006.0867
     if omega_prefactor == "opt":
-        omega_prefactor = mu_opt_omega_term  # ~14 for Nf=3, ~7.6 for Nf=0
+        omega_prefactor = mu_opt_omega_term  # ~14.743 for Nf=3, ~7.6 for Nf=0
     elif omega_prefactor == "0.25opt":
         omega_prefactor = mu_opt_omega_term / 4
     elif omega_prefactor == "0.5opt":
