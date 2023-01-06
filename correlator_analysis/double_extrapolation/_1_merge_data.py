@@ -2,11 +2,9 @@
 import numpy
 from os import listdir
 import lib_process_data as lpd
-
 from natsort import natsorted
 
 # TODO write basepath and conf numbers to file for future reference where the data came from
-
 
 def main():
 
@@ -135,7 +133,6 @@ def main():
         print("Didn't find any files! Are the input parameters correct?", args.conftype, beta, ns, nt, nt_half, args.qcdtype, fermions, temp, flowtype, args.corr, args.acc_sts)
         exit()
 
-    # TODO this could be simplified by pickling a dict to disk
     filename = outputfolder+'n_datafiles_'+args.conftype+'.dat'
     print("write "+filename)
     with open(filename, 'w') as outfile:
@@ -143,13 +140,9 @@ def main():
         outfile.write(str(n_datafiles)+'\n')
         outfile.write('# number of streams for '+args.qcdtype+' '+args.conftype+'\n')
         outfile.write(str(n_streams)+'\n')
-        # outfile.write('# number of discarded confs from the beginning of each stream:\n')
-        # for ndisc, strid in zip(args.n_discard, streamids):
-        #     outfile.write(str(ndisc) + '  # ' + strid + '\n')
         numpy.savetxt(outfile, numpy.asarray(n_files_per_stream), header='number of confs contained in each stream respectively', fmt='%i')
         outfile.write('# confnums, ordered by stream\n')
         numpy.savetxt(outfile, numpy.asarray(conf_nums), fmt='%i')
-    flow_times = [i for i in flow_times]
     numpy.savetxt(outputfolder+'flowtimes_'+args.conftype+'.dat', flow_times, header=r'flow times \tau_F for '+args.qcdtype+' '+args.conftype)
 
     # these have the following shape (nconf, nflow, Ntau/2)
@@ -157,47 +150,6 @@ def main():
     numpy.save(lpd.print_var("write", outputfolder + args.corr + '_imag_' + args.conftype + '_merged.npy'), XX_numerator_imag)
     numpy.save(lpd.print_var("write", outputfolder+'polyakov_real_'+args.conftype+'_merged.npy'), polyakov_real)
     numpy.save(lpd.print_var("write", outputfolder+'polyakov_imag_'+args.conftype+'_merged.npy'), polyakov_imag)
-
-    # with open(filename, 'w') as outfile:
-    #     outfile.write('# real part of numerator of '+args.corr+' correlator '+args.qcdtype+' '+args.conftype+'\n')
-    #     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
-    #     outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
-    #     lpd.write_flow_times(outfile, flow_times)
-    #     for conf in XX_numerator_real:
-    #         numpy.savetxt(outfile, conf)
-    #         outfile.write('# \n')
-
-
-    # with open(filename, 'w') as outfile:
-    #     outfile.write('# imag part of numerator of '+args.corr+' correlator '+args.qcdtype+' '+args.conftype+'\n')
-    #     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
-    #     outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
-    #     lpd.write_flow_times(outfile, flow_times)
-    #     for conf in XX_numerator_imag:
-    #         numpy.savetxt(outfile, conf)
-    #         outfile.write('# \n')
-
-    # filename =
-    # print("write "+filename)
-    # with open(filename, 'w') as outfile:
-    #     outfile.write('# real part of polyakov loop '+args.qcdtype+' '+args.conftype+'\n')
-    #     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
-    #     outfile.write('# rows correspond to flow times\n')
-    #     lpd.write_flow_times(outfile, flow_times)
-    #     for conf in polyakov_real:
-    #         numpy.savetxt(outfile, conf)
-    #         outfile.write('# \n')
-    #
-    # filename = outputfolder+'polyakov_imag_'+args.conftype+'_merged.dat'
-    # print("write "+filename)
-    # with open(filename, 'w') as outfile:
-    #     outfile.write('# imag part of polyakov loop '+args.qcdtype+' '+args.conftype+'\n')
-    #     outfile.write('# '+str(n_datafiles)+' confs in one file\n')
-    #     outfile.write('# rows correspond to flow times\n')
-    #     lpd.write_flow_times(outfile, flow_times)
-    #     for conf in polyakov_imag:
-    #         numpy.savetxt(outfile, conf)
-    #         outfile.write('# \n')
 
     print("done with "+args.qcdtype+" "+args.conftype)
 
