@@ -9,7 +9,7 @@ import argparse
 import itertools
 import matplotlib
 from matplotlib import gridspec
-from correlator_analysis.spf.spf_reconstruct import SpfArgs, Gnorm, Integrand
+from spf_reconstruction.model_fitting.spf_reconstruct import SpfArgs, Gnorm, Integrand
 from matplotlib.backends.backend_pdf import PdfPages
 
 
@@ -77,6 +77,11 @@ def set_watermark(args, ax, ax_kappa):
 
 
 def set_legend(args, ax):
+
+    # Legend
+    for i in range(args.leg_n_dummies):
+        ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
+
     ax.legend()
     handles, labels = ax.get_legend_handles_labels()
     n = len(handles)
@@ -88,11 +93,8 @@ def set_legend(args, ax):
         index = range(n)
 
     legend = ax.legend([handles[i] for i in index], [labels[i] for i in index],
-                       loc=args.leg_loc, bbox_to_anchor=args.leg_pos, ncol=args.leg_n_col, **lpd.leg_err_size())
+                       loc=args.leg_loc, bbox_to_anchor=args.leg_pos, ncol=args.leg_n_col, **lpd.leg_err_size(), columnspacing=0.5, framealpha=args.leg_framealpha)
 
-    # Legend
-    for i in range(args.leg_n_dummies):
-        ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
     legend.set_title(args.leg_title)
     # texts = legend.get_texts()
     # for text in texts:
@@ -117,17 +119,16 @@ def plot_error_interpolation(xdata, ydata, edata, y_int, e_int, tauT):
     return fig
 
 
-
-def plot_relative_flow(args, ax, color_offset, spfargs_arr, params_ansatz_arr):
+def plot_relative_flow(args, ax, plot_offset, spfargs_arr, params_ansatz_arr):
     # TODO put this part under correlator_analysis, and just plot the corresponding corrs here?
     # TODO add option to only calculate these corrs, don't plot anything.
     # find correlator at various fixed flowradiusBytauT
     if args.qcdtype is not None and args.corr is not None and args.conftype is not None:
         n = max(len(args.flowradiusBytauT), len(args.qcdtype), len(args.corr), len(args.conftype))
-        args.color_data = args.color_data[color_offset:color_offset + n]
-        args.markers = args.markers[color_offset:color_offset + n]
-        args.fillstyle = args.fillstyle[color_offset:color_offset + n]
-        args.leg_labels = args.leg_labels[color_offset:color_offset + n]
+        args.color_data = args.color_data[plot_offset:plot_offset + n]
+        args.markers = args.markers[plot_offset:plot_offset + n]
+        args.fillstyle = args.fillstyle[plot_offset:plot_offset + n]
+        args.leg_labels = args.leg_labels[plot_offset:plot_offset + n]
         for flowradiusBytauT, qcdtype, corr, conftype, color, marker, fillstyle, label_suffix, spfargs, params, a in \
                 zip(args.flowradiusBytauT if len(args.flowradiusBytauT) > 1 else itertools.cycle(args.flowradiusBytauT),
                     args.qcdtype if len(args.qcdtype) > 1 else itertools.cycle(args.qcdtype),
@@ -141,7 +142,7 @@ def plot_relative_flow(args, ax, color_offset, spfargs_arr, params_ansatz_arr):
                     params_ansatz_arr if len(params_ansatz_arr) > 0 else [None for _ in range(n)],
                     args.plot_in_fm if args.plot_in_fm[0] is not None else [None for _ in range(n)]):
             if flowradiusBytauT is not None:
-                inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype, basepath="../../../data/merged/")
+                inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype, basepath="../../../../data/merged/")
                 these_flowtimes = numpy.loadtxt(inputfolder + "flowtimes_" + conftype + ".dat")
                 XX = numpy.loadtxt(inputfolder + corr + "_" + conftype + ".dat")
                 XX_err = numpy.loadtxt(inputfolder + corr + "_err_" + conftype + ".dat")
@@ -154,7 +155,7 @@ def plot_relative_flow(args, ax, color_offset, spfargs_arr, params_ansatz_arr):
                 # interpolate between flow times
                 y_int = []
                 e_int = []
-                figs = []
+                # figs = []
                 for i in range(len(these_tauT)):
                     G_latt_LO_flow = lpd.G_latt_LO_flow(i, these_flowtimes, corr, nt, flowaction, gaugeaction)
                     ydata = numpy.asarray(XX[:, i]) * nt ** 4 / G_latt_LO_flow
@@ -223,27 +224,26 @@ def find_and_plot_and_save_relflow(args, ax, flowradiusBytauT, possible_tauTs, y
         ax.errorbar(xdata, relflow_ydata, zorder=-100 * zorder,  markersize=0, alpha=0.5, fmt='-', color=color)
 
 
-def plot_extrapolated_data(args, ax, color_offset):
+def plot_extrapolated_data(args, ax, plot_offset):
     if args.plot_flow_extr is not None:
         for i, path in enumerate(args.plot_flow_extr):
             try:
                 XX_flow_extr = numpy.loadtxt(path, unpack=True)
-                ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], XX_flow_extr[2],
-                            zorder=-10000, color=args.color_data[i], fmt='_', markersize=0,
-                            label=args.leg_labels[i])
+                ax.errorbar(XX_flow_extr[0]*args.flow_extr_custom_units[i], XX_flow_extr[1], XX_flow_extr[2],
+                            zorder=-10000, color=args.color_data[i], fmt=args.markers[i], label=args.leg_labels[i], markersize=3)
                 if not args.no_connection:
                     ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], zorder=-100000, markersize=0, color=args.color_data[i], fmt='-', alpha=0.5)
-                color_offset += 1
+                plot_offset += 1
             except OSError:
                 print("WARN: skipping tf->0 extr., could not find ", path)
-    return color_offset
+    return plot_offset
 
 
 # TODO fix this
-def plot_relflow_continuum_data(args, ax, color_offset):
+def plot_relflow_continuum_data(args, ax, plot_offset):
 
     for datapath, flowpath in zip(args.plot_cont_extr, args.cont_flowtimes):
-        color_offset += 1
+        plot_offset += 1
         conftype = args.conftype[0]  # TODO fix conftype
 
         # TODO update this for new sample-based format
@@ -294,7 +294,7 @@ def plot_relflow_continuum_data(args, ax, color_offset):
         find_and_plot_and_save_relflow(args, ax, args.flowradiusBytauT[0], possible_tauTs, cont_int, cont_err_int, outfolder, args.color_data[1], r'a\rightarrow 0',
                                        None, None, zorder=-9999)
 
-    return color_offset
+    return plot_offset
 
 
 def plot_fit_corrs(args, ax, xpoints_arr, model_means, just_UVs, fitparams, nts):
@@ -542,6 +542,9 @@ def prepare_plot_canvas(args):
         for tauT, color in zip(args.tauT_vlines, args.color_vlines):
             ax.axvline(tauT, **lpd.chmap(lpd.verticallinestyle, color=color, alpha=1))
 
+    if args.xticks != "auto":
+        ax.set_xticks([float(i) for i in args.xticks])
+
     return fig, ax, ax_kappa
 
 
@@ -559,6 +562,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--plot_flow_extr', help='paths to files containing flow-extr data.', default=None, type=str, nargs='*')
+    parser.add_argument('--flow_extr_custom_units', nargs='*', type=float)
     parser.add_argument('--plot_cont_extr', help='paths to files containing continuum-extr data.', default=None, type=str, nargs='*')
     parser.add_argument('--cont_flowtimes', help='paths to files containing continuum flowtimes in temperature units', default=None, type=str, nargs='*')
 
@@ -577,6 +581,7 @@ def parse_args():
     parser.add_argument('--usetex', action="store_true")
     parser.add_argument('--ylims', help='custom ylims', nargs=2, type=float, default=(-0.03, 4))
     parser.add_argument('--xlims', help='custom xlims', nargs=2, type=float, default=(-0.01, 0.55))
+    parser.add_argument('--xticks', default="auto", nargs="*")
     parser.add_argument('--title', help='title prefix of plot', default="", type=str)
     parser.add_argument('--custom_text', help="show some custom text. modify this script to customize it. (i dont feel like adding 10 more parameters "
                                               "just for some text)", nargs='*')
@@ -599,17 +604,18 @@ def parse_args():
     parser.add_argument('--leg_labels', help="additional strings to put after the Ntau in the labels in legend", nargs='*', type=str)
     parser.add_argument('--leg_interleave', help="whether to interleave the given data in the legend. this is useful if you want to pair extrapolated data with nonextrapolated data.",
                         default=False, action="store_true")
+    parser.add_argument('--leg_framealpha', default=0.8, type=int)
 
     # plot styling
     parser.add_argument('--figsize', help="size of the figure", default=None, nargs='*')
     parser.add_argument('--markers', nargs='*', default='|', type=str, help="fmt keywords for the plots")
     parser.add_argument('--fillstyle', nargs='*', default='none', type=str, help="fillstyle keywords for the plots")
     parser.add_argument('--color_data', help="specify colors in order that the data should have", type=str, nargs='*',
-                        default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
+                        default=('C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
     parser.add_argument('--color_fit', help="specify colors in order that the fits should have", type=str, nargs='*',
-                        default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
+                        default=('C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
     parser.add_argument('--color_vlines', help="specify colors in order that the vlines should have", type=str, nargs='*',
-                        default=('k', 'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
+                        default=('C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'))
 
     # hide certain plot elements
     parser.add_argument('--no_vlines', help="hide vertical lines that indicate lower fit limit", action="store_true")
@@ -695,12 +701,12 @@ def main():
     spfargs_array, params_ansatz_array = plot_fits(args, ax, ax_kappa)
     # we return some fit information, in case we want to normalize the relative flow correlators by some fit correlator.
 
-    color_offset = plot_extrapolated_data(args, ax, color_offset=0)
+    plot_offset = plot_extrapolated_data(args, ax, plot_offset=0)
     # we return an offset, so that plot_relative_flow knows that something else has already been plotted, so that it can skip already used colors.
 
-    # color_offset = plot_relflow_continuum_data(args, ax, color_offset)
+    # plot_offset = plot_relflow_continuum_data(args, ax, plot_offset)
 
-    plot_relative_flow(args, ax, color_offset, spfargs_array, params_ansatz_array)
+    plot_relative_flow(args, ax, plot_offset, spfargs_array, params_ansatz_array)
 
     set_legend(args, ax)
     set_watermark(args, ax, ax_kappa)
