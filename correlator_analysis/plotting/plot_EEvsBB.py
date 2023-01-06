@@ -19,8 +19,8 @@ def main():
 
     fig, ax, plots = lpd.create_figure(xlims=(0.2, 0.51), ylims=(2.5, 4.1), xlabel=r'$\tau T$', ylabel=r'')
 
-    ax.errorbar(BB[0], BB[1], BB[2], **plotstyle, label=r'$\displaystyle  {(G_B/Z^2_K)}/{G^\mathrm{norm}}$', color="C1")
-    ax.errorbar(EE[0], EE[1], EE[2], **plotstyle, label=r'$\displaystyle {G_E}/{G^\mathrm{norm}}$', color="k")
+    ax.errorbar(BB[0], BB[1], BB[2], **plotstyle, label=r'$\displaystyle  {(G_B/Z^2_K)}/{G^\mathrm{norm}}$', color="C0")
+    ax.errorbar(EE[0], EE[1], EE[2], **plotstyle, label=r'$\displaystyle {G_E}/{G^\mathrm{norm}}$', color="C1")
 
     ax.legend(loc="upper left", bbox_to_anchor=(0, 1), **lpd.leg_err_size())
 

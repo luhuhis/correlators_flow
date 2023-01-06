@@ -3,6 +3,7 @@ import numpy
 import matplotlib
 import lib_process_data as lpd
 import scipy.optimize
+import scipy.interpolate
 
 
 def extrapolation_ansatz(x, m, b):
@@ -36,37 +37,55 @@ def chisq(params, args):
     return r.T @ corr_inv @ (r * density_weight)
 
 
-def plot_extrapolation(xdata, ydata, edata, ydata_extr, edata_extr, indices, args, mintauTindex, plotbasepath):
+def plot_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_extr, indices, plotbasepath):
 
     finest_Nt_half = int(args.finest_Nt/2)
     tauTs = lpd.get_tauTs(args.finest_Nt)
 
+    mintauTindex = None
+
     # setup figure
     displaystyle = '' if not args.use_tex else r'\displaystyle'
     ylims = (2.5, 3.8) if not args.custom_ylims else args.custom_ylims
-    fig, ax, plots = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{G}{G^\text{norm}}$', xlabel=r'$'+displaystyle+r'\frac{8\tau_\mathrm{F}}{\tau^2}$')
+    ylabel_prefix = ""
+    if args.Zf2_file is not None:
+        ylabel_prefix = r'Z_f^2'
+    fig, ax, plots = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{'+ylabel_prefix+r'G}{G^\text{norm}}$', xlabel=r'$'+displaystyle+r'{8\tau_\mathrm{F}}/{\tau^2}$')
                                        # r'\frac{Z_f^2 G_B}{G^\text{norm}}$', UseTex=args.use_tex)
     ax.set_xlim([-0.005, args.max_FlowradiusBytauT**2 * 1.15])
 
     # fill figure with data
     for i in range(len(ydata)):
-        if not numpy.isnan(ydata_extr[i][1]):
-            tauT = tauTs[i]
+        tauT = tauTs[i]
+        if tauT >= args.min_tauT_plot:
+
+            if mintauTindex is None:
+                mintauTindex = i
+
             xdataplot = xdata*8/tauT**2
             mycolor = lpd.get_color(tauTs, i, mintauTindex, finest_Nt_half - 1)
 
-            # plot fit result at tf=0
-            plots.append(ax.errorbar(0, ydata_extr[i][1], edata_extr[i][1], fmt='|', color=mycolor, zorder=1, label='{0:.3f}'.format(tauT)))
+            if not args.no_extr and not numpy.isnan(ydata_extr[i][1]):
+                # plot fit result at tf=0
+                plots.append(ax.errorbar(0, ydata_extr[i][1], edata_extr[i][1], fmt='|', color=mycolor, zorder=1, label='{0:.3f}'.format(tauT)))
 
-            # plot linear fit line
-            x = numpy.asarray([0, xdataplot[-1]])
-            ax.errorbar(x, extrapolation_ansatz(x, *ydata_extr[i]), color='black', alpha=0.25, fmt='-',  zorder=-10000)  #lw=0.5,
+                # plot linear fit line
+                x = numpy.asarray([0, xdataplot[-1]])
+                ax.errorbar(x, extrapolation_ansatz(x, *ydata_extr[i]), color='black', alpha=0.25, fmt='-',  zorder=-10000)  #lw=0.5,
+
+                # plot data points used in extrapolation
+                ax.errorbar(xdataplot[indices[i]], ydata[i][indices[i]], edata[i][indices[i]], fmt='|', color=mycolor)
 
             # plot data error band
-            ax.fill_between(xdataplot, ydata[i]-edata[i], ydata[i]+edata[i], facecolor=mycolor, alpha=0.5, zorder=-300+i)
+            # TODO add option to only plot data where flowradius > 1.5a
+            if args.no_extr:
+                label = '{0:.3f}'.format(tauT)
+                alpha = 1
+            else:
+                label = None
+                alpha = 0.5
+            ax.fill_between(xdataplot, ydata[i]-edata[i], ydata[i]+edata[i], facecolor=mycolor, alpha=alpha, zorder=-300+i, label=label)
 
-            # plot data points used in extrapolation
-            ax.errorbar(xdataplot[indices[i]], ydata[i][indices[i]], edata[i][indices[i]], fmt='|', color=mycolor)
 
     # second x-axis for flow radius
     ax2 = ax.twiny()
@@ -74,7 +93,7 @@ def plot_extrapolation(xdata, ydata, edata, ydata_extr, edata_extr, indices, arg
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticks(new_tick_locations)
     ax2.set_xticklabels(["%.1f" % z if z == 0 else "%.2f" % z for z in numpy.sqrt(new_tick_locations)])
-    ax2.set_xlabel(r'$'+displaystyle+r'\frac{\sqrt{8\tau_\mathrm{F}}}{\tau}$', horizontalalignment='right', verticalalignment='top', zorder=999999, bbox=lpd.labelboxstyle)
+    ax2.set_xlabel(r'$'+displaystyle+r'{\sqrt{8\tau_\mathrm{F}}}/{\tau}$', horizontalalignment='right', verticalalignment='top', zorder=999999, bbox=lpd.labelboxstyle)
     ax2.xaxis.set_label_coords(0.97, 0.97)
     ax2.tick_params(direction='in', pad=0, width=0.5)
 
@@ -90,13 +109,13 @@ def plot_extrapolation(xdata, ydata, edata, ydata_extr, edata_extr, indices, arg
     #         ha='center', va='center', rotation='0', zorder=-1000000)
 
     # save plot
-    file = plotbasepath+"/"+args.corr+"_flow_extr_quality.pdf"
+    file = plotbasepath+"/"+args.corr+"_flow_extr_quality"+args.output_suffix+".pdf"
     print("saving", file)
     fig.savefig(file)
     matplotlib.pyplot.close(fig)
 
 
-def plot_corr(xdata, ydata, edata, args, plotbasepath):
+def plot_corr(args, xdata, ydata, edata, plotbasepath):
     # plot final double-extrapolated correlator in its own plot
     ylims = [1.5, 4] if not args.custom_ylims else args.custom_ylims
     fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=ylims, xlabel=r'$\tau T$',
@@ -104,7 +123,7 @@ def plot_corr(xdata, ydata, edata, args, plotbasepath):
                                               r'{ G^\text{norm}}$',
                                        UseTex=args.use_tex)
     ax.errorbar(xdata, ydata, edata, color='black', markersize=0)
-    file = plotbasepath+"/"+args.corr+"_flow_extr.pdf"
+    file = plotbasepath+"/"+args.corr+"_flow_extr"+args.output_suffix+".pdf"
     print("saving", file)
     fig.savefig(file)
     matplotlib.pyplot.close(fig)
@@ -145,7 +164,7 @@ def do_flow_extr(index, tauTs, cont_samples, data_std, n_samples, args, flowtime
             if len(xdata) >= 3:  # minimum amount for linear fit
 
                 if not args.no_extr:
-                    fitparams = scipy.optimize.minimize(chisq, x0=numpy.asarray([0, 3]), bounds=((-4, -1), (None, None)), args=[xdata, ydata, edata, None])
+                    fitparams = scipy.optimize.minimize(chisq, x0=numpy.asarray([0, 3]), bounds=(args.slope_bounds, (None, None)), args=[xdata, ydata, edata, None])
                     fitparams = fitparams.x
 
                     results[n] = fitparams
@@ -169,6 +188,7 @@ def main():
     parser.add_argument('--max_FlowradiusBytauT_offset', type=float, default=0,
                         help='fixed offset to make upper_flowradius_limit_ stricter (by e.g. one lattice spacing 1/Nt), as the 0.33 criterion is only valid in the '
                              'continuum. on the lattice one has to be stricter. 1/Nt_coarsest is a good value.')
+    parser.add_argument('--min_tauT_plot', default=0, type=float)
     parser.add_argument('--no_extr', help='do NOT perform a flow-time-to-zero extrapolation, just plot the data', action="store_true")
     parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
     parser.add_argument('--plot_all_flowtimes', help="plot all flowtimes instead of only the ones that are used in the extrapolation", action="store_true")
@@ -179,6 +199,9 @@ def main():
     parser.add_argument('--temp_subfolder', help="suffix for input path, to incorporate subfolders for different temperatures", default="", type=str)
     parser.add_argument('--basepath', help='where to look for files', type=str)
     parser.add_argument('--basepath_plot', help='where to save plots', type=str)
+    parser.add_argument('--Zf2_file', help="Z_f^2 for BB correlator renormalization", default=None, type=str)
+    parser.add_argument('--output_suffix', help="add this string to the end of plot file names", default="", type=str)
+    parser.add_argument('--slope_bounds', help="bound the slope fit parameter between these values", default=(None, None), nargs=2, type=float)
 
     args = parser.parse_args()
 
@@ -211,8 +234,17 @@ def main():
     ntauT = len(finest_tauTs)
 
     if args.input_type == "cont":
-        cont_samples = numpy.load(basepath+"/cont_extr/" + args.corr + "_cont_samples.npy")[:, :, :, 0]  # TODO change this back to 0, then rerun quenched analysis but change the continuum extr back to have a slope.
+        cont_samples = numpy.load(basepath+"/cont_extr/" + args.corr + "_cont_samples.npy")[:, :, :, 0]
+        print(cont_samples.shape)
+        print(len(flowtimes))
         n_samples = len(cont_samples)
+        if args.Zf2_file is not None:
+            tfT2, Zf2 = numpy.loadtxt(args.Zf2_file, unpack=True)
+            Zf2_int = scipy.interpolate.InterpolatedUnivariateSpline(tfT2, Zf2, k=3, ext=1)
+            for j in range(len(flowtimes)):
+                if Zf2_int(flowtimes[j]) == 0:
+                    print("warn", flowtimes[j])
+                cont_samples[:, j, :] *= Zf2_int(flowtimes[j])
         cont_samples = numpy.swapaxes(cont_samples, 1, 2)
         data_std = lpd.dev_by_dist(cont_samples, axis=0)
         # shape: (1000, 18, 221)
@@ -258,13 +290,6 @@ def main():
 
     fitparams, indices = lpd.parallel_function_eval(do_flow_extr, range(0, ntauT), 20, finest_tauTs, cont_samples, data_std, n_samples, args, flowtimes, flowradii)
 
-    # TODO determine mintauTindex
-    mintauTindex = None
-    for i in range(ntauT):
-        if mintauTindex is None:
-            if not numpy.isnan(fitparams[i]).any():
-                mintauTindex = i
-
     results = numpy.swapaxes(numpy.asarray(fitparams), 0, 1)
 
     file = basepath + "/" + args.corr + "_flow_extr.npy"
@@ -289,12 +314,12 @@ def main():
     print(results_mean[-1], results_std[-1])
     xdata = finest_tauTs
 
-    plot_extrapolation(flowtimes, data_mean, data_std, results_mean, results_std, indices, args, mintauTindex, plotbasepath)
+    plot_extrapolation(args, flowtimes, data_mean, data_std, results_mean, results_std, indices, plotbasepath)
 
     # plot and save final correlator
     ydata_extr = results_mean[:, 1]
     edata_extr = results_std[:, 1]
-    plot_corr(finest_tauTs, ydata_extr, edata_extr, args, plotbasepath)
+    plot_corr(args, finest_tauTs, ydata_extr, edata_extr, plotbasepath)
     correlator = numpy.column_stack((xdata, ydata_extr, edata_extr))
     print(correlator)
     file = basepath + "/" + args.corr + "_flow_extr.txt"
