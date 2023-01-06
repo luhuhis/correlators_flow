@@ -264,7 +264,7 @@ def get_optimized_start_and_tauint(x, y, index_offset, MC_stepsize, streamid, bl
 def print_result(streamid, x, best_start_index, MC_stepsize, tau_int, tau_inte, tau_intbias, itpick, index_max):
     print("stream=", streamid, ", nconf=[", int(x[best_start_index] / MC_stepsize), ",", int(x[-1] / MC_stepsize), "]", " ---> tau_int=",
           r'{0:.0f}'.format(tau_int), "+-", r'{0:.0f}'.format(tau_inte),
-          " (+", r'{0:.0f}'.format(tau_intbias), ") at n=", itpick, ", nconfeff=", int((index_max - best_start_index) / tau_int), sep="", end="")
+          " (+", r'{0:.0f}'.format(tau_intbias), ") at n=", itpick, ", nconfeff=", int((index_max - best_start_index) / int(tau_int)), sep="", end="")
 
 
 def print_too_small_warning():
@@ -372,7 +372,7 @@ def parse_args():
     parser.add_argument('--tpickmax_increment', default=1, type=int, help="if the jackknife bin size (to estimate the tau_int error and bias) is too small, "
                                                                           "then we never observe a decrease in the tau_int estimate and may underestimate tau_int."
                                                                           "so we keep increasing the binsize by <tpickmax_increment> and try again until we do.")
-    parser.add_argument('--flowradius', default=0.075, type=float, help="at which flowtime tau_int should be calculated")
+    parser.add_argument('--flowradius_by_a', default=1.5, type=float, help="at which flowtime tau_int should be calculated")
     parser.add_argument('--n_samples', default=10000, type=int, help="number of bootstrap samples to draw")
     parser.add_argument('--n_proc', default=20, type=int, help="number of processes for parallelization")
 
@@ -404,8 +404,8 @@ def main():
     if args.min_conf == (0,):
         args.min_conf = [0 for _ in range(n_streams)]
 
-    flowradii = numpy.sqrt(8 * flow_times) / nt
-    flowidx = numpy.argmin(numpy.abs(flowradii - args.flowradius))
+    flowradii = numpy.sqrt(8 * flow_times)
+    flowidx = numpy.argmin(numpy.abs(flowradii - args.flowradius_by_a))
 
     # separate data into streams
     x_eq_spaced_array = []
@@ -456,7 +456,6 @@ def main():
     plot_MC_time(x_eq_spaced_array, y_eq_spaced_array, flowidx, dataindex, results, args, flow_times[flowidx], nt, ns, beta)
 
     outputfolder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype, args.basepath)
-    # TODO add BB renorm
     resample_and_save_data(compute_XX_corr, y_binned, args.n_samples, len(y_binned),
                               outputfolder + "/" + args.corr, flow_times, args.qcdtype, args.conftype, args.corr, nt, False, args.n_proc, 0)
 
