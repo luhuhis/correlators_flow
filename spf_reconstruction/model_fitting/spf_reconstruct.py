@@ -109,6 +109,14 @@ def SpfByT3(OmegaByT, spfargs, *fit_params):
             print("-", end="")
             return np.inf  # this results in infinite chisq whenever the spf becomes negative
         return np.sqrt((0.5 * kappaByT3 * OmegaByT) ** 2 + (spfargs.PhiuvByT3(OmegaByT)) ** 2) * coef
+    elif spfargs.model == "trig":
+        coef = 1
+        for i in range(2, spfargs.n_max + 2):
+            coef += fit_params[0][i] * En((i-1), OmegaByT, spfargs.mu)
+        if coef < 0:
+            print("-", end="")
+            return np.inf  # this results in infinite chisq whenever the spf becomes negative
+        return np.sqrt((kappaByT3/2 * OmegaByT) ** 2 + (fit_params[0][1] * spfargs.PhiuvByT3(OmegaByT)) ** 2) * coef
     else:
         print("Error: unknown spf model", spfargs.model)
         return np.nan
@@ -135,7 +143,7 @@ def chisq_dof(fit_params, xdata, ydata_sample, edata, spfargs, verbose=False):
     if verbose:
         print(['{0:.7f} '.format(i) for i in fit_params], '{0:.4f}'.format(chisqdof))
 
-    threshold = 0.5
+    threshold = 1
     if spfargs.prevent_overfitting and chisqdof < threshold:
         return threshold
     else:
@@ -157,7 +165,6 @@ def fit_single_sample(ydata_sample, fit_params_0, xdata, edata, spfargs, OmegaBy
 
     fit_res = scipy.optimize.minimize(fun=chisq_dof, x0=fit_params_0, args=(xdata, ydata_sample, edata, spfargs, verbose), method='L-BFGS-B',
                                       options={'disp': 0, 'ftol': 1.0e-06}, bounds=[[0, np.inf], *[[None, None] for _ in range(len(fit_params_0)-1)]], callback=None)  # 'maxiter': MaxIter,   , *([[-1, 1]]*spfargs.n_max)])  # , 'xatol': args.tol, 'fatol': args.tol
-    # TODO add callback such that minimum search is ended when chisq/dof =1 ?
 
     # now use the fit results for the parameters to compute the fitted spectral function and correlator
 
@@ -194,6 +201,8 @@ def get_fileidentifier(args):
     def get_model_str(model, PhiUVtype, mu, constrainstr, nmax, p, OmegaByT_IR, OmegaByT_UV):
         if model == "fourier":
             model_str = model + "_" + PhiUVtype + "_" + constrainstr + "_" + str(mu) + "_" + str(nmax)
+        elif model == "trig":
+            model_str = model + "_" + PhiUVtype + "_" + "_" + str(mu) + "_" + str(nmax)
         elif model == "pnorm":
             model_str = str(model) + str(p) + "_" + PhiUVtype
         elif model == "line" or model == "plaw":
@@ -233,6 +242,7 @@ def readin_corr_data(args):
 
         xdata = corr[:, 0]
         ydata_norm_mean = corr[:, 1]
+        edata_of_ydata_norm_mean = corr[:, 2]
 
         # get rid of the pert. normalization in the data
         for i in range(NtauT):
@@ -288,6 +298,10 @@ def get_initial_guess(args):
         fit_params_0 = [1.]
         if args.constrain:
             args.nmax -= 1
+        for i in range(args.nmax):
+            fit_params_0.append(0.)
+    elif args.model == "trig":
+        fit_params_0 = [1., 1.]
         for i in range(args.nmax):
             fit_params_0.append(0.)
     elif args.model == "step":
@@ -378,7 +392,7 @@ def parse_args():
                                                  "then do a mock bootstrap instead of a real one.", default=False, action="store_true")
 
     # === spf model selection ===
-    requiredNamed.add_argument('--model', help='which model to use', choices=["max", "smax", "line", "step_any", "pnorm", "plaw", "sum", "fourier"], type=str,
+    requiredNamed.add_argument('--model', help='which model to use', choices=["max", "smax", "line", "step_any", "pnorm", "plaw", "sum", "fourier", "trig"], type=str,
                                required=True)
     requiredNamed.add_argument('--PhiUV_order', help='specify it this is LO or NLO.', type=str,
                                choices=["LO", "NLO"])
@@ -409,7 +423,7 @@ def parse_args():
     args = parser.parse_args()
 
     # check for missing params
-    if args.model == "fourier" and (not args.mu or not args.nmax):
+    if (args.model == "fourier" or args.model == "trig") and (not args.mu or not args.nmax):
         print("ERROR: Need mu and nmax for model=fourier.")
         exit(1)
     if (args.model == "line" or args.model == "plaw") and not args.OmegaByT_UV:
@@ -430,7 +444,7 @@ def main():
     nparam = len(fit_params_0)
 
     # constant parameters only used by the function SpfByT3
-    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiUVByT3_interpolation, nparam-1, args.OmegaByT_IR, args.OmegaByT_UV, args.p, MinOmegaByT, MaxOmegaByT, args.prevent_overfitting)
+    spfargs = SpfArgs(args.model, args.mu, args.constrain, PhiUVByT3_interpolation, args.nmax, args.OmegaByT_IR, args.OmegaByT_UV, args.p, MinOmegaByT, MaxOmegaByT, args.prevent_overfitting)
 
     if args.mock_bootstrap:
         samples, results_mean, results_mean_err = \
