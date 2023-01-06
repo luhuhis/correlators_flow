@@ -12,14 +12,14 @@ labels_and_models=(
 '$\text{max}_\text{LO\hphantom{N}}$'        "max_LO_Nf0_T0.472_minpiT_w1_${finalsamples}smpls_tauTgtr0.24_final"
 '$\text{smax}_\text{NLO}$'                  "smax_NLO_Nf0_T0.472_minpiT_wopt_${finalsamples}smpls_tauTgtr0.24_final"
 '$\text{smax}_\text{LO\hphantom{N}}$'       "smax_LO_Nf0_T0.472_minpiT_w1_${finalsamples}smpls_tauTgtr0.24_final"
-'$\text{plaw}_\text{NLO}$'                  "plaw_wIR1.0_wUV3.14_NLO_Nf0_T0.472_minpiT_wopt_${highsamples}smpls_tauTgtr0.24_final"
-'$\text{plaw}_\text{LO\hphantom{N}}$'       "plaw_wIR1.0_wUV3.14_LO_Nf0_T0.472_minpiT_w1_${highsamples}smpls_tauTgtr0.24_final"
-'$\text{trig1}_\text{NLO}$'                 "fourier_NLO_s1_beta_1_Nf0_T0.472_minpiT_wopt_${finalsamples}smpls_tauTgtr0.24_final"
-'$\text{trig1}_\text{LO\hphantom{N}}$'      "fourier_LO_s1_alpha_1_Nf0_T0.472_minpiT_w1_${finalsamples}smpls_tauTgtr0.24_final"
-'$\text{trig2}_\text{NLO}$'                 "fourier_NLO_s1_beta_2_Nf0_T0.472_minpiT_wopt_${finalsamples}smpls_tauTgtr0.24_final"
-'$\text{trig2}_\text{LO\hphantom{N}}$'      "fourier_LO_s1_alpha_2_Nf0_T0.472_minpiT_w1_${highsamples}smpls_tauTgtr0.24_final"
-#'$\text{trig3}_\text{NLO}$'                 "fourier_NLO_s1_beta_3_Nf0_T0.472_minpiT_wopt_${highsamples}smpls_tauTgtr0.24_final"
-#'$\text{trig3}_\text{LO\hphantom{N}}$'      "fourier_LO_s1_alpha_3_Nf0_T0.472_minpiT_w1_${highsamples}smpls_tauTgtr0.24_final"
+'$\text{plaw}_\text{NLO}$'                  "plaw_wIR1.0_wUV3.14_NLO_Nf0_T0.472_minpiT_wopt_${finalsamples}smpls_tauTgtr0.24_final"
+'$\text{plaw}_\text{LO\hphantom{N}}$'       "plaw_wIR1.0_wUV3.14_LO_Nf0_T0.472_minpiT_w1_${finalsamples}smpls_tauTgtr0.24_final"
+'$\text{trig1}_\text{NLO}$'                 "trig_NLO__beta_1_Nf0_T0.472_minpiT_wopt_${highsamples}smpls_tauTgtr0.24_final"
+'$\text{trig1}_\text{LO\hphantom{N}}$'      "trig_LO__alpha_1_Nf0_T0.472_minpiT_w1_${highsamples}smpls_tauTgtr0.24_final"
+'$\text{trig2}_\text{NLO}$'                 "trig_NLO__beta_2_Nf0_T0.472_minpiT_wopt_${highsamples}smpls_tauTgtr0.24_final"
+'$\text{trig2}_\text{LO\hphantom{N}}$'      "trig_LO__alpha_2_Nf0_T0.472_minpiT_w1_${highsamples}smpls_tauTgtr0.24_final"
+#'$\text{trig3}_\text{NLO}$'                 "trig_NLO__beta_3_Nf0_T0.472_minpiT_wopt_1000smpls_tauTgtr0.24_final"
+#'$\text{trig3}_\text{LO\hphantom{N}}$'      "trig_LO__alpha_3_Nf0_T0.472_minpiT_w1_1000smpls_tauTgtr0.24_final"
 #'$\text{trig4}_\text{NLO}$'                 "fourier_NLO_s1_beta_4_Nf0_T0.472_minpiT_wopt_${lowsamples}smpls_tauTgtr0.24_final"
 #'$\text{trig4}_\text{LO\hphantom{N}}$'      "fourier_LO_s1_alpha_4_Nf0_T0.472_minpiT_w1_${highsamples}smpls_tauTgtr0.24_final"
 #'$\text{trig5}_\text{NLO}$'                 "fourier_NLO_s1_beta_5_Nf0_T0.472_minpiT_wopt_${lowsamples}smpls_tauTgtr0.24_final"
@@ -48,7 +48,7 @@ plot_kappa() {
 --suffix _quenched_1.5Tc \
 --corr EE \
 --scale_error_by_chisqdof \
---figsize 7 5
+--figsize 7 7
 }
 
 plot_fitcorr() {
@@ -58,7 +58,10 @@ plot_fitcorr() {
 --basepath ~/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/ \
 --outputpath ~/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/EE/ \
 --suffix _quenched_1.5Tc \
---corr EE
+--corr EE \
+--ylims 0.94 1.04 \
+--xticks 0.25 0.30 0.35 0.40 0.45 0.50 \
+--yticks 0.98 0.99 1 1.01 1.02
 }
 
 plot_spfs(){
@@ -73,9 +76,11 @@ plot_spfs(){
 --ylims 1 150
 }
 
-plot_spfs
-plot_kappa
-plot_fitcorr
+plot_spfs &
+plot_kappa &
+plot_fitcorr &
+
+wait
 
 
 
