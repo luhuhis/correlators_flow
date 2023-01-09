@@ -56,28 +56,7 @@ def apply_tree_level_imp(XX,nt, flowtimes, corr, flowaction, gaugeaction):
     return XX
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--qcdtype', required=True, type=str)
-    parser.add_argument('--conftypes', nargs='*', type=str)
-    parser.add_argument('--continuum', type=str, help="path to continuum mean")
-    parser.add_argument('--continuum_err', type=str, help="path to continuum err")
-    parser.add_argument('--flowtimesT2', type=str, help="path to file that contains flowtimes*T^2")
-    parser.add_argument('--flow_index_range', default=(0, -1), type=int, nargs=2,
-                        help="which flow indices to consider (default considers all). useful if youre only interested in some speficic ones.")
-    parser.add_argument('--use_tex', default=True, action="store_false")
-    parser.add_argument('--nproc', default=20, type=int, help="number of processes for parallelization over flow times.")
-    parser.add_argument('--corr', choices=["EE", "BB"], required=True)
-    parser.add_argument('--basepath', type=str, default="../../../../data/merged/")  # TODO add help
-    parser.add_argument('--ylims', type=float, nargs=2, default=None)
-    parser.add_argument('--xlims', type=float, nargs=2, default=[0.15, 0.52])
-    parser.add_argument('--outputfolder', type=str, default=None)
-    parser.add_argument('--hide_cont', default=False, action="store_true")
-    parser.add_argument('--lower_limit_text_pos', type=float)
-    args = parser.parse_args()
-
-    fermions, temp, flowtype, gaugeaction, flowaction = lpd.parse_qcdtype(args.qcdtype)
-
+def load_data(args, gaugeaction, flowaction):
     flowtimesT2 = numpy.loadtxt(args.flowtimesT2)
 
     # load lattice data and interpolations
@@ -104,6 +83,32 @@ def main():
         # XX_int.append(tmp)
 
         tauT.append(lpd.get_tauTs(nt))
+    return tauT, flowtimesT2, XX, XX_err, Ntaus
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--qcdtype', required=True, type=str)
+    parser.add_argument('--conftypes', nargs='*', type=str)
+    parser.add_argument('--continuum', type=str, help="path to continuum mean")
+    parser.add_argument('--continuum_err', type=str, help="path to continuum err")
+    parser.add_argument('--flowtimesT2', type=str, help="path to file that contains flowtimes*T^2")
+    parser.add_argument('--flow_index_range', default=(0, -1), type=int, nargs=2,
+                        help="which flow indices to consider (default considers all). useful if youre only interested in some speficic ones.")
+    parser.add_argument('--use_tex', default=True, action="store_false")
+    parser.add_argument('--nproc', default=20, type=int, help="number of processes for parallelization over flow times.")
+    parser.add_argument('--corr', choices=["EE", "BB"], required=True)
+    parser.add_argument('--basepath', type=str, default="../../../../data/merged/")  # TODO add help
+    parser.add_argument('--ylims', type=float, nargs=2, default=None)
+    parser.add_argument('--xlims', type=float, nargs=2, default=[0.15, 0.52])
+    parser.add_argument('--outputfolder', type=str, default=None)
+    parser.add_argument('--hide_cont', default=False, action="store_true")
+    parser.add_argument('--lower_limit_text_pos', type=float)
+    args = parser.parse_args()
+
+    fermions, temp, flowtype, gaugeaction, flowaction = lpd.parse_qcdtype(args.qcdtype)
+
+    tauT, flowtimesT2, XX, XX_err, Ntaus = load_data(args, gaugeaction, flowaction)
 
     labels = [r'$' + str(nt) + r'$' for nt in Ntaus]
 
