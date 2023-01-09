@@ -114,18 +114,7 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
     return OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    add_args(parser)
-
-    parser.add_argument("--suffix", type=str, help="string to append to end of output file name", default="")
-    parser.add_argument("--prefix", type=str, help="string to prepend to end of output file name", default="")
-    parser.add_argument("--outputpath", default="/work/home/altenkort/work/correlators_flow/data/merged/spf_coupling/")
-
-    args = parser.parse_args()
-
-    OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor, args.Npoints, args.Nloop)
-
+def save_UV_spf(args, OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF):
     # prepare file names
     try:
         float(args.min_scale)
@@ -142,24 +131,40 @@ def main():
     elif args.max_type == "hard":
         max_label = "hmax"
     if args.suffix != "":
-        args.suffix = "_"+args.suffix
+        args.suffix = "_" + args.suffix
     if args.prefix != "":
-        args.prefix = args.prefix+"_"
-    prefix = args.outputpath+"/" + args.prefix
+        args.prefix = args.prefix + "_"
+    prefix = args.outputpath + "/" + args.prefix
     middle_part = "Nf" + str(args.Nf) + "_" + '{0:.3f}'.format(args.T_in_GeV) + "_" + min_scale_label + "_" + omega_prefactor_label + "_" + max_label
 
     # save files
-    file = prefix + "g2_" + middle_part + args.suffix + ".dat"
-    print("saving ", file)
-    np.savetxt(file, np.column_stack((OmegaByT_arr, g2_arr)), fmt='%10.9e', header='omega/T g^2')
 
-    file = prefix + "SPF_LO_"+middle_part + args.suffix+".dat"
+    file = prefix + "g2_" + middle_part + args.suffix + ".npy"
     print("saving ", file)
-    np.savetxt(file, np.column_stack((OmegaByT_arr, LO_SPF)), fmt='%10.9e', header='omega/T rho/T^3')
+    np.save(file, np.column_stack((OmegaByT_arr, g2_arr)))
 
-    file = prefix + "SPF_NLO_"+middle_part + args.suffix+".dat"
+    file = prefix + "SPF_LO_" + middle_part + args.suffix + ".npy"  # format: 'omega/T g^2'
     print("saving ", file)
-    np.savetxt(file, np.column_stack((OmegaByT_arr, NLO_SPF)), fmt='%10.9e', header='omega/T rho/T^3')
+    np.save(file, np.column_stack((OmegaByT_arr, LO_SPF)))  # format: 'omega/T rho/T^3'
+
+    file = prefix + "SPF_NLO_" + middle_part + args.suffix + ".npy"
+    print("saving ", file)
+    np.save(file, np.column_stack((OmegaByT_arr, NLO_SPF)))  # format: 'omega/T rho/T^3'
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    add_args(parser)
+
+    parser.add_argument("--suffix", type=str, help="string to append to end of output file name", default="")
+    parser.add_argument("--prefix", type=str, help="string to prepend to end of output file name", default="")
+    parser.add_argument("--outputpath", default="/work/home/altenkort/work/correlators_flow/data/merged/spf_coupling/")
+
+    args = parser.parse_args()
+
+    OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor, args.Npoints, args.Nloop)
+
+    save_UV_spf(args, OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF)
 
 
 if __name__ == '__main__':
