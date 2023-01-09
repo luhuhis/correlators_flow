@@ -1,6 +1,9 @@
 #!/bin/bash
 source ~/.bashrc
 
+OmegaByT_UV=3.1416
+OmegaByT_UV2=6.2832
+minscale=opt
 
 set_UV_params(){
     LO="--PhiUV_order LO --omega_prefactor 1 --min_scale $minscale --max_type hard"
@@ -9,16 +12,22 @@ set_UV_params(){
 
 set_models(){
     models=(
-#        "--model max $LO"
-#        "--model max $NLO"
-#        "--model smax $LO"
-#        "--model smax $NLO"
-#        "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
-#        "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
-        "--model trig $LO --mu alpha --nmax 1 --prevent_overfitting "
-        "--model trig $NLO --mu beta --nmax 1 --prevent_overfitting"
-        "--model trig $LO --mu alpha --nmax 2 --prevent_overfitting"
-        "--model trig $NLO --mu beta --nmax 2 --prevent_overfitting"
+        "--model max $LO"
+        "--model max $NLO"
+        "--model smax $LO"
+        "--model smax $NLO"
+        "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
+        "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
+        "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
+        "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
+        "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV2"
+        "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV2"
+        "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV2"
+        "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV2"
+        "--model trig $LO --mu alpha --nmax 1 "
+        "--model trig $NLO --mu beta --nmax 1"
+        "--model trig $LO --mu alpha --nmax 2"
+        "--model trig $NLO --mu beta --nmax 2"
 #        "--model trig $LO --mu alpha --nmax 3 --prevent_overfitting"
 #        "--model trig $NLO --mu beta --nmax 3 --prevent_overfitting"
 #        "--model fourier $LO --mu alpha --nmax 4 --prevent_overfitting"
@@ -29,8 +38,6 @@ set_models(){
 }
 
 submit_quenched_EE(){
-    minscale=piT
-    OmegaByT_UV=3.14
     set_UV_params
     set_models
 
@@ -38,7 +45,7 @@ submit_quenched_EE(){
     for i in "${!models[@]}" ; do
          spfbatch ../spf_reconstruct.py \
             --output_path /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/ \
-            --add_suffix final \
+            --add_suffix 23-01-09 \
             --input_corr /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr.npy \
             --min_tauT 0.24 \
             --nproc 4 \
@@ -50,16 +57,14 @@ submit_quenched_EE(){
 }
 
 submit_quenched_BB(){
-    minscale=piT
-    OmegaByT_UV=3.14
     set_UV_params
     set_models
 
-    nsamples=100
+    nsamples=1000
     for i in "${!models[@]}" ; do
          spfbatch ../spf_reconstruct.py \
             --output_path /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
-            --add_suffix final \
+            --add_suffix 23-01-09 \
             --input_corr /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr.npy \
             --min_tauT 0.24 \
             --nproc 4 \
@@ -73,8 +78,6 @@ submit_quenched_BB(){
 
 submit_hisq(){
     temps=( 196 220 251 296)
-    minscale=2piT
-    OmegaByT_UV=6.28
     set_UV_params
     set_models
 
@@ -85,7 +88,7 @@ submit_hisq(){
         for i in "${!models[@]}" ; do
              spfbatch ../spf_reconstruct.py \
                 --output_path /work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/ \
-                --add_suffix paper \
+                --add_suffix 23-01-09 \
                 --input_corr /work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//T${temp}/EE_flow_extr.npy \
                 --min_tauT 0.24 \
                 --nproc 4 \
@@ -97,6 +100,6 @@ submit_hisq(){
     done
 }
 
-#submit_quenched_EE
-#submit_quenched_BB
+submit_quenched_EE
+submit_quenched_BB
 submit_hisq
