@@ -67,7 +67,7 @@ def main():
     ax.text(0.99, 0.99, r'$\tau/a='+str(args.tau)+"$", ha='right', va='top', transform=ax.transAxes)
     ax.axhline(y=1, **lpd.horizontallinestyle)
     # ax.axvline(x=0.33, **lpd.verticallinestyle)
-    ax.legend(title="$S_\\mathrm{gauge}, S_\\mathrm{flow}$", handlelength=1, loc="upper right", bbox_to_anchor=(1, 0.95))
+    ax.legend(title="$S_\\mathrm{gauge}, S_\\mathrm{flow}$", handlelength=1, loc="upper right", bbox_to_anchor=(1, 0.95), alignment="left")
     add_suffix = ""
     if args.exp:
         add_suffix = "_exp"
