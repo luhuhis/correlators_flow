@@ -21,22 +21,12 @@ def resample_and_save_data(reduce_function, XX_data, n_samples, n_datafiles, fil
     # save samples
     numpy.save(lpd.print_var("write", file_prefix + "_" + conftype + "_samples.npy"), XX_samples)
 
-    # add renormalization factor for BB correlator. errors for it are extremely small. FIXME abstract this
-    if BB_renorm and corr == "BB":
-        path = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
-        tfT2, Z2 = numpy.loadtxt(path + "Z2_" + str(nt) + ".dat", unpack=True)
-        for i in range(XX.shape[0]):
-            for j in range(XX.shape[1]):
-                XX[i, j] *= Z2[i]
-                XX_err[i, j] *= Z2[i]
-
     # write XX and XX_err to file
     with open(lpd.print_var("write", file_prefix+"_"+conftype+".dat"), 'w') as outfile:
         outfile.write('# bootstrap mean of '+str(n_datafiles)+' measurements of '+corr+' correlator for '+qcdtype+' '+conftype+'\n')
         outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
         lpd.write_flow_times(outfile, flow_times)
         numpy.savetxt(outfile, XX)
-
     with open(lpd.print_var("write", file_prefix+"_err_"+conftype+".dat"), 'w') as outfile:
         outfile.write('# bootstrap mean err of '+str(n_datafiles)+' measurements of '+corr+' correlator '+qcdtype+' '+conftype+'\n')
         outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2}\n')
