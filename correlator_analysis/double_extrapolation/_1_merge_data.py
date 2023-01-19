@@ -6,7 +6,24 @@ from natsort import natsorted
 
 # TODO write basepath and conf numbers to file for future reference where the data came from
 
+
+def get_flow_indices(flowradii, flowradii_ref):
+    indices = []
+    for f in range(len(flowradii)):
+        for g in range(len(flowradii_ref)):
+            if numpy.isclose(flowradii[f], flowradii_ref[g]):  # TODO check whether tolerance of isclose is small enough for our stepsizes.
+                indices.append(f)
+                break
+    return numpy.asarray(indices)
+
+
+def are_all_floats_of_a_in_b(a, b):
+    return numpy.array([numpy.isclose(val, b).any() for val in a]).all()
+
+
 def main():
+
+    # it is assumed that the first data file that is read in is not corrupted and has the correct shape.
 
     # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
@@ -63,6 +80,10 @@ def main():
     full_prefix = flow_prefix+XX_label
     print("searching in subfolders of "+inputfolder + "   for  ", full_prefix+"*")
 
+    flowradii_ref = None
+    if args.reference_flowradii is not None:
+        flowradii_ref = numpy.loadtxt(args.reference_flowradii)
+
     # read in data from many files
     shape = (0, 0)
     folders = listdir(inputfolder)
@@ -82,41 +103,45 @@ def main():
                     confnum = int(lpd.remove_left_of_last('_U', path))
                     if confnum >= args.min_conf_nr:
                         tmp = numpy.loadtxt(path)
-                        if shape == (0, 0):
-                            shape = tmp.shape
-                        if shape != tmp.shape:
-                            if args.excess_workaround and tmp.shape != (0,) and tmp.shape[1] == shape[1] and tmp.shape[0] > shape[0]:
-                                print("INFO: discarding", tmp.shape[0]-shape[0], " flow times from the end")
-                                tmp = tmp[:shape[0]]
-                            else:
-                                print("error! shapes of input files don't match. ignoring this file.")
-                                print(shape, " (previous) vs ", tmp.shape, " (current file)")
-                                corrupt_files.append(datafile)
-                                continue
-                        if n_datafiles == 0:
+                        if tmp.shape != (0,):
+                            # print(tmp.shape)
+                            if shape == (0, 0):
+                                shape = tmp.shape
+                            shape_wrong_but_all_flowtimes_exist = False
+                            if shape != tmp.shape:
+                                flow_times = tmp[:, 0]
+                                these_flowradii = numpy.sqrt(8 * flow_times) / nt
+                                if args.excess_workaround and tmp.shape != (0,) and tmp.shape[1] == shape[1] and tmp.shape[0] > shape[0]:
+                                    print("INFO: discarding", tmp.shape[0]-shape[0], " flow times from the end")
+                                    tmp = tmp[:shape[0]]
+                                elif args.reference_flowradii and are_all_floats_of_a_in_b(these_flowradii, flowradii_ref):
+                                    shape_wrong_but_all_flowtimes_exist = True
+                                    # TODO check that all flowradii in flowradii are also in the ref file.
+                                else:
+                                    print("error! shapes of input files don't match. ignoring this file.")
+                                    print(shape, " (previous) vs ", tmp.shape, " (current file)")
+                                    corrupt_files.append(datafile)
+                                    continue
+
                             flow_times = tmp[:, 0]
-                            if args.reference_flowradii is not None:
+                            if args.reference_flowradii is not None or shape_wrong_but_all_flowtimes_exist:
                                 flowradii = numpy.sqrt(8*flow_times)/nt
-                                flowradii_ref = numpy.loadtxt(args.reference_flowradii)
-                                indices = []
-                                for f in range(len(flow_times)):
-                                    for g in range(len(flowradii_ref)):
-                                        if numpy.isclose(flowradii[f], flowradii_ref[g]):  # TODO check whether tolerance of isclose is small enough for our stepsizes.
-                                            indices.append(f)
-                                            break
-                                indices = numpy.asarray(indices)
+                                indices = get_flow_indices(flowradii, flowradii_ref)
+                                if len(indices) != len(flowradii_ref):
+                                    print("error! coulnd't find all ref flowradii")
+                                    continue
                             else:
                                 indices = numpy.asarray(range(0, len(flow_times)))
 
                             flow_times = flow_times[indices]
                             # print("nflow=", len(flow_times))
-                        polyakov_real.append(tmp[indices, 1])
-                        polyakov_imag.append(tmp[indices, 2])
-                        XX_numerator_real.append(tmp[indices, 3:int((3 + nt_half))] / multiplicity)
-                        XX_numerator_imag.append(tmp[indices, int((3 + nt_half)):] / multiplicity)
-                        conf_nums.append(confnum)
-                        n_datafiles += 1
-                        n_files_this_stream += 1
+                            polyakov_real.append(tmp[indices, 1])
+                            polyakov_imag.append(tmp[indices, 2])
+                            XX_numerator_real.append(tmp[indices, 3:int((3 + nt_half))] / multiplicity)
+                            XX_numerator_imag.append(tmp[indices, int((3 + nt_half)):] / multiplicity)
+                            conf_nums.append(confnum)
+                            n_datafiles += 1
+                            n_files_this_stream += 1
             print("n_files_this_stream: ", n_files_this_stream)
             if n_files_this_stream > 0:
                 n_files_per_stream.append(n_files_this_stream)

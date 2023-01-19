@@ -52,7 +52,7 @@ for idx in "${!arr_conftypes[@]}" ; do
             acc_sts="--acc_sts sts0.150000"
         fi
         if [ "$conftype" == "s096t36_b0824900_m002022_m01011" ] ; then
-            even_more_args="--excess_workaround --min_conf_nr 2000"
+            even_more_args="--min_conf_nr 2000"
         else
             even_more_args=""
         fi
