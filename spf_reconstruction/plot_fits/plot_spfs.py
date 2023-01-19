@@ -81,11 +81,11 @@ def main():
             y = ydata[i]*factor
             if args.plot_spf_err:
                 yerr = [errorsleft[i]*factor, errorsright[i]*factor]
-                ax.fill_between(xdata[i][::10], y[::10]-yerr[0][::10], y[::10]+yerr[1][::10], facecolor=args.colors[i], alpha=0.25, zorder=-100)
+                ax.fill_between(xdata[i][::10], y[::10]-yerr[0][::10], y[::10]+yerr[1][::10], facecolor=args.colors[i], alpha=0.1, zorder=-100-i)
 
-            fmt='--' if i % 2 == 0 else ':'
+            fmt = '--' if i % 2 == 0 else ':'
 
-            ax.errorbar(xdata[i], y, fmt=fmt, label=args.labels[i], color=args.colors[i])
+            ax.errorbar(xdata[i], y, fmt=fmt, label=args.labels[i], color=args.colors[i], zorder=-i)
             # ax.axvline(x=1, **lpd.verticallinestyle)
             # ax.axvline(x=omegaUV, **lpd.verticallinestyle)
 
