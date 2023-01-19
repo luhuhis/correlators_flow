@@ -8,7 +8,9 @@ def load_data(args):
 
     files = []
     for i, model_id in enumerate(args.model_ids):
-        files.append(args.basepath + "/" + model_id + "/params.dat")
+        files.append(args.basepath + "/" + model_id)
+
+    kappa_samples = []
 
     # === load data
     xdata = []
@@ -18,11 +20,11 @@ def load_data(args):
     chisqdof_arr = []
     chisqdof_arr_err = []
     for file in files:
-        loadfunc = numpy.loadtxt
         try:
-            data = loadfunc(file)
-        except OSError:
-            print("fail: could not find ", file, "\n")
+            data = numpy.loadtxt(file+"/params.dat")
+            fitparam_samples = numpy.load(file + "/params_samples.npy")
+        except OSError as error:
+            print(error)
             xdata.append(numpy.nan)
             ydata.append(numpy.nan)
             errorsleft.append(numpy.nan)
@@ -32,6 +34,9 @@ def load_data(args):
             continue
 
         idx = 0
+
+        kappa_samples.append(fitparam_samples[:, idx])
+
         xdata.append(data[idx, 0])
 
         chisqdof = data[-1, 0]
@@ -41,7 +46,12 @@ def load_data(args):
         errorsleft.append(data[idx, 1])
         errorsright.append(data[idx, 2])
 
-    return len(files), xdata, ydata, errorsleft, errorsright, chisqdof_arr, chisqdof_arr_err
+    kappa_samples = numpy.concatenate([*kappa_samples])
+    kappa_median = numpy.nanmedian(kappa_samples)
+    kappa_errs = lpd.dev_by_dist(kappa_samples, return_both_q=True, percentile=68)
+    kappa_bounds = [kappa_median-kappa_errs[0], kappa_median+kappa_errs[1]]
+
+    return len(files), xdata, ydata, errorsleft, errorsright, chisqdof_arr, chisqdof_arr_err, kappa_bounds
 
 
 def parse_args():
@@ -56,8 +66,9 @@ def parse_args():
     parser.add_argument('--temperature_on_xaxis', default=False, action="store_true")
     parser.add_argument('--pos', nargs='*', default=None, type=float, help="position of each kappa value. this could be either just some arbitrary number or the temperature for example.")
     parser.add_argument('--colors', nargs='*')
-    parser.add_argument('--outputpath', type=str)
-    parser.add_argument('--suffix', type=str)
+    parser.add_argument('--outputpath', required=True)
+    parser.add_argument('--outputpath_data', required=True)
+    parser.add_argument('--suffix', type=str, default="")
     parser.add_argument('--corr', type=str, choices=["EE", "BB"])
     parser.add_argument('--scale_error_by_chisqdof', default=False, action="store_true")
     parser.add_argument('--figsize', default=None, nargs='*')
@@ -68,7 +79,7 @@ def parse_args():
         exit(1)
 
     if args.ylims is None and args.pos is None:
-        args.ylims = (0, len(args.model_ids)+2.5)
+        args.ylims = (-1, len(args.model_ids)+2.5)
 
     if args.pos is None:
         args.pos = numpy.flip(numpy.linspace(0.5, len(args.model_ids)+1, len(args.model_ids)))
@@ -80,14 +91,14 @@ def main():
 
     args = parse_args()
 
-    nfiles, xdata, ydata, errorsleft, errorsright, chisqdof_arr, chisqdof_arr_err = load_data(args)
-
-    fig, ax, plots = lpd.create_figure(figsize=args.figsize, xlims=args.xlims, ylims=args.ylims)
+    nfiles, xdata, ydata, errorsleft, errorsright, chisqdof_arr, chisqdof_arr_err, kappa_bounds = load_data(args)
+    labelboxstyle = dict(boxstyle="Round", fc="None", ec="None", alpha=0, pad=0.1, zorder=99)
+    fig, ax, plots = lpd.create_figure(figsize=args.figsize, xlims=args.xlims, ylims=args.ylims, ylabelbox=labelboxstyle, xlabelbox=labelboxstyle)
 
     if args.colors is None:
         args.colors = [lpd.get_discrete_color(int(i/2)) for i in range(nfiles)]
 
-    ax.set_xlabel(r'$\kappa/T^3$', horizontalalignment='left',  verticalalignment='bottom', bbox=lpd.labelboxstyle)
+    ax.set_xlabel(r'$\kappa/T^3$', horizontalalignment='left',  verticalalignment='bottom', bbox=None)
     ax.xaxis.set_label_coords(0.01, 0.01)
 
     leftmost = 100
@@ -122,10 +133,12 @@ def main():
                 if rightmost < numpy.max(thisright):
                     rightmost = thisright
 
-    ax.fill_between([leftmost, rightmost], [0, 0], [100, 100], facecolor='k', alpha=0.2, zorder=-1000)
+    leftmost, rightmost = kappa_bounds
+    ax.fill_between([leftmost, rightmost], [-100, -100], [100, 100], facecolor='grey', alpha=0.2, zorder=-1000)
     centralvalue = (leftmost+rightmost)/2
     error = rightmost-centralvalue
-    numpy.savetxt("", [centralvalue, error])
+    numpy.savetxt(args.outputpath_data + "/" + args.corr + "_kappa" + args.suffix + ".txt", numpy.c_[centralvalue, error],
+                  header='kappa                  err')
 
     if args.temperature_on_xaxis:
         ax.set_xlabel(r'T\mathrm{[MeV]}')
