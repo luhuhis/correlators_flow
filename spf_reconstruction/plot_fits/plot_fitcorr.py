@@ -74,7 +74,7 @@ def main():
     for i in range(nfiles):
         if not numpy.isnan(xdata[i]).any():
             ax.errorbar(xdata[i] + i * 0.002, ydata[i], yerr=[errorsleft[i], errorsright[i]],
-                        fmt='|', markersize=0, color=args.colors[i] if i % 2 == 0 else lpd.lighten_color(args.colors[i], 0.5), label=args.labels[i])
+                        fmt='|', markersize=0, color=args.colors[i] if i % 2 == 0 else args.colors[i], label=args.labels[i])
             # ax.errorbar(xdata[i] + i * 0.002, ydata[i],
             #             fmt='-', markersize=0, color=args.colors[i] if i % 2 == 0 else lpd.lighten_color(args.colors[i], 0.5), zorder=-100)
     ax.axhline(y=1, color='k', dashes=(2, 1))
