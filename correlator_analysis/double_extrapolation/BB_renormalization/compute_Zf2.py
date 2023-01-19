@@ -12,20 +12,29 @@ def find_index(array, value):
 
 def plot_integrand(args, tauFT2, integrand, integrand_err, reference_tauF_T2):
     fig, ax, _ = lpd.create_figure(xlabel=r'$\tau_F T^2$', ylabel=r'$ \frac{1}{\tau_FT^2} \left(\frac{-3g^2(\tau_F)}{8\pi^2}\right), \quad T=1.5T_c$')
+    ax.set_ylim((-250, 0))
     ax.errorbar(tauFT2, integrand, fmt='-')
     ax.axvline(x=reference_tauF_T2, **lpd.verticallinestyle)
+    ax.fill_between([convert_sqrt8taufT_to_tfT2(0.25*0.25), convert_sqrt8taufT_to_tfT2(0.5*0.3)],
+                     [-250, -250], [400, 400], facecolor='grey', alpha=0.25, zorder=-1000)
     file = args.outputpath_plot+"/integrand.pdf"
     print("save", file)
     fig.savefig(file)
+
+
+def convert_sqrt8taufT_to_tfT2(sqrt8taufT):
+    return sqrt8taufT**2/8
 
 
 def plot_Zf2(args, taufT2, Z2, reference_tauF_T2):
     fig2, ax2, plots2 = lpd.create_figure(xlabel=r'$\tau_F T^2$', ylabel=r'$Z_f^2$')
     ax2.errorbar(taufT2, Z2, fmt='-')
     ax2.axvline(x=reference_tauF_T2, **lpd.verticallinestyle)
-    ax2.axhline(y=1, **lpd.horizontallinestyle)
-    ax2.set_ylim((0.75,  1.35))
-
+    ax2.fill_between([convert_sqrt8taufT_to_tfT2(0.25*0.25), convert_sqrt8taufT_to_tfT2(0.5*0.3)],
+                     [-1, -1], [1.25, 1.25], facecolor='grey', alpha=0.25, zorder=-1000)
+    ax2.axhline(y=1, color='grey', alpha=0.8, zorder=-10000, dashes=(2, 1))
+    ax2.set_ylim((0.7,  1.35))
+    ax2.set_xlim(0, 0.009)
     file = args.outputpath_plot+"Zf2.pdf"
     print("saving", file)
     fig2.savefig(file)
@@ -61,7 +70,7 @@ def calc_Zf(args, tauFT2, integrand, reference_tauF_T2):
 
 
 def load_data(args):
-    tauF_by_r0sq, g2, g2_err, _, _ = numpy.loadtxt(args.g2_file, unpack=True)
+    tauF_by_r0sq, g2, g2_err, _, _, _, _ = numpy.loadtxt(args.g2_file, unpack=True)
     tauFT2 = tauF_by_r0sq*(0.7457*args.T_by_Tc)**2
     integrand = (-3*g2)/(8*numpy.pi**2) / tauFT2
     integrand_err = numpy.fabs((-3*g2_err)/(8*numpy.pi**2) / tauFT2)
