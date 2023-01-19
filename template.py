@@ -4,11 +4,17 @@ import numpy
 import argparse
 
 
-def main():
 
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--test')
     args = parser.parse_args()
+    return args
+
+
+def main():
+
+    args = parse_args()
 
     return
 
