@@ -27,6 +27,49 @@ def add_args(parser):
     return
 
 
+def set_minscale(min_scale, T_in_GeV, Nc, Nf):
+
+    effective_theory_thermal_scale = 4 * np.pi * T_in_GeV * np.exp(-np.euler_gamma) * np.exp((-Nc + 4 * Nf * np.log(4)) / (22 * Nc - 4 * Nf))
+
+    # check min_scale
+    if min_scale == "piT":
+        min_scale = np.pi * T_in_GeV
+    elif min_scale == "2piT":
+        min_scale = 2 * np.pi * T_in_GeV
+    elif min_scale == "eff":
+        min_scale = effective_theory_thermal_scale
+    else:
+        min_scale = float(min_scale)
+
+    print("min_scale = ", lpd.format_float(min_scale))
+
+    return min_scale
+
+
+def set_omega_prefactor(omega_prefactor, Nc, Nf, T_in_GeV, min_scale):
+
+    mu_opt_omega_term = 2 * np.exp(((24 * np.pi ** 2 - 149) * Nc + 20 * Nf) / (6 * (11 * Nc - 2 * Nf)))  # see eq. 4.17 of arXiv:1006.0867
+    omega_exponent = 1
+    if omega_prefactor == "opt":
+        omega_prefactor = mu_opt_omega_term  # ~14.743 for Nf=3, ~7.6 for Nf=0
+    elif omega_prefactor == "optBB":
+        gamma_0 = 3 / (8 * np.pi ** 2)  # color-magnetic anomalous dimension
+        b_0 = 11 / (16 * np.pi ** 2)
+        omega_exponent = (1 - gamma_0 / b_0)
+        omega_prefactor = min_scale ** (gamma_0 / b_0)
+    elif omega_prefactor == "optBBpiT":
+        gamma_0 = 3 / (8 * np.pi ** 2)  # color-magnetic anomalous dimension
+        b_0 = 11 / (16 * np.pi ** 2)
+        omega_exponent = (1 - gamma_0 / b_0)
+        omega_prefactor = (np.pi * T_in_GeV) ** (gamma_0 / b_0)
+    else:
+        omega_prefactor = float(omega_prefactor)
+
+    print("omega_prefactor = ", lpd.format_float(omega_prefactor))
+
+    return omega_prefactor, omega_exponent
+
+
 def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoints, Nloop):
     # check Nf
     if Nf == 0:
@@ -42,50 +85,16 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
     elif max_type == "hard":
         maxfunc = np.fmax
 
+    # some constants
     Nc = 3
-
-    mu_opt_T_term = np.exp(np.log(4*np.pi*T_in_GeV) - np.euler_gamma - (Nc - 8 * np.log(2) * Nf) / (2*(11 * Nc - 2 * Nf)))
-    # check min_scale
-    if min_scale == "piT":
-        min_scale = np.pi * T_in_GeV
-    elif min_scale == "2piT":
-        min_scale = 2 * np.pi * T_in_GeV
-    elif min_scale == "3piT":
-        min_scale = 3 * np.pi * T_in_GeV
-    elif min_scale == "4piT":
-        min_scale = 4 * np.pi * T_in_GeV
-    elif min_scale == "opt":
-        min_scale = mu_opt_T_term
-    elif min_scale == "0.25opt":
-        min_scale = mu_opt_T_term / 4
-    elif min_scale == "0.5opt":
-        min_scale = mu_opt_T_term / 2
-    elif min_scale == "2opt":
-        min_scale = mu_opt_T_term * 2
-    else:
-        min_scale = float(min_scale)
-
-    print("min_scale = ", lpd.format_float(min_scale))
-
-    # check omega_prefactor
-    mu_opt_omega_term = 2 * np.exp(((24 * np.pi ** 2 - 149) * Nc + 20 * Nf) / (6 * (11 * Nc - 2 * Nf)))  # see eq. 4.17 of arXiv:1006.0867
-    if omega_prefactor == "opt":
-        omega_prefactor = mu_opt_omega_term  # ~14.743 for Nf=3, ~7.6 for Nf=0
-    elif omega_prefactor == "0.25opt":
-        omega_prefactor = mu_opt_omega_term / 4
-    elif omega_prefactor == "0.5opt":
-        omega_prefactor = mu_opt_omega_term / 2
-    elif omega_prefactor == "2opt":
-        omega_prefactor = mu_opt_omega_term * 2
-    else:
-        omega_prefactor = float(omega_prefactor)
-
-    print("omega_prefactor = ", lpd.format_float(omega_prefactor))
-
-    crd = rundec.CRunDec()
     r20 = Nc * (149. / 36. - 11. * np.log(2.) / 6. - 2 * np.pi ** 2 / 3.) - Nf * (5. / 9. - np.log(2.) / 3.)
     r21 = (11. * Nc - 2. * Nf) / 12.
     C_F = (Nc ** 2 - 1) / 2 / Nc
+
+    min_scale = set_minscale(min_scale, T_in_GeV, Nc, Nf)
+    omega_prefactor, omega_exponent = set_omega_prefactor(omega_prefactor, Nc, Nf, T_in_GeV, min_scale)
+
+    crd = rundec.CRunDec()
 
     # calculation
     OmegaByT_arr = []
@@ -94,7 +103,7 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
     g2_arr = []
     first = True
     for OmegaByT in np.logspace(-6, 3, Npoints, base=10):
-        scale = omega_prefactor * OmegaByT * T_in_GeV
+        scale = omega_prefactor * (OmegaByT*T_in_GeV)**omega_exponent
         mu = maxfunc(min_scale, scale)
         if scale > min_scale and first:
             print("scale > min_scale at OmegaByT=", lpd.format_float(OmegaByT))
@@ -103,7 +112,7 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
         g2 = 4. * np.pi * Alphas
         g2_arr.append(g2)
         lo_spf = g2 * C_F * OmegaByT ** 3 / 6. / np.pi
-        l = np.log((mu / T_in_GeV) ** 2 / OmegaByT ** 2)
+        l = np.log((scale / T_in_GeV) ** 2 / OmegaByT ** 2)  # TODO should this be scale or mu? 
         OmegaByT_arr.append(OmegaByT)
         LO_SPF.append(lo_spf)
         NLO_SPF.append(lo_spf * (1 + (r20 + r21 * l) * Alphas / np.pi))
