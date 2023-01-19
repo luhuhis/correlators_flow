@@ -230,7 +230,7 @@ def plot_extrapolated_data(args, ax, plot_offset):
             try:
                 XX_flow_extr = numpy.loadtxt(path, unpack=True)
                 ax.errorbar(XX_flow_extr[0]*args.flow_extr_custom_units[i], XX_flow_extr[1], XX_flow_extr[2],
-                            zorder=-10000, color=args.color_data[i], fmt=args.markers[i], label=args.leg_labels[i], markersize=3)
+                            zorder=-10000, color=args.color_data[i], fillstyle=args.fillstyle[i], fmt=args.markers[i], label=args.leg_labels[i], markersize=4, markeredgewidth=0.75, elinewidth=0.75)
                 if not args.no_connection:
                     ax.errorbar(XX_flow_extr[0], XX_flow_extr[1], zorder=-100000, markersize=0, color=args.color_data[i], fmt='-', alpha=0.5)
                 plot_offset += 1
