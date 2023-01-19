@@ -25,7 +25,7 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     "s064t20_b0770400 s064t24_b0791300 s096t32_b0824900_m002022_m01011"
     "s064t20_b0757000 s064t24_b0777700 s096t36_b0824900_m002022_m01011")
     arr_output_suffix=("T296" "T251" "T220" "T196")
-    arr_ylims=("0 10.5" "0 10.5" "0 10.5" "0 10.5")
+    arr_ylims=("4 11.5" "3 10.5" "2 8.5" "2 7.5")
     min_flowradius=0.055
     add_args="--ansatz custom"
 fi
