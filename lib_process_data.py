@@ -404,5 +404,5 @@ def dev_by_dist(data, axis=0, return_both_q=False, percentile=68):
 
 
 def print_var(prefix, var):
-    # print(prefix, var)
+    print(prefix, var)
     return var
