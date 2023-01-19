@@ -168,7 +168,7 @@ def do_flow_extr(index, tauTs, cont_samples, data_std, n_samples, args, flowtime
                     fitparams = fitparams.x
 
                     results[n] = fitparams
-    print("done ", '{0:.3f}'.format(tauT))
+    print("done ", '{0:.3f}'.format(tauT), ", taufT2_min=", lpd.format_float(numpy.sqrt(8*flowtimes[flowstart])), "taufT2_max=", lpd.format_float(numpy.sqrt(8*flowtimes[flowend])), sep="")
     return results, indices
 
 
