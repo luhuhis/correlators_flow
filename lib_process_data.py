@@ -145,20 +145,26 @@ def get_tauTs(nt):
     # return tauT_improved[nt] #tree-level improved tauT for XX correlators
 
 
-def EE_cont_LO(tauT, flowradius=0):
-    EE_cont_zeroflow = math.pi ** 2 * (math.cos(math.pi * tauT) ** 2 / math.sin(math.pi * tauT) ** 4 + 1 / (3 * math.sin(math.pi * tauT) ** 2))
-    if numpy.isscalar(flowradius) and flowradius == 0:
+def EE_cont_LO(tauT, sqrt8tauF_T=0):
+    EE_cont_zeroflow = numpy.pi ** 2 * (numpy.cos(numpy.pi * tauT) ** 2 / numpy.sin(numpy.pi * tauT) ** 4 + 1 / (3 * numpy.sin(numpy.pi * tauT) ** 2))
+    if numpy.isscalar(sqrt8tauF_T) and sqrt8tauF_T == 0:
         return EE_cont_zeroflow
     else:
-        flowradius = numpy.asarray(flowradius)
-        tmpsum = 0
+        if numpy.isscalar(sqrt8tauF_T):
+            pass
+        else:
+            sqrt8tauF_T = numpy.asarray(sqrt8tauF_T)
+        tmpsum = numpy.zeros(tauT.shape)
         with numpy.errstate(divide='ignore', invalid='ignore'):  # supress divide by 0 warnings.
             for m in range(-4, 5):
-                tmpsum += 1/(tauT+m)**4 * ((tauT+m)**4/flowradius**4 + (tauT+m)**2/flowradius**2 + 1) * numpy.exp(-((tauT+m)**2/flowradius**2))
+                tmpsum += 1 / (tauT+m) ** 4 * ((tauT+m) ** 4 / sqrt8tauF_T ** 4 + (tauT + m) ** 2 / sqrt8tauF_T ** 2 + 1) * numpy.exp(-((tauT + m) ** 2 / sqrt8tauF_T ** 2))
             answer = numpy.asarray(-(1/numpy.pi**2) * tmpsum + EE_cont_zeroflow)
         # fix flowradius=0 entries
-        indices = numpy.where(flowradius == 0)
-        answer[indices] = EE_cont_zeroflow
+        if numpy.isscalar(sqrt8tauF_T):
+            pass
+        else:
+            indices = numpy.where(sqrt8tauF_T == 0)
+            answer[indices] = EE_cont_zeroflow
         return answer
 
 
