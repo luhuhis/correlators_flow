@@ -57,7 +57,7 @@ def plot(args, tauT, flowtimesT2, XX, XX_err):
     labels = []
     for i in range(len(XX)):
         color = lpd.get_color(range(len(XX)), i, 0, len(XX)-1)
-        handle1 = ax.errorbar(8*flowtimesT2/tauT[i]**2, XX[i], color=color, fmt='.', markersize=1, zorder=-i)
+        handle1 = ax.errorbar(8*flowtimesT2/tauT[i]**2, XX[i], color=color, fmt='o', fillstyle='full', markersize=0.5, zorder=-i)
         # ax.errorbar(8 * flowtimesT2 / tauT[i] ** 2, XX[i], color=color, fmt='-', markersize=0, lw=0.25, zorder=-i)
         handle2 = ax.fill_between(8*flowtimesT2/tauT[i]**2, XX[i]-XX_err[i], XX[i]+XX_err[i], facecolor=color, alpha=0.5, zorder=-100-i)
         plots.append((handle1, handle2))
