@@ -2,14 +2,16 @@
 
 basepath="/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"
 
+suffix="" #_paper
+
 plot_hisq(){
 
     ../plot_final_kappas.py \
         --input_kappa_files \
-        ${basepath}/T196/EE_kappa_T196.txt \
-        ${basepath}/T220/EE_kappa_T220.txt \
-        ${basepath}/T251/EE_kappa_T251.txt \
-        ${basepath}/T296/EE_kappa_T296.txt \
+        ${basepath}/T196/EE_kappa_T196${suffix}.txt \
+        ${basepath}/T220/EE_kappa_T220${suffix}.txt \
+        ${basepath}/T251/EE_kappa_T251${suffix}.txt \
+        ${basepath}/T296/EE_kappa_T296${suffix}.txt \
         \
         --labels \
         196 \

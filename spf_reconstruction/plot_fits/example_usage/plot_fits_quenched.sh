@@ -30,7 +30,7 @@ for corr in "EE" "BB" ; do # "EE"
         )
 
     elif [ "${corr}" == "BB" ] ; then
-        input_suffix="23-01-15"
+        input_suffix="23-01-19"
         nsamples=500
         minscale=eff
         ylims="0.1 5000"

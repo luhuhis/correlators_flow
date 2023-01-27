@@ -106,7 +106,7 @@ def plot_data(args, ax, data, offset, temps):
     for i, [kappa, kappa_err] in enumerate(data):
         if i == 0:
             color = 'k'
-        else:
+        elif args.plot_EE_quenched_lit or args.plot_BB_quenched_lit:
             color = lpd.get_discrete_color(offset)
             offset += 1
         ax.errorbar(temps[i]/args.Tc_in_GeV, kappa, kappa_err, fmt='.', markersize=0, color=color, label=args.labels[i])
