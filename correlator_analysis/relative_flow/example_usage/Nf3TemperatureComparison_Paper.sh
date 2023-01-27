@@ -7,8 +7,19 @@ qcdtype="hisq_ms5_zeuthenFlow"
 plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
 
     params=(
-        "--xlims 0 19 --xticks 0 3 6 9 12 15 18 --plot_in_lattice_units --output_suffix _hisq_final_phys --flow_extr_custom_units 36 32 28 24"
+        "--xlims 0 19 --xticks 0 3 6 9 12 15 18 --hide_fits --x_scales 36 32 28 24 20 36 32 28 24 --xlabel $\tau/a$ --output_suffix _hisq_final_phys --flow_extr_custom_units 36 32 28 24"
         "--xlims 0.24 0.52 --xticks 0.25 0.3 0.35 0.4 0.45 0.5 --output_suffix _hisq_final --flow_extr_custom_units 1 1 1 1"
+    )
+
+    fit_args=(
+        "--npoints 50 --show_UV_corrs"
+        "--fit_basepath /work/home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/"
+        "--fit_folders"
+        "T196/spf/smax_NLO_Nf3_T0.196_mineff_wopt_500smpls_tauTgtr0.24_23-01-19"
+        "T220/spf/smax_NLO_Nf3_T0.220_mineff_wopt_500smpls_tauTgtr0.24_23-01-19"
+        "T251/spf/smax_NLO_Nf3_T0.251_mineff_wopt_500smpls_tauTgtr0.24_23-01-19"
+        "T296/spf/smax_NLO_Nf3_T0.296_mineff_wopt_500smpls_tauTgtr0.24_23-01-19"
+        "s096t20_b0824900_m002022_m01011/spf/smax_NLO_Nf3_T0.352_mineff_wopt_500smpls_tauTgtr0.24_23-01-19"
     )
 
     for x_units in "${params[@]}" ; do
@@ -17,8 +28,8 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
             --output_path ~/work/correlators_flow/plots/$qcdtype/EE/ \
             ${x_units} \
             --ylims 3 9.25 \
-            --no_kappa_plot \
             --usetex \
+            ${fit_args[@]} \
             --no_connection \
             --conftype \
             s096t20_b0824900_m002022_m01011 \
@@ -36,11 +47,13 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
             --color_data C0 C1 C2 C3 C4 C0 C1 C2 C3 \
             --fillstyle none none none none full full full full  \
             --flowradiusBytauT 0.25 \
-            &
+
 
     done
 
 }
+
+
 
 # --leg_interleave
 #        --conftype \
@@ -142,7 +155,7 @@ plot_comparison_of_temperature_effects_phys() {
 }
 
 plot_comparison_of_different_temperatures_of_doublextrapolated_correlators
-plot_comparison_of_lattice_spacing_and_temperature_effects
-plot_comparison_of_temperature_effects_phys
+#plot_comparison_of_lattice_spacing_and_temperature_effects
+#plot_comparison_of_temperature_effects_phys
 
 wait
