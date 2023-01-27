@@ -84,6 +84,7 @@ def get_ylabel():
     # return r'$ \scriptstyle g^{2 \text{(flow)}} = \frac{\pi^2\tau_F^2 \langle E\rangle}{8}  / \left( \frac{3}{128} + \scriptstyle \underset{n=1,2}{\sum} \scriptscriptstyle  c_{2n} \frac{a^{2n}}{\tau_\mathrm{F}^{n}} \right)$'
     return r'$ \displaystyle g^{2 \text{(flow)}}_\mathrm{imp}$'
 
+
 def convert_taufT2_to_sqrt8tauFByr0(taufT2, TbyTc=1.5, r0Tc=0.7457):
     return numpy.sqrt(8*taufT2)/(TbyTc*r0Tc)
 
@@ -111,7 +112,7 @@ def plot1(args, tauFbyScale_arr, g2_arr, g2_err_arr, cont, flowstart, flowend, p
     ax2.legend(title=r'$N_\tau$', **lpd.leg_err_size(), loc="center right", bbox_to_anchor=(1, 0.5), handlelength=1)
     # ax2.axvline(x=convert_taufT2_to_sqrt8tauFByr0(0.002719), **lpd.verticallinestyle)
     ax2.errorbar([convert_taufT2_to_sqrt8tauFByr0(0.002719), convert_taufT2_to_sqrt8tauFByr0(0.002719)], [0,3], fmt='--', color='grey', zorder=-1000)
-    ax2.errorbar([convert_sqrt8taufT_to_sqrt8tauFByr0(0.0625), convert_sqrt8taufT_to_sqrt8tauFByr0(0.0625)], [0, 3], fmt='--', color='grey', zorder=-1000)
+    # ax2.errorbar([convert_sqrt8taufT_to_sqrt8tauFByr0(0.0625), convert_sqrt8taufT_to_sqrt8tauFByr0(0.0625)], [0, 3], fmt='--', color='grey', zorder=-1000)
     ax2.fill_between([convert_sqrt8taufT_to_sqrt8tauFByr0(0.25*0.25), convert_sqrt8taufT_to_sqrt8tauFByr0(0.5*0.3)],
                      [-1, -1], [3, 3], facecolor='grey', alpha=0.25, zorder=-1000)
     ax2.set_xticks((0, 0.05, 0.1, 0.15, 0.2, 0.25))
@@ -244,18 +245,3 @@ if __name__ == '__main__':
     lpd.print_script_call()
     main()
     lpd.save_script_call()
-
-    # # plot both cont extr
-    # if args.ref_scale == "r0":
-    #     otherlabel = "t0"  # yes this is the other one!
-    # elif args.ref_scale == "t0":
-    #     otherlabel = "r0"
-    # otherdatafile = outputpathdata + "g2_" + otherlabel + "_cont_extr.txt"
-    # tauFbytau0, b, berr, m, merr = numpy.loadtxt(otherdatafile, unpack=True)
-    #
-    # fig4, ax4, _ = lpd.create_figure(xlabel=r'$\frac{\tau_F}{'+plotlabel+r'}$', xlabelpos=(1.1, 0.05), ylabelpos=(0.1, 0.9), figsize=((16/9)*(3+3/8), 3+3/8 - 1/2.54))  # r'$\tau_F T^2\big|_{T=1.5T_c}$',
-    # ax4.set_title(r'$ g^2_\mathrm{gf}\equiv \frac{128\pi^2 \tau_F^2 \langle E \rangle}{24}$', y=0.6)
-    # ax4.errorbar(tauFbytau0_arr[0], cont[:, 0], cont[:, 1], fmt='x-', lw=0.5, markersize=2, mew=0.3, capsize=1, label=r'$'+plotlabel+r'$', zorder=-1)
-    # ax4.errorbar(tauFbytau0_arr[0], cont[:, 0], cont[:, 1], fmt='x-', lw=0.5, markersize=2, mew=0.3, capsize=1, label='cont', zorder=-1)
-    # ax4.legend(**lpd.legendstyle)
-    # fig4.savefig(outputpath+"g2_"+label+".pdf")

@@ -28,13 +28,17 @@ def convert_sqrt8taufT_to_tfT2(sqrt8taufT):
 
 def plot_Zf2(args, taufT2, Z2, reference_tauF_T2):
     fig2, ax2, plots2 = lpd.create_figure(xlabel=r'$\tau_F T^2$', ylabel=r'$Z_f^2$')
-    ax2.errorbar(taufT2, Z2, fmt='-')
+
+    min_idx = numpy.abs(numpy.asarray(taufT2)-convert_sqrt8taufT_to_tfT2(0.25*0.25)).argmin()-1
+    max_idx = numpy.abs(numpy.asarray(taufT2)-convert_sqrt8taufT_to_tfT2(0.5*0.3)).argmin()+1
+
+    ax2.errorbar(taufT2[min_idx:max_idx], Z2[min_idx:max_idx], fmt='-')
     ax2.axvline(x=reference_tauF_T2, **lpd.verticallinestyle)
-    ax2.fill_between([convert_sqrt8taufT_to_tfT2(0.25*0.25), convert_sqrt8taufT_to_tfT2(0.5*0.3)],
-                     [-1, -1], [1.25, 1.25], facecolor='grey', alpha=0.25, zorder=-1000)
-    ax2.axhline(y=1, color='grey', alpha=0.8, zorder=-10000, dashes=(2, 1))
-    ax2.set_ylim((0.7,  1.35))
-    ax2.set_xlim(0, 0.009)
+    # ax2.fill_between([convert_sqrt8taufT_to_tfT2(0.25*0.25), convert_sqrt8taufT_to_tfT2(0.5*0.3)],
+    #                  [-1, -1], [1.25, 1.25], facecolor='grey', alpha=0.25, zorder=-1000)
+    ax2.axhline(y=1, color='k', zorder=-10000, lw=0.5, dashes=(6,2))
+    ax2.set_ylim((0.85,  1.35))
+    ax2.set_xlim(0, 0.0045)
     file = args.outputpath_plot+"Zf2.pdf"
     print("saving", file)
     fig2.savefig(file)
