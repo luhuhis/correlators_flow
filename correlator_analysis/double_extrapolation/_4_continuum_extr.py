@@ -7,13 +7,10 @@ import scipy.optimize
 from matplotlib.backends.backend_pdf import PdfPages
 
 
-# hide warning for fit when only having 2 data points.
 import warnings
-# warnings.simplefilter("ignore", OptimizeWarning)
-# warnings.simplefilter('error', UserWarning)
-warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered.*')
 warnings.filterwarnings('ignore', r'Calling figure.constrained_layout, but figure not setup to do constrained layout.*')
-warnings.filterwarnings('ignore', r'constrained_layout not applied*')
+warnings.filterwarnings('ignore', r'constrained_layout not applied.*')
 
 
 def linear_ansatz(x, b, m, chisq_dof=None):
@@ -56,9 +53,10 @@ def wrapper(index, flowtimes, samples, args, Nts, edatas):
     flowradius_str = r'{0:.4f}'.format(flowradius)
 
     # define some parameters
-    lower_tauT_lim = lpd.lower_tauT_limit_(flowradius, args.max_FlowradiusBytauT, args.max_FlowradiusBytauT_offset)
+    lower_tauT_lim = flowradius/args.max_FlowradiusBytauT
+    upper_tauT_lim = flowradius/args.min_FlowradiusBytauT
     tauTs_fine = lpd.get_tauTs(nt_finest)
-    valid_tauTs = [tauT for tauT in tauTs_fine if tauT > lower_tauT_lim]
+    valid_tauTs = [tauT for tauT in tauTs_fine if lower_tauT_lim <= tauT <= upper_tauT_lim]
     n_valid_tauTs = len(valid_tauTs)
     nt_half_fine = int(nt_finest/2)
     offset = nt_half_fine-n_valid_tauTs
@@ -67,7 +65,7 @@ def wrapper(index, flowtimes, samples, args, Nts, edatas):
     nsamples = samples[0].shape[1]
     # TODO if compute:
 
-    results = numpy.empty((nsamples, nt_half_fine, 3))  # TODO change back to 3
+    results = numpy.empty((nsamples, nt_half_fine, 3))
     results[:] = numpy.nan
 
     # at fixed flowtime, perform cont extr for each tauT for each sample
@@ -78,7 +76,7 @@ def wrapper(index, flowtimes, samples, args, Nts, edatas):
             extrapolation_ansatz = linear_ansatz
             if args.ansatz == "constant":
                 extrapolation_ansatz = constant_ansatz
-            elif args.ansatz == "custom" and tauT >= 0.33:
+            elif args.ansatz == "custom" and tauT >= 0.249:
                 extrapolation_ansatz = constant_ansatz
 
             if tauT in valid_tauTs and len(xdata) >= 2:
@@ -115,7 +113,7 @@ def wrapper(index, flowtimes, samples, args, Nts, edatas):
     plot_data = numpy.transpose(numpy.stack([continuum_mean, *[tmp for tmp in data_mean]]))
     plot_std = numpy.transpose(numpy.stack([continuum_std, *[tmp for tmp in data_std]]))
 
-    fig_corr = plot_corr(args, lpd.get_tauTs(nt_finest), continuum_mean, continuum_std, flowradius_str, lpd.lower_tauT_limit_(flowradius, 0.33))
+    fig_corr = plot_corr(args, lpd.get_tauTs(nt_finest), continuum_mean, continuum_std, flowradius_str, lpd.lower_tauT_limit_(flowradius, 0.3))
     fig_extr = plot_extrapolation(args, Nts, plot_data, plot_std, results_mean, flowradius_str, tauTs_fine, valid_tauTs, offset)
 
     return results, fig_corr, fig_extr
@@ -144,7 +142,7 @@ def plot_extrapolation(args, xdata, ydata, edata, fitparams, flowradius_str, tau
                 mintauTindex = j
             if j > maxtauTindex_plot:
                 maxtauTindex_plot = j
-            mycolor = lpd.get_color(tauTs_fine, nt_half_fine - 1 - j + offset, mintauTindex, nt_half_fine - 1)
+            mycolor = lpd.get_color(valid_tauTs, len(valid_tauTs) - 1 - (j - mintauTindex))
             plots.append(ax.errorbar(xdata, ydata[j], edata[j], fmt='|', color=mycolor, zorder=-100 + j, label='{0:.3f}'.format(tauTs_fine[j])))  # lpd.markers[j - nt_half_fine + len(lpd.markers)]
             x = numpy.linspace(0, 0.1, 100)
             ax.errorbar(x, linear_ansatz(x, *fitparams[j]), color=mycolor, fmt=':', zorder=-100)
@@ -157,7 +155,7 @@ def plot_extrapolation(args, xdata, ydata, edata, fitparams, flowradius_str, tau
     ax.legend(handles=plots)
     handles, labels = ax.get_legend_handles_labels()
     # reverse ordering of legend
-    ax.legend(handles[::-1], labels[::-1], title=r'$\tau T$', loc="lower left", bbox_to_anchor=(-0.01, -0.01), **lpd.leg_err_size(1, 0.25), ncol=4,
+    ax.legend(handles[::-1], labels[::-1], title=r'$\tau T$', loc="center left", bbox_to_anchor=(1, 0.5), **lpd.leg_err_size(1, 0.25), ncol=1,
               columnspacing=0.5)
 
     return fig
@@ -195,9 +193,8 @@ def main():
 
     parser.add_argument('--use_tex', action="store_true", help="use LaTeX when plotting")
     parser.add_argument('--custom_ylims', help="custom y-axis limits for both plots", type=float, nargs=2)
-    parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
-                        help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
-                             'cannot be greater than 0.33*tauT, or that for each flow radius the tauT must be atleast 3*flowradius.')
+    parser.add_argument('--max_FlowradiusBytauT', type=float, default=0.3001)
+    parser.add_argument('--min_FlowradiusBytauT', type=float, default=0.2499)
     parser.add_argument('--max_FlowradiusBytauT_offset', type=float, default=1/20,
                         help='fixed offset to make lower_tauT_limit stricter (by e.g. one lattice spacing 1/Nt), as the 0.33 criterion is only valid in the '
                              'continuum. on the lattice one has to be stricter. 1/Nt_coarsest is a good value.')
