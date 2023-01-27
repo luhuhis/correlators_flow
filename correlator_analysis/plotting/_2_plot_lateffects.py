@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore', r'(.*?)More than 20 figures have been opened.(
 def plot_single_flowtime(index, flowradii, args, tauT, XX, XX_err, labels, ylims, xlims):
 
     nplot = len(XX)
-    colors = ['k', *[cm.tab10(i) for i in range(nplot)]]
+    colors = [*[cm.tab10(nplot-i-1) for i in range(nplot)]]
     # markers = ['s', 'o', 'D', 'H', 'h']
     zorders = numpy.linspace(-50, -1, nplot, dtype=int)
 
@@ -28,6 +28,8 @@ def plot_single_flowtime(index, flowradii, args, tauT, XX, XX_err, labels, ylims
     ylabel = r'$ ' + displaystyle + r'\frac{G}{G^\mathrm{norm}}$'
 
     fig, ax, plots = lpd.create_figure(xlims=xlims, ylims=ylims, xlabel=r'$\tau T$', ylabel=ylabel, UseTex=args.use_tex)
+
+    ax.set_xticks((0.0, 0.1, 0.2, 0.3, 0.4, 0.5))
 
     ax.text(0.99, 0.99, r'$\sqrt{8\tau_\mathrm{F}} T=$ ' + '{0:.3f}'.format(flowradii[index]), ha='right', va='top', transform=ax.transAxes, bbox=lpd.labelboxstyle)
 
