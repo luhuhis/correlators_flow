@@ -41,8 +41,8 @@ plot_quenched(){
     done
 
     ../plot_UV_spf.py \
-        --xlims 0.1 1500 \
-        --ylims 0 4.5 \
+        --xlims 0.3 900 \
+        --ylims 0 5.5 \
         --PhiUV_files "${models[@]}" \
         --labels "${labels[@]}" \
         --outputpath /work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/ \
