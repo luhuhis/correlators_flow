@@ -253,7 +253,7 @@ def get_optimized_start_and_tauint(x, y, index_offset, MC_stepsize, streamid, bl
 
 def print_result(streamid, x, best_start_index, MC_stepsize, tau_int, tau_inte, tau_intbias, itpick, index_max):
     print("stream=", streamid, ", nconf=[", int(x[best_start_index] / MC_stepsize), ",", int(x[-1] / MC_stepsize), "]", " ---> tau_int=",
-          r'{0:.0f}'.format(tau_int), "+-", r'{0:.0f}'.format(tau_inte),
+          r'{0:.1f}'.format(tau_int), "+-", r'{0:.0f}'.format(tau_inte),
           " (+", r'{0:.0f}'.format(tau_intbias), ") at n=", itpick, ", nconfeff=", int((index_max - best_start_index) / int(tau_int)), sep="", end="")
 
 
@@ -265,7 +265,7 @@ def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta
     results = numpy.asarray(results)
     n_streams = results.shape[0]
 
-    xlabel = r'$n_\mathrm{traj}/ ' + str(args.MC_stepsize) + r'$'
+    xlabel = r'$n_\mathrm{'+args.update_str+r'}/ ' + str(args.MC_stepsize) + r'$'
     ylabel = r'$\mathrm{Re}\mathrm{Tr}[U_{(\beta,0)}]$'
     fig, ax, _ = lpd.create_figure(xlabel=xlabel, ylabel=ylabel, figsize="fullwidth_slim")
 
@@ -278,10 +278,10 @@ def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta
         bestvals = results[k][1:]
 
         if k in args.show_id:
-            ref = ax.errorbar(thisx[:best_start + 1] / args.MC_stepsize, thisy[:best_start + 1], fmt='-', lw=0.4, fillstyle='full', markersize=2.5, mew=0,
+            ref = ax.errorbar(thisx[:best_start + 1] / args.MC_stepsize, thisy[:best_start + 1], fmt='-', lw=0.5, fillstyle='full', markersize=2.5, mew=0,
                               alpha=0.25)
             label = str(k+1)  # + ", " + str(int(bestvals[0])) + ", " + str(int(thisx[best_start] / args.MC_stepsize)
-            ax.errorbar(thisx[best_start:] / args.MC_stepsize, thisy[best_start:], fmt='-', lw=0.4, fillstyle='full', markersize=2.5, mew=0, alpha=1,
+            ax.errorbar(thisx[best_start:] / args.MC_stepsize, thisy[best_start:], fmt='-', lw=0.5, fillstyle='full', markersize=2.5, mew=0, alpha=1,
                         color=ref.lines[0].get_color(), label=label)
 
     legendoptions = dict(edgecolor='none', fancybox=False, facecolor="w", columnspacing=0.1,
@@ -290,8 +290,8 @@ def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta
     if args.vlines:
         for x in args.vlines:
             ax.axvline(x=x, **lpd.verticallinestyle)
-    ax.text(0.99, 0.99, r'$' + str(ns) + r'^3 \times ' + str(nt) + r'$, $\beta=' + str(beta) + '$,' + r'$\sqrt{8\tau_F}/a=' + r'{0:.1f}'.format(
-        numpy.sqrt(8 * flowtime)) + r'$', ha='right', va='top', transform=ax.transAxes)  # + ', ms/5, HISQ'
+    ax.text(0.99, 0.99, r'$' + str(ns) + r'^3 \times ' + str(nt) + r'$, $\beta=' + str(beta) + '$,' + r'$\sqrt{8\tau_\mathrm{F}}T=' + r'{0:.2f}'.format(
+        numpy.sqrt(8 * flowtime)/nt) + r'$', ha='right', va='top', transform=ax.transAxes)  # + ', ms/5, HISQ'
     # r', \sqrt{8\tau_F}T \approx ' + r'{0:.2f}'.format(numpy.sqrt(8 * flowtime) / nt) +
     ax.set_xlim(xmin=-50)
 
@@ -362,9 +362,10 @@ def parse_args():
     parser.add_argument('--tpickmax_increment', default=1, type=int, help="if the jackknife bin size (to estimate the tau_int error and bias) is too small, "
                                                                           "then we never observe a decrease in the tau_int estimate and may underestimate tau_int."
                                                                           "so we keep increasing the binsize by <tpickmax_increment> and try again until we do.")
-    parser.add_argument('--flowradius_by_a', default=1.5, type=float, help="at which flowtime tau_int should be calculated")
+    parser.add_argument('--flowradius_T', default=0.15, type=float, help="at which flowtime in units of inverse temperature tau_int should be calculated")
     parser.add_argument('--n_samples', default=10000, type=int, help="number of bootstrap samples to draw")
     parser.add_argument('--n_proc', default=20, type=int, help="number of processes for parallelization")
+    parser.add_argument('--update_str', default="traj", help="what to call the gauge updates in the plot xlabel")
 
     args = parser.parse_args()
 
@@ -394,8 +395,8 @@ def main():
     if args.min_conf == (0,):
         args.min_conf = [0 for _ in range(n_streams)]
 
-    flowradii = numpy.sqrt(8 * flow_times)
-    flowidx = numpy.argmin(numpy.abs(flowradii - args.flowradius_by_a))
+    flowradii = numpy.sqrt(8 * flow_times)/nt
+    flowidx = numpy.argmin(numpy.abs(flowradii - args.flowradius_T))
 
     # separate data into streams
     x_eq_spaced_array = []
@@ -433,7 +434,11 @@ def main():
                 y_binned.append(val)
         else:
             ndata = len(y_eq_spaced) - best_start
-            binlength = int(tau_int)
+            if tau_int > 30 and tau_inte/tau_int > 0.2:
+                binlength = 30
+                print("INFO: binlength capped at 30 for unreliable estimates.")
+            else:
+                binlength = int(tau_int)
             nbins = int(ndata / binlength)
             for b in range(nbins):
                 y_binned.append(numpy.mean(y_eq_spaced[b * binlength:(b + 1) * binlength], axis=0))
