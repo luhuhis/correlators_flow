@@ -75,7 +75,7 @@ def parse_args():
     args = parser.parse_args()
 
     if len(args.model_ids) != len(args.labels):
-        print("ERROR: need as many pos as model_ids")
+        print("ERROR: need as many labels as model_ids")
         exit(1)
 
     if args.ylims is None and args.pos is None:

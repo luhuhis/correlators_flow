@@ -9,11 +9,17 @@ def parse_args():
     parser.add_argument('--corr', choices=["EE", "BB"])
     parser.add_argument('--input_kappa_files', nargs='*')
     parser.add_argument('--labels', nargs='*')
+    parser.add_argument('--fillstyles', nargs='*')
+    parser.add_argument('--fmts', nargs='*')
+    parser.add_argument('--colors', nargs='*')
+    parser.add_argument('--zorders', nargs='*', type=int)
+    parser.add_argument('--markersize', type=int)
     parser.add_argument('--outputpath')
     parser.add_argument('--suffix')
     parser.add_argument('--temps_in_GeV', type=float, nargs="*")
     parser.add_argument('--Tc_in_GeV', type=float, required=True)
     parser.add_argument('--leg_hide', action="store_true")
+    parser.add_argument('--leg_ncol', default=1, type=int)
     parser.add_argument('--xlims', nargs=2, type=float)
     parser.add_argument('--ylims', nargs=2, type=float)
     parser.add_argument('--plot_EE_quenched_lit', action="store_true")
@@ -109,7 +115,13 @@ def plot_data(args, ax, data, offset, temps):
         elif args.plot_EE_quenched_lit or args.plot_BB_quenched_lit:
             color = lpd.get_discrete_color(offset)
             offset += 1
-        ax.errorbar(temps[i]/args.Tc_in_GeV, kappa, kappa_err, fmt='.', markersize=0, color=color, label=args.labels[i])
+        ax.errorbar(temps[i]/args.Tc_in_GeV, kappa, kappa_err,
+                    fmt='.' if args.fmts is None else args.fmts[i],
+                    fillstyle=None if args.fillstyles is None else args.fillstyles[i],
+                    markersize=0 if args.markersize is None else args.markersize,
+                    color=color if args.colors is None else args.colors[i],
+                    zorder=None if args.zorders is None else args.zorders[i],
+                    label=args.labels[i])
 
     return offset
 
@@ -136,7 +148,9 @@ def do_plot(args, data, temps):
         plot_analytical_results(args, ax)
 
     if not args.leg_hide:
-        ax.legend(**lpd.leg_err_size())
+        leg = ax.legend(**lpd.leg_err_size(1, 0.5), ncol=args.leg_ncol, columnspacing=1, labelspacing=0.5)
+        for t in leg.texts:
+            t.set_multialignment('left')
 
     filename = args.outputpath + "/kappa_"+args.suffix+".pdf"
     fig.savefig(filename)

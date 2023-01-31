@@ -63,7 +63,7 @@ labels_and_models=(
     )
     add_suffix="_paper"
 else
-    mintauT=0.33
+    mintauT=0.24
     labels_and_models=(
     '$\text{max}_\text{NLO}$'                     "max_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
     '$\text{max}_\text{LO\hphantom{N}}$'          "max_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
@@ -82,38 +82,48 @@ else
 fi
 }
 
+conftypes=(s096t36_b0824900_m002022_m01011 s096t32_b0824900_m002022_m01011 s096t28_b0824900_m002022_m01011 s096t24_b0824900_m002022_m01011 s096t20_b0824900_m002022_m01011)
+temps=(196 220 251 296 352)
+for selector2 in "zeroflow" "finiteflow" ; do
+    for selector in "thesis" "paper" "finiteflow" ; do
+        for j in "${!temps[@]}" ; do
 
-temps=( 196 220 251 296)
-for selector in "thesis" "paper" ; do
-    for j in "${!temps[@]}" ; do
+            temp=${temps[j]}
+            nsamples=500
 
-        temp=${temps[j]}
-        nsamples=500
 
-        set_labels_and_models
+            set_labels_and_models
 
-        suffix="_T${temp}${add_suffix}"
-        basepath=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/
-        outputpath=/work/home/altenkort/work/correlators_flow/plots/hisq_ms5_zeuthenFlow/EE//T${temp}/
-        outputpath_data=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/T${temp}
-
-        models=()
-        labels=()
-        for i in "${!labels_and_models[@]}" ; do
-            if [ $((i % 2)) -eq 0 ] ; then
-                labels+=("${labels_and_models[i]}")
+            if [ "${selector2}" == "finiteflow" ] ; then
+                conftype=${conftypes[j]}
+                suffix="_T${temp}_finiteflow${add_suffix}"
+                basepath=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//${conftype}/spf/
+                outputpath=/work/home/altenkort/work/correlators_flow/plots/hisq_ms5_zeuthenFlow/EE//${conftype}/
+                outputpath_data=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/${conftype}/
             else
-                models+=("${labels_and_models[i]}")
+                if [ "${temp}" == "352" ]; then
+                    continue
+                fi
+                suffix="_T${temp}${add_suffix}"
+                basepath=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/
+                outputpath=/work/home/altenkort/work/correlators_flow/plots/hisq_ms5_zeuthenFlow/EE//T${temp}/
+                outputpath_data=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/T${temp}
             fi
+            models=()
+            labels=()
+            for i in "${!labels_and_models[@]}" ; do
+                if [ $((i % 2)) -eq 0 ] ; then
+                    labels+=("${labels_and_models[i]}")
+                else
+                    models+=("${labels_and_models[i]}")
+                fi
+            done
+
+            plot_spfs &
+            plot_kappa &
+            plot_fitcorr &
+
         done
-
-
-        plot_spfs &
-        plot_kappa &
-        plot_fitcorr &
-
-
-
     done
 done
 wait
