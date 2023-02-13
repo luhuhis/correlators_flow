@@ -7,10 +7,10 @@ import lib_process_data as lpd
 import scipy.interpolate
 import matplotlib.pyplot
 from matplotlib.backends.backend_pdf import PdfPages
-# import warnings
-# warnings.simplefilter("ignore", OptimizeWarning)
-# warnings.simplefilter('error', UserWarning)
-# warnings.filterwarnings('ignore', r'Calling figure.constrained_layout, but figure not setup to do constrained layout.*')
+
+
+import warnings
+warnings.filterwarnings('ignore', r'All-NaN slice encountered.*')
 
 
 def interpolate_XX_flow(xdata, ydata, ydata_norm, output_xdata1, output_xdata2):
@@ -22,7 +22,7 @@ def interpolate_XX_flow(xdata, ydata, ydata_norm, output_xdata1, output_xdata2):
 def plot(args, flowradius, x, y, yerr, merged_data_path, index, flowtime, nt, flowaction, gaugeaction):
 
     # plot interpolations and underlying data points
-    ylabel = r'$\displaystyle \frac{G}{G^\mathrm{norm}}$'
+    ylabel = r'$\displaystyle \frac{G' + lpd.get_corr_subscript(args.corr) + r'}{G^\mathrm{norm}}$'
     fig, ax, plots = lpd.create_figure(xlims=[0, 0.52], ylims=args.ylims, xlabel=r'$\tau T$', ylabel=ylabel, constrained_layout=True)
     ax.text(0.99, 0.99, r'$ \sqrt{8\tau_F}T = ' + '{0:.3f}'.format(flowradius)+'$', ha='right', va='top', transform=ax.transAxes, zorder=-1000, bbox=lpd.labelboxstyle)
     lower_limit = lpd.lower_tauT_limit_(flowradius, 0.33, 0)
@@ -35,7 +35,7 @@ def plot(args, flowradius, x, y, yerr, merged_data_path, index, flowtime, nt, fl
     ax.fill_between(x[min_index:], y[min_index:] - yerr[min_index:], y[min_index:] + yerr[min_index:], label="int.")
     ax.errorbar(x[min_index:], y[min_index:], fmt='-', zorder=-10)
 
-    # data
+    #data
     XX = numpy.loadtxt(merged_data_path + "/" + args.corr + "_" + args.conftype + ".dat")
     XX_err = numpy.loadtxt(merged_data_path + "/" + args.corr + "_err_" + args.conftype + ".dat")
     for a in range(len(XX[index])):
@@ -49,7 +49,7 @@ def plot(args, flowradius, x, y, yerr, merged_data_path, index, flowtime, nt, fl
     return fig
 
 
-def wrapper(index, flowtimes, XX_samples, args, merged_data_path):
+def tau_interpolation(index, flowtimes, XX_samples, args, merged_data_path):
 
     beta, ns, nt, nt_half = lpd.parse_conftype(args.conftype)
     _, _, _, gaugeaction, flowaction = lpd.parse_qcdtype(args.qcdtype)
@@ -86,8 +86,12 @@ def wrapper(index, flowtimes, XX_samples, args, merged_data_path):
     return theoutputdata, fig, yplot
 
 
-def main():
+def interpolate_data(xdata, ydata, output_xdata, bc=((2, 0.0), (2, 0.0))):
+    spline = scipy.interpolate.CubicSpline(xdata, ydata, bc_type=bc, extrapolate=False)
+    return spline(output_xdata)
 
+
+def parse_args():
     # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
 
@@ -108,22 +112,24 @@ def main():
 
     args = parser.parse_args()
 
-    # file paths
-    merged_data_path = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype, args.basepath)
+    return args
+
+
+def save_data(args, merged_data_path, interpolations, interpolation_mean_for_plotting, suffix="interpolation"):
+    interpolations = numpy.asarray(interpolations)
+    interpolation_mean_for_plotting = numpy.asarray(interpolation_mean_for_plotting)
+    file = merged_data_path + args.corr + "_" + args.conftype + "_" + suffix + "_samples.npy"
+    print("save ", file)
+    numpy.save(file, interpolations)
+    file = merged_data_path + args.corr + "_" + args.conftype + "_" + suffix + "_mean.npy"
+    print("save ", file)
+    numpy.save(file, interpolation_mean_for_plotting)
+
+
+def save_figs(args, figs, suffix="interpolation"):
     outputfolder_plot = lpd.get_plot_path(args.qcdtype, args.corr, args.conftype, args.basepath_plot)
     lpd.create_folder(outputfolder_plot)
-
-    # load flow times
-    flowtimes = numpy.loadtxt(merged_data_path + "/flowtimes_" + args.conftype + ".dat")
-    indices = range(0, len(flowtimes))
-
-    # load data
-    XX_samples = numpy.load(merged_data_path+"/"+args.corr + "_" + args.conftype + "_samples.npy")
-
-    matplotlib.rcParams['figure.max_open_warning'] = 0  # suppress warning due to possibly large number of figures...
-    interpolations, figs, interpolation_mean_for_plotting = lpd.parallel_function_eval(wrapper, indices, args.nproc, flowtimes, XX_samples, args, merged_data_path)
-
-    filepath = outputfolder_plot + "/" + args.corr + "_interpolation.pdf"
+    filepath = outputfolder_plot + "/" + args.corr + "_" + suffix + ".pdf"
     print("saving ", filepath)
 
     lpd.set_rc_params()  # for some reason we need to call this here...
@@ -132,12 +138,141 @@ def main():
             pdf.savefig(fig)
             matplotlib.pyplot.close(fig)
 
-    # save data
-    interpolations = numpy.asarray(interpolations)
-    interpolation_mean_for_plotting = numpy.asarray(interpolation_mean_for_plotting)
-    print(interpolation_mean_for_plotting.shape)
-    numpy.save(merged_data_path + args.corr + "_" + args.conftype + "_interpolation_samples.npy", interpolations)
-    numpy.save(merged_data_path + args.corr + "_" + args.conftype + "_interpolation_mean.npy", interpolation_mean_for_plotting)
+
+def convert_sqrt8tauFT_to_tauFBya2(sqrt8tauFT, nt):
+    return (sqrt8tauFT*nt)**2/8
+
+
+def traditional_interpolation(args, merged_data_path, flowtimes, XX_samples):
+    matplotlib.rcParams['figure.max_open_warning'] = 0  # suppress warning due to possibly large number of figures...
+    indices = range(len(flowtimes))
+    interpolations, figs, interpolation_mean_for_plotting = lpd.parallel_function_eval(tau_interpolation, indices, args.nproc, flowtimes, XX_samples, args, merged_data_path)
+
+    save_figs(args, figs)
+    save_data(args, merged_data_path, interpolations, interpolation_mean_for_plotting)
+
+
+def interpolate_to_relative_flowtimes(tauT_index, tauTs, XX_samples, args, absolute_flowtimes, relative_flowradii):
+
+    _, _, nt, _ = lpd.parse_conftype(args.conftype)
+    _, _, _, gaugeaction, flowaction = lpd.parse_qcdtype(args.qcdtype)
+
+    new_XX_samples = numpy.empty((args.nsamples, len(relative_flowradii)))
+
+    # only use well-behaved part for interpolation
+    flow_indices = (absolute_flowtimes >= 1 / 8) & (absolute_flowtimes <= convert_sqrt8tauFT_to_tauFBya2(0.35 * 0.5, nt))
+    new_absolute_flowtimes = convert_sqrt8tauFT_to_tauFBya2(relative_flowradii * tauTs[tauT_index], nt)
+    factor = nt**4 / lpd.G_latt_LO_flow(tauT_index, absolute_flowtimes[flow_indices], args.corr, nt, flowaction, gaugeaction)
+    for m in range(args.nsamples):
+        ydata_old = XX_samples[m, flow_indices, tauT_index] * factor
+        new_XX_samples[m] = interpolate_data(absolute_flowtimes[flow_indices], ydata_old, new_absolute_flowtimes)
+
+    return new_XX_samples
+
+
+def interpolate_tauTs_at_relative_flowtime(flow_index, args, XX_samples, int_tauTs):
+    def first_non_nan_index(arr):
+        for i, value in enumerate(arr):
+            if not numpy.isnan(value):
+                return i
+        return None
+
+    def first_non_nan_index_from_end(arr):
+        for i in range(len(arr) - 1, -1, -1):
+            if not numpy.isnan(arr[i]):
+                return i
+        return None
+
+    _, _, nt, _ = lpd.parse_conftype(args.conftype)
+    orig_tauTs = lpd.get_tauTs(nt)
+
+    new_XX_samples = numpy.empty((args.nsamples, len(int_tauTs)))
+
+    first_not_nan_index = first_non_nan_index(XX_samples[0, flow_index])
+    last_not_nan_index = first_non_nan_index_from_end(XX_samples[0, flow_index])
+
+    for m in range(args.nsamples):
+        ydata_old = XX_samples[m, flow_index][first_not_nan_index:last_not_nan_index+1]
+        new_XX_samples[m] = interpolate_data(orig_tauTs[first_not_nan_index:last_not_nan_index+1], ydata_old, int_tauTs, bc=((2, 0.0), (1, 0.0)))
+
+    return new_XX_samples
+
+
+def plot_relative_flow_ints(flowindex, args, relflow_range, orig_XX_samples, int_XX_samples, int_xdata):
+    relflow = relflow_range[flowindex]
+    _, _, nt, _ = lpd.parse_conftype(args.conftype)
+
+    orig_xdata = lpd.get_tauTs(nt)
+    orig_ydata = numpy.nanmedian(orig_XX_samples, axis=0)[flowindex]
+    orig_edata = lpd.dev_by_dist(orig_XX_samples, axis=0)[flowindex]
+
+    int_ydata = numpy.nanmedian(int_XX_samples, axis=0)[flowindex]
+    int_edata = lpd.dev_by_dist(int_XX_samples, axis=0)[flowindex]
+
+    # plot interpolations and underlying data points
+    ylabel = r'$\displaystyle \frac{G' + lpd.get_corr_subscript(args.corr) + r'}{G^\mathrm{norm}}$'
+    fig, ax, plots = lpd.create_figure(xlims=[0, 0.52], ylims=args.ylims, xlabel=r'$\tau T$', ylabel=ylabel, constrained_layout=True)
+    ax.text(0.99, 0.99, r'$ \sqrt{8\tau_F}/\tau = ' + '{0:.3f}'.format(relflow) + '$', ha='right', va='top', transform=ax.transAxes, zorder=-1000,
+            bbox=lpd.labelboxstyle)
+    ax.set_xticks((0.0, 0.1, 0.2, 0.3, 0.4, 0.5))
+
+    # interpolations
+    ax.errorbar(orig_xdata, orig_ydata, orig_edata, label="data", fmt='|', color="C0", zorder=0)
+    ax.errorbar(int_xdata, int_ydata, lw=0.5, color="C1", zorder=1)
+    ax.fill_between(int_xdata, int_ydata-int_edata, int_ydata+int_edata, label="int.", facecolor="C1", zorder=2)
+
+    ax.legend(loc="center right", bbox_to_anchor=(0.99, 0.25), **lpd.leg_err_size())
+    return fig
+
+
+def new_interpolation(args, merged_data_path, flowtimes, XX_samples):
+    _, _, nt, nt_half = lpd.parse_conftype(args.conftype)
+
+    min_relflow = 0.2
+    max_relflow = 0.35
+    stepsize = 0.005
+    relflow_range = numpy.arange(min_relflow, max_relflow + stepsize, stepsize)
+    nflow = len(relflow_range)
+
+    orig_xdata = lpd.get_tauTs(nt)
+
+    # interpolate_to_relative_flowtimes
+    flow_int_XX_samples = lpd.parallel_function_eval(interpolate_to_relative_flowtimes, range(nt_half), args.nproc, orig_xdata, XX_samples, args, flowtimes, relflow_range)
+    flow_int_XX_samples = numpy.asarray(flow_int_XX_samples).swapaxes(0, 2)
+    flow_int_XX_samples = flow_int_XX_samples.swapaxes(0, 1)
+
+    # interpolate to tauTs of finest lattice
+    tauT_int_flow_int_XX_samples = lpd.parallel_function_eval(interpolate_tauTs_at_relative_flowtime, range(len(relflow_range)), args.nproc,
+                                                              args, flow_int_XX_samples, lpd.get_tauTs(args.int_Nt))
+    tauT_int_flow_int_XX_samples = numpy.asarray(tauT_int_flow_int_XX_samples).swapaxes(0, 1)
+
+    # interpolate to all the tauTs for the plot
+    int_xdata = numpy.linspace(0, 0.5, 200)
+    plot_tauT_int_flow_int_XX_samples = lpd.parallel_function_eval(interpolate_tauTs_at_relative_flowtime, range(len(relflow_range)), args.nproc,
+                                                                   args, flow_int_XX_samples, int_xdata)
+    plot_tauT_int_flow_int_XX_samples = numpy.asarray(plot_tauT_int_flow_int_XX_samples).swapaxes(0, 1)
+
+    numpy.savetxt(merged_data_path + args.corr + "_" + args.conftype + "_relflows.txt", relflow_range, fmt='%.4f')
+    save_data(args, merged_data_path, tauT_int_flow_int_XX_samples, numpy.median(plot_tauT_int_flow_int_XX_samples, axis=0), suffix="interpolation_relflow")
+
+    # create figs
+    figs = lpd.parallel_function_eval(plot_relative_flow_ints, range(nflow), args.nproc, args, relflow_range,
+                                      flow_int_XX_samples, plot_tauT_int_flow_int_XX_samples, int_xdata)
+
+    save_figs(args, figs, suffix="interpolation_relflow")
+
+
+def main():
+
+    args = parse_args()
+
+    # load data
+    merged_data_path = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftype, args.basepath)
+    flowtimes = numpy.loadtxt(merged_data_path + "/flowtimes_" + args.conftype + ".dat")
+    XX_samples = numpy.load(merged_data_path + "/" + args.corr + "_" + args.conftype + "_samples.npy")
+
+    traditional_interpolation(args, merged_data_path, flowtimes, XX_samples)
+    new_interpolation(args, merged_data_path, flowtimes, XX_samples)
 
 
 if __name__ == '__main__':
