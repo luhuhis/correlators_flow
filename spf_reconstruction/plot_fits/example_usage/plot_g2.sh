@@ -7,7 +7,7 @@ plot_quenched(){
     labels_and_models=(
 #        "EE_LO_piT_1" "${basepath}/SPF_LO_Nf0_0.472_piT_1_hmax.npy"
         '$N_f=0, T=1.5T_c$' "dummy"
-        '$\mu=\mathrm{max}(\mu_\mathrm{eff}, 1)$' "${basepath}/SPF_LO_Nf0_0.472_eff_1_hmax.npy"
+        '$\mu=\mathrm{max}(\mu_\mathrm{eff}, \omega)$' "${basepath}/SPF_LO_Nf0_0.472_eff_1_hmax.npy"
 #        "LO_2piT_1" "${basepath}/SPF_LO_Nf0_0.472_2piT_1_hmax.npy"
 #        "NLO_piT_1" "${basepath}/SPF_NLO_Nf0_0.472_piT_1_hmax.npy"
 #        "NLO_opt_1" "${basepath}/SPF_NLO_Nf0_0.472_eff_1_hmax.npy"
@@ -25,8 +25,8 @@ plot_quenched(){
 #        "BB_(N)LO_piT_piT" "${basepath}/SPF_LO_Nf0_0.472_piT_optBBpiT_hmax.npy"
 #        "NLO_2piT_opt" "${basepath}/SPF_NLO_Nf0_0.472_2piT_opt_hmax.npy"
         ' ' "dummy"
-        '$N_f=3, T=1.6T_c$' "dummy"
-        '$\mu=\mathrm{max}(\mu_\mathrm{eff}, 1)$' "${basepath}/SPF_LO_Nf3_0.251_eff_1_hmax.npy"
+        '$N_f=3, T=1.4T_c$' "dummy"
+        '$\mu=\mathrm{max}(\mu_\mathrm{eff}, \omega)$' "${basepath}/SPF_LO_Nf3_0.251_eff_1_hmax.npy"
         '$\mu=\mathrm{max}(\mu_\mathrm{eff}, \mu_\mathrm{opt})$' "${basepath}/SPF_NLO_Nf3_0.251_eff_opt_hmax.npy"
     )
 
@@ -40,7 +40,7 @@ plot_quenched(){
         fi
     done
 
-    ../plot_UV_spf.py \
+    ../plot_g2.py \
         --xlims 0.3 900 \
         --ylims 0 5.5 \
         --PhiUV_files "${models[@]}" \
@@ -82,7 +82,7 @@ plot_hisq(){
         fi
     done
 
-    ../plot_UV_spf.py \
+    ../plot_g2.py \
         --xlims 0.1 1000 \
         --ylims 0 6 \
         --T_in_GeV 0.251 --Nf 3 \

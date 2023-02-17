@@ -36,6 +36,8 @@ def main():
 
     fmts=['.', ':', '-.', '--', '.', '.', ':', '-.']
 
+    dummycounter=0
+
     for i, file in enumerate(args.PhiUV_files):
         if file != "dummy":
             data = numpy.load(file)
@@ -44,9 +46,10 @@ def main():
             factor = 1/xdata**3 / Cf *6 * numpy.pi
             # factor = 2 / xdata
             ydata *= factor
-            ax.errorbar(xdata, ydata, fmt=fmts[i], label=args.labels[i], color=colors[i], alpha=1, zorder=-i)
+            ax.errorbar(xdata, ydata, fmt=fmts[i], label=args.labels[i], color=colors[i-dummycounter], alpha=1, zorder=-i)
         else:
             ax.errorbar(1, 1, fmt='.', markersize=0, label=args.labels[i])
+            dummycounter+=1
 
     ax.legend(loc=args.leg_loc, bbox_to_anchor=args.leg_pos, handlelength=1.4, fontsize=8)#, title=r'$N_f, T/T_c, \mu$')  #
 
