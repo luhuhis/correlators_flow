@@ -98,12 +98,6 @@ def parse_args():
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
     parser.add_argument('--nsamples', help="number of gaussian bootstrap samples that are contained in the input files", type=int, default=1000)
     parser.add_argument('--int_Nt', help='use tauT of this Nt as xdata for the interpolation output', type=int, default=36)
-    parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8*0.014),
-                        help='modify the tauT filter based on flow time to be more/less strict. default value of 0.33 means that for each tauT the flow radius '
-                             'cannot be greater than 0.33*tauT, or that for each flow radius the tauT must be atleast 3*flowradius.')
-    parser.add_argument('--max_FlowradiusBytauT_offset', type=float, default=1/20,
-                        help='fixed offset to make lower_tauT_limit stricter (by e.g. one lattice spacing 1/Nt), as the 0.33 criterion is only valid in the '
-                             'continuum. on the lattice one has to be stricter. 1/Nt_coarsest is a good value.')
     parser.add_argument('--ylims', default=[-0.2, 4], nargs=2, type=float, help="custom ylims for plot")
     parser.add_argument('--nproc', type=int, default=20, help="number of parallel processes (different flow times can be interpolated independently)")
     parser.add_argument('--basepath', type=str, help="where to look for the data")
@@ -117,6 +111,7 @@ def parse_args():
 
 def save_data(args, merged_data_path, interpolations, interpolation_mean_for_plotting, suffix="interpolation"):
     interpolations = numpy.asarray(interpolations)
+    print("output data shape =", interpolations.shape)
     interpolation_mean_for_plotting = numpy.asarray(interpolation_mean_for_plotting)
     file = merged_data_path + args.corr + "_" + args.conftype + "_" + suffix + "_samples.npy"
     print("save ", file)
@@ -153,6 +148,15 @@ def traditional_interpolation(args, merged_data_path, flowtimes, XX_samples):
 
 
 def interpolate_to_relative_flowtimes(tauT_index, tauTs, XX_samples, args, absolute_flowtimes, relative_flowradii):
+    def flip_last_false_before_first_true(arr):
+        idx = None
+        for i, val in enumerate(arr):
+            if val:
+                idx = i-1
+                break
+        if idx is not None:
+            arr[idx] = True
+        return arr
 
     _, _, nt, _ = lpd.parse_conftype(args.conftype)
     _, _, _, gaugeaction, flowaction = lpd.parse_qcdtype(args.qcdtype)
@@ -160,7 +164,8 @@ def interpolate_to_relative_flowtimes(tauT_index, tauTs, XX_samples, args, absol
     new_XX_samples = numpy.empty((args.nsamples, len(relative_flowradii)))
 
     # only use well-behaved part for interpolation
-    flow_indices = (absolute_flowtimes >= 1 / 8) & (absolute_flowtimes <= convert_sqrt8tauFT_to_tauFBya2(0.35 * 0.5, nt))
+    flow_indices = flip_last_false_before_first_true((absolute_flowtimes >= 1 / 8) & (absolute_flowtimes <= convert_sqrt8tauFT_to_tauFBya2(0.35 * 0.5, nt)))
+
     new_absolute_flowtimes = convert_sqrt8tauFT_to_tauFBya2(relative_flowradii * tauTs[tauT_index], nt)
     factor = nt**4 / lpd.G_latt_LO_flow(tauT_index, absolute_flowtimes[flow_indices], args.corr, nt, flowaction, gaugeaction)
     for m in range(args.nsamples):
@@ -217,9 +222,9 @@ def plot_relative_flow_ints(flowindex, args, relflow_range, orig_XX_samples, int
     ax.set_xticks((0.0, 0.1, 0.2, 0.3, 0.4, 0.5))
 
     # interpolations
-    ax.errorbar(orig_xdata, orig_ydata, orig_edata, label="data", fmt='|', color="C0", zorder=0)
+    ax.errorbar(orig_xdata, orig_ydata, orig_edata, label="data", fmt='|', color="C0", zorder=2)
     ax.errorbar(int_xdata, int_ydata, lw=0.5, color="C1", zorder=1)
-    ax.fill_between(int_xdata, int_ydata-int_edata, int_ydata+int_edata, label="int.", facecolor="C1", zorder=2)
+    ax.fill_between(int_xdata, int_ydata-int_edata, int_ydata+int_edata, label="int.", facecolor="C1", edgecolor="C1", zorder=0)
 
     ax.legend(loc="center right", bbox_to_anchor=(0.99, 0.25), **lpd.leg_err_size())
     return fig
@@ -229,7 +234,7 @@ def new_interpolation(args, merged_data_path, flowtimes, XX_samples):
     _, _, nt, nt_half = lpd.parse_conftype(args.conftype)
 
     min_relflow = 0.2
-    max_relflow = 0.35
+    max_relflow = 0.33
     stepsize = 0.005
     relflow_range = numpy.arange(min_relflow, max_relflow + stepsize, stepsize)
     nflow = len(relflow_range)
@@ -244,7 +249,7 @@ def new_interpolation(args, merged_data_path, flowtimes, XX_samples):
     # interpolate to tauTs of finest lattice
     tauT_int_flow_int_XX_samples = lpd.parallel_function_eval(interpolate_tauTs_at_relative_flowtime, range(len(relflow_range)), args.nproc,
                                                               args, flow_int_XX_samples, lpd.get_tauTs(args.int_Nt))
-    tauT_int_flow_int_XX_samples = numpy.asarray(tauT_int_flow_int_XX_samples).swapaxes(0, 1)
+    tauT_int_flow_int_XX_samples = numpy.asarray(tauT_int_flow_int_XX_samples)
 
     # interpolate to all the tauTs for the plot
     int_xdata = numpy.linspace(0, 0.5, 200)
@@ -271,7 +276,7 @@ def main():
     flowtimes = numpy.loadtxt(merged_data_path + "/flowtimes_" + args.conftype + ".dat")
     XX_samples = numpy.load(merged_data_path + "/" + args.corr + "_" + args.conftype + "_samples.npy")
 
-    traditional_interpolation(args, merged_data_path, flowtimes, XX_samples)
+    # traditional_interpolation(args, merged_data_path, flowtimes, XX_samples)
     new_interpolation(args, merged_data_path, flowtimes, XX_samples)
 
 

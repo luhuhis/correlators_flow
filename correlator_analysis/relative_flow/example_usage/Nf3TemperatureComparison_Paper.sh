@@ -2,6 +2,8 @@
 
 qcdtype="hisq_ms5_zeuthenFlow"
 
+suffix="" #_paper"
+
 # plot comparing different temperatures of doube-extrapolated correlators
 
 plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
@@ -15,11 +17,11 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
         "--npoints 50 --show_UV_corrs"
         "--fit_basepath /work/home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/"
         "--fit_folders"
-        "T196/spf/smax_NLO_Nf3_T0.196_mineff_wopt_500smpls_tauTgtr0.24_23-01-19"
-        "T220/spf/smax_NLO_Nf3_T0.220_mineff_wopt_500smpls_tauTgtr0.24_23-01-19"
-        "T251/spf/smax_NLO_Nf3_T0.251_mineff_wopt_500smpls_tauTgtr0.24_23-01-19"
-        "T296/spf/smax_NLO_Nf3_T0.296_mineff_wopt_500smpls_tauTgtr0.24_23-01-19"
-        "s096t20_b0824900_m002022_m01011/spf/smax_NLO_Nf3_T0.352_mineff_wopt_500smpls_tauTgtr0.24_23-01-19"
+        "T195/spf/smax_NLO_Nf3_T0.195_mineff_wopt_1000smpls_tauTgtr0.24_23-02-16_relflow"
+        "T220/spf/smax_NLO_Nf3_T0.220_mineff_wopt_1000smpls_tauTgtr0.24_23-02-16_relflow"
+        "T251/spf/smax_NLO_Nf3_T0.251_mineff_wopt_1000smpls_tauTgtr0.24_23-02-16_relflow"
+        "T293/spf/smax_NLO_Nf3_T0.293_mineff_wopt_1000smpls_tauTgtr0.24_23-02-16_relflow"
+        "s096t20_b0824900_m002022_m01011/spf/smax_NLO_Nf3_T0.352_mineff_wopt_1000smpls_tauTgtr0.26_23-02-16_0.30"
     )
 
     for x_units in "${params[@]}" ; do
@@ -27,28 +29,27 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
         ../plot_rec_corr_fixFlowBytauT.py \
             --output_path ~/work/correlators_flow/plots/$qcdtype/EE/ \
             ${x_units} \
-            --ylims 3 9.25 \
+            --ylims 3 9.5 \
             --usetex \
             ${fit_args[@]} \
             --no_connection \
             --conftype \
             s096t20_b0824900_m002022_m01011 \
             --plot_flow_extr \
-            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T196/EE_flow_extr.txt \
-            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T220/EE_flow_extr.txt \
-            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T251/EE_flow_extr.txt \
-            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T296/EE_flow_extr.txt \
+            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T195${suffix}/EE_flow_extr_relflow.txt \
+            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T220${suffix}/EE_flow_extr_relflow.txt \
+            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T251${suffix}/EE_flow_extr_relflow.txt \
+            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T293${suffix}/EE_flow_extr_relflow.txt \
             --qcdtype $qcdtype --corr EE \
             --figsize 7 7 \
             --leg_title '$T [\mathrm{MeV}]$' --leg_pos 1 0 --leg_loc "lower right" --leg_n_dummies 3 --leg_n_col 2 --leg_framealpha 0 \
             --leg_labels \
-            "196" "220" "251" "296" "352*" "196" "220" "251" "296" \
+            "195" "220" "251" "293" "352*" "195" "220" "251" "293" \
             --markers o s D H p o s D H \
             --color_data C0 C1 C2 C3 C4 C0 C1 C2 C3 \
             --fillstyle none none none none full full full full  \
-            --flowradiusBytauT 0.25 \
-
-
+            --flowradiusBytauT 0.3 --min_flowradius 0.09 \
+            &
     done
 
 }
@@ -76,8 +77,6 @@ plot_comparison_of_lattice_spacing_and_temperature_effects() {
             ${xparam} \
             --min_flowradius 0.05 \
             --output_path ~/work/correlators_flow/plots/$qcdtype/EE/ \
-            --no_kappa_plot \
-            --no_just_UV \
             --ylims 3 9.25 \
             --flowradiusBytauT $flowradiusBytauT \
             --qcdtype $qcdtype --corr EE \
@@ -98,14 +97,14 @@ plot_comparison_of_lattice_spacing_and_temperature_effects() {
             --leg_title '$T [\mathrm{MeV}], N_\tau$' --leg_pos 1 0.05 --leg_loc "lower right" --leg_n_col 2 --leg_n_dummies 0 \
             --custom_text 0.5 0.99 '$\sqrt{8\tau_\mathrm{F}}/\tau='${flowradiusBytauT}'$' center top rel \
             --leg_labels \
-            "196, 36" \
-            "196, 20" \
+            "195, 36" \
+            "195, 20" \
             "220, 32" \
             "220, 20" \
             "251, 28" \
             "251, 20" \
-            "296, 24" \
-            "296, 20" \
+            "293, 24" \
+            "293, 20" \
             &
         done
     done
@@ -116,7 +115,7 @@ plot_comparison_of_temperature_effects_phys() {
 
     for flowradiusBytauT in "0.25" "0.30"; do
         xparams=(
-            "--xlims 0 19 --xticks 0 3 6 9 12 15 18 --plot_in_lattice_units --output_suffix _hisq_${flowradiusBytauT}_phys"
+            "--xlims 0 19 --xticks 0 3 6 9 12 15 18 --x_scales 36 32 28 24 20  --xlabel $\tau/a$ --output_suffix _hisq_${flowradiusBytauT}_phys"
         )
         for xparam in "${xparams[@]}" ; do
 
@@ -124,8 +123,6 @@ plot_comparison_of_temperature_effects_phys() {
             ${xparam} \
             --min_flowradius 0.05 \
             --output_path ~/work/correlators_flow/plots/$qcdtype/EE/ \
-            --no_kappa_plot \
-            --no_just_UV \
             --ylims 0 9.25 \
             --flowradiusBytauT $flowradiusBytauT \
             --qcdtype $qcdtype --corr EE \
@@ -143,10 +140,10 @@ plot_comparison_of_temperature_effects_phys() {
             --leg_title '$T [\mathrm{MeV}], N_\tau$' --leg_pos 1 0.05 --leg_loc "lower right" --leg_n_col 2 --leg_n_dummies 0 \
             --custom_text 0.5 0.99 '$\sqrt{8\tau_\mathrm{F}}/\tau='${flowradiusBytauT}'$' center top rel \
             --leg_labels \
-            "196, 36" \
+            "195, 36" \
             "220, 32" \
             "251, 28" \
-            "296, 24" \
+            "293, 24" \
             "352, 20" \
             &
         done
@@ -155,7 +152,7 @@ plot_comparison_of_temperature_effects_phys() {
 }
 
 plot_comparison_of_different_temperatures_of_doublextrapolated_correlators
-#plot_comparison_of_lattice_spacing_and_temperature_effects
-#plot_comparison_of_temperature_effects_phys
+plot_comparison_of_lattice_spacing_and_temperature_effects
+plot_comparison_of_temperature_effects_phys
 
 wait

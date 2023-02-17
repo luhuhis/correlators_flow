@@ -62,6 +62,8 @@ def wrapper(index, flowtimes, samples, args, Nts, edatas):
 
     # define some parameters
     lower_tauT_lim = flowradius/args.max_FlowradiusBytauT
+    if args.min_flowradius is None:
+        args.min_flowradius = 1/nt_coarsest
     upper_tauT_lim = flowradius/args.min_FlowradiusBytauT
     tauTs_fine = lpd.get_tauTs(nt_finest)
     valid_tauTs = [tauT for tauT in tauTs_fine if lower_tauT_lim <= tauT <= upper_tauT_lim]
@@ -71,7 +73,6 @@ def wrapper(index, flowtimes, samples, args, Nts, edatas):
 
     # declarations
     nsamples = samples[0].shape[1]
-    # TODO if compute:
 
     results = numpy.empty((nsamples, nt_half_fine, 3))
     results[:] = numpy.nan
@@ -220,6 +221,8 @@ def parse_args():
     parser.add_argument('--flow_index_range', default=(0, -1), type=int, nargs=2,
                         help="which flow indices to consider (default considers all). useful if youre only interested in some speficic ones.")
     parser.add_argument('--ansatz', type=str, choices=["linear", "constant", "custom"], default="linear")
+    parser.add_argument('--relflow', action="store_true")
+    parser.add_argument('--nsamples', type=int, default=None)
 
     args = parser.parse_args()
 
@@ -251,49 +254,40 @@ def parse_nts(args):
     return Nts, nt_finest, nt_coarsest
 
 
-def load_data(args, flowtimes, nt_finest):
-    # load data
-
-    _, _, _, gaugeaction, flowaction = lpd.parse_qcdtype(args.qcdtype)
-
+def load_data(args):
     print("load data...")
     samples = []
+
+    suffix = ""
+    if args.relflow:
+        suffix = "relflow_"
+
     for conftype in args.conftypes:
-        if conftype != args.conftypes[-1]:
-            path = lpd.get_merged_data_path(args.qcdtype, args.corr, conftype, args.basepath) + "/" + args.corr + "_" + conftype + "_interpolation_samples.npy"
-            tmp = numpy.load(path)
-            samples.append(tmp)
-        else:
-            path = lpd.get_merged_data_path(args.qcdtype, args.corr, conftype, args.basepath) + "/" + args.corr + "_" + conftype + "_samples.npy"
-            tmp = numpy.load(path)
-            # add tree-level imp for finest lattice
-            for j in range(tmp.shape[1]):
-                for k in range(tmp.shape[2]):
-                    tmp[:, j, k] *= nt_finest ** 4 / lpd.G_latt_LO_flow(k, flowtimes[j], args.corr, nt_finest, flowaction, gaugeaction)
-            tmp = numpy.swapaxes(tmp, 0, 1)
-            samples.append(tmp)
+        path = lpd.get_merged_data_path(args.qcdtype, args.corr, conftype, args.basepath) + "/" + args.corr + "_" + conftype + "_interpolation_"+suffix+"samples.npy"
+        tmp = numpy.load(path)
+        samples.append(tmp)
 
     samples = numpy.stack([conftype_samples for conftype_samples in samples], 0)
+
+    if args.nsamples is None:
+        args.nsamples = samples.shape[2]
 
     print("Done. Data layout: (n_conftypes, n_flowtimes, n_samples, Nt/2): ", samples.shape)
 
     return samples
 
 
-def save_figs(args, figs_corr, figs_extr):
+def save_figs(args, figs, suffix):
     # save figures to pdf
     print("save figures...")
     lpd.set_rc_params()  # for some reason we need to repeat this here...
     plotpath = lpd.get_plot_path(args.qcdtype, args.corr, args.output_suffix, args.basepath_plot)
     lpd.create_folder(plotpath)
-    with PdfPages(plotpath + "/" + args.corr + "_cont.pdf") as pdf:
-        for fig in figs_corr:
-            pdf.savefig(fig)
-            matplotlib.pyplot.close(fig)
-    with PdfPages(plotpath + "/" + args.corr + "_cont_quality.pdf") as pdf:
-        for fig in figs_extr:
-            pdf.savefig(fig)
-            matplotlib.pyplot.close(fig)
+    with PdfPages(plotpath + "/" + args.corr + suffix + ".pdf") as pdf:
+        for fig in figs:
+            if fig is not None:
+                pdf.savefig(fig)
+                matplotlib.pyplot.close(fig)
 
 
 def save_data(args, fitparams, flowtimes, nt_finest):
@@ -330,26 +324,185 @@ def get_weights(samples):
     return edatas
 
 
+def traditional_extr(args, samples, edatas, nt_finest, Nts):
+    print("calculate extrapolation and create figures...")
+    print("      ", lpd.get_tauTs(nt_finest))
+    flowtimes, indices = load_flowtimes(args)
+    fitparams, figs_corr, figs_extr = lpd.parallel_function_eval(wrapper, indices, args.nproc, flowtimes, samples, args, Nts, edatas)
+
+    save_figs(args, figs_corr, "_cont")
+    save_figs(args, figs_extr, "_cont_quality")
+    save_data(args, fitparams, flowtimes, nt_finest)
+
+    return
+
+
+n_additional_fitparams = 1
+def combined_fit_ansatz(x, tauT, cont, a):  # base_slope,  c b
+    return cont + (- (a/tauT)**2)*x  #  - (c/tauT)**6  # - (b/tauT)**4
+
+
+def combined_chisqdof(fitparams, ydata, xdata, edata, tauTs):
+    ndata = ydata.size
+    ntauT = ydata.shape[1]
+    chisq = 0
+
+    combined_fitparams = fitparams[ntauT:]
+
+    for i in range(ntauT):
+        chisq += numpy.nansum(((combined_fit_ansatz(xdata, tauTs[i], fitparams[i], *combined_fitparams) - ydata[:, i])/edata[:, i]) ** 2)
+
+    nfitparams = len(fitparams)
+    chisqdof = chisq / (ndata-nfitparams)
+    return chisqdof
+
+
+def perform_combined_fit(ydata, xdata, tauTs, edata, nparams):
+    ntauT = len(tauTs)
+    # print(xdata, ydata, edata)
+    fitparams = scipy.optimize.minimize(combined_chisqdof, x0=numpy.asarray([*[1 for _ in range(ntauT)], *[1 for _ in range(nparams)]]),
+                                        bounds=([*[(0, 20) for _ in range(ntauT)], (None, None), *[(None, None) for _ in range(nparams-1)]]), args=(ydata, xdata, edata, tauTs))
+    fitparams = fitparams.x
+    chisqdof = combined_chisqdof(fitparams, ydata, xdata, edata, tauTs)
+    return [*fitparams, chisqdof]
+
+
+def plot_combined_fit(index, args, relflows, results, xdata, samples, edatas, tauTs):
+
+    relflow = relflows[index]
+
+    if 0.2 <= relflow <= 0.33:
+
+        orig_ydata = numpy.asarray([numpy.nanmedian(conftype_samples[index], axis=0) for conftype_samples in samples]).swapaxes(0, 1)
+        orig_edata = numpy.asarray([conftype_edata[index] for conftype_edata in edatas]).swapaxes(0, 1)
+
+        xlims = (-0.0002, numpy.amax(xdata) * 1.05)
+        fig, ax, _ = lpd.create_figure(xlims=xlims, ylims=args.custom_ylims, xlabel=r'$1/N_\tau^2$',
+                                       ylabel=r'$\displaystyle \frac{G' + lpd.get_corr_subscript(args.corr) + r'}{G^\mathrm{norm}}$')
+
+        fitparams = numpy.nanmedian(results, axis=0)[index]
+        if 0.25 <= relflows[index] <= 0.3:
+            print(lpd.format_float(relflows[index]), fitparams[:len(tauTs)], fitparams[len(tauTs):])
+        fitparams_err = lpd.dev_by_dist(results, axis=0)[index]
+        xpoints = numpy.linspace(0, numpy.amax(xdata), 5)
+        plots = []
+
+        mintauTindex = None
+
+        for i, tauT in enumerate(tauTs):
+            if numpy.count_nonzero(~numpy.isnan(orig_ydata[i])) == len(xdata) and tauT >= 0.249:
+                if mintauTindex is None:
+                    mintauTindex = i
+                mycolor = lpd.get_color(tauTs, len(tauTs) - 1 - (i-mintauTindex), mintauTindex)
+                plots.append(
+                    ax.errorbar(xdata, orig_ydata[i], orig_edata[i], fmt='|', label=lpd.format_float(tauT), color=mycolor))
+                # print(lpd.format_float(tauT), "-> chisqdof=", fitparams[-1])
+                ax.errorbar(xpoints, combined_fit_ansatz(xpoints, tauT, fitparams[i], *fitparams[len(tauTs):-1]), **lpd.fitlinestyle, color=mycolor)
+                ax.errorbar(0, fitparams[i], fitparams_err[i], fmt='|', color=mycolor)
+
+        ax.text(0.99, 0.99, r'$\sqrt{8\tau_\mathrm{F}}/\tau=' + lpd.format_float(relflows[index]) + r'$', ha='right', va='top', transform=ax.transAxes)
+        ax.legend(handles=plots)
+        handles, labels = ax.get_legend_handles_labels()
+        # reverse ordering of legend
+        ax.legend(handles[::-1], labels[::-1], title=r'$\tau T$', loc="center left", bbox_to_anchor=(1, 0.5), **lpd.leg_err_size(1, 0.25), ncol=1,
+                  columnspacing=0.5)
+        return fig
+    else:
+        return None
+
+
+def count_falses_from_start(arr):
+    count = 0
+    for value in arr:
+        if not value:
+            count += 1
+        else:
+            break
+    return count
+
+
+
+def combined_extr_at_relflow(index, args, samples, edatas, nfitparams, nt_finest, Nts):
+    tauTs_finest = lpd.get_tauTs(nt_finest)
+    nt_finest_half = int(nt_finest/2)
+
+    results = numpy.empty((args.nsamples, nfitparams+1))
+    results[:] = numpy.nan
+
+    xdata = numpy.asarray([1 / Ntau ** 2 for Ntau in Nts])
+
+    valid_tauT_indices = ~numpy.isnan(edatas[0, index])
+    valid_tauT_indices = valid_tauT_indices & [*[False for _ in range(int(nt_finest_half/2)-1)], *[True for _ in range(int(nt_finest_half/2)+1)]]
+    offset = count_falses_from_start(valid_tauT_indices)
+
+    edata = numpy.asarray([conftype_edata[index][valid_tauT_indices] for conftype_edata in edatas])
+
+    for m in range(args.nsamples):
+        ydata = numpy.asarray([conftype_samples[index][m][valid_tauT_indices] for conftype_samples in samples])
+        fitresults = perform_combined_fit(ydata, xdata, tauTs_finest[valid_tauT_indices], edata, n_additional_fitparams)
+        for i, val in enumerate(fitresults):
+            results[m][offset+i] = val
+
+    print("done", index)
+
+    return results
+
+
+def new_extr(args, samples, edatas, nt_finest, Nts):
+    merged_data_path = lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1], args.basepath)
+    relflows = numpy.loadtxt(merged_data_path + args.corr + "_" + args.conftypes[-1] + "_relflows.txt")
+    nflow = len(relflows)
+
+    nfitparams = int(nt_finest/2)+n_additional_fitparams
+
+    results = lpd.parallel_function_eval(combined_extr_at_relflow, range(nflow), args.nproc, args, samples, edatas, nfitparams, nt_finest, Nts)
+    results = numpy.asarray(results)
+    results = results.swapaxes(0, 1)
+    print("results shape", results.shape)
+
+    # save data
+    save_relflow_data(args, results, relflows, nt_finest)
+
+    # plot extr
+    xdata = 1/numpy.asarray(Nts)**2
+    figs = lpd.parallel_function_eval(plot_combined_fit, range(nflow), args.nproc, args, relflows, results, xdata, samples, edatas, lpd.get_tauTs(nt_finest))
+    save_figs(args, figs, "_cont_relflow")
+
+
+def save_relflow_data(args, fitparams, relflows, nt_finest):
+    # we need samples flowtime tauT as the shape
+
+    folder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.output_suffix, args.basepath) + "/cont_extr/"
+    lpd.create_folder(folder)
+    numpy.save(folder + args.corr + "_cont_relflow_samples.npy", fitparams)
+
+    nt_finest_half = int(nt_finest/2)
+    with open(folder + args.corr + "_cont_relflow.dat", 'w') as outfile:
+        outfile.write('# bootstrap mean of continuum ' + args.corr + ' correlator for ' + args.qcdtype + '\n')
+        outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2} of the finest lattice that entered the extrapolation\n')
+        cont_mean = numpy.nanmedian(fitparams, axis=0)[:, :nt_finest_half]
+        numpy.savetxt(outfile, cont_mean)
+    with open(folder + args.corr + "_cont_relflow_err.dat", 'w') as outfile:
+        outfile.write('# bootstrap err of mean of continuum ' + args.corr + ' correlator for ' + args.qcdtype + '\n')
+        outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2} of the finest lattice that entered the extrapolation\n')
+        cont_std = lpd.dev_by_dist(fitparams, axis=0)[:, :nt_finest_half]
+        numpy.savetxt(outfile, cont_std)
+    numpy.savetxt(folder + args.corr + "_cont_relflows.dat", relflows, header='# sqrt(8tau_F)/tau')
+
+
+
 def main():
 
     args = parse_args()
-
-    flowtimes, indices = load_flowtimes(args)
-
     Nts, nt_finest, nt_coarsest = parse_nts(args)
 
-    if args.min_flowradius is None:
-        args.min_flowradius = 1/nt_coarsest
-
-    samples = load_data(args, flowtimes, nt_finest)
+    samples = load_data(args)
     edatas = get_weights(samples)
 
-    print("calculate extrapolation and create figures...")
-    print("      ", lpd.get_tauTs(nt_finest))
-    fitparams, figs_corr, figs_extr = lpd.parallel_function_eval(wrapper, indices, args.nproc, flowtimes, samples, args, Nts, edatas)
-
-    save_figs(args, figs_corr, figs_extr)
-    save_data(args, fitparams, flowtimes, nt_finest)
+    if not args.relflow:
+        traditional_extr(args, samples, edatas, nt_finest, Nts)
+    else:
+        new_extr(args, samples, edatas, nt_finest, Nts)
 
 
 if __name__ == '__main__':

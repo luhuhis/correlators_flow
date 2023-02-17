@@ -154,7 +154,10 @@ def EE_cont_LO(tauT, sqrt8tauF_T=0):
             pass
         else:
             sqrt8tauF_T = numpy.asarray(sqrt8tauF_T)
-        tmpsum = numpy.zeros(tauT.shape)
+        if numpy.isscalar(tauT):
+            tmpsum = 0
+        else:
+            tmpsum = numpy.zeros(tauT.shape)
         with numpy.errstate(divide='ignore', invalid='ignore'):  # supress divide by 0 warnings.
             for m in range(-4, 5):
                 tmpsum += 1 / (tauT+m) ** 4 * ((tauT+m) ** 4 / sqrt8tauF_T ** 4 + (tauT + m) ** 2 / sqrt8tauF_T ** 2 + 1) * numpy.exp(-((tauT + m) ** 2 / sqrt8tauF_T ** 2))
@@ -179,6 +182,7 @@ def G_latt_LO_flow(tau_index: int, flowtime, corr: str, Nt: int, flowaction: str
     param tau_index
         Min = 0 (--> tau/a=1), Max = Nt/2-1 (--> tau/a=Nt/2).
 
+    flowtime is given units of lattice spacing squared.
     """
 
     identifier = str(Nt)+flowaction+gaugeaction
@@ -258,8 +262,9 @@ def leg_err_size(x=1, y=0.3):
 
 
 labelboxstyle = dict(boxstyle="Round", fc="w", ec="None", alpha=0.9, pad=0.1, zorder=99)
-verticallinestyle = dict(color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4))  # ymin=0, ymax=1,
-horizontallinestyle = dict(color='grey', alpha=0.8, zorder=-10000, dashes=(4, 4))  # xmin=0, xmax=1,z
+verticallinestyle = dict(color='k', alpha=1, zorder=-10000, lw=0.5, dashes=(6, 2))  # ymin=0, ymax=1,
+horizontallinestyle = dict(color='k', alpha=1, zorder=-10000, lw=0.5, dashes=(6, 2))  # xmin=0, xmax=1,z
+fitlinestyle = dict(alpha=1, lw=0.5, dashes=(6, 2))
 markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8',
            'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P',
            '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
@@ -293,7 +298,8 @@ def set_rc_params():
 
 
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98, 0.01), ylabelpos=(0.01, 0.98), tickpad=1,
-                  figsize=None, UseTex=True, fig=None, subplot=111, no_ax=False, constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle):
+                  figsize=None, UseTex=True, fig=None, subplot=111, no_ax=False,
+                  constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle, ytwinticks=True):
 
     set_rc_params()
     if UseTex:
@@ -330,9 +336,16 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98,
         ax.set_ylabel(ylabel, horizontalalignment='left', verticalalignment='top', rotation=0, bbox=ylabelbox)
     else:
         ax = None
-    plots = []
+
+    axtwiny = None
+    if ytwinticks:
+        axtwiny = ax.twinx()
+        axtwiny.set_ylim(ax.get_ylim())
+        axtwiny.tick_params(axis='y', which='both', direction='in', width=axeslinewidth, left=False, top=False, right=True, bottom=False, labelleft=False, labeltop=False,
+                        labelright=False, labelbottom=False)
+
     matplotlib.rc('image', cmap='Set1')
-    return fig, ax, plots
+    return fig, ax, axtwiny
 
 
 # class that is used in parallel_function_eval down below
@@ -397,6 +410,9 @@ def dev_by_dist(data, axis=0, return_both_q=False, percentile=68):
     method is used sometimes to estimate error, for example in the bootstrap."""
     data = numpy.asarray(data)
     median = numpy.nanmedian(data, axis)
+    # mask = numpy.isnan(data).all(axis=axis)
+    # data = numpy.take(data, ~mask, axis)
+    # TODO filter out nans??
     numb_data = data.shape[axis]
     idx_dn = max(int(numpy.floor((numb_data-1) / 2 - percentile/100 * (numb_data-1) / 2)), 0)
     idx_up = min(int(numpy.ceil((numb_data-1) / 2 + percentile/100 * (numb_data-1) / 2)), numb_data-1)
@@ -412,3 +428,16 @@ def dev_by_dist(data, axis=0, return_both_q=False, percentile=68):
 def print_var(prefix, var):
     print(prefix, var)
     return var
+
+
+def get_corr_subscript(corr):
+    subscript = r''
+    if corr == 'EE' or corr == ['EE']:
+        subscript = r'_E'
+    elif corr == 'BB' or corr == ['BB']:
+        subscript = r'_B'
+    return subscript
+
+
+def float_ceil(a, precision=0):
+    return numpy.true_divide(numpy.ceil(a * 10**precision), 10**precision)

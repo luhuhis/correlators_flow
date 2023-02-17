@@ -79,17 +79,17 @@ def plot_relative_flow(args, ax, plot_offset):
         n = max(len(args.flowradiusBytauT), len(args.qcdtype), len(args.corr), len(args.conftype))
         color_data = args.color_data[plot_offset:plot_offset + n]
         markers = args.markers[plot_offset:plot_offset + n]
-        fillstyle = args.fillstyle[plot_offset:plot_offset + n]
+        fillstyles = args.fillstyle[plot_offset:plot_offset + n]
         leg_labels = args.leg_labels[plot_offset:plot_offset + n]
         x_scales = args.x_scales[plot_offset:plot_offset + n] if args.x_scales is not None else [1 for _ in range(n)]
         for i in range(n):
-            flowradiusBytauT = args.flowradiusBytauT[i]
+            flowradiusBytauT = args.flowradiusBytauT[i] if len(args.flowradiusBytauT) > 1 else args.flowradiusBytauT[0]
             qcdtype = args.qcdtype[i] if len(args.qcdtype) > 1 else args.qcdtype[0]
             corr = args.corr[i] if len(args.corr) > 1 else args.corr[0]
             conftype = args.conftype[i] if len(args.conftype) > 1 else args.conftype[0]
             color = color_data[i]
             marker = markers[i]
-            fillstyle = fillstyle[i]
+            fillstyle = fillstyles[i]
             label_suffix = leg_labels[i]
             x_scale = x_scales[i]
             inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype, basepath="../../../../data/merged/")
@@ -238,30 +238,33 @@ def plot_fit_corrs(args, ax, xpoints, model_means, just_UVs):
         color = args.color_fit[i]
         zorder = i
 
-        ax.errorbar(these_xpoints, model_mean, color=color, fmt='--', zorder=-10000+zorder)
+        ax.errorbar(these_xpoints, model_mean, color=color, lw=0.75, fmt='--', zorder=-10000+zorder)
 
         if args.show_UV_corrs:
             ax.errorbar(these_xpoints, just_UV, color=color, alpha=0.25, fmt='-.', zorder=-10000+zorder)
 
 
+def Integrand(OmegaByT, tauT, SpfByT3):
+    return 1. / numpy.pi * Kernel(OmegaByT, tauT) * SpfByT3(OmegaByT)
+
+
+def calc_Gmodel(tauT, spf, MinOmegaByT, MaxOmegaByT):
+    normalization = Gnorm(tauT)
+    Gmodel = scipy.integrate.quad(Integrand, MinOmegaByT, MaxOmegaByT, args=(tauT, spf), limit=100)[0]
+    return Gmodel / normalization
+
+
 def plot_fits(args, ax):
 
-    def Integrand(OmegaByT, tauT, SpfByT3):
-        return 1. / numpy.pi * Kernel(OmegaByT, tauT) * SpfByT3(OmegaByT)
+    if args.fit_folders is not None:
 
-    def calc_Gmodel(tauT, spf, MinOmegaByT, MaxOmegaByT):
-        normalization = Gnorm(tauT)
-        Gmodel = scipy.integrate.quad(Integrand, MinOmegaByT, MaxOmegaByT, args=(tauT, spf), limit=100)[0]
-        return Gmodel / normalization
+        xpoints = numpy.linspace(0.25, 0.5, args.npoints)
+        Gmodel_by_norm_arr = []
+        GmodelUV_by_norm_arr = []
 
-    xpoints = numpy.linspace(0.25, 0.5, args.npoints)
-    Gmodel_by_norm_arr = []
-    GmodelUV_by_norm_arr = []
+        file_prefixes = [args.fit_basepath+folder for folder in args.fit_folders]
 
-    file_prefixes = [args.fit_basepath+folder for folder in args.fit_folders]
-
-    # calculate fit corrs for all given models
-    if args.fit_folders:
+        # calculate fit corrs for all given models
         for file_prefix in file_prefixes:
             # load PhiUV and calculate model correlators
             PhiUVByT3 = numpy.load(file_prefix + "/phiUV.npy")
@@ -286,7 +289,13 @@ def plot_fits(args, ax):
 def prepare_plot_canvas(args):
 
     xlabel = args.xlabel
-    ylabel = "$\\dfrac{G}{G^\\mathrm{norm}}$"
+    subscript = r''
+    if args.corr == ['EE']:
+        subscript = r'_E'
+    elif args.corr == ['BB']:
+        subscript = r'_B'
+
+    ylabel = r'$\dfrac{G'+subscript+r'}{G^\mathrm{norm}}$'
 
     fig, ax, _ = lpd.create_figure(figsize=args.figsize, UseTex=args.usetex, xlims=args.xlims, xlabel=xlabel, ylims=args.ylims, ylabel=ylabel)
 

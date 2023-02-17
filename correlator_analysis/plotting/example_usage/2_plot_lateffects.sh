@@ -26,7 +26,7 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     "s064t20_b0785700 s064t24_b0806800 s096t28_b0824900_m002022_m01011"
     "s064t20_b0770400 s064t24_b0791300 s096t32_b0824900_m002022_m01011"
     "s064t20_b0757000 s064t24_b0777700 s096t36_b0824900_m002022_m01011")
-    arr_output_suffix=("T296" "T251" "T220" "T196")
+    arr_output_suffix=("T293" "T251" "T220" "T195")
     ylims_arr=("3 10.5" "3 10.5" "3 10.5" "3 10.5")
     basepath="../../../../data/merged/hisq_ms5_zeuthenFlow/${corr}"
     add_args="--hide_cont --lower_limit_text_pos 8"

@@ -22,14 +22,14 @@ for idz in {0..1} ; do
                 --usetex \
                 --title " " \
                 --plot_flow_extr \
-                /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T196/EE_flow_extr.txt \
+                /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T195/EE_flow_extr.txt \
                 /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T220/EE_flow_extr.txt \
                 /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T251/EE_flow_extr.txt \
-                /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T296/EE_flow_extr.txt \
+                /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T293/EE_flow_extr.txt \
                 --qcdtype $qcdtype --corr EE \
                 --leg_title_suffix "T\\," --leg_loc "center left" --leg_pos 1 0.5 --leg_n_dummies 0 --leg_n_col 1 --leg_label_showNtinsteadofa \
                 --leg_label_suffix  \
-                "196,\\: " "220,\\: " "251,\\: " "296,\\: "
+                "195,\\: " "220,\\: " "251,\\: " "293,\\: "
     #TODO add option for figsize here
 done
 wait
@@ -46,10 +46,10 @@ for idz in {0..1} ; do
                 --usetex \
                 --title " " \
                 --plot_flow_extr \
-                /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T196/EE_flow_extr.txt \
+                /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T195/EE_flow_extr.txt \
                 /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T220/EE_flow_extr.txt \
                 /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T251/EE_flow_extr.txt \
-                /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T296/EE_flow_extr.txt \
+                /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T293/EE_flow_extr.txt \
                 --flowradiusBytauT 0.25 \
                 --conftype \
                 s096t36_b0824900_m002022_m01011 \
@@ -59,8 +59,8 @@ for idz in {0..1} ; do
                 --qcdtype $qcdtype --corr EE \
                 --leg_title_suffix "T\\," --leg_loc "center left" --leg_pos 1 0.5 --leg_n_dummies 0 --leg_n_col 1 --leg_label_showNtinsteadofa \
                 --leg_label_suffix  \
-                "196,\\: " "220,\\: " "251,\\: " "296,\\: " \
-                "196,\\: " "220,\\: " "251,\\: " "296,\\: "  \
+                "195,\\: " "220,\\: " "251,\\: " "293,\\: " \
+                "195,\\: " "220,\\: " "251,\\: " "293,\\: "  \
 
 done
 wait

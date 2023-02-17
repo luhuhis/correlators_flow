@@ -32,7 +32,7 @@ for idz in {0..2} ; do
             --min_tauT 0.35 0.35 0.35 0.35 0.35 --min_tauT_plot 0.05 \
             --no_label --no_connection \
             --leg_title_suffix ",\\: T\\," --leg_pos 0.15 1 --leg_n_dummies 0 \
-            --leg_label_suffix  ",\\: 196 \\,\\mathrm{MeV}" ",\\: 220\\,\\mathrm{MeV} " ",\\: 251\\,\\mathrm{MeV}" ",\\: 296\\,\\mathrm{MeV}" ",\\: 352\\,\\mathrm{MeV}"
+            --leg_label_suffix  ",\\: 195 \\,\\mathrm{MeV}" ",\\: 220\\,\\mathrm{MeV} " ",\\: 251\\,\\mathrm{MeV}" ",\\: 293\\,\\mathrm{MeV}" ",\\: 352\\,\\mathrm{MeV}"
         done
     done
 done

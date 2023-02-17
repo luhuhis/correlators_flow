@@ -28,10 +28,10 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     "s064t20_b0757000" "s064t24_b0777700" "s096t36_b0824900_m002022_m01011"
 )
     temps=(
-        "296"
+        "293"
         "251"
         "220"
-        "196"
+        "195"
         )
     add_args="--basepath /work/data/altenkort/gradientFlow"
     flowradiusbasepath="/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"

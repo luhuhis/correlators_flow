@@ -405,6 +405,7 @@ def main():
     offset = 0
 
     y_binned = []
+    total_ndata = 0
 
     print("=========")
     for k in range(n_streams):
@@ -434,6 +435,7 @@ def main():
                 y_binned.append(val)
         else:
             ndata = len(y_eq_spaced) - best_start
+            total_ndata += ndata
             if tau_int > 30 and tau_inte/tau_int > 0.2:
                 binlength = 30
                 print("INFO: binlength capped at 30 for unreliable estimates.")
@@ -443,6 +445,8 @@ def main():
             for b in range(nbins):
                 y_binned.append(numpy.mean(y_eq_spaced[b * binlength:(b + 1) * binlength], axis=0))
         print("=========")
+
+    print("Total number of confs before binning:", total_ndata)
 
     y_binned = numpy.asarray(y_binned)
     if len(y_binned) < n_datafiles:
