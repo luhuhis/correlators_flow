@@ -161,10 +161,8 @@ def plot_extr(args):
     matplotlib.pyplot.close(fig)
 
 
-
-
 def plot_tau(args):
-    ylabel = r'$\displaystyle \frac{{G^\mathrm{latt}_\mathrm{LO}}}{{G^\mathrm{cont}_\mathrm{LO}}}$'
+    ylabel = r'$\displaystyle \frac{{G^\mathrm{LO}_{E,\mathrm{latt}}}}{{G^\mathrm{LO}_{E,\mathrm{cont}}}}$'
 
     xlims = (0, args.Nt/2+1)
     ylims = (0.95, 1.45)
@@ -185,7 +183,7 @@ def plot_tau(args):
 
     counter = 0
     fmts = ('x', '+', 'o', 'o', '--', ':')
-    colors = ('C1', 'C2', 'C3', 'C4')
+    colors = ('C0', 'C1', 'C2', 'C3', 'C4')
     for gauge_action in gauge_actions:
         for flow_action in flow_actions:
             if not (gauge_action == "LW" and flow_action == "Wilson"):
@@ -218,7 +216,8 @@ def plot_tau(args):
     ax.text(0.99, 0.99, r'$\sqrt{8\tau_\mathrm{F}}/\tau=' + lpd.format_float(flowradiusbytauT) + r'$', ha='right', va='top', transform=ax.transAxes)
     ax.axhline(y=1, **lpd.horizontallinestyle)
     # ax.axvline(x=0.33, **lpd.verticallinestyle)
-    ax.legend(title="$S_\\mathrm{gauge}, S_\\mathrm{flow}$", handlelength=1, loc="upper right", bbox_to_anchor=(1, 0.95), alignment="left")
+    ax.errorbar(0, 0, label="$S_\\mathrm{gauge}, S_\\mathrm{flow}$", markersize=0, alpha=0, lw=0)
+    ax.legend(handlelength=1, loc="upper right", bbox_to_anchor=(1, 0.95), alignment="left")
     fig.savefig(args.outputpath + "/pert_latt_comparison_" + args.corr + "_" + "Nt" + str(args.Nt) + ".pdf")
     matplotlib.pyplot.close(fig)
 
@@ -232,7 +231,7 @@ def plot_flow(args):
 
     flowtimes = numpy.loadtxt(args.flowtime_file)
 
-    ylabel = r'$\displaystyle \frac{{G^\mathrm{latt}_\mathrm{LO}}}{{G^\mathrm{cont}_\mathrm{LO}}}$'
+    ylabel = r'$\displaystyle \frac{{G^\mathrm{LO}_{E,\mathrm{latt}}}}{{G^\mathrm{LO}_{E,\mathrm{cont}}}}$'
 
     fig, ax, _ = lpd.create_figure(xlims=args.xlims, ylims=args.ylims, ylabel=ylabel, xlabel="$\\sqrt{8\\tau_F}/\\tau$")
 
@@ -257,7 +256,7 @@ def plot_flow(args):
                     y = (corr[:, i])/(lpd.EE_cont_LO(tauT, flowradiitimesT))  # flowradiitimesT
                     if gauge_action == "LW":
                         gauge_action = "Symanzik 2x1"  # rename
-                    ax.errorbar(x, y, label=gauge_action+", "+flow_action, fmt=fmts[counter])
+                    ax.errorbar(x, y, label=gauge_action+", "+flow_action, fmt=fmts[counter], color=lpd.get_discrete_color(counter))
                     counter += 1
                 except OSError:
                     print("did not find", file)
@@ -284,9 +283,9 @@ def main():
     parser.add_argument('--ylims', type=float, nargs=2)
     args = parser.parse_args()
 
-    plot_extr(args)
+    # plot_extr(args)
     # plot_tau(args)
-    # plot_flow(args)
+    plot_flow(args)
 
 
 if __name__ == '__main__':
