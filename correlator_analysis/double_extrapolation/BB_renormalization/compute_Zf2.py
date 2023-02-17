@@ -36,9 +36,9 @@ def plot_Zf2(args, taufT2, Z2, reference_tauF_T2):
     ax2.axvline(x=reference_tauF_T2, **lpd.verticallinestyle)
     # ax2.fill_between([convert_sqrt8taufT_to_tfT2(0.25*0.25), convert_sqrt8taufT_to_tfT2(0.5*0.3)],
     #                  [-1, -1], [1.25, 1.25], facecolor='grey', alpha=0.25, zorder=-1000)
-    ax2.axhline(y=1, color='k', zorder=-10000, lw=0.5, dashes=(6,2))
-    ax2.set_ylim((0.85,  1.35))
-    ax2.set_xlim(0, 0.0045)
+    ax2.axhline(y=1, **lpd.horizontallinestyle)
+    ax2.set_ylim((0.95,  1.25))
+    ax2.set_xlim(0, 0.0035)
     file = args.outputpath_plot+"Zf2.pdf"
     print("saving", file)
     fig2.savefig(file)

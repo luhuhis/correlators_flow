@@ -111,10 +111,10 @@ def plot1(args, tauFbyScale_arr, g2_arr, g2_err_arr, cont, flowstart, flowend, p
         ax2.errorbar(numpy.sqrt(8 * tauFbyScale_arr[i]), g2_arr[i], fmt='-', markersize=0, label=str(Nt), zorder=-i - 10)
     ax2.legend(title=r'$N_\tau$', **lpd.leg_err_size(), loc="center right", bbox_to_anchor=(1, 0.5), handlelength=1)
     # ax2.axvline(x=convert_taufT2_to_sqrt8tauFByr0(0.002719), **lpd.verticallinestyle)
-    ax2.errorbar([convert_taufT2_to_sqrt8tauFByr0(0.002719), convert_taufT2_to_sqrt8tauFByr0(0.002719)], [0,3], fmt='--', color='grey', zorder=-1000)
+    ax2.axvline(convert_taufT2_to_sqrt8tauFByr0(0.002719), **lpd.verticallinestyle)
     # ax2.errorbar([convert_sqrt8taufT_to_sqrt8tauFByr0(0.0625), convert_sqrt8taufT_to_sqrt8tauFByr0(0.0625)], [0, 3], fmt='--', color='grey', zorder=-1000)
     ax2.fill_between([convert_sqrt8taufT_to_sqrt8tauFByr0(0.25*0.25), convert_sqrt8taufT_to_sqrt8tauFByr0(0.5*0.3)],
-                     [-1, -1], [3, 3], facecolor='grey', alpha=0.25, zorder=-1000)
+                     [-1, -1], [4, 4], facecolor='k', alpha=0.15, zorder=-1000)
     ax2.set_xticks((0, 0.05, 0.1, 0.15, 0.2, 0.25))
     file = args.outputpath_plot + "g2_" + label + "_imp.pdf"
     print("saving", file)
@@ -143,7 +143,7 @@ def plot2(args, data, data_err, cont, slope, tauFbyScale_arr, flowstart, flowend
                          color=color,
                          fmt='|', label=lpd.format_float(numpy.sqrt(8*tauFbyScale_arr[0][i])), zorder=-i)
             ax3.errorbar(xpoints, extrapolation_ansatz(xpoints, slope[i, 0] * factor, cont[i, 0]),
-                         fmt='--', alpha=0.5, color=color)
+                         **lpd.fitlinestyle, color=color)
         counter += 1
     ax3.legend(title=r'$\displaystyle \frac{\sqrt{8\tau_\mathrm{F}}}{' + plotlabel + r'}$', loc="center left", bbox_to_anchor=(1, 0.5), **lpd.leg_err_size())
 

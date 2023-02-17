@@ -27,8 +27,8 @@ def plot_single_flowtime(index, flowradii, args, tauT, XX, XX_err, labels, ylims
         displaystyle = r''
     ylabel = r'$ ' + displaystyle + r'\frac{G}{G^\mathrm{norm}}$'
 
-    fig, ax, plots = lpd.create_figure(xlims=xlims, ylims=ylims, xlabel=r'$\tau T$', ylabel=ylabel, UseTex=args.use_tex)
-
+    fig, ax, _ = lpd.create_figure(xlims=xlims, ylims=ylims, xlabel=r'$\tau T$', ylabel=ylabel, UseTex=args.use_tex)
+    plots = []
     ax.set_xticks((0.0, 0.1, 0.2, 0.3, 0.4, 0.5))
 
     ax.text(0.99, 0.99, r'$\sqrt{8\tau_\mathrm{F}} T=$ ' + '{0:.3f}'.format(flowradii[index]), ha='right', va='top', transform=ax.transAxes, bbox=lpd.labelboxstyle)
@@ -45,7 +45,7 @@ def plot_single_flowtime(index, flowradii, args, tauT, XX, XX_err, labels, ylims
     if index != 0:
         lower_limit = lpd.lower_tauT_limit_(flowradii[index])
         ax.axvline(x=lower_limit, **lpd.verticallinestyle)
-        ax.text(lower_limit, args.lower_limit_text_pos, r'$ 3\sqrt{8\tau_F}T$', ha='center', va='center', bbox=lpd.labelboxstyle)
+        # ax.text(lower_limit*1.01, args.lower_limit_text_pos, r'$ 3\sqrt{8\tau_F}T$', ha='left', va='center')
 
     return fig
 
