@@ -72,6 +72,8 @@ def parse_args():
     parser.add_argument('--corr', type=str, choices=["EE", "BB"])
     parser.add_argument('--scale_error_by_chisqdof', default=False, action="store_true")
     parser.add_argument('--figsize', default=None, nargs='*')
+    parser.add_argument('--no_subscript', action="store_true")
+    parser.add_argument('--hide_chisq', action="store_true")
     args = parser.parse_args()
 
     if len(args.model_ids) != len(args.labels):
@@ -93,12 +95,17 @@ def main():
 
     nfiles, xdata, ydata, errorsleft, errorsright, chisqdof_arr, chisqdof_arr_err, kappa_bounds = load_data(args)
     labelboxstyle = dict(boxstyle="Round", fc="None", ec="None", alpha=0, pad=0.1, zorder=99)
-    fig, ax, plots = lpd.create_figure(figsize=args.figsize, xlims=args.xlims, ylims=args.ylims, ylabelbox=labelboxstyle, xlabelbox=labelboxstyle)
+    fig, ax, plots = lpd.create_figure(figsize=args.figsize, xlims=args.xlims, ylims=args.ylims, ylabelbox=labelboxstyle, xlabelbox=labelboxstyle, ytwinticks=False)
 
     if args.colors is None:
         args.colors = [lpd.get_discrete_color(int(i/2)) for i in range(nfiles)]
 
-    ax.set_xlabel(r'$\kappa/T^3$', horizontalalignment='left',  verticalalignment='bottom', bbox=None)
+    if args.no_subscript:
+        corr = ""
+    else:
+        corr = args.corr
+
+    ax.set_xlabel(r'$\kappa'+lpd.get_corr_subscript(corr)+r'/T^3$', horizontalalignment='left',  verticalalignment='bottom', bbox=None)
     ax.xaxis.set_label_coords(0.01, 0.01)
 
     leftmost = 100
@@ -124,7 +131,8 @@ def main():
                     scale_error_factor = numpy.fmax(1, chisqdof_arr[i])
                 ax.errorbar(x, y, xerr=[[errorsleft[i]*scale_error_factor], [errorsright[i]*scale_error_factor]],
                             markersize=2, color=args.colors[i], fmt='D', fillstyle='full')
-                args.labels[i] += r', $'+lpd.format_float(chisqdof_arr[i], 1)+r'\pm'+lpd.format_float(chisqdof_arr_err[i], 1)+r'$'
+                if not args.hide_chisq:
+                    args.labels[i] += r', $'+lpd.format_float(chisqdof_arr[i], 1)+r'\pm'+lpd.format_float(chisqdof_arr_err[i], 1)+r'$'
                 args.labels[i] = r'\begin{flushleft}'+args.labels[i]+r'\end{flushleft}'
                 thisleft = x-errorsleft[i] * scale_error_factor
                 if leftmost > numpy.min(thisleft):
@@ -137,22 +145,34 @@ def main():
     ax.fill_between([leftmost, rightmost], [-100, -100], [100, 100], facecolor='grey', alpha=0.2, zorder=-1000)
     centralvalue = (leftmost+rightmost)/2
     error = rightmost-centralvalue
-    numpy.savetxt(args.outputpath_data + "/" + args.corr + "_kappa" + args.suffix + ".txt", numpy.c_[centralvalue, error],
-                  header='kappa                  err')
+    with open(args.outputpath_data + "/" + args.corr + "_kappa" + args.suffix + ".txt", 'w') as file:
+        file.write('# kappa +- error \n')
+        file.write("# $"+lpd.format_float(centralvalue, 1)+r' \pm '+str(lpd.float_ceil(error, 1))+"$\n")
+        numpy.savetxt(file, numpy.c_[centralvalue, error])
 
     if args.temperature_on_xaxis:
         ax.set_xlabel(r'T\mathrm{[MeV]}')
         ax.set_ylabel(r'\kappa \mathrm{[GeV}^3\mathrm{]}')
     else:
-        ax.yaxis.set_label_coords(1.01, 1)
-        ax.set_ylabel(r'model, $\chi^2/\mathrm{dof}$', horizontalalignment='left', verticalalignment='top')
+        ax.yaxis.set_label_coords(1.03, 1)
+        chisqstr = ""
+        if not args.hide_chisq:
+            chisqstr = r', $\chi^2/\mathrm{dof}$'
+        ax.set_ylabel(r'model'+chisqstr, horizontalalignment='left', verticalalignment='top')
         ax.set_yticks(args.pos)
         ax.yaxis.tick_right()
         ax.set_yticklabels(args.labels)
+        axtwinx = ax.twiny()
+        axtwinx.set_xlim(ax.get_xlim())
+        axtwinx.tick_params(axis='x', which='both', direction='in', width=lpd.axeslinewidth, left=False, top=True, right=False, bottom=False, labelleft=False, labeltop=False,
+                        labelright=False, labelbottom=False)
         if args.xticks != "auto":
             ax.set_xticks([float(i) for i in args.xticks])
+            axtwinx.set_xticks([float(i) for i in args.xticks])
         ax.yaxis.label.set_size(10)
         ax.tick_params(axis='y', which='major', labelsize=10)
+
+
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/"+args.corr+"_kappa" + args.suffix + ".pdf"

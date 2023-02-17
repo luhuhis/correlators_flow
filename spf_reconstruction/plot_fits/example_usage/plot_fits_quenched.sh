@@ -101,7 +101,6 @@ for corr in "EE" "BB" ; do # "EE"
     --outputpath ~/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/${corr}/ \
     --suffix _quenched_1.5Tc${add_suffix} \
     --corr ${corr} \
-    --plot_spf_err \
     --ylims ${ylims}
     }
 

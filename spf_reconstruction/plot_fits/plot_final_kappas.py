@@ -25,6 +25,7 @@ def parse_args():
     parser.add_argument('--plot_EE_quenched_lit', action="store_true")
     parser.add_argument('--plot_BB_quenched_lit', action="store_true")
     parser.add_argument('--plot_analytical_results', action="store_true")
+    parser.add_argument('--no_subscript', action="store_true")
     args = parser.parse_args()
     return args
 
@@ -128,12 +129,12 @@ def plot_data(args, ax, data, offset, temps):
 
 def do_plot(args, data, temps):
 
-    if args.corr == "EE":
-        kappa_index = r'E'
-    elif args.corr == "BB":
-        kappa_index = r'B'
+    if args.no_subscript:
+        corr = ""
+    else:
+        corr = args.corr
 
-    fig, ax, plots = lpd.create_figure(xlims=args.xlims, ylims=args.ylims, xlabel=r'$T/T_c$', ylabel=r'$\displaystyle \frac{\kappa_'+kappa_index+r'}{T^3}$')
+    fig, ax, plots = lpd.create_figure(xlims=args.xlims, ylims=args.ylims, xlabel=r'$T/T_c$', ylabel=r'$\displaystyle \frac{\kappa'+lpd.get_corr_subscript(corr)+r'}{T^3}$')
 
     offset = 0
     if args.plot_EE_quenched_lit:

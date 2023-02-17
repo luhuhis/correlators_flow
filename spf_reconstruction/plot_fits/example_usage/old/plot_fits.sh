@@ -78,14 +78,14 @@ for idf in "${!flows[@]}"; do
                 ./plot_fits.py --outputpath ~/work/correlators_flow/plots/hisq_b8249_zeuthenFlow/EE/spf/ \
                 --file_basepath ~/work/correlators_flow/data/merged/hisq_b8249_zeuthenFlow/EE/ \
                 --files \
-                s096t36_b0824900_m002022_m01011/spf/${models_file[idx]}_${order[idy]}_Nf3_T0.196_${scale[idy]}_500_0.35_exp0_hisq_nt36_f${flows[idf]}/${filenames[idz]}.dat \
+                s096t36_b0824900_m002022_m01011/spf/${models_file[idx]}_${order[idy]}_Nf3_T0.195_${scale[idy]}_500_0.35_exp0_hisq_nt36_f${flows[idf]}/${filenames[idz]}.dat \
                 s096t32_b0824900_m002022_m01011/spf/${models_file[idx]}_${order[idy]}_Nf3_T0.220_${scale[idy]}_500_0.35_exp0_hisq_nt32_f${flows[idf]}/${filenames[idz]}.dat \
                 s096t28_b0824900_m002022_m01011/spf/${models_file[idx]}_${order[idy]}_Nf3_T0.251_${scale[idy]}_500_0.35_exp0_hisq_nt28_f${flows[idf]}/${filenames[idz]}.dat \
-                s096t24_b0824900_m002022_m01011/spf/${models_file[idx]}_${order[idy]}_Nf3_T0.296_${scale[idy]}_500_0.35_exp0_hisq_nt24_f${flows[idf]}/${filenames[idz]}.dat \
+                s096t24_b0824900_m002022_m01011/spf/${models_file[idx]}_${order[idy]}_Nf3_T0.293_${scale[idy]}_500_0.35_exp0_hisq_nt24_f${flows[idf]}/${filenames[idz]}.dat \
                 s096t20_b0824900_m002022_m01011/spf/${models_file[idx]}_${order[idy]}_Nf3_T0.352_${scale[idy]}_500_0.35_exp0_hisq_nt20_f${flows[idf]}/${filenames[idz]}.dat \
                 --Nts 36 32 28 24 20 \
-                --pos 196 220 251 296 352 \
-                --labels "0.196" "0.220" "0.251" "0.296" "0.352" --legtitle "\$T\$ in GeV"\
+                --pos 195 220 251 293 352 \
+                --labels "0.195" "0.220" "0.251" "0.293" "0.352" --legtitle "\$T\$ in GeV"\
                 --OmegaByT_UV ${OmegaByT_UV} \
                 --obs ${obs[idz]} --suffix ${models_str[idx+idy*3]}_f${flows[idf]} --title "${models_str[idx+idy*3]} ${scale[idy]} f${flows[idf]}" \
                 &
@@ -120,7 +120,7 @@ colors=(C0 C1 C2 C3)
 # --xlims 0.14 0.512 --ylims 1.8 9 \
 #--ylims 0.001 0.1 --xlims 0.001 1
 Nts=(20 24 28 32 36)  # ${models_str[idx+idy*3]} ${scale[idy]} f${flows[idf]}
-temp=(352 296 251 220 196)
+temp=(352 293 251 220 195)
 for Nt_idx in "${!Nts[@]}"; do
     filearray=()
     labelarray=()

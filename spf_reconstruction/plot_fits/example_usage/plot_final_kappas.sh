@@ -7,7 +7,7 @@ plot_hisq(){
     for suffix in "" "_paper" ; do
 
         if [ "${suffix}" == "_paper" ] ; then
-            addargs=""
+            addargs="--no_subscript"
         else
             addargs="--plot_analytical_results"
         fi
@@ -16,14 +16,14 @@ plot_hisq(){
 
         ../plot_final_kappas.py \
             --input_kappa_files \
-            ${basepath}/T196/EE_kappa_T196${suffix}.txt \
+            ${basepath}/T195/EE_kappa_T195${suffix}.txt \
             ${basepath}/T220/EE_kappa_T220${suffix}.txt \
             ${basepath}/T251/EE_kappa_T251${suffix}.txt \
-            ${basepath}/T296/EE_kappa_T296${suffix}.txt \
-            ${basepath}/s096t36_b0824900_m002022_m01011/EE_kappa_T196_finiteflow_paper.txt \
+            ${basepath}/T293/EE_kappa_T293${suffix}.txt \
+            ${basepath}/s096t36_b0824900_m002022_m01011/EE_kappa_T195_finiteflow_paper.txt \
             ${basepath}/s096t32_b0824900_m002022_m01011/EE_kappa_T220_finiteflow_paper.txt \
             ${basepath}/s096t28_b0824900_m002022_m01011/EE_kappa_T251_finiteflow_paper.txt \
-            ${basepath}/s096t24_b0824900_m002022_m01011/EE_kappa_T296_finiteflow_paper.txt \
+            ${basepath}/s096t24_b0824900_m002022_m01011/EE_kappa_T293_finiteflow_paper.txt \
             ${basepath}/s096t20_b0824900_m002022_m01011/EE_kappa_T352_finiteflow_paper.txt \
             --labels \
             '$ a\rightarrow 0, \tau_\mathrm{F} \rightarrow 0$' "" "" "" '\begin{flushleft}$ a^{-1}=7.06\,\mathrm{GeV}$, \newline $\sqrt{8\tau_\mathrm{F}}/\tau=0.3$ \end{flushleft}' "" "" "" "" \
@@ -39,7 +39,7 @@ plot_hisq(){
             --outputpath /work/home/altenkort/work/correlators_flow/plots/hisq_ms5_zeuthenFlow/EE/ \
             --suffix "hisq${suffix}" \
             --temps_in_GeV \
-            0.196 0.220 0.251 0.296 0.198 0.222 0.253 0.298 0.352 \
+            0.195 0.220 0.251 0.293 0.198 0.222 0.253 0.295 0.352 \
             --Tc_in_GeV 0.180 \
             --leg_ncol 1 \
             --xlims 0.9 2.4 \

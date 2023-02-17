@@ -67,9 +67,11 @@ def main():
 
     nfiles, xdata, ydata, errorsleft, errorsright = load_data(args)
 
-    fig, ax, plots = lpd.create_figure(xlabel=r'$\omega/T$', ylabel=r'$\displaystyle \frac{2\rho}{ \omega T^2}$', xlims=args.xlims, ylims=args.ylims)
+    fig, ax, axtwiny = lpd.create_figure(xlabel=r'$\omega/T$', ylabel=r'$\displaystyle \frac{2\rho'+lpd.get_corr_subscript(args.corr)+r'}{ \omega T^2}$',
+                                       xlims=args.xlims, ylims=args.ylims)
 
     ax.set_yscale('log')
+    axtwiny.set_yscale('log')
     ax.set_xscale('log')
 
     if args.colors is None:
@@ -89,7 +91,7 @@ def main():
             # ax.axvline(x=1, **lpd.verticallinestyle)
             # ax.axvline(x=omegaUV, **lpd.verticallinestyle)
 
-    ax.legend(loc=args.leg_loc, bbox_to_anchor=args.leg_pos, title="model", handlelength=1, fontsize=10)
+    ax.legend(loc=args.leg_loc, bbox_to_anchor=args.leg_pos, title="model", handlelength=1.5, fontsize=10)
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/"+args.corr+"_spf" + args.suffix + ".pdf"

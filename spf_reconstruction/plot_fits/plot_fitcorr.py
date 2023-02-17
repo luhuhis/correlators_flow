@@ -66,7 +66,7 @@ def main():
 
     nfiles, xdata, ydata, errorsleft, errorsright = load_data(args)
 
-    fig, ax, plots = lpd.create_figure(xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G^\text{model}}{G}$', xlims=args.xlims, ylims=args.ylims)
+    fig, ax, axtwiny = lpd.create_figure(xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G^\text{model}}{G'+lpd.get_corr_subscript(args.corr)+r'}$', xlims=args.xlims, ylims=args.ylims)
 
     if args.colors is None:
         args.colors = [lpd.get_discrete_color(int(i/2)) for i in range(nfiles)]
@@ -77,14 +77,15 @@ def main():
                         fmt='|', markersize=0, color=args.colors[i] if i % 2 == 0 else lpd.lighten_color(args.colors[i], 0.5), label=args.labels[i])
             # ax.errorbar(xdata[i] + i * 0.002, ydata[i],
             #             fmt='-', markersize=0, color=args.colors[i] if i % 2 == 0 else lpd.lighten_color(args.colors[i], 0.5), zorder=-100)
-    ax.axhline(y=1, color='k', dashes=(2, 1))
+    ax.axhline(y=1, **lpd.horizontallinestyle)
 
     if args.yticks != "auto":
         ax.set_yticks([float(i) for i in args.yticks])
+        axtwiny.set_yticks([float(i) for i in args.yticks])
     if args.xticks != "auto":
         ax.set_xticks([float(i) for i in args.xticks])
 
-    ax.legend(title="model", handlelength=1, loc="lower left", bbox_to_anchor=(0, 0), ncols=2, **lpd.leg_err_size(1, 0.3))
+    ax.legend(title="model", handlelength=1, loc="lower left", bbox_to_anchor=(0.15, 0), ncols=2, **lpd.leg_err_size(1, 0.3))
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/"+args.corr+"_corrfit" + args.suffix + ".pdf"

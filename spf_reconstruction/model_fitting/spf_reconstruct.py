@@ -9,21 +9,22 @@ from typing import NamedTuple
 from latqcdtools.statistics import bootstr
 import argparse
 from spf_reconstruction.model_fitting.EE_UV_spf import get_spf, add_args
-import numba
+# import numba
 
-@numba.njit(cache=True)
+
+# @numba.njit(cache=True)
 def Gnorm(tauT: float):
     return np.pi ** 2 * (np.cos(np.pi * tauT) ** 2 / np.sin(np.pi * tauT) ** 4 + 1 / (3 * np.sin(np.pi * tauT) ** 2))
 
 
 # ==============================================================
 
-@numba.njit(cache=True)
+# @numba.njit(cache=True)
 def Kernel(OmegaByT: float, tauT: float):
     return np.cosh(OmegaByT / 2 - OmegaByT * tauT) / np.sinh(OmegaByT / 2)
 
 
-@numba.njit(cache=True)
+# @numba.njit(cache=True)
 def En(n: int, OmegaByT: float, mu: str):
     x = np.log(1 + OmegaByT / np.pi)
     y = x / (1 + x)
@@ -53,7 +54,7 @@ class SpfArgs(NamedTuple):
     verbose: bool
 
 
-@numba.njit(cache=True)
+# @numba.njit(cache=True)
 def PhiIR(OmegaByT: float, kappaByT3: float):
     return kappaByT3 / 2 * OmegaByT
 
@@ -263,44 +264,41 @@ def identity(y):
 
 def readin_corr_data(args):
 
-    if args.mock_bootstrap:
-        corr = np.loadtxt(args.input_corr)
-        corr = corr[~np.isnan(corr).any(axis=1)]  # remove lines with NaN's
-        corr = corr[corr[:, 0] >= args.min_tauT, :]  # filter out below min_tauT
+    if args.relflow:
 
-        NtauT = len(corr)  # number of data points we can actually consider. this is NOT the actual nt.
+        # example output shape from interpolation
+        # 31, 10000, 18 - relflow, samples, tauT
 
-        xdata = corr[:, 0]
-        ydata_norm_mean = corr[:, 1]
-        edata_of_ydata_norm_mean = corr[:, 2]
+        relflows = np.loadtxt(args.relflow_file)
+        flowindex = np.fabs(relflows-args.relflow).argmin()
 
-        # get rid of the pert. normalization in the data
-        for i in range(NtauT):
-            corr[i, 1:3] *= Gnorm(xdata[i])
+        ydata_samples = np.load(args.input_corr)[flowindex][:args.nsamples]
 
-        ydata_mean = corr[:, 1]
-        edata = corr[:, 2]
-
-        # generate mock bootstrap samples
-        ydata_samples, _, _ = bootstr.bootstr_from_gauss(identity, ydata_mean, edata, args.nsamples, sample_size=1, return_sample=True, seed=args.seed,
-                                                         useCovariance=False, parallelize=True, nproc=args.nproc)
     else:
-        ydata_samples = np.load(args.input_corr)[:, :, 1]
-        nt_half = ydata_samples.shape[1]
-        xdata = lpd.get_tauTs(int(nt_half * 2))
+        if args.corr_from_combined_fit_nt:
+            # example output shape from combined flowtime extrapolation
+            # 10000, 20 - samples, tauT+fitparams
+            int_nt_half = int(args.corr_from_combined_fit_nt/2)
+            ydata_samples = np.load(args.input_corr)[:args.nsamples, :int_nt_half]
+        else:
+            # example output shape from flowtime extrapolation
+            # 10000, 18, 2 - samples, tauT, fitparams
+            ydata_samples = np.load(args.input_corr)[:args.nsamples, :, 1]
+    nt_half = ydata_samples.shape[1]
+    xdata = lpd.get_tauTs(int(nt_half * 2))
 
-        mask = np.logical_and(~np.isnan(ydata_samples[0]), xdata >= args.min_tauT)  # filter out NaN's and filter out below min_tauT
+    mask = np.logical_and(~np.isnan(ydata_samples[0]), xdata >= args.min_tauT)  # filter out NaN's and filter out below min_tauT
 
-        xdata = xdata[mask]
-        ydata_samples = ydata_samples[:, mask]
+    xdata = xdata[mask]
+    ydata_samples = ydata_samples[:, mask]
 
-        NtauT = len(xdata)
+    NtauT = len(xdata)
 
-        ydata_norm_mean = np.nanmedian(ydata_samples, axis=0)
-        edata_of_ydata_norm_mean = lpd.dev_by_dist(ydata_samples, axis=0)
-        for i in range(NtauT):
-            ydata_samples[:, i] *= Gnorm(xdata[i])
-        edata = lpd.dev_by_dist(ydata_samples, axis=0)
+    ydata_norm_mean = np.nanmedian(ydata_samples, axis=0)
+    edata_of_ydata_norm_mean = lpd.dev_by_dist(ydata_samples, axis=0)
+    for i in range(NtauT):
+        ydata_samples[:, i] *= Gnorm(xdata[i])
+    edata = lpd.dev_by_dist(ydata_samples, axis=0)
 
     return xdata, ydata_samples, edata, ydata_norm_mean, edata_of_ydata_norm_mean
 
@@ -439,9 +437,10 @@ def parse_args():
     # input corr
     # TODO add support for multiple input_corrs
     parser.add_argument('--input_corr', help='Path to input correlator data file. expects text file with three columns: tauT, G, err', type=str)
+    parser.add_argument('--corr_from_combined_fit_nt', type=int, help="if correlator comes from a combined fit, then the read in is slightly different, and we need the Nt of the interpolation.")
     parser.add_argument('--min_tauT', help='ignore corr data below this tauT', type=float, default=0)
-    parser.add_argument('--mock_bootstrap', help="if input_corr already contains mean and error values instead of bootstrap samples, "
-                                                 "then do a mock bootstrap instead of a real one.", default=False, action="store_true")
+    parser.add_argument('--relflow', type=float, help="flowradius divided by tau. when provided, it is assumed that the input data is given in the shape (relflow, samples, tauT)")
+    parser.add_argument('--relflow_file')
 
     # === spf model selection ===
     requiredNamed.add_argument('--model', help='which model to use', choices=["max", "smax", "line", "step_any", "pnorm", "plaw", "plaw_any", "sum", "fourier", "trig"], type=str,
@@ -482,8 +481,8 @@ def parse_args():
         print("ERROR: Need OmegaByT_UV for model line or plaw.")
         exit(1)
 
-    if args.mock_bootstrap and not args.nsamples:
-        print("ERROR: Need OmegaByT_UV for model line or plaw.")
+    if args.relflow and not args.relflow_file or args.relflow_file and not args.relflow:
+        print("ERROR: need either both or none of --relflow and --relflow_file")
         exit(1)
 
     return args
@@ -505,8 +504,6 @@ def main():
 
     if args.nsamples is None:
         args.nsamples = len(ydata)
-    elif not args.mock_bootstrap:
-        print("WARN: only using", args.nsamples, "of", len(ydata), "samples.")
     results_samples = lpd.parallel_function_eval(fit_single_sample_wrapper, range(0, args.nsamples), args.nproc, ydata, spfargs)
     results_samples = np.asarray(results_samples)
     results_mean = np.median(results_samples, axis=0)
