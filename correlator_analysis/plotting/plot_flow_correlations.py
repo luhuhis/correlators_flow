@@ -28,7 +28,9 @@ def plot_correlation_matrix(index, data, flow_radii, nt, title):
 
     data = numpy.corrcoef(data)
 
-    fig, ax, _ = lpd.create_figure(xlims=[0, 0.35], ylims=[0, 0.35], ylabel=r'$\sqrt{8\tau_\mathrm{F}}/\tau$', xlabel=r'$\sqrt{8\tau_\mathrm{F}\prime}/\tau$', constrained_layout=True)
+    fig, ax, _ = lpd.create_figure(xlims=[0, 0.35], ylims=[0, 0.35], ylabel=r'$\sqrt{8\tau_\mathrm{F}}/\tau$',
+                                   xlabel=r'$\sqrt{8\tau_\mathrm{F}\prime}/\tau$', constrained_layout=True,
+                                   ytwinticks=False, xlabelbox=None, ylabelbox=None)
     ax.set_aspect('equal', 'box')
 
     # cax = ax.pcolormesh(flow_radii, flow_radii, data, cmap=cmasher.fusion, shading='auto', linewidth=0, vmin=-1, vmax=1, rasterized=True)  # 'seismic'
@@ -42,8 +44,12 @@ def plot_correlation_matrix(index, data, flow_radii, nt, title):
         c.set_edgecolor("face")
     cbar = fig.colorbar(cax, ax=ax, shrink=0.7)
     cbar.set_ticks(numpy.arange(0, 1.01, 0.2))
-    ax.axvline(x=1.5 / nt / tauT, color='grey', alpha=0.8, zorder=100, lw=1)
-    ax.axhline(y=1.5 / nt / tauT, color='grey', alpha=0.8, zorder=100, lw=1)
+    ax.vlines(x=0.25, ymin=0.2495, ymax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5)
+    ax.vlines(x=0.3, ymin=0.2495, ymax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5)
+    ax.hlines(y=0.25, xmin=0.2495, xmax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5)
+    ax.hlines(y=0.3, xmin=0.2495, xmax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5)
+    # ax.axvline(x=1.5 / nt / tauT, color='grey', alpha=0.8, zorder=100, lw=1)
+    # ax.axhline(y=1.5 / nt / tauT, color='grey', alpha=0.8, zorder=100, lw=1)
 
     return fig
 
@@ -53,7 +59,7 @@ def main():
     # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
-    parser.add_argument('--basepath', type=str, default="../../data/merged/")
+    parser.add_argument('--basepath', type=str, default="../../../data/merged/")
     parser.add_argument('--outputfolder', default="./")
     parser.add_argument('--nproc', type=int, default=20)
     args = parser.parse_args()

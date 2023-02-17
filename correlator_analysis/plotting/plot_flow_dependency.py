@@ -38,7 +38,7 @@ def load_data(args):
     flowtimesBy_a2 = numpy.loadtxt(inputfolder+"flowtimes_"+args.conftype+".dat")
     flowtimesT2 = flowtimesBy_a2 / nt**2
     XX = numpy.loadtxt(inputfolder + "/" + args.corr + "_" + args.conftype + ".dat")
-    XX = apply_tree_level_imp(XX, nt, [0 for _ in range(len(flowtimesBy_a2))], args.corr, flowaction, gaugeaction)
+    XX = apply_tree_level_imp(XX, nt, flowtimesBy_a2, args.corr, flowaction, gaugeaction)  #[0 for _ in range(len(flowtimesBy_a2))]
     XX_err = numpy.loadtxt(inputfolder + "/" + args.corr + "_err_" + args.conftype + ".dat")
     XX_err = numpy.fabs(apply_tree_level_imp(XX_err, nt, [0 for _ in range(len(flowtimesBy_a2))], args.corr, flowaction, gaugeaction))
 
@@ -51,7 +51,7 @@ def plot(args, tauT, flowtimesT2, XX, XX_err):
     XX = numpy.swapaxes(XX, 0, 1)
     XX_err = numpy.swapaxes(XX_err, 0, 1)
 
-    fig, ax, plots = lpd.create_figure(xlims=args.xlims, ylims=args.ylims, xlabel=r'$8\tau_\mathrm{F} / \tau^2$', ylabel=r'$\displaystyle \frac{G}{G^{\mathrm{norm}}}$')
+    fig, ax, plots = lpd.create_figure(xlims=args.xlims, ylims=args.ylims, xlabel=r'$8\tau_\mathrm{F} / \tau^2$', ylabel=r'$\displaystyle \frac{G'+lpd.get_corr_subscript(args.corr)+r'}{G^{\mathrm{norm}}}$')
 
     ax.yaxis.set_label_coords(0.07, 0.97)
     labels = []
@@ -80,7 +80,7 @@ def plot(args, tauT, flowtimesT2, XX, XX_err):
                     labelspacing=0.1, bbox_to_anchor=args.leg_pos, **lpd.leg_err_size(1, 0.3), framealpha=0.9, edgecolor="k", ncol=args.leg_ncol, fontsize=10)
     leg.get_frame().set_linewidth(args.leg_lw)
 
-    file = args.outputfolder+"/"+args.corr+"_"+args.conftype+"_flow_dep"+args.suffix+".pdf"
+    file = args.outputfolder+"/"+args.corr+"_"+args.conftype+"_flow_dep"+args.suffix+"_imp.pdf"
     print("saving", file)
     fig.savefig(file)
 
