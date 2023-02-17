@@ -19,8 +19,7 @@ def main():
     ax.axhline(y=100, **lpd.horizontallinestyle)
     ax.axhline(y=0, **lpd.horizontallinestyle)
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
-    lpd.legendstyle.update(dict(loc="center right", bbox_to_anchor=(1, 0.46), framealpha=0))
-    ax.legend(**lpd.legendstyle)  #, title="QED: lattice artifacts \n at NLO")
+    ax.legend(loc="center right", bbox_to_anchor=(1, 0.46), framealpha=0, handlelength=1)  #, title="QED: lattice artifacts \n at NLO")
     fig.savefig(args.outputfolder+"/EE_QED_LPT.pdf")
     print("saved QED LPT plot", args.outputfolder+"/EE_QED_LPT.pdf")
 
