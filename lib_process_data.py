@@ -268,7 +268,7 @@ fitlinestyle = dict(alpha=1, lw=0.5, dashes=(6, 2))
 markers = ['.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8',
            'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P', '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>', '.', '+', 'x', 'P',
            '*', 'X', 'o', 'v', 's', 'H', '8', 'd', 'p', '^', 'h', 'D', '<', '>']
-linewidth = 1.5
+linewidth = 1.25
 axeslinewidth = 0.5
 plot_fontsize = 11
 
@@ -282,6 +282,7 @@ def set_rc_params():
     matplotlib.rcParams['axes.linewidth'] = axeslinewidth
     matplotlib.rcParams['lines.linewidth'] = linewidth
     matplotlib.rcParams['lines.markeredgewidth'] = linewidth
+    matplotlib.rcParams['lines.markersize'] = linewidth*4
     matplotlib.rcParams['errorbar.capsize'] = 2*linewidth
     matplotlib.rcParams['legend.handlelength'] = 0.2
     matplotlib.rcParams['legend.frameon'] = True
