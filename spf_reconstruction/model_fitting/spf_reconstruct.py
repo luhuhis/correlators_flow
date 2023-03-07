@@ -6,7 +6,6 @@ import scipy.integrate
 import scipy.optimize
 import scipy.interpolate
 from typing import NamedTuple
-from latqcdtools.statistics import bootstr
 import argparse
 from spf_reconstruction.model_fitting.EE_UV_spf import get_spf, add_args
 # import numba
@@ -26,7 +25,7 @@ def Kernel(OmegaByT: float, tauT: float):
 
 # @numba.njit(cache=True)
 def En(n: int, OmegaByT: float, mu: str):
-    x = np.log(1 + OmegaByT / np.pi)
+    x = np.log(1 + OmegaByT / (np.pi))
     y = x / (1 + x)
     if mu == "alpha":
         return np.sin(np.pi * n * y)
@@ -102,7 +101,7 @@ def SpfByT3(OmegaByT, spfargs, *fit_params):
         x = OmegaByT
         y_IR = PhiIR(x, kappaByT3)
         y_UV = fit_params[0][1] * spfargs.PhiuvByT3(x)
-        x2 = spfargs.OmegaByT_UV
+        x2 = fit_params[0][3]
         x1 = fit_params[0][2]
         y2 = fit_params[0][1] * spfargs.PhiuvByT3(x2)
         y1 = PhiIR(x1, kappaByT3)
@@ -346,8 +345,8 @@ def get_initial_guess(args):
         initial_guess = [1, ]
         bounds = [kappa_bounds,]
     elif args.model == "plaw_any":
-        initial_guess = [1, 1, 1]
-        bounds = [kappa_bounds, k_bounds, [0.01, 1]]
+        initial_guess = [1, 1, 1, 6.28]
+        bounds = [kappa_bounds, k_bounds, [0.5, 1], [6.28, 3*6.28]]
     else:
         initial_guess = [1, 1]
         bounds = [kappa_bounds, k_bounds]
