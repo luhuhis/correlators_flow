@@ -19,37 +19,54 @@ def compute_XX_corr(data):
     return XX
 
 
-def plot_correlation_matrix(index, data, flow_radii, nt, title):
+def plot_correlation_matrix(index, data, flow_radii, nt):
     data = data[index]
 
     tauT = (index + 1) / nt
     label = '{0:.2f}'.format(tauT)
-    title = title + label + r'$'
+
+    title = r'\begin{center}$\mathrm{corr}[G_E(\tau_\mathrm{F}), G_E(\tau_\mathrm{F}\prime)]$ \\ $\tau T ='
+    title = title + label + r'$ \end{center}'
 
     data = numpy.corrcoef(data)
 
-    fig, ax, _ = lpd.create_figure(xlims=[0, 0.35], ylims=[0, 0.35], ylabel=r'$\sqrt{8\tau_\mathrm{F}}/\tau$',
-                                   xlabel=r'$\sqrt{8\tau_\mathrm{F}\prime}/\tau$', constrained_layout=True,
+    xydata = flow_radii/tauT
+    for i in range(len(xydata)):
+        for j in range(len(xydata)):
+            r2 = (xydata[i]/xydata[j])**2
+            data[i,j] = (4 * r2 / (1+r2)**2)
+
+    fig, ax, _ = lpd.create_figure(xlims=[0, 0.35], ylims=[0, 0.35], constrained_layout=True,
                                    ytwinticks=False, xlabelbox=None, ylabelbox=None)
     ax.set_aspect('equal', 'box')
 
+    ax.xaxis.tick_top()
+    ax.invert_yaxis()
+    ax.set_xlabel(r'$\sqrt{8\tau_\mathrm{F}\prime}/\tau$', ha='left', va='center', rotation=90, zorder=1000)
+    ax.xaxis.set_label_coords(0.02, 0.5)
+    ax.set_ylabel(r'$\sqrt{8\tau_\mathrm{F}}/\tau$', ha='center', va='top', rotation=0, zorder=1000)
+    ax.yaxis.set_label_coords(0.5, 0.98)
+
     # cax = ax.pcolormesh(flow_radii, flow_radii, data, cmap=cmasher.fusion, shading='auto', linewidth=0, vmin=-1, vmax=1, rasterized=True)  # 'seismic'
 
-    ax.set_title(title)
+    ax.text(0.5, -0.02, title, ha='center', va='top', transform=ax.transAxes)
+
     ax.xaxis.set_major_locator(MaxNLocator(4))
     ax.yaxis.set_major_locator(MaxNLocator(4))
 
-    cax = ax.contourf(flow_radii/tauT, flow_radii/tauT, data, numpy.linspace(0, 1, 11), cmap=cmasher.get_sub_cmap(cmasher.fusion, 0.5, 1))
+    cax = ax.contourf(xydata, xydata, data, numpy.linspace(0, 1, 21), cmap=cmasher.get_sub_cmap(cmasher.fusion, 0.5, 1))
     for c in cax.collections:
         c.set_edgecolor("face")
-    cbar = fig.colorbar(cax, ax=ax, shrink=0.7)
+    cbar = fig.colorbar(cax, ax=ax, shrink=0.74)
     cbar.set_ticks(numpy.arange(0, 1.01, 0.2))
-    ax.vlines(x=0.25, ymin=0.2495, ymax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5)
-    ax.vlines(x=0.3, ymin=0.2495, ymax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5)
-    ax.hlines(y=0.25, xmin=0.2495, xmax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5)
-    ax.hlines(y=0.3, xmin=0.2495, xmax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5)
-    # ax.axvline(x=1.5 / nt / tauT, color='grey', alpha=0.8, zorder=100, lw=1)
-    # ax.axhline(y=1.5 / nt / tauT, color='grey', alpha=0.8, zorder=100, lw=1)
+    ax.vlines(x=0.25, ymin=0.2495, ymax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5, linestyles='dashed')
+    ax.vlines(x=0.3, ymin=0.2495, ymax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5, linestyles='dashed')
+    ax.hlines(y=0.25, xmin=0.2495, xmax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5, linestyles='dashed')
+    ax.hlines(y=0.3, xmin=0.2495, xmax=0.3005, color='C1', alpha=1, zorder=100, lw=0.5, linestyles='dashed')
+
+    onespacingflow = 1 / nt / tauT
+    ax.hlines(y=onespacingflow, xmin=0, xmax=onespacingflow, color='C3', alpha=1, zorder=100, lw=0.5, linestyles='dashdot')
+    ax.vlines(x=onespacingflow, ymin=0, ymax=onespacingflow, color='C3', alpha=1, zorder=100, lw=0.5, linestyles='dashdot')
 
     return fig
 
@@ -96,8 +113,7 @@ def main():
     # print(polyakov_real.shape)
     # plot_correlation_matrix(polyakov_real, flow_radii, r'$\mathrm{corr}[X(\tau_\mathrm{F}), X(\tau_\mathrm{F}\prime)], X= U(\beta, 0) $', "poly")
 
-    title = r'$\mathrm{corr}[G(\tau_\mathrm{F}), G(\tau_\mathrm{F}\prime)], \tau T ='
-    figs = lpd.parallel_function_eval(plot_correlation_matrix, range(nt_half), args.nproc, XX_samples, flow_radii, nt, title)
+    figs = lpd.parallel_function_eval(plot_correlation_matrix, range(nt_half), args.nproc, XX_samples, flow_radii, nt)
     # data = numpy.copy(EE_numerator[:, :, i])
     # data = numpy.swapaxes(data, 0, 1)
     # plot_correlation_matrix(data, flow_radii/tauT, r'$\mathrm{corr}[X(\tau_\mathrm{F}), X(\tau_\mathrm{F}\prime)], \newline X= U(\beta, \tau) E(\tau) U(\tau, 0) E(0), \tau T ='+label+r'$', args.outputfolder+"EE_tauT"+label)
