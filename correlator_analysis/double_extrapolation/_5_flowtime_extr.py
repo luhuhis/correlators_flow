@@ -135,6 +135,7 @@ def do_flow_extr(index, tauTs, cont_samples, data_std, n_samples, args, flowstep
         flowstart = numpy.fabs(relflows - args.min_FlowradiusBytauT).argmin()
         midpoint = numpy.abs(relflows - (args.max_FlowradiusBytauT+args.min_FlowradiusBytauT)/2).argmin()
         indices = numpy.unique([flowstart, midpoint, flowend])
+        # indices = range(flowstart, flowend+1)
         xdatatmp = relflows[indices]**2
     else:
         flowtimes = flowsteps
@@ -145,27 +146,31 @@ def do_flow_extr(index, tauTs, cont_samples, data_std, n_samples, args, flowstep
         indices = numpy.unique([flowstart, geom_mean, flowend])
         xdatatmp = flowtimes[indices] * 8 / tauT ** 2
 
-    if len(indices) >= 3:
+    if len(indices) >= 2:
+
+        edatatmp = data_std[index][indices]
+        mask = numpy.isnan(cont_samples[0][index][indices])
+        xdata = xdatatmp[~mask]
+        edata = edatatmp[~mask]
+        ydatas = []
 
         for n in range(n_samples):
 
             ydatatmp = cont_samples[n][index][indices]
-            edatatmp = data_std[index][indices]
-            mask = numpy.isnan(ydatatmp)
-            xdata = xdatatmp[~mask]
             ydata = ydatatmp[~mask]
-            edata = edatatmp[~mask]
-
+            ydatas.append(ydata)
             # TODO undo this again when working on corr matrix again
             # this_cov = cov[i][index[:, numpy.newaxis], index]
 
-            if len(xdata) >= 3:  # minimum amount for linear fit
+            if len(xdata) >= 2:  # minimum amount for linear fit
 
                 if not args.no_extr:
                     fitparams = scipy.optimize.minimize(chisq, x0=numpy.asarray([0, 3]), bounds=(args.slope_bounds, (None, None)), args=[xdata, ydata, edata, None])
                     fitparams = fitparams.x
 
                     results[n] = fitparams
+
+        print(xdata, numpy.nanmedian(numpy.asarray(ydatas), axis=0), edata)
     print("done ", '{0:.3f}'.format(tauT))  # TODO , ", taufT2=[", lpd.format_float(numpy.sqrt(8*flowtimes[flowstart])), ", ", lpd.format_float(numpy.sqrt(8*flowtimes[flowend])), "]", sep="")
     return results, indices
 
@@ -406,6 +411,11 @@ def plot_final_corr_and_savetxt(args, results_mean, results_std, ntauT, finest_t
     plot_corr(args, finest_tauTs, ydata_extr, edata_extr, plotbasepath)
     correlator = numpy.column_stack((finest_tauTs, ydata_extr, edata_extr))
     print(correlator)
+    numpy.set_printoptions(linewidth=numpy.inf, precision=4, threshold=numpy.inf, floatmode="fixed")
+    print(finest_tauTs)
+    print(ydata_extr)
+    print(edata_extr)
+
     file = basepath + "/" + args.corr + "_flow_extr"+suffix+".txt"
     print("saving mean and error in ", file)
     numpy.savetxt(file, correlator, header="                tauT                G/Gnorm                    err", fmt='%22.15e')
@@ -428,8 +438,6 @@ def plot_flow_extr(args, flowsteps, cont_samples, data_std, results_mean, result
 
 
 def main():
-
-    # TODO how are the flowtimes actually used in this script?
 
     args = parse_args()
 
@@ -463,9 +471,9 @@ def main():
     # plots
     results_mean = numpy.nanmedian(results[:args.n_samples], axis=0)
     results_std = lpd.dev_by_dist(results[:args.n_samples], axis=0)
-    print(results_mean[-1])
+
     if not args.combined_fit:
-        print(numpy.column_stack((results_mean[:,0], results_std[:,0])))
+        print(numpy.column_stack((results_mean[:, 0], results_std[:, 0])))
     plotbasepath = lpd.get_plot_path(args.qcdtype, args.corr, "", args.basepath_plot) + args.temp_subfolder
     plot_flow_extr(args, flowsteps, cont_samples, data_std, results_mean, results_std, indices, plotbasepath)
     plot_final_corr_and_savetxt(args, results_mean, results_std, ntauT, finest_tauTs, plotbasepath, basepath, suffix)
