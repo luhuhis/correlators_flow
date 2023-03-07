@@ -14,7 +14,7 @@ nsamples=10000
 if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     arr_conftypes=("s080t20_b0703500" "s096t24_b0719200" "s120t30_b0739400" "s144t36_b0754400")
     arr_int_Nt=(36 36 36 36)
-    ylims="1.5 4.25"
+    ylims="1.9 3.9"
     add_args="--lower_limit_text_pos 2"
 elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     arr_conftypes=(                                       "s096t20_b0824900_m002022_m01011"

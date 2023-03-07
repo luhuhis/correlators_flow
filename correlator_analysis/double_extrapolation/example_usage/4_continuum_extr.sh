@@ -17,7 +17,7 @@ if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     arr_conftypes=("s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
     arr_output_suffix=("" )
     ylims="2.4 3.9"
-    add_args="--relflow --nsamples 1000"
+    add_args="--relflow --nsamples 10000"  #--nterms 2
     min_flowradius=0.05
 elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     arr_conftypes=(
@@ -29,7 +29,7 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     arr_output_suffix=("T195" "T220" "T251" "T293")
     arr_ylims=("4 9.9" "3.9 8.9"  "3.5 7.9" "3.5 6.9")
     min_flowradius=0.05
-    add_args="--ansatz custom --relflow --nsamples 10000"
+    add_args="--nterms 1 --relflow --combined_fit --nsamples 10000"
 fi
 
 for idx in "${!arr_conftypes[@]}" ; do
@@ -48,7 +48,7 @@ for idx in "${!arr_conftypes[@]}" ; do
 
 #        ../find_common_flowtimes.py --basepath ../../../../data/merged/$qcdtype/$corr/ --files $files --output ../../../../data/merged/$qcdtype/$corr/${arr_output_suffix[idx]}/flowradii_${arr_output_suffix[idx]}.dat
         args="$add_args --use_tex --nproc $ncpu --min_flowradius $min_flowradius --basepath ../../../../data/merged/
-        --basepath_plot ../../../../plots/ --max_FlowradiusBytauT_offset 0 --max_FlowradiusBytauT 0.31  --min_FlowradiusBytauT 0.2  $sufargs ${arr_output_suffix[idx]}${addsuf}
+        --basepath_plot ../../../../plots/ --max_FlowradiusBytauT 0.31  --min_FlowradiusBytauT 0.2  $sufargs ${arr_output_suffix[idx]}${addsuf}
         --qcdtype $qcdtype --conftypes ${arr_conftypes[idx]} --corr $corr --custom_ylims $ylims"
         ../_4_continuum_extr.py $args
 
