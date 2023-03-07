@@ -6,7 +6,7 @@ plot_quenched(){
 
     labels_and_models=(
 #        "EE_LO_piT_1" "${basepath}/SPF_LO_Nf0_0.472_piT_1_hmax.npy"
-        '$N_f=0, T=1.5T_c$' "dummy"
+        '$N_f=0,\ T=1.5\,T_c$' "dummy"
         '$\mu=\mathrm{max}(\mu_\mathrm{eff}, \omega)$' "${basepath}/SPF_LO_Nf0_0.472_eff_1_hmax.npy"
 #        "LO_2piT_1" "${basepath}/SPF_LO_Nf0_0.472_2piT_1_hmax.npy"
 #        "NLO_piT_1" "${basepath}/SPF_NLO_Nf0_0.472_piT_1_hmax.npy"
@@ -25,7 +25,7 @@ plot_quenched(){
 #        "BB_(N)LO_piT_piT" "${basepath}/SPF_LO_Nf0_0.472_piT_optBBpiT_hmax.npy"
 #        "NLO_2piT_opt" "${basepath}/SPF_NLO_Nf0_0.472_2piT_opt_hmax.npy"
         ' ' "dummy"
-        '$N_f=3, T=1.4T_c$' "dummy"
+        '\begin{center}$N_f=3,\ m_l=m_s/5,$ \\[-0.5ex] $T\approx 1.4\, T_c$\end{center}' "dummy"
         '$\mu=\mathrm{max}(\mu_\mathrm{eff}, \omega)$' "${basepath}/SPF_LO_Nf3_0.251_eff_1_hmax.npy"
         '$\mu=\mathrm{max}(\mu_\mathrm{eff}, \mu_\mathrm{opt})$' "${basepath}/SPF_NLO_Nf3_0.251_eff_opt_hmax.npy"
     )
@@ -42,13 +42,13 @@ plot_quenched(){
 
     ../plot_g2.py \
         --xlims 0.3 900 \
-        --ylims 0 5.5 \
+        --ylims 0 4.5 \
         --PhiUV_files "${models[@]}" \
         --labels "${labels[@]}" \
         --outputpath /work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/ \
         --suffix _EE_quenched_1.5Tc \
-        --leg_pos 1 1 \
-        --leg_loc "upper right" \
+        --leg_pos 0 0 \
+        --leg_loc "lower left" \
         --fmt
 }
 
@@ -84,17 +84,16 @@ plot_hisq(){
 
     ../plot_g2.py \
         --xlims 0.1 1000 \
-        --ylims 0 6 \
+        --ylims 0 4 \
         --T_in_GeV 0.251 --Nf 3 \
         --PhiUV_files "${models[@]}" \
         --labels "${labels[@]}" \
         --outputpath /work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/ \
         --suffix _EE_hisq_1.6Tc \
-        --leg_pos 1 0.5 \
-        --leg_loc "center right"
+        --leg_pos 0 0 \
+        --leg_loc "lower left"
 
 }
 
 plot_quenched
-#plot_hisq &
 wait

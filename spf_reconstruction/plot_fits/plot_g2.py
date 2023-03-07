@@ -38,6 +38,8 @@ def main():
 
     dummycounter=0
 
+    handlers = []
+
     for i, file in enumerate(args.PhiUV_files):
         if file != "dummy":
             data = numpy.load(file)
@@ -46,12 +48,18 @@ def main():
             factor = 1/xdata**3 / Cf *6 * numpy.pi
             # factor = 2 / xdata
             ydata *= factor
-            ax.errorbar(xdata, ydata, fmt=fmts[i], label=args.labels[i], color=colors[i-dummycounter], alpha=1, zorder=-i)
+            tmp = ax.errorbar(xdata, ydata, fmt=fmts[i], label=args.labels[i], color=colors[i-dummycounter], alpha=1, zorder=-i)
+            handlers.append(tmp)
         else:
-            ax.errorbar(1, 1, fmt='.', markersize=0, label=args.labels[i])
+            tmp = ax.errorbar(1, 1, fmt='.', markersize=0, label=args.labels[i])
+            handlers.append(tmp)
             dummycounter+=1
 
-    ax.legend(loc=args.leg_loc, bbox_to_anchor=args.leg_pos, handlelength=1.4, fontsize=8)#, title=r'$N_f, T/T_c, \mu$')  #
+    leg1 = ax.legend(handles=handlers[:4], loc=args.leg_loc, bbox_to_anchor=args.leg_pos, handlelength=1.4, fontsize=8)#, title=r'$N_f, T/T_c, \mu$')  #
+
+    leg2 = ax.legend(handles=handlers[5:], loc="upper right", bbox_to_anchor=(1,1), handlelength=1.4, fontsize=8)#, title=r'$N_f, T/T_c, \mu$')  #
+
+    ax.add_artist(leg1)
 
     # ax.axvline(x=numpy.pi)
     # ax.axvline(x=2*numpy.pi)
