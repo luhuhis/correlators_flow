@@ -132,7 +132,7 @@ def main():
                 ax.errorbar(x, y, xerr=[[errorsleft[i]*scale_error_factor], [errorsright[i]*scale_error_factor]],
                             markersize=2, color=args.colors[i], fmt='D', fillstyle='full')
                 if not args.hide_chisq:
-                    args.labels[i] += r', $'+lpd.format_float(chisqdof_arr[i], 1)+r'\pm'+lpd.format_float(chisqdof_arr_err[i], 1)+r'$'
+                    args.labels[i] = r'\parbox{3cm}{' + args.labels[i] + r' \hfill $' + lpd.format_float(chisqdof_arr[i], 1)+r'\pm'+lpd.format_float(chisqdof_arr_err[i], 1)+r'$\null}'
                 args.labels[i] = r'\begin{flushleft}'+args.labels[i]+r'\end{flushleft}'
                 thisleft = x-errorsleft[i] * scale_error_factor
                 if leftmost > numpy.min(thisleft):
@@ -148,17 +148,18 @@ def main():
     with open(args.outputpath_data + "/" + args.corr + "_kappa" + args.suffix + ".txt", 'w') as file:
         file.write('# kappa +- error \n')
         file.write("# $"+lpd.format_float(centralvalue, 1)+r' \pm '+str(lpd.float_ceil(error, 1))+"$\n")
+        file.write("# $[" + lpd.format_float(leftmost, 2) + r', ' + lpd.format_float(rightmost, 2) + "]$\n")
         numpy.savetxt(file, numpy.c_[centralvalue, error])
 
     if args.temperature_on_xaxis:
         ax.set_xlabel(r'T\mathrm{[MeV]}')
         ax.set_ylabel(r'\kappa \mathrm{[GeV}^3\mathrm{]}')
     else:
-        ax.yaxis.set_label_coords(1.03, 1)
+        ax.yaxis.set_label_coords(1.05, 0.99)
         chisqstr = ""
         if not args.hide_chisq:
-            chisqstr = r', $\chi^2/\mathrm{dof}$'
-        ax.set_ylabel(r'model'+chisqstr, horizontalalignment='left', verticalalignment='top')
+            chisqstr = r'$\chi^2/\mathrm{d.o.f.}$'
+        ax.set_ylabel(r'\parbox{3cm}{model \hfill '+chisqstr+r'\null}', horizontalalignment='left', verticalalignment='top')
         ax.set_yticks(args.pos)
         ax.yaxis.tick_right()
         ax.set_yticklabels(args.labels)

@@ -85,7 +85,7 @@ def main():
     if args.xticks != "auto":
         ax.set_xticks([float(i) for i in args.xticks])
 
-    ax.legend(title="model", handlelength=1, loc="lower left", bbox_to_anchor=(0.15, 0), ncols=2, **lpd.leg_err_size(1, 0.3))
+    ax.legend(title="model", handlelength=1, loc="lower left", bbox_to_anchor=(0, 0), ncols=2, **lpd.leg_err_size(1, 0.3))
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/"+args.corr+"_corrfit" + args.suffix + ".pdf"

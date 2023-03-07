@@ -85,13 +85,19 @@ def main():
                 yerr = [errorsleft[i]*factor, errorsright[i]*factor]
                 ax.fill_between(xdata[i][::10], y[::10]-yerr[0][::10], y[::10]+yerr[1][::10], facecolor=args.colors[i], alpha=0.1, zorder=-100-i)
 
-            fmt = '--' if i % 2 == 0 else ':'
+            fmt = '--' if i % 2 == 0 else '-'
+            zorder = -i
 
-            ax.errorbar(xdata[i], y, fmt=fmt, label=args.labels[i], color=args.colors[i], zorder=-i)
+            # custom fix for the quenched EE results
+            if i == 8:
+                fmt = ':'
+                zorder = -i+3
+
+            ax.errorbar(xdata[i], y, fmt=fmt, label=args.labels[i], color=args.colors[i], zorder=zorder)
             # ax.axvline(x=1, **lpd.verticallinestyle)
             # ax.axvline(x=omegaUV, **lpd.verticallinestyle)
 
-    ax.legend(loc=args.leg_loc, bbox_to_anchor=args.leg_pos, title="model", handlelength=1.5, fontsize=10)
+    ax.legend(loc=args.leg_loc, bbox_to_anchor=args.leg_pos, title="model", handlelength=1.15, fontsize=10)
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/"+args.corr+"_spf" + args.suffix + ".pdf"

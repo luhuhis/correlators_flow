@@ -49,8 +49,8 @@ set_labels_and_models(){
 
 if [ "${selector}" == "paper" ] ; then
     nosubscript="--no_subscript"
-    hidechisq="--hide_chisq"
-    figheight=5
+    hidechisq="" # --hide_chisq
+    figheight=7
 labels_and_models=(
     '$\text{max}_\text{NLO}$'                     "max_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
     '$\text{max}_\text{LO\hphantom{N}}$'          "max_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
@@ -76,8 +76,8 @@ else
     '$\text{plaw}_\text{NLO}$'                    "plaw_wIR1.0_wUV6.2832_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
     '$\text{plaw}_\text{LO\hphantom{N}}$'         "plaw_wIR1.0_wUV6.2832_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
 
-#    '$\text{trig1}_\text{NLO}$'                   "trig_NLO__beta_1_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-#    '$\text{trig1}_\text{LO\hphantom{N}}$'        "trig_LO__alpha_1_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
+    '$\text{trig1}_\text{NLO}$'                   "trig_NLO__beta_1_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
+    '$\text{trig1}_\text{LO\hphantom{N}}$'        "trig_LO__alpha_1_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
 
 #    '$\text{trig2}_\text{NLO}$'                 "trig_NLO__beta_2_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
 #    '$\text{trig2}_\text{LO\hphantom{N}}$'      "trig_LO__alpha_2_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
