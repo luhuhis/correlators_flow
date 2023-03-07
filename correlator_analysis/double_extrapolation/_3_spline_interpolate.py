@@ -230,9 +230,46 @@ def plot_relative_flow_ints(flowindex, args, relflow_range, orig_XX_samples, int
     return fig
 
 
+def plot_relative_flow_ints_combined(indices, args, relflow_range, orig_XX_samples, int_XX_samples, int_xdata):
+    _, _, nt, _ = lpd.parse_conftype(args.conftype)
+    orig_xdata = lpd.get_tauTs(nt)
+
+    ylabel = r'$\displaystyle \frac{G' + lpd.get_corr_subscript(args.corr) + r'}{G^\mathrm{norm}}$'
+    fig, ax, plots = lpd.create_figure(xlims=[0, 0.52], ylims=args.ylims, xlabel=r'$\tau T$', ylabel=ylabel, constrained_layout=True)
+
+    ax.set_xticks((0.0, 0.1, 0.2, 0.3, 0.4, 0.5))
+
+    color_counter = 0
+    colors = ["C0", "C2", "C1", "C3"]
+
+    handles = []
+    # handles.append(ax.errorbar(0, 0, label=r'$ \sqrt{8\tau_F}/\tau$', markersize=0, alpha=0, lw=0))
+
+    for flowindex in indices:
+        relflow = relflow_range[flowindex]
+        relflowstr = '{0:.2f}'.format(relflow)
+
+        orig_ydata = numpy.nanmedian(orig_XX_samples, axis=0)[flowindex]
+        orig_edata = lpd.dev_by_dist(orig_XX_samples, axis=0)[flowindex]
+
+        int_ydata = numpy.nanmedian(int_XX_samples, axis=0)[flowindex]
+        int_edata = lpd.dev_by_dist(int_XX_samples, axis=0)[flowindex]
+
+        # plot interpolations and underlying data points
+        handles.append(ax.errorbar(orig_xdata, orig_ydata, orig_edata, label=relflowstr, fmt='|', color=colors[color_counter], zorder=2))
+        color_counter += 1
+        ax.errorbar(int_xdata, int_ydata, lw=0.5, color=colors[color_counter], zorder=1)
+        handles.append(ax.fill_between(int_xdata, int_ydata-int_edata, int_ydata+int_edata, label=relflowstr, facecolor=colors[color_counter], edgecolor=colors[color_counter], zorder=0))
+        color_counter += 1
+
+    ax.legend(handles=handles, title=r'$ \sqrt{8\tau_F}/\tau$', loc="center left", bbox_to_anchor=(0, 0.5), **lpd.leg_err_size())
+    return fig
+
+
 def new_interpolation(args, merged_data_path, flowtimes, XX_samples):
     _, _, nt, nt_half = lpd.parse_conftype(args.conftype)
 
+    # TODO convert these to input arguments
     min_relflow = 0.2
     max_relflow = 0.33
     stepsize = 0.005
@@ -266,6 +303,10 @@ def new_interpolation(args, merged_data_path, flowtimes, XX_samples):
 
     save_figs(args, figs, suffix="interpolation_relflow")
 
+    fig_combined = plot_relative_flow_ints_combined([10, 20], args, relflow_range,
+                                      flow_int_XX_samples, plot_tauT_int_flow_int_XX_samples, int_xdata)
+
+    save_figs(args, [fig_combined,], suffix="interpolation_relflow_combined")
 
 def main():
 
