@@ -110,7 +110,7 @@ def plot_relative_flow(args, ax, plot_offset):
                 ydata = numpy.asarray(XX[:, i]) * nt ** 4 / G_latt_LO_flow
                 edata = numpy.asarray(XX_err[:, i]) * nt ** 4 / numpy.fabs(G_latt_LO_flow)
                 xdata = these_flowradii
-                min_index = numpy.fabs(these_flowradii-args.min_flowradius).argmin()
+                min_index = numpy.fabs(these_flowradii-args.min_flowradius).argmin()-1
                 y_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata[min_index:], ydata[min_index:], k=3, ext=2, check_finite=True))
                 e_int.append(scipy.interpolate.InterpolatedUnivariateSpline(xdata[min_index:], edata[min_index:], k=3, ext=2, check_finite=True))
 
@@ -148,7 +148,7 @@ def find_and_plot_and_save_relflow(args, ax, flowradiusBytauT, possible_tauTs, y
     xdata = numpy.asarray(relflow_xdata) * xscale
     ax.errorbar(xdata, relflow_ydata, relflow_edata, zorder=zorder, fmt=marker, color=color, fillstyle=fillstyle,
                 label=label, markeredgewidth=0.75, elinewidth=0.75, markersize=4)
-    # TODO add custom labels
+
     if not args.no_connection:
         ax.errorbar(xdata, relflow_ydata, zorder=-100 * zorder,  markersize=0, alpha=0.5, fmt='-', color=color)
 
