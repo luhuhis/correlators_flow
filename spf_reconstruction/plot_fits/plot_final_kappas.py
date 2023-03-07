@@ -50,7 +50,8 @@ def mean_and_err(low, high):
 
 
 def thiscolor(i):
-    return lpd.lighten_color(lpd.get_discrete_color(i), 0.75)
+    return lpd.get_discrete_color(i)
+    # return lpd.lighten_color(lpd.get_discrete_color(i), 0.75)
 
 
 def plot_EE_quenched_literature(args, ax, i):
@@ -59,26 +60,29 @@ def plot_EE_quenched_literature(args, ax, i):
     myfmt='.'
 
     #  2015, A. Francis, O. Kaczmarek, M. Laine, T. Neuhaus, and H. Ohno, Phys. Rev. D 92, 116003
-    ax.errorbar(1.44, 2.6, 0.8, color=thiscolor(i), fmt=myfmt, markersize=ms, label=r'Francis \textquotesingle 15 (ML)')
+    ax.errorbar(1.46, 2.6, 0.8, color=thiscolor(3-i), fmt=myfmt, markersize=ms, label=r'Francis \textquotesingle 15 (ML)')
     i += 1
 
     #  2020, Nora Brambilla, Viljami Leino, Peter Petreczky, and Antonio Vairo, Phys. Rev. D 102, 074503
-    ax.errorbar(1.1, *mean_and_err(1.91,5.40), markersize=ms, fmt=myfmt, color=thiscolor(i), label=r'TUMQCD \textquotesingle 20 (ML)')
-    ax.errorbar(1.47, *mean_and_err(1.31,3.64), markersize=ms, fmt=myfmt, color=thiscolor(i))
-    ax.errorbar(3,   *mean_and_err(0.63,2.20), markersize=ms, fmt=myfmt, color=thiscolor(i), zorder=-10)
+    color = thiscolor(3-i)
+    ax.errorbar(1.1, *mean_and_err(1.91,5.40), markersize=ms, fmt=myfmt, color=color, label=r'TUMQCD \textquotesingle 20 (ML)')
+    ax.errorbar(1.48, *mean_and_err(1.31,3.64), markersize=ms, fmt=myfmt, color=color)
+    ax.errorbar(3,   *mean_and_err(0.63,2.20), markersize=ms, fmt=myfmt, color=color, zorder=-10)
     i += 1
 
     #  2022, Nora Brambilla, Viljami Leino, Julian Mayer-Steudte, Peter Petreczky, 	arXiv:2206.02861
-    ax.errorbar(1.5, *mean_and_err(1.70,3.12), markersize=ms, fmt=myfmt, color=thiscolor(i), label=r'TUMQCD \textquotesingle 22 (flow)')
+    color = thiscolor(3-i)
+    ax.errorbar(1.5, *mean_and_err(1.70,3.12), markersize=ms, fmt=myfmt, color=color, label=r'TUMQCD \textquotesingle 22 (flow)')
     i += 1
 
     # 2022, Debasish Banerjee, Rajiv Gavai, Saumen Datta, Pushan Majumdar, arXiv:2206.15471v1
-    ax.errorbar(1.2, *mean_and_err(2.1,3.5), markersize=ms, fmt=myfmt, color=thiscolor(i), label=r'Banerjee \textquotesingle 22 (ML)')
-    ax.errorbar(1.53, *mean_and_err(1.5,2.8), markersize=ms, fmt=myfmt, color=thiscolor(i))
-    ax.errorbar(2.0, *mean_and_err(1.0,2.3), markersize=ms, fmt=myfmt, color=thiscolor(i))
-    ax.errorbar(2.5, *mean_and_err(0.9,2.1), markersize=ms, fmt=myfmt, color=thiscolor(i))
-    ax.errorbar(3.0, *mean_and_err(0.8,1.8), markersize=ms, fmt=myfmt, color=thiscolor(i))
-    ax.errorbar(3.5, *mean_and_err(0.75, 1.5), markersize=ms, fmt=myfmt, color=thiscolor(i))
+    color = thiscolor(3-i)
+    ax.errorbar(1.2, *mean_and_err(2.1,3.5), markersize=ms, fmt=myfmt, color=color, label=r'Banerjee \textquotesingle 22 (ML)')
+    ax.errorbar(1.52, *mean_and_err(1.5,2.8), markersize=ms, fmt=myfmt, color=color)
+    ax.errorbar(2.0, *mean_and_err(1.0,2.3), markersize=ms, fmt=myfmt, color=color)
+    ax.errorbar(2.5, *mean_and_err(0.9,2.1), markersize=ms, fmt=myfmt, color=color)
+    ax.errorbar(3.0, *mean_and_err(0.8,1.8), markersize=ms, fmt=myfmt, color=color)
+    ax.errorbar(3.5, *mean_and_err(0.75, 1.5), markersize=ms, fmt=myfmt, color=color)
     i += 1
 
     return i

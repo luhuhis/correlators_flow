@@ -63,7 +63,7 @@ plot_quenched_EE(){
         --outputpath "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/EE/" \
         --suffix "EE_quenched_literature" \
         --temps_in_GeV \
-        0.493 \
+        0.485 \
         --Tc_in_GeV 0.315 \
         --xlims 0.9 3.1 \
         --ylims 0 7.5 \
