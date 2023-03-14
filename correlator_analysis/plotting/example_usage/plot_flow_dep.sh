@@ -17,8 +17,8 @@ for conftype in "${conftypes_quenched[@]}" ; do
          --conftype $conftype \
          --basepath "/work/home/altenkort/work/correlators_flow/data/merged/" \
          --basepath_plot "/work/home/altenkort/work/correlators_flow/plots/" \
-         --xlims -0.003 0.27 \
-         --ylims 0 4.4 \
+         --xlims 0 0.27 \
+         --ylims 1 4.4 \
          --ticklocations 0.1 0.25 0.33 0.4 0.45 0.5 \
          --leg_pos 1 0.5 --leg_ncol 1 --leg_lw 0 --leg_pad 0.5 \
          --leg_loc "center left" \
@@ -30,8 +30,8 @@ for conftype in "${conftypes_quenched[@]}" ; do
          --conftype $conftype \
          --basepath "/work/home/altenkort/work/correlators_flow/data/merged/" \
          --basepath_plot "/work/home/altenkort/work/correlators_flow/plots/" \
-         --xlims -0.001 0.11 \
-         --ylims 0 4.4 \
+         --xlims 0 0.11 \
+         --ylims 1 4.4 \
          --ticklocations 0.1 0.2 0.25 0.3 \
          --leg_pos 1 0.5 --leg_ncol 1 --leg_lw 0 --leg_pad 0.5 \
          --leg_loc "center left" \

@@ -38,7 +38,7 @@ def load_data(args):
     flowtimesBy_a2 = numpy.loadtxt(inputfolder+"flowtimes_"+args.conftype+".dat")
     flowtimesT2 = flowtimesBy_a2 / nt**2
     XX = numpy.loadtxt(inputfolder + "/" + args.corr + "_" + args.conftype + ".dat")
-    XX = apply_tree_level_imp(XX, nt, flowtimesBy_a2, args.corr, flowaction, gaugeaction)  #[0 for _ in range(len(flowtimesBy_a2))]
+    XX = apply_tree_level_imp(XX, nt, [0 for _ in range(len(flowtimesBy_a2))], args.corr, flowaction, gaugeaction)  # flowtimesBy_a2
     XX_err = numpy.loadtxt(inputfolder + "/" + args.corr + "_err_" + args.conftype + ".dat")
     XX_err = numpy.fabs(apply_tree_level_imp(XX_err, nt, [0 for _ in range(len(flowtimesBy_a2))], args.corr, flowaction, gaugeaction))
 
@@ -51,15 +51,20 @@ def plot(args, tauT, flowtimesT2, XX, XX_err):
     XX = numpy.swapaxes(XX, 0, 1)
     XX_err = numpy.swapaxes(XX_err, 0, 1)
 
-    fig, ax, plots = lpd.create_figure(xlims=args.xlims, ylims=args.ylims, xlabel=r'$8\tau_\mathrm{F} / \tau^2$', ylabel=r'$\displaystyle \frac{G'+lpd.get_corr_subscript(args.corr)+r'}{G^{\mathrm{norm}}}$')
+    fig, ax, _ = lpd.create_figure(xlims=args.xlims, ylims=args.ylims,
+                                   xlabel=r'$8\tau_\mathrm{F} / \tau^2$',
+                                   ylabel=r'$\displaystyle \frac{G'+lpd.get_corr_subscript(args.corr)+r'}{G^{\mathrm{norm}}}$',
+                                   ylabelbox=None)
+
+    plots = []
 
     ax.yaxis.set_label_coords(0.07, 0.97)
     labels = []
     for i in range(len(XX)):
         color = lpd.get_color(range(len(XX)), i, 0, len(XX)-1)
-        handle1 = ax.errorbar(8*flowtimesT2/tauT[i]**2, XX[i], color=color, fmt='o', fillstyle='full', markersize=0.5, zorder=-i)
+        handle1 = ax.errorbar(8*flowtimesT2/tauT[i]**2, XX[i], color=color, fmt='-', fillstyle='full', markersize=0.5, lw=0.75, zorder=-i)  # fmt = 'o'
         # ax.errorbar(8 * flowtimesT2 / tauT[i] ** 2, XX[i], color=color, fmt='-', markersize=0, lw=0.25, zorder=-i)
-        handle2 = ax.fill_between(8*flowtimesT2/tauT[i]**2, XX[i]-XX_err[i], XX[i]+XX_err[i], facecolor=color, alpha=0.5, zorder=-100-i)
+        handle2 = ax.fill_between(8*flowtimesT2/tauT[i]**2, XX[i]-XX_err[i], XX[i]+XX_err[i], facecolor=color, alpha=0.5, zorder=-i)
         plots.append((handle1, handle2))
         labels.append(lpd.format_float(tauT[i]))
 
@@ -71,7 +76,7 @@ def plot(args, tauT, flowtimesT2, XX, XX_err):
     ax2.set_xticklabels(["%.1f" % z if z == 0 else "%.2f" % z for z in numpy.sqrt(new_tick_locations)])
     ax2.set_xlabel(r'$' + r'{\sqrt{8\tau_\mathrm{F}}}/{\tau}$', horizontalalignment='right', verticalalignment='top', zorder=999999,
                    bbox=lpd.labelboxstyle)
-    ax2.xaxis.set_label_coords(0.99, 0.97)
+    ax2.xaxis.set_label_coords(0.97, 0.97)
     ax2.tick_params(direction='in', pad=0, width=0.5)
 
     # ax.legend(plots, labels)
@@ -80,7 +85,7 @@ def plot(args, tauT, flowtimesT2, XX, XX_err):
                     labelspacing=0.1, bbox_to_anchor=args.leg_pos, **lpd.leg_err_size(1, 0.3), framealpha=0.9, edgecolor="k", ncol=args.leg_ncol, fontsize=10)
     leg.get_frame().set_linewidth(args.leg_lw)
 
-    file = args.outputfolder+"/"+args.corr+"_"+args.conftype+"_flow_dep"+args.suffix+"_imp.pdf"
+    file = args.outputfolder+"/"+args.corr+"_"+args.conftype+"_flow_dep"+args.suffix+".pdf"
     print("saving", file)
     fig.savefig(file)
 
