@@ -76,11 +76,11 @@ def flowed_correlator_matrix(gauge_action, flow_action, p1, p2, p3, p4, tau1, ta
     elif flow_action == 'LW' or flow_action == 'Lüscher-Weisz' or flow_action == 'Luscher-Weisz' or flow_action == 'Luescher-Weisz':  # if Lüscher-Weisz flow
         flow_kernel = (5 / 3) * plaquette_kernel - (1 / 12) * rectangle_kernel
     elif flow_action == 'Zeuthen':
-        Zpk = np.array([[psquared * delta(i, j) * ps[i] ** 2 - ps[i] ** 3 * ps[j] for i in range(4)]
+        Zpk = np.array([[psquared * delta(i, j) * ps[j] ** 2 - ps[j] ** 3 * ps[i] for i in range(4)]
                         for j in range(4)])  # Zeuthen extra term for plaquette
         Zeuthen_pk = plaquette_kernel - (1 / 12) * Zpk  # full Zeuthen flow expression for plaquette
         Zrk = 4 * np.array(
-            [[(cs[i] ** 2 * psquared + np.sum(ps ** 2 * cs ** 2)) * ps[i] ** 2 * delta(i, j) - (cs[i] ** 2 + cs[j] ** 2) * ps[i] ** 3 * ps[j]
+            [[(cs[i] ** 2 * psquared + np.sum(ps ** 2 * cs ** 2)) * ps[j] ** 2 * delta(i, j) - (cs[i] ** 2 + cs[j] ** 2) * ps[j] ** 3 * ps[i]
               for i in range(4)]
              for j in range(4)])  # Zeuthen extra term for rectangle
         Zeuthen_rk = rectangle_kernel - (1 / 12) * Zrk  # Zeuthen flowed rectangle kernel
