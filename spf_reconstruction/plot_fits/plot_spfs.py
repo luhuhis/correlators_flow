@@ -48,8 +48,9 @@ def parse_args():
     parser.add_argument('--outputpath', type=str)
     parser.add_argument('--suffix', type=str)
     parser.add_argument('--corr', type=str, choices=["EE", "BB"])
-    parser.add_argument('--leg_pos', nargs=2, default=(0.45, 1))
+    parser.add_argument('--leg_pos', nargs=2, type=float, default=(0.45, 1))
     parser.add_argument('--leg_loc', default="upper center")
+    parser.add_argument('--leg_ncol', default=1, type=int)
     parser.add_argument('--plot_spf_err', action="store_true")
 
     args = parser.parse_args()
@@ -97,7 +98,7 @@ def main():
             # ax.axvline(x=1, **lpd.verticallinestyle)
             # ax.axvline(x=omegaUV, **lpd.verticallinestyle)
 
-    ax.legend(loc=args.leg_loc, bbox_to_anchor=args.leg_pos, title="model", handlelength=1.15, fontsize=10)
+    ax.legend(loc=args.leg_loc, bbox_to_anchor=args.leg_pos, title="model", handlelength=1.15, fontsize=10, ncol=args.leg_ncol, columnspacing=1, framealpha=0)
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/"+args.corr+"_spf" + args.suffix + ".pdf"
