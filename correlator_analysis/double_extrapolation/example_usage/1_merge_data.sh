@@ -2,16 +2,21 @@
 
 qcdtype=$1
 corr=$2
+input_basepath=$3
+output_basepath=$4
 if [ -z "$qcdtype" ] || [ -z "$corr" ] ; then
-    echo "Usage: $0 qcdtype corr"
+    echo "Usage: $0 qcdtype corr input_basepath output_basepath"
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
     echo "choices for corr: EE BB EE_clover BB_clover"
+    echo "Usage example: $0 hisq_ms5_zeuthenFlow EE /work/data/altenkort/gradientFlow ../../../../data/merged/"
     exit
 fi
 
 
 if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     arr_conftypes=("s064t16_b0687361" "s080t20_b0703500" "s096t24_b0719200" "s120t30_b0739400" "s144t36_b0754400")
+
+    # here we need to adjust the file names via --acc_sts due to historical reasons
     if [ "$corr" == "EE" ] ; then
         acc_sts="--acc_sts acc0.000010_sts0.000010"
         add_args="--legacy --basepath ../../../../data/raw/"
@@ -33,7 +38,7 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
         "220"
         "195"
         )
-    add_args="--basepath /work/data/altenkort/gradientFlow"
+    add_args="--basepath $input_basepath"
     flowradiusbasepath="/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"
     flowradii_refs=()
     for temp in "${temps[@]}"; do
@@ -46,11 +51,16 @@ for idx in "${!arr_conftypes[@]}" ; do
     conftype="${arr_conftypes[idx]}"
 
     if [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
+
+        # for historical reasons the file names of the Nt=24 lattice are different
         if [ "$conftype" == "s096t24_b0824900_m002022_m01011" ] ; then
             acc_sts=""
         else
             acc_sts="--acc_sts sts0.150000"
         fi
+
+        # throw away the first 2000 traj for Nt=36 due to thermalization.
+        # we do that here instead of in the next step because for some reason many of the files below 2000 are broken...
         if [ "$conftype" == "s096t36_b0824900_m002022_m01011" ] ; then
             even_more_args="--min_conf_nr 2000"
         else
@@ -60,7 +70,7 @@ for idx in "${!arr_conftypes[@]}" ; do
 
     ../_1_merge_data.py \
     ${flowradii_refs[idx/3]} \
-    --output_basepath ../../../../data/merged/ \
+    --output_basepath $output_basepath \
     $even_more_args $add_args \
     --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype
 done
