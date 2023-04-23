@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#SBATCH --partition=cpu
+#SBATCH --partition=cpu_compute
 #SBATCH --array=0-299
 #SBATCH --qos=regular
 #SBATCH --time=10:00:00
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=128
 #SBATCH --ntasks=1
 
 export OMP_NUM_THREADS=1
@@ -25,7 +25,7 @@ for flow_action in "${flow_actions[@]}"  ; do
     done
 done
 
-srun -n1 -u ~/work/correlators_flow/scripts/process_data/calc_pert_latt_corr_flow.py ${param_list[$((SLURM_ARRAY_TASK_ID))]} \
-    --nproc 4 --printprogress \
+srun -n1 -u /home/altenkort/work/correlators_flow/scripts/perturbative_corr/calc_pert_latt_corr_flow.py ${param_list[$((SLURM_ARRAY_TASK_ID))]} \
+    --nproc 128 --printprogress \
     --flowtimes_file ~/work/correlators_flow/data/merged/pert_LO/flowtimes.dat \
     --outputpath ~/work/correlators_flow/data/merged/pert_LO/
