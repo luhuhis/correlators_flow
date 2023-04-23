@@ -82,7 +82,7 @@ def get_scale_params(scale):
 def get_ylabel():
     # return r'$ g^{2 \text{(flow)}} = \frac{\pi^2}{8} \tau_F^2 \langle E \rangle / \frac{3}{128}$'
     # return r'$ \scriptstyle g^{2 \text{(flow)}} = \frac{\pi^2\tau_F^2 \langle E\rangle}{8}  / \left( \frac{3}{128} + \scriptstyle \underset{n=1,2}{\sum} \scriptscriptstyle  c_{2n} \frac{a^{2n}}{\tau_\mathrm{F}^{n}} \right)$'
-    return r'$ \displaystyle g^{2 \text{(flow)}}_\mathrm{imp}$'
+    return r'$ \displaystyle g^{2}_\mathrm{imp}$'
 
 
 def convert_taufT2_to_sqrt8tauFByr0(taufT2, TbyTc=1.5, r0Tc=0.7457):
@@ -103,7 +103,7 @@ def plot1(args, tauFbyScale_arr, g2_arr, g2_err_arr, cont, flowstart, flowend, p
     max_idx = numpy.abs(numpy.sqrt(8*tauFbyScale_arr[0])-convert_sqrt8taufT_to_sqrt8tauFByr0(0.5*0.3)).argmin()+1
 
     # ax2.errorbar(numpy.sqrt(8*tauFbyScale_arr[0][flowstart:flowend]), cont[:, 0], cont[:, 1], fmt='-', markersize=0, label='cont', zorder=-1)
-    ax2.errorbar(numpy.sqrt(8 * tauFbyScale_arr[0][min_idx:max_idx]), cont[min_idx:max_idx, 0], fmt='-', markersize=0, label='cont', zorder=-1)
+    ax2.errorbar(numpy.sqrt(8 * tauFbyScale_arr[0][0:max_idx]), cont[0:max_idx, 0], fmt='-', markersize=0, label='cont.', zorder=-1)
     # ax2.fill_between(numpy.sqrt(8 * tauFbyScale_arr[0][flowstart:flowend]), cont[:, 0]-cont[:, 1], cont[:, 0]+cont[:, 1], label='cont', zorder=-1)
     for i, Nt in enumerate(args.Nts):
         # ax2.fill_between(numpy.sqrt(8 * tauFbyScale_arr[i]), g2_arr[i]-g2_err_arr[i], g2_arr[i]+g2_err_arr[i], label=str(Nt), zorder=-i - 10)
@@ -111,7 +111,7 @@ def plot1(args, tauFbyScale_arr, g2_arr, g2_err_arr, cont, flowstart, flowend, p
         ax2.errorbar(numpy.sqrt(8 * tauFbyScale_arr[i]), g2_arr[i], fmt='-', markersize=0, label=str(Nt), zorder=-i - 10)
     ax2.legend(title=r'$N_\tau$', **lpd.leg_err_size(), loc="center right", bbox_to_anchor=(1, 0.5), handlelength=1)
     # ax2.axvline(x=convert_taufT2_to_sqrt8tauFByr0(0.002719), **lpd.verticallinestyle)
-    ax2.axvline(convert_taufT2_to_sqrt8tauFByr0(0.002719), **lpd.verticallinestyle)
+    ax2.axvline(convert_taufT2_to_sqrt8tauFByr0(8*0.002719), **lpd.verticallinestyle)
     # ax2.errorbar([convert_sqrt8taufT_to_sqrt8tauFByr0(0.0625), convert_sqrt8taufT_to_sqrt8tauFByr0(0.0625)], [0, 3], fmt='--', color='grey', zorder=-1000)
     ax2.fill_between([convert_sqrt8taufT_to_sqrt8tauFByr0(0.25*0.25), convert_sqrt8taufT_to_sqrt8tauFByr0(0.5*0.3)],
                      [-1, -1], [4, 4], facecolor='k', alpha=0.15, zorder=-1000)
