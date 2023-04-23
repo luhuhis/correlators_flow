@@ -6,12 +6,12 @@
 #./perturbative_corr/plot_QED_LPT.py --inputfolder ../data/merged/ --outputfolder ../plots/
 #./plotting/0_plot_pert_correlators.py --Ntau 24 --inputfolder "../data/merged/quenched_pertLO_wilsonFlow/EE/"
 
-#for tau in 1 2 3 4 5 6 7 8 9 10 ; do
-#    ./perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ../data/merged/pert_LO/flowtimes.dat --outputpath ../plots/pertLO/ --inputpath ../data/merged/pert_LO/ --tau $tau
-#done
+for tau in 1 2 3 4 5 6 7 8 9 10 ; do
+    ./perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ../data/merged/pert_LO/flowtimes.dat --outputpath ../plots/pertLO/ --inputpath ../data/merged/pert_LO/ --tau $tau
+done
 
-# TODO change input phiUV to npy file
-#./plotting/plot_integrand.py --outputpath ../plots/ --PathPhiUV ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/max_LO_T0.472_min2piT_w1_500_0.0_exp0_quenched_cont_f0/phiUV.dat
+#./spf_reconstruction/plotting/plot_integrand.py --outputpath ../plots/ --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor 1
+#--PathPhiUV ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/max_LO_T0.472_min2piT_w1_500_0.0_exp0_quenched_cont_f0/phiUV.dat
 
 #./correlator_analysis/plotting/plot_EEvsBB.py
 #./process_data/covariance.py --qcdtype quenched_1.50Tc_zeuthenFlow --conftype s144t36_b0754400 --corr EE --basepath ../data/merged/ --outputfolder ../plots/quenched_1.50Tc_zeuthenFlow/EE/
@@ -43,7 +43,7 @@
 #./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow BB
 #./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE
 #
-./correlator_analysis/plotting/6_plot_finalcorr.py --outputfolder ../plots/quenched_1.50Tc_zeuthenFlow/EE/ --input_flow ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.txt --input_multilvl ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/multi-level_2015/EE_2015_new.txt
+#./correlator_analysis/plotting/6_plot_finalcorr.py --outputfolder ../plots/quenched_1.50Tc_zeuthenFlow/EE/ --input_flow ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.txt --input_multilvl ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/multi-level_2015/EE_2015_new.txt
 #
 #./correlator_analysis/plotting/example_usage/plot_flow_dep.sh
 #
