@@ -1,6 +1,41 @@
 #!/usr/bin/env bash
 
+plot_hisq_thesis(){
 
+        basepath="/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"
+
+        ../plot_final_kappas.py \
+            --input_kappa_files \
+            /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_kappa_quenched_1.5Tc.txt \
+            ${basepath}/T195/EE_kappa_T195${suffix}.txt \
+            ${basepath}/T220/EE_kappa_T220${suffix}.txt \
+            ${basepath}/T251/EE_kappa_T251${suffix}.txt \
+            ${basepath}/T293/EE_kappa_T293${suffix}.txt \
+            --labels \
+            "\textbf{this work}* (flow)" '\textbf{this work} (flow)' "" "" "" "" \
+            --fillstyles \
+            none none none none none \
+            --fmts \
+            "|" "|" "|" "|" "|" \
+            --zorders \
+            10 1 1 1 1 \
+            --colors \
+            k m m m m \
+            --markersize 0 \
+            --outputpath /work/home/altenkort/work/correlators_flow/plots/hisq_ms5_zeuthenFlow/EE/ \
+            --suffix "hisq${suffix}_thesis" \
+            --temps_in_GeV \
+            0.270 0.195 0.220 0.251 0.293 \
+            --Tc_in_GeV 0.180 \
+            --leg_ncol 1 \
+            --xlims 1 3.1 \
+            --ylims 0 16.5 \
+            --corr EE \
+            --plot_EE_quenched_lit --add_leg_titles --xlabelpos 0.93 0.01 \
+            --leg_fontsize 9 \
+            $addargs
+
+}
 
 plot_hisq(){
 
@@ -26,7 +61,7 @@ plot_hisq(){
             ${basepath}/s096t24_b0824900_m002022_m01011/EE_kappa_T293_finiteflow_paper.txt \
             ${basepath}/s096t20_b0824900_m002022_m01011/EE_kappa_T352_finiteflow_paper.txt \
             --labels \
-            '$ a\rightarrow 0, \tau_\mathrm{F} \rightarrow 0$' "" "" "" '\begin{flushleft}$ a^{-1}=7.06\,\mathrm{GeV}$, \newline $\sqrt{8\tau_\mathrm{F}}/\tau=0.3$ \end{flushleft}' "" "" "" "" \
+            '$ a\rightarrow 0, \tau_\mathrm{F} \rightarrow 0$' "" "" "" '\begin{flushleft}$ a^{-1}=7.036\,\mathrm{GeV}$, \newline $\sqrt{8\tau_\mathrm{F}}/\tau=0.3$ \end{flushleft}' "" "" "" "" \
             --fillstyles \
             none none none none full full full full full \
             --fmts \
@@ -59,13 +94,13 @@ plot_quenched_EE(){
         --input_kappa_files \
         ${basepath}/EE_kappa_quenched_1.5Tc.txt \
         --labels \
-        '\textbf{this work} (flow)' \
+        '\textbf{this work}* (flow)' \
         --outputpath "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/EE/" \
         --suffix "EE_quenched_literature" \
         --temps_in_GeV \
-        0.485 \
+        0.4725 \
         --Tc_in_GeV 0.315 \
-        --xlims 0.9 3.1 \
+        --xlims 1 3.1 \
         --ylims 0 7.5 \
         --plot_EE_quenched_lit --corr EE
 
@@ -85,14 +120,15 @@ plot_quenched_BB(){
         --temps_in_GeV \
         0.482 \
         --Tc_in_GeV 0.315 \
-        --xlims 0.9 3.1 \
+        --xlims 1 3.1 \
         --ylims 0 4.5 \
         --plot_BB_quenched_lit --corr BB
 
 }
 
 plot_hisq &
-plot_quenched_EE &
-plot_quenched_BB &
+#plot_hisq_thesis &
+#plot_quenched_EE &
+#plot_quenched_BB &
 
 wait

@@ -2,6 +2,7 @@
 import lib_process_data as lpd
 import numpy
 import argparse
+from matplotlib.ticker import AutoMinorLocator
 
 
 def parse_args():
@@ -26,6 +27,10 @@ def parse_args():
     parser.add_argument('--plot_BB_quenched_lit', action="store_true")
     parser.add_argument('--plot_analytical_results', action="store_true")
     parser.add_argument('--no_subscript', action="store_true")
+    parser.add_argument('--leg_fontsize', default=11, type=int)
+    parser.add_argument('--add_leg_titles', action="store_true")
+    parser.add_argument('--xlabelpos', nargs=2, type=float)
+    parser.add_argument('--Tcstar', action="store_true")
     args = parser.parse_args()
     return args
 
@@ -56,6 +61,9 @@ def thiscolor(i):
 
 def plot_EE_quenched_literature(args, ax, i):
 
+    if args.add_leg_titles:
+        ax.errorbar(0, 0, fmt='.', markersize=0, label=r'Quenched QCD')
+
     ms=0
     myfmt='.'
 
@@ -72,13 +80,13 @@ def plot_EE_quenched_literature(args, ax, i):
 
     #  2022, Nora Brambilla, Viljami Leino, Julian Mayer-Steudte, Peter Petreczky, 	arXiv:2206.02861
     color = thiscolor(3-i)
-    ax.errorbar(1.5, *mean_and_err(1.70,3.12), markersize=ms, fmt=myfmt, color=color, label=r'TUMQCD \textquotesingle 22 (flow)')
+    ax.errorbar(1.52, *mean_and_err(1.70,3.12), markersize=ms, fmt=myfmt, color=color, label=r'TUMQCD \textquotesingle 22 (flow)')
     i += 1
 
     # 2022, Debasish Banerjee, Rajiv Gavai, Saumen Datta, Pushan Majumdar, arXiv:2206.15471v1
     color = thiscolor(3-i)
     ax.errorbar(1.2, *mean_and_err(2.1,3.5), markersize=ms, fmt=myfmt, color=color, label=r'Banerjee \textquotesingle 22 (ML)')
-    ax.errorbar(1.52, *mean_and_err(1.5,2.8), markersize=ms, fmt=myfmt, color=color)
+    ax.errorbar(1.54, *mean_and_err(1.5,2.8), markersize=ms, fmt=myfmt, color=color)
     ax.errorbar(2.0, *mean_and_err(1.0,2.3), markersize=ms, fmt=myfmt, color=color)
     ax.errorbar(2.5, *mean_and_err(0.9,2.1), markersize=ms, fmt=myfmt, color=color)
     ax.errorbar(3.0, *mean_and_err(0.8,1.8), markersize=ms, fmt=myfmt, color=color)
@@ -114,7 +122,12 @@ def plot_analytical_results(args, ax):
 
 
 def plot_data(args, ax, data, offset, temps):
+
     for i, [kappa, kappa_err] in enumerate(data):
+        if args.add_leg_titles and i == 1:
+            ax.errorbar(0, 0, fmt='.', markersize=0, label=r' ')
+            ax.errorbar(0, 0, fmt='.', markersize=0, label=r'2+1-flavor QCD')
+
         if i == 0:
             color = 'k'
         elif args.plot_EE_quenched_lit or args.plot_BB_quenched_lit:
@@ -138,7 +151,16 @@ def do_plot(args, data, temps):
     else:
         corr = args.corr
 
-    fig, ax, plots = lpd.create_figure(xlims=args.xlims, ylims=args.ylims, xlabel=r'$T/T_c$', ylabel=r'$\displaystyle \frac{\kappa'+lpd.get_corr_subscript(corr)+r'}{T^3}$')
+    xlabel =r'$T/T_c$'
+    if args.Tcstar:
+        xlabel = r'$T/T_c^*$'
+
+    fig, ax, axtwiny = lpd.create_figure(xlims=args.xlims, ylims=args.ylims,
+                                       xlabel=xlabel, ylabel=r'$\displaystyle \frac{\kappa'+lpd.get_corr_subscript(corr)+r'}{T^3}$')
+
+    ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+    axtwiny.yaxis.set_minor_locator(AutoMinorLocator(2))
+    ax.xaxis.set_minor_locator(AutoMinorLocator(2))
 
     offset = 0
     if args.plot_EE_quenched_lit:
@@ -153,9 +175,25 @@ def do_plot(args, data, temps):
         plot_analytical_results(args, ax)
 
     if not args.leg_hide:
-        leg = ax.legend(**lpd.leg_err_size(1, 0.5), ncol=args.leg_ncol, columnspacing=1, labelspacing=0.5)
+        if args.plot_EE_quenched_lit:
+
+            # Reposition my own data point
+            leg = ax.legend()
+            handles, labels = ax.get_legend_handles_labels()
+            leg.remove()
+            offset = 0
+            if not args.add_leg_titles:
+                offset = -1
+            handles.insert(3+offset, handles.pop(5+offset))
+            labels.insert(3+offset, labels.pop(5+offset))
+            ax.legend(handles, labels, **lpd.leg_err_size(1, 0.5), ncol=args.leg_ncol, columnspacing=1, labelspacing=0.5, fontsize=args.leg_fontsize)
+        else:
+            leg = ax.legend(**lpd.leg_err_size(1, 0.5), ncol=args.leg_ncol, columnspacing=1, labelspacing=0.5, fontsize=args.leg_fontsize)
         for t in leg.texts:
             t.set_multialignment('left')
+
+    if args.xlabelpos is not None:
+        ax.xaxis.set_label_coords(*args.xlabelpos)
 
     filename = args.outputpath + "/kappa_"+args.suffix+".pdf"
     fig.savefig(filename)
