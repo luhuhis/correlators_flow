@@ -2,6 +2,7 @@
 import lib_process_data as lpd
 import numpy
 import argparse
+from matplotlib.ticker import AutoMinorLocator
 
 
 def load_data(args):
@@ -95,7 +96,7 @@ def main():
 
     nfiles, xdata, ydata, errorsleft, errorsright, chisqdof_arr, chisqdof_arr_err, kappa_bounds = load_data(args)
     labelboxstyle = dict(boxstyle="Round", fc="None", ec="None", alpha=0, pad=0.1, zorder=99)
-    fig, ax, plots = lpd.create_figure(figsize=args.figsize, xlims=args.xlims, ylims=args.ylims, ylabelbox=labelboxstyle, xlabelbox=labelboxstyle, ytwinticks=False)
+    fig, ax, plots = lpd.create_figure(figsize=args.figsize, xlims=args.xlims, ylims=args.ylims, ylabelbox=labelboxstyle, xlabelbox=labelboxstyle, ytwinticks=False, minorticks=False)
 
     if args.colors is None:
         args.colors = [lpd.get_discrete_color(int(i/2)) for i in range(nfiles)]
@@ -148,7 +149,7 @@ def main():
     with open(args.outputpath_data + "/" + args.corr + "_kappa" + args.suffix + ".txt", 'w') as file:
         file.write('# kappa +- error \n')
         file.write("# $"+lpd.format_float(centralvalue, 1)+r' \pm '+str(lpd.float_ceil(error, 1))+"$\n")
-        file.write("# $[" + lpd.format_float(leftmost, 2) + r', ' + lpd.format_float(rightmost, 2) + "]$\n")
+        file.write("# $[" + lpd.format_float(leftmost, 3) + r', ' + lpd.format_float(rightmost, 3) + "]$\n")
         numpy.savetxt(file, numpy.c_[centralvalue, error])
 
     if args.temperature_on_xaxis:
@@ -170,6 +171,8 @@ def main():
         if args.xticks != "auto":
             ax.set_xticks([float(i) for i in args.xticks])
             axtwinx.set_xticks([float(i) for i in args.xticks])
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+        axtwinx.xaxis.set_minor_locator(AutoMinorLocator(2))
         ax.yaxis.label.set_size(10)
         ax.tick_params(axis='y', which='major', labelsize=10)
 
