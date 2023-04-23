@@ -4,7 +4,7 @@ minscale="eff"
 
 plot_kappa() {
         ../plot_kappa.py \
-    --xlims -0.5 16.5 \
+    --xlims 0 16.5 \
     --xticks 0 5 10 15 \
     --model_ids "${models[@]}" \
     --labels "${labels[@]}" \
@@ -39,9 +39,13 @@ plot_spfs(){
     --outputpath "${outputpath}" \
     --suffix "${suffix}" \
     --corr EE \
-    --ylims 1 1500 \
-    --xlims 0.1 150 \
-    --colors C0 C1 C2 C3 C4 C5 C6 C7 C8 C9
+    --ylims 1 200 \
+    --colors C0 C1 C2 C3 C4 C5 C6 C7 C8 C9 \
+    $leg_pos $leg_ncol
+
+
+    # --xlims 0.1 150 \
+
 }
 
 
@@ -61,7 +65,7 @@ labels_and_models=(
 )
 
 else
-    figheight=7
+    figheight=5
     nosubscript=""
     hidechisq=""
     labels_and_models=(
@@ -76,8 +80,8 @@ else
     '$\text{plaw}_\text{NLO}$'                    "plaw_wIR1.0_wUV6.2832_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
     '$\text{plaw}_\text{LO\hphantom{N}}$'         "plaw_wIR1.0_wUV6.2832_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
 
-    '$\text{trig1}_\text{NLO}$'                   "trig_NLO__beta_1_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{trig1}_\text{LO\hphantom{N}}$'        "trig_LO__alpha_1_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
+#    '$\text{trig1}_\text{NLO}$'                   "trig_NLO__beta_1_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
+#    '$\text{trig1}_\text{LO\hphantom{N}}$'        "trig_LO__alpha_1_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
 
 #    '$\text{trig2}_\text{NLO}$'                 "trig_NLO__beta_2_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
 #    '$\text{trig2}_\text{LO\hphantom{N}}$'      "trig_LO__alpha_2_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
@@ -88,8 +92,8 @@ fi
 
 conftypes=(s096t36_b0824900_m002022_m01011 s096t32_b0824900_m002022_m01011 s096t28_b0824900_m002022_m01011 s096t24_b0824900_m002022_m01011 s096t20_b0824900_m002022_m01011)
 temps=(195 220 251 293 352)
-for selector_two in "zeroflow" "finiteflow" ; do
-    for selector in "thesis" "paper" ; do
+for selector_two in "zeroflow"  ; do # "finiteflow"
+    for selector in "thesis" "paper" ; do  #
         for j in "${!temps[@]}" ; do
 
             if [ "${selector}" == "paper" ] ; then
@@ -101,6 +105,14 @@ for selector_two in "zeroflow" "finiteflow" ; do
             temp=${temps[j]}
             nsamples=1000
             mintauT=0.24
+
+            if [ "${temp}" == "195" ] || [ "${temp}" == "220" ] ; then
+                leg_ncol="" #--leg_ncol 2"
+                leg_pos=""  #--leg_pos 0.4 0.34"
+            else
+                leg_pos=""
+                leg_ncol=""
+            fi
 
             if [ "${selector_two}" == "finiteflow" ] ; then
                 input_suffix="23-02-16_0.30"
