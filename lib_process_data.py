@@ -5,6 +5,7 @@ import argparse
 from collections import ChainMap
 import matplotlib
 from matplotlib import pyplot, container, legend_handler
+from matplotlib.ticker import AutoMinorLocator
 import sys
 import scipy.interpolate
 import concurrent.futures
@@ -300,7 +301,7 @@ def set_rc_params():
 
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98, 0.01), ylabelpos=(0.01, 0.98), tickpad=1,
                   figsize=None, UseTex=True, fig=None, subplot=111, no_ax=False,
-                  constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle, ytwinticks=True):
+                  constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle, ytwinticks=True, minorticks=True):
 
     set_rc_params()
     if UseTex:
@@ -312,7 +313,7 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98,
     elif figsize == "fullwidth_slim":
         figsize = (15, 5)
     elif figsize == "wide" or figsize == ['wide']:
-        figsize = (10.875, 7)  # 3/4 of the width
+        figsize = (10.5, 7)  # 3/4 of the width
     elif figsize is None:
         figsize = (7, 7)
     elif len(figsize) == 2:
@@ -344,6 +345,11 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98,
         axtwiny.set_ylim(ax.get_ylim())
         axtwiny.tick_params(axis='y', which='both', direction='in', width=axeslinewidth, left=False, top=False, right=True, bottom=False, labelleft=False, labeltop=False,
                         labelright=False, labelbottom=False)
+
+    if minorticks:
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        axtwiny.yaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
 
     matplotlib.rc('image', cmap='Set1')
     return fig, ax, axtwiny
