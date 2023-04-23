@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# This script is an adaption of https://github.com/SiStende/PertLattFlow, courtesy of Simon Stendebach. See also https://tuprints.ulb.tu-darmstadt.de/23185/.
+
 import argparse
 import sys
 
