@@ -1,6 +1,8 @@
 #!/bin/bash
-source ~/.bashrc
 
+spfbatch() {
+sbatch --qos=debug --partition=cpu_compute --time=10-00:00:00 --ntasks=1 --cpus-per-task=128 --nodes=1 "$@"
+}
 
 
 minscale=eff
@@ -18,32 +20,30 @@ set_models_EE(){
         "--model smax $NLO"
         "--model plaw_any $LO --OmegaByT_UV $OmegaByT_UV"
         "--model plaw_any $NLO --OmegaByT_UV $OmegaByT_UV"
+        "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
+        "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
         "--model trig $LO --mu alpha --nmax 1 "
-        "--model trig $LO --mu beta --nmax 1 "
-        "--model trig $NLO --mu alpha --nmax 1 "
         "--model trig $NLO --mu beta --nmax 1 "
         "--model trig $LO --mu alpha --nmax 2 "
-        "--model trig $LO --mu beta --nmax 2 "
-        "--model trig $NLO --mu alpha --nmax 2 "
         "--model trig $NLO --mu beta --nmax 2 "
     )
 }
 
 submit_quenched_EE(){
 
-    OmegaByT_UV=3.1416
+    OmegaByT_UV=0.00 #3.1416
 
     set_UV_params_EE
     set_models_EE
 
-    nsamples=64
+    nsamples=1000
     for i in "${!models[@]}" ; do
          spfbatch ../spf_reconstruct.py \
             --output_path /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/ \
-            --add_suffix 23-01-30 \
-            --input_corr /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr.npy \
+            --add_suffix 23-02-26_2piT \
+            --input_corr /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.npy \
             --min_tauT 0.24 \
-            --nproc 64 \
+            --nproc 128 \
             --T_in_GeV 0.472 \
             --Nf 0 \
             --nsamples $nsamples \
@@ -80,7 +80,7 @@ submit_quenched_BB(){
          spfbatch ../spf_reconstruct.py \
             --output_path /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
             --add_suffix 23-01-30 \
-            --input_corr /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr.npy \
+            --input_corr /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow.npy \
             --min_tauT 0.24 \
             --nproc 128 \
             --T_in_GeV 0.472 \
@@ -101,18 +101,18 @@ submit_hisq(){
     set_UV_params_EE
 
     models=(
-#        "--model max $LO"
-#        "--model max $NLO"
-#        "--model smax $LO"
-#        "--model smax $NLO"
+        "--model max $LO"
+        "--model max $NLO"
+        "--model smax $LO"
+        "--model smax $NLO"
         "--model plaw_any $LO --OmegaByT_UV $OmegaByT_UV" # --prevent_overfitting 1
         "--model plaw_any $NLO --OmegaByT_UV $OmegaByT_UV" #--prevent_overfitting 1
-#        "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
-#        "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
-        "--model trig $LO --mu alpha --nmax 1 --prevent_overfitting 2"
-        "--model trig $NLO --mu beta --nmax 1 --prevent_overfitting 2"
-        "--model trig $LO --mu alpha --nmax 2 --prevent_overfitting 2"
-        "--model trig $NLO --mu beta --nmax 2 --prevent_overfitting 2"
+        "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
+        "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
+#        "--model trig $LO --mu alpha --nmax 1 --prevent_overfitting 2"
+#        "--model trig $NLO --mu beta --nmax 1 --prevent_overfitting 2"
+#        "--model trig $LO --mu alpha --nmax 2 --prevent_overfitting 2"
+#        "--model trig $NLO --mu beta --nmax 2 --prevent_overfitting 2"
     )
 
     nsamples=1000
@@ -178,7 +178,7 @@ submit_hisq_finite_a_and_tf(){
 }
 
 
-#submit_quenched_EE
-#submit_quenched_BB
+submit_quenched_EE
+submit_quenched_BB
 submit_hisq
-#submit_hisq_finite_a_and_tf
+submit_hisq_finite_a_and_tf
