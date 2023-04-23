@@ -2,7 +2,6 @@
 import numpy
 from latqcdtools.statistics import bootstr
 import lib_process_data as lpd
-
 import correlator_analysis.double_extrapolation._4_continuum_extr as ce
 import scipy
 
@@ -11,14 +10,8 @@ def identity(input):
     return input
 
 
-def cont_extr(Ntaus, tauT_data, corr_data, corr_err_data, output_tauTs, nsamples):
+def interpolation(Ntaus, tauT_data, corr_data, corr_err_data, output_tauTs, nsamples):
     output_tauT_len = len(output_tauTs)
-
-    # result variables
-    cont_corr = numpy.empty(output_tauT_len)
-    cont_corr[:] = numpy.nan
-    cont_corr_err = numpy.empty(output_tauT_len)
-    cont_corr_err[:] = numpy.nan
 
     # interpolate all coarser lattices to tauT of the finest lattice
     interpolations = numpy.ndarray((len(Ntaus), 2, output_tauT_len))
@@ -44,9 +37,23 @@ def cont_extr(Ntaus, tauT_data, corr_data, corr_err_data, output_tauTs, nsamples
         interpolations[i][0] = numpy.mean(theoutputdata, axis=0)
         interpolations[i][1] = numpy.std(theoutputdata, axis=0)
         print("done interpolation Ntau", Ntau)
+    return interpolations
+
+
+def cont_extr(Ntaus, tauT_data, corr_data, corr_err_data, output_tauTs, nsamples):
+
+    interpolations = interpolation(Ntaus, tauT_data, corr_data, corr_err_data, output_tauTs, nsamples)
+
+    # result variables
+    output_tauT_len = len(output_tauTs)
+    cont_corr = numpy.empty(output_tauT_len)
+    cont_corr[:] = numpy.nan
+    cont_corr_err = numpy.empty(output_tauT_len)
+    cont_corr_err[:] = numpy.nan
 
     # continuum extrapolation
     xdata = numpy.asarray([1 / Ntau ** 2 for k, Ntau in enumerate(Ntaus)])
+
     for j in range(output_tauT_len):
         ydata = [interpolation[0][j] for interpolation in interpolations]
         edata = [interpolation[1][j] for interpolation in interpolations]
@@ -55,6 +62,7 @@ def cont_extr(Ntaus, tauT_data, corr_data, corr_err_data, output_tauTs, nsamples
 
         cont_corr[j] = fitparams[1]
         cont_corr_err[j] = fitparams_err[1]
+
     return cont_corr, cont_corr_err
 
 
