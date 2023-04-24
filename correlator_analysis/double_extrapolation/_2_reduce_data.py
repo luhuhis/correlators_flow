@@ -436,6 +436,11 @@ def main():
         else:
             ndata = len(y_eq_spaced) - best_start
             total_ndata += ndata
+
+            # unreasonably high tau_int estimates with large tau_inte can occur sometimes (mainly for short streams).
+            # with our current setup, we know from equivalent longer streams that the typical autocorrelation time is ~10-30 with relative errors <20%.
+            # therefore, we manually cap the binlength at 30 if the relative error is larger 20%. This only happens in a handful of cases.
+            # TODO make these parameters variable instead of hardcoded
             if tau_int > 30 and tau_inte/tau_int > 0.2:
                 binlength = 30
                 print("INFO: binlength capped at 30 for unreliable estimates.")

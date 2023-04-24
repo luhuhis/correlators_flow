@@ -128,7 +128,7 @@ def main():
                                 flowradii = numpy.sqrt(8*flow_times)/nt
                                 indices = get_flow_indices(flowradii, flowradii_ref)
                                 if len(indices) != len(flowradii_ref):
-                                    print("error! coulnd't find all ref flowradii")
+                                    print("error! could not find all ref flowradii. skipping", datafile)
                                     continue
                             else:
                                 indices = numpy.asarray(range(0, len(flow_times)))
