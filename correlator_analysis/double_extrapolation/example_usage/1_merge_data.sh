@@ -2,8 +2,8 @@
 
 qcdtype=$1
 corr=$2
-input_basepath=$3
-output_basepath=$4
+basepath_raw_data=$3
+basepath_work_data=$4
 if [ -z "$qcdtype" ] || [ -z "$corr" ] ; then
     echo "Usage: $0 qcdtype corr input_basepath output_basepath"
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
@@ -38,7 +38,7 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
         "220"
         "195"
         )
-    add_args="--basepath $input_basepath"
+    add_args="--basepath $basepath_raw_data"
     flowradiusbasepath="/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"
     flowradii_refs=()
     for temp in "${temps[@]}"; do
@@ -68,9 +68,13 @@ for idx in "${!arr_conftypes[@]}" ; do
         fi
     fi
 
+    (
+    echo "work dir: $(dirname $0)" && cd "$(dirname $0)" || exit
+
     ../_1_merge_data.py \
-    ${flowradii_refs[idx/3]} \
-    --output_basepath $output_basepath \
-    $even_more_args $add_args \
-    --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype
+        ${flowradii_refs[idx / 3]} \
+        --output_basepath $basepath_work_data \
+        $even_more_args $add_args \
+        --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype
+    )
 done
