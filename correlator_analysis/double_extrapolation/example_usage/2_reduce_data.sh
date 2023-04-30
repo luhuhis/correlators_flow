@@ -29,12 +29,14 @@ elif  [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     "s064t20_b0785700" "s064t24_b0806800" "s096t28_b0824900_m002022_m01011"
     "s064t20_b0770400" "s064t24_b0791300" "s096t32_b0824900_m002022_m01011"
     "s064t20_b0757000" "s064t24_b0777700" "s096t36_b0824900_m002022_m01011"
+    "s096t20_b0824900_m002022_m01011"
     )
     min_trajs=(
         "0 100 100 100"                 "  0   0   0   0 0 0 0 0 0 0 0 0" "  0   0   0"
         "0   0   0   0"                 "  0   0   0   0 0 0 0 0 0 0 0 0" "200 200 200 200"
         "0   0   0   0 0 0 0 0 0 0 0 0" "700 100 400 400"                 "175 175"
         "0   0   0   0 0 0 0 0 0 0 0 0" "200 300 100 100"                 "0 0 0 0"
+        "150 150 150 150"
     )
     MC_stepsize=10
 fi
@@ -46,8 +48,19 @@ echo "work dir: $(dirname $0)" && cd "$(dirname $0)" || exit
 for idx in "${!arr_conftypes[@]}"; do
     conftype=${arr_conftypes[idx]}
     min_conf="--min_conf ${min_trajs[idx]}"
-    ../_2_reduce_data.py $add_args --MC_stepsize $MC_stepsize $min_conf --qcdtype $qcdtype --conftype $conftype --corr $corr \
+
+    mycmd="
+    ../_2_reduce_data.py $add_args --MC_stepsize $MC_stepsize $min_conf --qcdtype $qcdtype --conftype $conftype --corr $corr
     --basepath $basepath_work_data  --basepath_plot $basepath_plot
+    "
+    # uncomment these lines to confirm each script call
+#    echo "$mycmd"
+#    echo -en "\n y/n? "
+#    read -r input
+#    if [ "$input" == "y" ]; then
+        eval $mycmd
+#    fi
+
 done
 wait
 

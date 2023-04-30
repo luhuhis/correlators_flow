@@ -2,10 +2,13 @@
 
 qcdtype=$1
 corr=$2
+basepath_work_data=$3
+basepath_plot=$4
 if [ -z "$qcdtype" ] || [ -z "$corr" ] ; then
-    echo "Usage: $0 qcdtype corr"
+    echo "Usage: $0 qcdtype corr basepath_work_data basepath_plot"
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
     echo "choices for corr: EE BB EE_clover BB_clover"
+    echo "Example: $0 hisq_ms5_zeuthenFlow EE ../../../../data/merged/ ../../../../plots/"
     exit
 fi
 
@@ -32,12 +35,17 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     add_args="--lower_limit_text_pos 2"
 fi
 
-for idx in "${!arr_conftypes[@]}"; do
-    conftype="${arr_conftypes[idx]}"
+(
+    echo "work dir: $(dirname $0)" && cd "$(dirname $0)" || exit
 
-    args="--basepath ../../../../data/merged/ --basepath_plot ../../../../plots/ $add_args --ylims $ylims --qcdtype $qcdtype --conftype $conftype --corr $corr --int_Nt ${arr_int_Nt[idx]} --nsamples $nsamples"
+    for idx in "${!arr_conftypes[@]}"; do
+        conftype="${arr_conftypes[idx]}"
 
-    ../_3_spline_interpolate.py $args
+        args="--basepath $basepath_work_data --basepath_plot $basepath_plot $add_args --ylims $ylims --qcdtype $qcdtype --conftype $conftype --corr $corr --int_Nt ${arr_int_Nt[idx]} --nsamples $nsamples"
 
-done
-wait
+        ../_3_spline_interpolate.py $args
+
+    done
+    wait
+
+)
