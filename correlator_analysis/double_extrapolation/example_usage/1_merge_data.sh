@@ -4,7 +4,11 @@ qcdtype=$1
 corr=$2
 basepath_raw_data=$3
 basepath_work_data=$4
-flowradiusbasepath=$5  # this path contains "reference" flow times which are useful if there are multiple lattice spacings for each temperature that have different flow times
+
+# this path contains "reference" flow times which are useful if there are
+# multiple lattice spacings for each temperature that have different flow times
+flowradiusbasepath=$5
+
 if [ -z "$qcdtype" ] || [ -z "$corr" ] || [ -z "$basepath_raw_data" ] || [ -z "$basepath_work_data" ] ; then
     echo "Usage: $0 qcdtype corr input_basepath output_basepath [flowradiusbasepath]"
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
