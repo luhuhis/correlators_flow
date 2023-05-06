@@ -88,23 +88,23 @@ for idx in "${!arr_conftypes[@]}" ; do
     fi
 
     (
-    echo "work dir: $(dirname $0)" && cd "$(dirname $0)" || exit
+        cd "$(dirname "$0")" || exit
 
-    mycmd="
-    ../_1_merge_data.py \
-        $flowradiiref \
-        --output_basepath $basepath_work_data \
-        $even_more_args $add_args \
-        --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype
-        "
+        mycmd="
+        ../_1_merge_data.py \
+            $flowradiiref \
+            --output_basepath $basepath_work_data \
+            $even_more_args $add_args \
+            --qcdtype $qcdtype --corr $corr $acc_sts --conftype $conftype
+            "
 
-    # uncomment these lines to confirm each script call
-#    echo "$mycmd"
-#    echo -en "\n y/n? "
-#    read -r input
-#    if [ "$input" == "y" ]; then
+        # uncomment these lines to confirm each script call
+        #    echo "$mycmd"
+        #    echo -en "\n y/n? "
+        #    read -r input
+        #    if [ "$input" == "y" ]; then
         eval $mycmd
-#    fi
+        #    fi
 
     )
 done

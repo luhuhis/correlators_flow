@@ -2,11 +2,13 @@
 
 qcdtype=$1
 corr=$2
-addsuf=$3
+basepath_work_data=$3
+basepath_plot=$4
 if [ -z "$qcdtype" ] || [ -z "$corr" ] ; then
-    echo "Usage: $0 qcdtype corr"
+    echo "Usage: $0 qcdtype corr basepath_work_data basepath_plot"
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
     echo "choices for corr: EE BB EE_clover BB_clover"
+    echo "Example: $0 hisq_ms5_zeuthenFlow EE ../../../../data/merged/ ../../../../plots/"
     exit
 fi
 
@@ -32,25 +34,30 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     add_args="--nterms 1 --relflow --combined_fit --nsamples 10000"
 fi
 
-for idx in "${!arr_conftypes[@]}" ; do
 
-    if [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
-        ylims=${arr_ylims[idx]}
-    fi
+(
+    cd "$(dirname $0)" || exit
+    for idx in "${!arr_conftypes[@]}"; do
 
-    if [ "${arr_output_suffix[idx]}" ] ; then
-        sufargs="--output_suffix"
-    fi
-    files=""
-    for conftype in ${arr_conftypes[idx]} ; do
-        files="$files $conftype/flowradii_$conftype.dat"
-    done
+        if [ "$qcdtype" == hisq_ms5_zeuthenFlow ]; then
+            ylims=${arr_ylims[idx]}
+        fi
 
-#        ../find_common_flowtimes.py --basepath ../../../../data/merged/$qcdtype/$corr/ --files $files --output ../../../../data/merged/$qcdtype/$corr/${arr_output_suffix[idx]}/flowradii_${arr_output_suffix[idx]}.dat
-        args="$add_args --use_tex --nproc $ncpu --min_flowradius $min_flowradius --basepath ../../../../data/merged/
-        --basepath_plot ../../../../plots/ --max_FlowradiusBytauT 0.31  --min_FlowradiusBytauT 0.2  $sufargs ${arr_output_suffix[idx]}${addsuf}
+        if [ "${arr_output_suffix[idx]}" ]; then
+            sufargs="--output_suffix"
+        fi
+        files=""
+        for conftype in ${arr_conftypes[idx]}; do
+            files="$files $conftype/flowradii_$conftype.dat"
+        done
+
+        #        ../find_common_flowtimes.py --basepath ../../../../data/merged/$qcdtype/$corr/ --files $files --output ../../../../data/merged/$qcdtype/$corr/${arr_output_suffix[idx]}/flowradii_${arr_output_suffix[idx]}.dat
+        args="$add_args --use_tex --nproc $ncpu --min_flowradius $min_flowradius --basepath $basepath_work_data
+        --basepath_plot $basepath_plot --max_FlowradiusBytauT 0.31  --min_FlowradiusBytauT 0.2  $sufargs ${arr_output_suffix[idx]}
         --qcdtype $qcdtype --conftypes ${arr_conftypes[idx]} --corr $corr --custom_ylims $ylims"
+
         ../_4_continuum_extr.py $args
 
-done
-wait
+    done
+    wait
+)

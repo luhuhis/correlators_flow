@@ -43,25 +43,25 @@ fi
 
 
 (
-echo "work dir: $(dirname $0)" && cd "$(dirname $0)" || exit
+    cd "$(dirname "$0")" || exit
 
-for idx in "${!arr_conftypes[@]}"; do
-    conftype=${arr_conftypes[idx]}
-    min_conf="--min_conf ${min_trajs[idx]}"
+    for idx in "${!arr_conftypes[@]}"; do
+        conftype=${arr_conftypes[idx]}
+        min_conf="--min_conf ${min_trajs[idx]}"
 
-    mycmd="
+        mycmd="
     ../_2_reduce_data.py $add_args --MC_stepsize $MC_stepsize $min_conf --qcdtype $qcdtype --conftype $conftype --corr $corr
     --basepath $basepath_work_data  --basepath_plot $basepath_plot
     "
-    # uncomment these lines to confirm each script call
-#    echo "$mycmd"
-#    echo -en "\n y/n? "
-#    read -r input
-#    if [ "$input" == "y" ]; then
+        # uncomment these lines to confirm each script call
+        #    echo "$mycmd"
+        #    echo -en "\n y/n? "
+        #    read -r input
+        #    if [ "$input" == "y" ]; then
         eval $mycmd
-#    fi
+        #    fi
 
-done
-wait
+    done
+    wait
 
 )

@@ -36,7 +36,7 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
 fi
 
 (
-    echo "work dir: $(dirname $0)" && cd "$(dirname $0)" || exit
+    cd "$(dirname $0)" || exit
 
     for idx in "${!arr_conftypes[@]}"; do
         conftype="${arr_conftypes[idx]}"
