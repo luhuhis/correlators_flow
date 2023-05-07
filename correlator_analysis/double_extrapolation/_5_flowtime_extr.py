@@ -394,7 +394,8 @@ def combined_extrapolation(args, ntauT, finest_tauTs, cont_samples, data_std, n_
                 for i, val in enumerate(fitresults):
                     results[n][offset + i] = val
             if n % 100 == 0:
-                print(n)
+                print("\rfinished sample", n, end='', flush=True)
+        print("")
 
     return results, indices
 
