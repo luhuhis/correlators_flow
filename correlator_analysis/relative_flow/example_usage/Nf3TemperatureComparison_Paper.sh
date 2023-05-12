@@ -1,21 +1,22 @@
 #!/bin/bash
 
 qcdtype="hisq_ms5_zeuthenFlow"
+basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}$qcdtype/EE/"
+basepath_plot="${2:-"/work/home/altenkort/work/correlators_flow/plots/"}$qcdtype/EE/"
 
 suffix="" #_paper"
 
-# plot comparing different temperatures of doube-extrapolated correlators
 
 plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
 
     params=(
-        "--xlims 0 19 --xticks 0 3 6 9 12 15 18 --hide_fits --x_scales 36 32 28 24 20 36 32 28 24 --xlabel $\tau/a$ --output_suffix _hisq_final_phys --flow_extr_custom_units 36 32 28 24"
+#        "--xlims 0 19 --xticks 0 3 6 9 12 15 18 --hide_fits --x_scales 36 32 28 24 20 36 32 28 24 --xlabel $\tau/a$ --output_suffix _hisq_final_phys --flow_extr_custom_units 36 32 28 24"
         "--xlims 0.24 0.52 --xticks 0.25 0.3 0.35 0.4 0.45 0.5 --output_suffix _hisq_final --flow_extr_custom_units 1 1 1 1"
     )
 
     fit_args=(
         "--npoints 50 --show_UV_corrs"
-        "--fit_basepath /work/home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/"
+        "--fit_basepath $basepath_work_data"
         "--fit_folders"
         "T195/spf/smax_NLO_Nf3_T0.195_mineff_wopt_1000smpls_tauTgtr0.24_23-02-16_relflow"
         "T220/spf/smax_NLO_Nf3_T0.220_mineff_wopt_1000smpls_tauTgtr0.24_23-02-16_relflow"
@@ -27,7 +28,7 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
     for x_units in "${params[@]}" ; do
 
         ../plot_rec_corr_fixFlowBytauT.py \
-            --output_path ~/work/correlators_flow/plots/$qcdtype/EE/ \
+            --output_path $basepath_plot \
             ${x_units} \
             --ylims 4 9.5 \
             --usetex \
@@ -35,10 +36,10 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
             --no_connection \
             --conftype s096t20_b0824900_m002022_m01011 \
             --plot_flow_extr \
-            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T195${suffix}/EE_flow_extr_relflow.txt \
-            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T220${suffix}/EE_flow_extr_relflow.txt \
-            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T251${suffix}/EE_flow_extr_relflow.txt \
-            /home/altenkort/work/correlators_flow/data/merged/$qcdtype/EE/T293${suffix}/EE_flow_extr_relflow.txt \
+            $basepath_work_data/T195${suffix}/EE_flow_extr_relflow.txt \
+            $basepath_work_data/T220${suffix}/EE_flow_extr_relflow.txt \
+            $basepath_work_data/T251${suffix}/EE_flow_extr_relflow.txt \
+            $basepath_work_data/T293${suffix}/EE_flow_extr_relflow.txt \
             --qcdtype $qcdtype --corr EE \
             --figsize 7 7 \
             --leg_title '$T [\mathrm{MeV}]$' --leg_pos 0 0.6 --leg_loc "center left" --leg_n_dummies 3 --leg_n_col 2 --leg_framealpha 0 \
@@ -48,7 +49,7 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
             --color_data C0 C1 C2 C3 C4 C0 C1 C2 C3 \
             --fillstyle none none none none full full full full  \
             --flowradiusBytauT 0.3 --min_flowradius 0.09 \
-            &
+
     done
 
 }
@@ -64,7 +65,7 @@ plot_comparison_of_lattice_spacing_and_temperature_effects() {
         ../plot_rec_corr_fixFlowBytauT.py \
             ${xparam} \
             --min_flowradius 0.05 \
-            --output_path ~/work/correlators_flow/plots/$qcdtype/EE/ \
+            --output_path $basepath_plot \
             --ylims 3 9.25 \
             --flowradiusBytauT $flowradiusBytauT \
             --qcdtype $qcdtype --corr EE \
@@ -93,7 +94,7 @@ plot_comparison_of_lattice_spacing_and_temperature_effects() {
             "251, 20" \
             "293, 24" \
             "293, 20" \
-            &
+
         done
     done
 
@@ -110,7 +111,7 @@ plot_comparison_of_temperature_effects_phys() {
         ../plot_rec_corr_fixFlowBytauT.py \
             ${xparam} \
             --min_flowradius 0.05 \
-            --output_path ~/work/correlators_flow/plots/$qcdtype/EE/ \
+            --output_path $basepath_plot \
             --ylims 0 9.25 \
             --flowradiusBytauT $flowradiusBytauT \
             --qcdtype $qcdtype --corr EE \
@@ -133,14 +134,19 @@ plot_comparison_of_temperature_effects_phys() {
             "251, 28" \
             "293, 24" \
             "352, 20" \
-            &
+
         done
     done
 
 }
 
-plot_comparison_of_different_temperatures_of_doublextrapolated_correlators
-plot_comparison_of_lattice_spacing_and_temperature_effects
-plot_comparison_of_temperature_effects_phys
+(
+    cd "$(dirname $0)" || exit
 
-wait
+    plot_comparison_of_different_temperatures_of_doublextrapolated_correlators
+    plot_comparison_of_lattice_spacing_and_temperature_effects
+#    plot_comparison_of_temperature_effects_phys
+
+#    wait
+
+)
