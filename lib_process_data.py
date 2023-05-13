@@ -1,6 +1,5 @@
 import numpy
 import re
-import math
 import argparse
 from collections import ChainMap
 import matplotlib
@@ -9,6 +8,7 @@ from matplotlib.ticker import AutoMinorLocator
 import sys
 import scipy.interpolate
 import concurrent.futures
+import os
 
 
 def format_float(number, digits=3):
@@ -188,12 +188,17 @@ def G_latt_LO_flow(tau_index: int, flowtime, corr: str, Nt: int, flowaction: str
 
     identifier = str(Nt)+flowaction+gaugeaction
 
+    G_PERT_LO_DIR = os.environ['G_PERT_LO_DIR']
+    if not G_PERT_LO_DIR:
+        print("Warn: environment variable G_PERT_LO_DIR is not set, using default path")
+        G_PERT_LO_DIR = "/work/home/altenkort/work/correlators_flow/data/merged/pert_LO/"
+
     # store for future access
     global G_latt_LO_flow_storage
     if identifier not in G_latt_LO_flow_storage.keys():
-        #TODO make these paths an input instead of hard code
-        file = "/work/home/altenkort/work/correlators_flow/data/merged/pert_LO/"+corr+"_pert_latt_"+flowaction+"_"+gaugeaction+"_Nt"+str(Nt)+".dat"
-        flowtimes = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/pert_LO/flowtimes.dat")
+
+        file = G_PERT_LO_DIR+"/"+corr+"_pert_latt_"+flowaction+"_"+gaugeaction+"_Nt"+str(Nt)+".dat"
+        flowtimes = numpy.loadtxt(G_PERT_LO_DIR+"/flowtimes.dat")
         try:
             tmp = numpy.loadtxt(file)
         except OSError:
