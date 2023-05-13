@@ -49,7 +49,7 @@ scriptpath1="./correlators_flow/correlator_analysis/double_extrapolation/example
 )
 
 # spf fits
-
+./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh $BASEPATH_WORK_DATA NO
 
 
 # TODO probably some other files are missing which are hardcoded in lib process data. test this with the new environment on the other laptop.

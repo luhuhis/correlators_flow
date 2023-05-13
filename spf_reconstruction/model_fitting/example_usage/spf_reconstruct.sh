@@ -1,9 +1,19 @@
 #!/bin/bash
 
-spfbatch() {
-sbatch --qos=debug --partition=cpu_compute --time=10-00:00:00 --ntasks=1 --cpus-per-task=128 --nodes=1 "$@"
-}
 
+basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}"
+use_cluster="${2:-"yes"}"
+nproc="${3:-"1"}"
+
+
+if [ "$use_cluster" == "yes" ] ; then
+    nproc=128
+    spfbatch() {
+    sbatch --qos=debug --partition=cpu_compute --time=10-00:00:00 --ntasks=1 --cpus-per-task=128 --nodes=1 "$@"
+    }
+else
+    spfbatch(){ "$@"; }
+fi
 
 minscale=eff
 
@@ -31,7 +41,7 @@ set_models_EE(){
 
 submit_quenched_EE(){
 
-    OmegaByT_UV=0.00 #3.1416
+    OmegaByT_UV=3.1416
 
     set_UV_params_EE
     set_models_EE
@@ -39,11 +49,11 @@ submit_quenched_EE(){
     nsamples=1000
     for i in "${!models[@]}" ; do
          spfbatch ../spf_reconstruct.py \
-            --output_path /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/ \
+            --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/spf/ \
             --add_suffix 23-02-26_2piT \
-            --input_corr /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.npy \
+            --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.npy \
             --min_tauT 0.24 \
-            --nproc 128 \
+            --nproc $nproc \
             --T_in_GeV 0.472 \
             --Nf 0 \
             --nsamples $nsamples \
@@ -78,11 +88,11 @@ submit_quenched_BB(){
     nsamples=10000
     for i in "${!models[@]}" ; do
          spfbatch ../spf_reconstruct.py \
-            --output_path /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
+            --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
             --add_suffix 23-01-30 \
-            --input_corr /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow.npy \
+            --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow.npy \
             --min_tauT 0.24 \
-            --nproc 128 \
+            --nproc $nproc \
             --T_in_GeV 0.472 \
             --Nf 0 \
             --nsamples $nsamples \
@@ -109,10 +119,6 @@ submit_hisq(){
         "--model plaw_any $NLO --OmegaByT_UV $OmegaByT_UV" #--prevent_overfitting 1
         "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
         "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
-#        "--model trig $LO --mu alpha --nmax 1 --prevent_overfitting 2"
-#        "--model trig $NLO --mu beta --nmax 1 --prevent_overfitting 2"
-#        "--model trig $LO --mu alpha --nmax 2 --prevent_overfitting 2"
-#        "--model trig $NLO --mu beta --nmax 2 --prevent_overfitting 2"
     )
 
     nsamples=1000
@@ -124,11 +130,11 @@ submit_hisq(){
         for i in "${!models[@]}" ; do
 #            if [ $i -eq 0 ] ; then
              spfbatch ../spf_reconstruct.py \
-                --output_path /work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/ \
+                --output_path $basepath_work_data/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/ \
                 --add_suffix 23-02-16_relflow \
-                --input_corr /work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//T${temp}/EE_flow_extr${relflowsuffix}.npy \
+                --input_corr $basepath_work_data/hisq_ms5_zeuthenFlow/EE//T${temp}/EE_flow_extr${relflowsuffix}.npy \
                 --min_tauT 0.24 \
-                --nproc 128 \
+                --nproc $nproc \
                 --T_in_GeV 0.${temp} --corr_from_combined_fit_nt $int_nt \
                 --Nf 3 \
                 --nsamples $nsamples \
@@ -163,12 +169,12 @@ submit_hisq_finite_a_and_tf(){
         temp=${temps[j]}
         for i in "${!models[@]}" ; do
              spfbatch ../spf_reconstruct.py \
-                --output_path /work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/spf/ \
+                --output_path $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/spf/ \
                 --add_suffix 23-02-16_0.30 --relflow 0.30 \
-                --input_corr /work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/EE_s096t${Nt}_b0824900_m002022_m01011_interpolation_relflow_samples.npy \
+                --input_corr $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/EE_s096t${Nt}_b0824900_m002022_m01011_interpolation_relflow_samples.npy \
                 --min_tauT 0.24 \
-                --relflow_file /work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/EE_s096t${Nt}_b0824900_m002022_m01011_relflows.txt \
-                --nproc 128 \
+                --relflow_file $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/EE_s096t${Nt}_b0824900_m002022_m01011_relflows.txt \
+                --nproc $nproc \
                 --T_in_GeV 0.${temp} \
                 --Nf 3 \
                 --nsamples $nsamples \
@@ -178,7 +184,12 @@ submit_hisq_finite_a_and_tf(){
 }
 
 
-submit_quenched_EE
-submit_quenched_BB
-submit_hisq
-submit_hisq_finite_a_and_tf
+(
+    cd "$(dirname $0)" || exit
+
+    #submit_quenched_EE
+    #submit_quenched_BB
+    submit_hisq
+    submit_hisq_finite_a_and_tf
+
+)
