@@ -22,15 +22,16 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
         "T220/spf/smax_NLO_Nf3_T0.220_mineff_wopt_1000smpls_tauTgtr0.24_23-02-16_relflow"
         "T251/spf/smax_NLO_Nf3_T0.251_mineff_wopt_1000smpls_tauTgtr0.24_23-02-16_relflow"
         "T293/spf/smax_NLO_Nf3_T0.293_mineff_wopt_1000smpls_tauTgtr0.24_23-02-16_relflow"
-        "s096t20_b0824900_m002022_m01011/spf/smax_NLO_Nf3_T0.352_mineff_wopt_1000smpls_tauTgtr0.26_23-02-16_0.30" #TODO remove this and conftype below later
+        "s096t20_b0824900_m002022_m01011/spf/smax_NLO_Nf3_T0.352_mineff_wopt_1000smpls_tauTgtr0.26_23-02-16_0.30" #TODO remove this and conftype below later for thesis
     )
 
     for x_units in "${params[@]}" ; do
 
+        # TODO revert ylims 4 9.5, leg_pos to 0 0.6 and leg_loc to "center left"
         ../plot_rec_corr_fixFlowBytauT.py \
             --output_path $basepath_plot \
             ${x_units} \
-            --ylims 4 9.5 \
+            --ylims 3 9.5 \
             --usetex \
             ${fit_args[@]} \
             --no_connection \
@@ -42,7 +43,7 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
             $basepath_work_data/T293${suffix}/EE_flow_extr_relflow.txt \
             --qcdtype $qcdtype --corr EE \
             --figsize 7 7 \
-            --leg_title '$T [\mathrm{MeV}]$' --leg_pos 0 0.6 --leg_loc "center left" --leg_n_dummies 3 --leg_n_col 2 --leg_framealpha 0 \
+            --leg_title '$T [\mathrm{MeV}]$' --leg_pos 1 0 --leg_loc "lower right" --leg_n_dummies 3 --leg_n_col 2 --leg_framealpha 0 \
             --leg_labels \
             "195" "220" "251" "293" "352*" "195" "220" "251" "293" \
             --markers o s D H p o s D H \

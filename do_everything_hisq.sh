@@ -16,6 +16,7 @@ export PYTHONPATH
 export BASEPATH_RAW_DATA=your-path
 export BASEPATH_WORK_DATA=your-path
 export BASEPATH_PLOT=your-path
+export G_PERT_LO_DIR # TODO
 
 # tar -xzf data.tar.gz $INPUT_BASEPATH
 
@@ -51,5 +52,15 @@ scriptpath1="./correlators_flow/correlator_analysis/double_extrapolation/example
 # spf fits
 ./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh $BASEPATH_WORK_DATA NO
 
+# plot spf fit results
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
 
-# TODO probably some other files are missing which are hardcoded in lib process data. test this with the new environment on the other laptop.
+
+# k factor
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
+
+# TODO final kappas
+
+
+
+# TODO include pertLO files in data pub

@@ -164,15 +164,14 @@ submit_hisq_finite_a_and_tf(){
 
     nsamples=1000
 
-    if [ "${temp}" == "352" ]; then
-        mintauT=0.26
-    else
-        mintauT=0.24
-    fi
-
     for j in "${!Nts[@]}" ; do
         Nt=${Nts[j]}
         temp=${temps[j]}
+        if [ "${temp}" == "352" ]; then
+            mintauT=0.26
+        else
+            mintauT=0.24
+        fi
         for i in "${!models[@]}" ; do
              spfbatch ../spf_reconstruct.py \
                 --output_path $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/spf/ \

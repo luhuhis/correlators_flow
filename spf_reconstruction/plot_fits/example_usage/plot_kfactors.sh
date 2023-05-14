@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
-input_suffix="23-01-19"
-minscale="eff"
-nsamples=500
+basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}/hisq_ms5_zeuthenFlow/EE/"
+basepath_plot="${2:-"/work/home/altenkort/work/correlators_flow/plots"}/hisq_ms5_zeuthenFlow/EE/"
 
-basepath=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/
-outputpath=/work/home/altenkort/work/correlators_flow/plots/hisq_ms5_zeuthenFlow/EE/
-outputpath_data=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/
+# TODO check whether this is even correct
+input_suffix="23-02-16_relflow" # "23-01-19"
+minscale="eff"
+nsamples=1000 #500
+
+# TODO fix nt=20
+
 suffix=""
 
 plot_kfactors() {
@@ -18,8 +21,8 @@ plot_kfactors() {
     --model_ids "${models[@]}" \
     --labels '\begin{flushright}$\scriptstyle a\rightarrow 0,$ \\[-1ex] $\scriptstyle\tau_\mathrm{F}\rightarrow 0$\hphantom{,} \end{flushright}' "NLO" "LO" "" "" "" "" "" "" \
              '\begin{flushleft}{\scriptsize nonzero} \\[-1.5ex] $\scriptstyle a$ {\scriptsize and} $\scriptstyle\tau_\mathrm{F}$\end{flushleft}' "NLO" "LO" "" "" "" "" "" "" "" "" \
-    --basepath "${basepath}" \
-    --outputpath "${outputpath}" \
+    --basepath "${basepath_work_data}" \
+    --outputpath "${basepath_plot}" \
     --suffix "${suffix}" \
     --corr EE \
     --figsize 7 7 \
@@ -29,7 +32,7 @@ plot_kfactors() {
                  none full full full full full full full full full full \
     --fmts '.' 's' 'D' 's' 'D' 's' 'D' 's' 'D'\
            '.' 'o' 'p' 'o' 'p' 'o' 'p' 'o' 'p' 'o' 'p' \
-    --outputpath_data $outputpath_data \
+    --outputpath_data $basepath_work_data \
     --pos 0 0.195 0.195 0.220 0.220 0.251 0.251 0.293 0.293 \
           0 0.195 0.195 0.220 0.220 0.251 0.251 0.293 0.293 0.352 0.352 \
     --Tc_in_GeV 0.180
@@ -87,5 +90,7 @@ for i in "${!labels_and_models[@]}" ; do
 done
 
 
-
-plot_kfactors
+(
+    cd "$(dirname $0)" || exit
+    plot_kfactors
+)
