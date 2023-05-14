@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 
+basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}"
+basepath_plot="${2:-"/work/home/altenkort/work/correlators_flow/plots/"}"
+
+
 plot_hisq_thesis(){
 
-        basepath="/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"
+        basepath="$basepath_work_data/hisq_ms5_zeuthenFlow/EE/"
 
         ../plot_final_kappas.py \
             --input_kappa_files \
-            /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_kappa_quenched_1.5Tc.txt \
+            $basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/EE_kappa_quenched_1.5Tc.txt \
             ${basepath}/T195/EE_kappa_T195${suffix}.txt \
             ${basepath}/T220/EE_kappa_T220${suffix}.txt \
             ${basepath}/T251/EE_kappa_T251${suffix}.txt \
@@ -22,7 +26,7 @@ plot_hisq_thesis(){
             --colors \
             k m m m m \
             --markersize 0 \
-            --outputpath /work/home/altenkort/work/correlators_flow/plots/hisq_ms5_zeuthenFlow/EE/ \
+            --outputpath $basepath_plot/hisq_ms5_zeuthenFlow/EE/ \
             --suffix "hisq${suffix}_thesis" \
             --temps_in_GeV \
             0.270 0.195 0.220 0.251 0.293 \
@@ -39,7 +43,7 @@ plot_hisq_thesis(){
 
 plot_hisq(){
 
-    for suffix in "" "_paper" ; do
+    for suffix in  "_paper" ; do   # #TODO add "" back in
 
         if [ "${suffix}" == "_paper" ] ; then
             addargs="--no_subscript"
@@ -47,7 +51,7 @@ plot_hisq(){
             addargs="--plot_analytical_results"
         fi
 
-        basepath="/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"
+        basepath="$basepath_work_data/hisq_ms5_zeuthenFlow/EE/"
 
         ../plot_final_kappas.py \
             --input_kappa_files \
@@ -71,7 +75,7 @@ plot_hisq(){
             --colors \
             C0 C0 C0 C0 C1 C1 C1 C1 C1 \
             --markersize 4 \
-            --outputpath /work/home/altenkort/work/correlators_flow/plots/hisq_ms5_zeuthenFlow/EE/ \
+            --outputpath $basepath_plot/hisq_ms5_zeuthenFlow/EE/ \
             --suffix "hisq${suffix}" \
             --temps_in_GeV \
             0.195 0.220 0.251 0.293 0.198 0.222 0.253 0.295 0.352 \
@@ -88,14 +92,14 @@ plot_hisq(){
 
 plot_quenched_EE(){
 
-    basepath="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/"
+    basepath="$basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/"
 
     ../plot_final_kappas.py \
         --input_kappa_files \
         ${basepath}/EE_kappa_quenched_1.5Tc.txt \
         --labels \
         '\textbf{this work}* (flow)' \
-        --outputpath "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/EE/" \
+        --outputpath "$basepath_plot/quenched_1.50Tc_zeuthenFlow/EE/" \
         --suffix "EE_quenched_literature" \
         --temps_in_GeV \
         0.4725 \
@@ -108,14 +112,14 @@ plot_quenched_EE(){
 
 plot_quenched_BB(){
 
-    basepath="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/"
+    basepath="$basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/"
 
     ../plot_final_kappas.py \
         --input_kappa_files \
         ${basepath}/BB_kappa_quenched_1.5Tc.txt \
         --labels \
         '\textbf{this work} (flow)' \
-        --outputpath "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/BB/" \
+        --outputpath "$basepath_plot/quenched_1.50Tc_zeuthenFlow/BB/" \
         --suffix "BB_quenched_literature" \
         --temps_in_GeV \
         0.482 \
@@ -126,9 +130,13 @@ plot_quenched_BB(){
 
 }
 
-plot_hisq &
-#plot_hisq_thesis &
-#plot_quenched_EE &
-#plot_quenched_BB &
+(
+    cd "$(dirname $0)" || exit
 
-wait
+    plot_hisq
+    #plot_hisq_thesis &
+    #plot_quenched_EE &
+    #plot_quenched_BB &
+
+    wait
+)
