@@ -164,6 +164,12 @@ submit_hisq_finite_a_and_tf(){
 
     nsamples=1000
 
+    if [ "${temp}" == "352" ]; then
+        mintauT=0.26
+    else
+        mintauT=0.24
+    fi
+
     for j in "${!Nts[@]}" ; do
         Nt=${Nts[j]}
         temp=${temps[j]}
@@ -172,7 +178,7 @@ submit_hisq_finite_a_and_tf(){
                 --output_path $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/spf/ \
                 --add_suffix 23-02-16_0.30 --relflow 0.30 \
                 --input_corr $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/EE_s096t${Nt}_b0824900_m002022_m01011_interpolation_relflow_samples.npy \
-                --min_tauT 0.24 \
+                --min_tauT $mintauT \
                 --relflow_file $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/EE_s096t${Nt}_b0824900_m002022_m01011_relflows.txt \
                 --nproc $nproc \
                 --T_in_GeV 0.${temp} \

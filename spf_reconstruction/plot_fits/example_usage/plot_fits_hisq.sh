@@ -1,6 +1,11 @@
 #!/bin/bash
 
+
+basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}"
+basepath_plot="${2:-"/work/home/altenkort/work/correlators_flow/plots"}"
+
 minscale="eff"
+
 
 plot_kappa() {
         ../plot_kappa.py \
@@ -53,8 +58,8 @@ set_labels_and_models(){
 
 if [ "${selector}" == "paper" ] ; then
     nosubscript="--no_subscript"
-    hidechisq="" # --hide_chisq
-    figheight=7
+    hidechisq="--hide_chisq"
+    figheight=5
 labels_and_models=(
     '$\text{max}_\text{NLO}$'                     "max_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
     '$\text{max}_\text{LO\hphantom{N}}$'          "max_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
@@ -73,18 +78,8 @@ else
     '$\text{max}_\text{LO\hphantom{N}}$'          "max_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
     '$\text{smax}_\text{NLO}$'                    "smax_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
     '$\text{smax}_\text{LO\hphantom{N}}$'         "smax_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-
-#    '$\text{plaw}_\text{NLO}$'                    "plaw_any_wUV6.2832_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-#    '$\text{plaw}_\text{LO\hphantom{N}}$'         "plaw_any_wUV6.2832_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-
     '$\text{plaw}_\text{NLO}$'                    "plaw_wIR1.0_wUV6.2832_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
     '$\text{plaw}_\text{LO\hphantom{N}}$'         "plaw_wIR1.0_wUV6.2832_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-
-#    '$\text{trig1}_\text{NLO}$'                   "trig_NLO__beta_1_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-#    '$\text{trig1}_\text{LO\hphantom{N}}$'        "trig_LO__alpha_1_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-
-#    '$\text{trig2}_\text{NLO}$'                 "trig_NLO__beta_2_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-#    '$\text{trig2}_\text{LO\hphantom{N}}$'      "trig_LO__alpha_2_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
     )
 
 fi
@@ -93,7 +88,7 @@ fi
 conftypes=(s096t36_b0824900_m002022_m01011 s096t32_b0824900_m002022_m01011 s096t28_b0824900_m002022_m01011 s096t24_b0824900_m002022_m01011 s096t20_b0824900_m002022_m01011)
 temps=(195 220 251 293 352)
 for selector_two in "zeroflow"  ; do # "finiteflow"
-    for selector in "thesis" "paper" ; do  #
+    for selector in "paper" ; do  # "thesis"
         for j in "${!temps[@]}" ; do
 
             if [ "${selector}" == "paper" ] ; then
@@ -122,18 +117,18 @@ for selector_two in "zeroflow"  ; do # "finiteflow"
                 fi
                 conftype=${conftypes[j]}
                 suffix="_T${temp}_finiteflow${add_suffix}"
-                basepath=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//${conftype}/spf/
-                outputpath=/work/home/altenkort/work/correlators_flow/plots/hisq_ms5_zeuthenFlow/EE//${conftype}/
-                outputpath_data=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/${conftype}/
+                basepath=$basepath_work_data/hisq_ms5_zeuthenFlow/EE//${conftype}/spf/
+                outputpath=$basepath_plot/hisq_ms5_zeuthenFlow/EE//${conftype}/
+                outputpath_data=$basepath_work_data/hisq_ms5_zeuthenFlow/EE/${conftype}/
             else
                 if [ "${temp}" == "352" ]; then
                     continue
                 fi
                 input_suffix="23-02-16_relflow"
                 suffix="_T${temp}${add_suffix}"
-                basepath=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/
-                outputpath=/work/home/altenkort/work/correlators_flow/plots/hisq_ms5_zeuthenFlow/EE//T${temp}/
-                outputpath_data=/work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/T${temp}
+                basepath=$basepath_work_data/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/
+                outputpath=$basepath_plot/hisq_ms5_zeuthenFlow/EE//T${temp}/
+                outputpath_data=$basepath_work_data/hisq_ms5_zeuthenFlow/EE/T${temp}
             fi
 
             set_labels_and_models
@@ -148,11 +143,15 @@ for selector_two in "zeroflow"  ; do # "finiteflow"
                 fi
             done
 
-            plot_spfs &
-            plot_kappa &
-            plot_fitcorr &
+            (
+                cd "$(dirname $0)" || exit
+                plot_spfs &
+                plot_kappa &
+                plot_fitcorr &
+                wait
+            )
 
         done
     done
 done
-wait
+
