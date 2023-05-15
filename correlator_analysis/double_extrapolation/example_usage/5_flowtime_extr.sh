@@ -4,8 +4,9 @@ qcdtype=$1
 corr=$2
 basepath_work_data=$3
 basepath_plot=$4
+nproc=${5:-"20"}
 if [ -z "$qcdtype" ] || [ -z "$corr" ] || [ -z "$basepath_work_data" ] || [ -z "$basepath_plot" ] ; then
-    echo "Usage: $0 qcdtype corr basepath_work_data basepath_plot [relflow_file]"
+    echo "Usage: $0 qcdtype corr basepath_work_data basepath_plot [nproc]"
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
     echo "choices for corr: EE BB EE_clover BB_clover"
     echo "Example: $0 hisq_ms5_zeuthenFlow EE ../../../../data/merged/ ../../../../plots/"
@@ -27,7 +28,7 @@ fi
                 --min_FlowradiusBytauT 0.25 \
                 --basepath $basepath_work_data --basepath_plot $basepath_plot \
                 --use_tex --min_tauT_plot 0.25 \
-                $Zf2file $noextr $output_suffix
+                $Zf2file $noextr $output_suffix --nproc $nproc
         }
 
         Zf2file=""
@@ -67,7 +68,7 @@ fi
                 --basepath $basepath_work_data --basepath_plot $basepath_plot \
                 --use_tex \
                 --slope_bounds -100 0 \
-                --nproc 20 $output_suffix
+                --nproc $nproc $output_suffix
         done
 
     fi

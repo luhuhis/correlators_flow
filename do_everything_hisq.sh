@@ -66,6 +66,8 @@ export G_PERT_LO_DIR
 export BASEPATH_WORK_DATA=#<YOUR-PATH-HERE>
 export BASEPATH_PLOT=#<YOUR-PATH-HERE>
 
+# Specify how many processes can be created for parallelization.
+export NPROC=1
 
 # 2. RUN SCRIPTS
 
@@ -94,7 +96,7 @@ tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usa
 # 2.1.2 Resampling
 # Load the merged data files, extract an equally spaced MCMC time series, then plot the time history of the Polyakov loop at a large flow time.
 # Then bin configurations according to the integrated autocorrelation time, then perform bootstrap resampling of the uncorrelated blocks and save the samples to numpy files (binary format).
-./$tmppath/2_reduce_data.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT
+./$tmppath/2_reduce_data.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
 # Afterwards, the following files have been created:
 
@@ -108,13 +110,13 @@ tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usa
 # polyakovloop_MCtime.pdf     | shows the MCMC time series of the polyakovloop at a large flow time
 
 # interpolate in Euclidean time and in flow time
-./$tmppath/3_spline_interpolate.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT
+./$tmppath/3_spline_interpolate.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
 # continuum extrapolation
-./$tmppath/4_continuum_extr.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT
+./$tmppath/4_continuum_extr.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
 # flow time extrapolation
-./$tmppath/5_flowtime_extr.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT
+./$tmppath/5_flowtime_extr.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
 # create relative flow time plots
 ./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
@@ -140,3 +142,6 @@ tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usa
 # TODO: make files executable locally and push them
 # TODO include pertLO files in data pub
 # TODO why are there two interpolation plots?
+
+
+# TODO fix nproc in spline and cont extr

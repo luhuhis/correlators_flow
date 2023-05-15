@@ -4,16 +4,15 @@ qcdtype=$1
 corr=$2
 basepath_work_data=$3
 basepath_plot=$4
+nproc=${5:-"20"}
 if [ -z "$qcdtype" ] || [ -z "$corr" ] || [ -z "$basepath_work_data" ] || [ -z "$basepath_plot" ] ; then
-    echo "Usage: $0 qcdtype corr basepath_work_data basepath_plot"
+    echo "Usage: $0 qcdtype corr basepath_work_data basepath_plot [nproc]"
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
     echo "choices for corr: EE BB EE_clover BB_clover"
     echo "Example: $0 hisq_ms5_zeuthenFlow EE ../../../../data/merged/ ../../../../plots/"
     exit
 fi
 
-
-ncpu=20
 
 if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     arr_conftypes=("s080t20_b0703500 s096t24_b0719200 s120t30_b0739400 s144t36_b0754400")
@@ -52,7 +51,7 @@ fi
         done
 
         #        ../find_common_flowtimes.py --basepath ../../../../data/merged/$qcdtype/$corr/ --files $files --output ../../../../data/merged/$qcdtype/$corr/${arr_output_suffix[idx]}/flowradii_${arr_output_suffix[idx]}.dat
-        args="$add_args --use_tex --nproc $ncpu --min_flowradius $min_flowradius --basepath $basepath_work_data
+        args="$add_args --use_tex --nproc $nproc --min_flowradius $min_flowradius --basepath $basepath_work_data
         --basepath_plot $basepath_plot --max_FlowradiusBytauT 0.31  --min_FlowradiusBytauT 0.2  $sufargs ${arr_output_suffix[idx]}
         --qcdtype $qcdtype --conftypes ${arr_conftypes[idx]} --corr $corr --custom_ylims $ylims"
 
