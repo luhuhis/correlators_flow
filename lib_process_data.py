@@ -190,7 +190,7 @@ def G_latt_LO_flow(tau_index: int, flowtime, corr: str, Nt: int, flowaction: str
 
     G_PERT_LO_DIR = os.environ['G_PERT_LO_DIR']
     if not G_PERT_LO_DIR:
-        print("Warn: environment variable G_PERT_LO_DIR is not set, using default path")
+        # print("Warn: environment variable G_PERT_LO_DIR is not set, using default path")
         G_PERT_LO_DIR = "/work/home/altenkort/work/correlators_flow/data/merged/pert_LO/"
 
     # store for future access
