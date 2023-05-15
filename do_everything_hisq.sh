@@ -72,7 +72,7 @@ export NPROC=1
 # 2. RUN SCRIPTS
 
 # 2.1 Double extrapolation
-# TODO The data and plots are already contained in here, but can in principle be created by calling these script on the source data file.
+# TODO If we supply the bootstrap samples, comment on that these files already exist
 
 # 2.1.1 Merge individual small text files into large binary (npy) files
 # Merge individual EE correlator measurement text files (output from SIMULATeQCD) into a small number of larger numpy files (binary format).
@@ -94,6 +94,9 @@ tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usa
 # s096t36_b0824900_m002022_m01011 (meaning Ns=96, Nt=36, beta=8.249, m_l=0.002022, m_s=0.01011). m_l and m_s are optional.
 
 # 2.1.2 Resampling
+# The double-extrapolation of the correlator data as well as the spectral reconstruction fits are later performed on
+# each individual bootstrap sample.
+#
 # Load the merged data files, extract an equally spaced MCMC time series, then plot the time history of the Polyakov loop at a large flow time.
 # Then bin configurations according to the integrated autocorrelation time, then perform bootstrap resampling of the uncorrelated blocks and save the samples to numpy files (binary format).
 ./$tmppath/2_reduce_data.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
@@ -106,20 +109,39 @@ tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usa
 # EE_<conftype>.dat           | mean EE correlator (useful for checking the data / plotting)
 # EE_err_<conftype>.dat       | std_dev of EE correlator (useful for checking the data / plotting)
 
-# $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/<conftype>
+# $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/<conftype>/
 # polyakovloop_MCtime.pdf     | shows the MCMC time series of the polyakovloop at a large flow time
 
-# interpolate in Euclidean time and in flow time
+# Interpolate the EE correlator in Euclidean time and in flow time, such that a common set of normalized flow times
+# is available across all lattices and temperatures.
 ./$tmppath/3_spline_interpolate.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
+
+# Afterwards, the following files have been created:
+
+# $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/
+# EE_<conftype>_relflows.txt                         | Normalized flow times (\sqrt{8_\tau_F}/\tau)
+# EE_<conftype>_interpolation_relflow_mean.npy       | Mean of the interpolated EE correlator for the corresponding normalized flow times (binary format, npy)
+# EE_<conftype>_interpolation_relflow_samples.npy    | Interpolations of each individual bootstrap sample of the EE correlator for the corresponding normalized flow times (binary format, npy)
+
+# $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/<conftype>/
+# EE_interpolation_relflow.pdf                       | Multi-page PDF containing plots of interpolation in Eucl. time at different normalized flow times
+# EE_interpolation_relflow_combined.pdf              | Plot of interpolation in Eucl. time for two normalized flow times
+
 
 # continuum extrapolation
 ./$tmppath/4_continuum_extr.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
+# TODO
+
 # flow time extrapolation
 ./$tmppath/5_flowtime_extr.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
+# TODO
+
 # create relative flow time plots
 ./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
+
+# TODO
 
 # plot 2piTD figure
 (
@@ -127,21 +149,22 @@ tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usa
     gnuplot 2piTDs.plt
 )
 
+# TODO
+
 # spf fits. The data line is optional
 ./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh $BASEPATH_WORK_DATA NO
+
+# TODO
 
 # plot spf fit results
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
 
+# TODO
+
 # k factor
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
 
+# TODO
+
 # plot final kappa plot
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
-
-# TODO: make files executable locally and push them
-# TODO include pertLO files in data pub
-# TODO why are there two interpolation plots?
-
-
-# TODO fix nproc in spline and cont extr
