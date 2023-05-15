@@ -282,6 +282,7 @@ plot_fontsize = 11
 def set_rc_params():
     matplotlib.pyplot.rc('font', family='cmr10', size=plot_fontsize)
     matplotlib.pyplot.rc('axes', unicode_minus=False)
+    matplotlib.rcParams['axes.formatter.use_mathtext'] = True
     matplotlib.rcParams['mathtext.fontset'] = 'cm'
     matplotlib.rcParams['figure.constrained_layout.use'] = True
     matplotlib.rcParams['axes.titlesize'] = plot_fontsize
