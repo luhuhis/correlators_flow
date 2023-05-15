@@ -13,14 +13,16 @@ if [ -z "$qcdtype" ] || [ -z "$corr" ] || [ -z "$basepath_work_data" ] || [ -z "
     exit
 fi
 
-nsamples=10000
+
 
 if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     arr_conftypes=("s080t20_b0703500" "s096t24_b0719200" "s120t30_b0739400" "s144t36_b0754400")
     arr_int_Nt=(36 36 36 36)
     ylims="1.9 3.9"
     add_args="--lower_limit_text_pos 2"
+    nsamples=10000
 elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
+    nsamples=1000
     arr_conftypes=(                                       "s096t20_b0824900_m002022_m01011"
                     "s064t20_b0803600" "s064t22_b0814700" "s096t24_b0824900_m002022_m01011"
                     "s064t20_b0785700" "s064t24_b0806800" "s096t28_b0824900_m002022_m01011"

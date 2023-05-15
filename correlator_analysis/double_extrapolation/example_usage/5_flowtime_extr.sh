@@ -56,7 +56,7 @@ fi
         for idx in "${!temps[@]}"; do
 
             ../_5_flowtime_extr.py \
-                --min_tauT_plot 0.249 --n_samples 10000 \
+                --min_tauT_plot 0.249 --n_samples 1000 \
                 --corr $corr --qcdtype $qcdtype \
                 --custom_ylims ${ylims[idx]} \
                 --finest_Nt ${fine_Nts[idx]} \
