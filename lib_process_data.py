@@ -114,7 +114,7 @@ def get_raw_data_path(qcdtype, conftype, basepath="../../data/raw/"):
     return basepath + "/" + qcdtype + "/" + conftype + "/"
 
 
-def get_plot_path(qcdtype, corr, conftype, basepath="../../plots/"):
+def get_plot_path(qcdtype, corr, conftype, basepath="../../plots/"):#
     return basepath + "/" + qcdtype + "/" + corr + "/" + conftype + "/"
 
 
