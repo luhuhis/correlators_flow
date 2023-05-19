@@ -3,7 +3,7 @@
 # ---
 # Data publication for "Heavy Quark Diffusion from 2+1 Flavor Lattice QCD with 320 MeV Pion Mass", 2023, arXiv 2302.08501
 # Authors:
-#   Luis Altenkort, altenkort@physik.uni-bielefeld.de, Universität Bielefeld#%
+#   Luis Altenkort, altenkort@physik.uni-bielefeld.de, Universität Bielefeld
 #   Olaf Kaczmarek, Universität Bielefeld
 #   Rasmus Larsen, University of Stavanger
 #   Swagato Mukherjee, Brookhaven National Laboratory
@@ -52,7 +52,8 @@ export PYTHONPATH
 # Unzip raw data (gradientFlow output from SIMULATeQCD). This will create a new folder "hisq_ms5_zeuthenFlow".
 tar -xzf hisq_ms5_zeuthenFlow.tar.gz
 
-# Add the *parent* directory of the new folder (i.e., the directory where you called the "tar" command) to the environment. This should usually be $(pwd).
+# Add the *parent* directory of the new folder (i.e., the directory where you called the "tar" command) to the environment.
+# This should usually be $(pwd).
 # For example, if you called tar in the folder /home/data, then a new folder /home/data/hisq_ms5_zeuthenFlow has been created. The parent of that directory is then /home/data.
 BASEPATH_RAW_DATA=$(pwd)
 export BASEPATH_RAW_DATA
@@ -62,7 +63,8 @@ tar -xzf pertLO
 G_PERT_LO_DIR=$(pwd)/pertLO
 export G_PERT_LO_DIR
 
-# Create two directories where you want to store the data of the intermediate steps (resampling, interpolation, extrapolations, ...) as well as final output data and plots.
+# Create two directories where you want to store the data of the intermediate steps
+# (resampling, interpolation, extrapolations, ...) as well as final output data and plots.
 export BASEPATH_WORK_DATA=#<YOUR-PATH-HERE>
 export BASEPATH_PLOT=#<YOUR-PATH-HERE>
 
@@ -72,6 +74,9 @@ export NPROC=1
 # 2. RUN SCRIPTS
 
 # 2.1 Double extrapolation
+# Files are either saved in plain text (.txt, .dat) or in numpy binary format (.npy).
+# Some steps output median and standard deviation over all bootstrap samples as plain text files, and then the
+# actual underlying bootstrap samples in numpy format (binary).
 # TODO If we supply the bootstrap samples, comment on that these files already exist
 
 # 2.1.1 Merge individual small text files into large binary (npy) files
@@ -101,70 +106,151 @@ tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usa
 # Then bin configurations according to the integrated autocorrelation time, then perform bootstrap resampling of the uncorrelated blocks and save the samples to numpy files (binary format).
 ./$tmppath/2_reduce_data.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
-# Afterwards, the following files have been created:
-
+# Afterwards, the following files have been created inside
 # $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/
+
 # EE_<conftype>_samples.npy   | bootstrap samples of EE correlator
 # EE_flow_cov_<conftype>.npy  | flow time correlation matrix (based on bootstrap samples)
-# EE_<conftype>.dat           | mean EE correlator (useful for checking the data / plotting)
+# EE_<conftype>.dat           | median EE correlator (useful for checking the data / plotting)
 # EE_err_<conftype>.dat       | std_dev of EE correlator (useful for checking the data / plotting)
 
+# and inside
 # $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/<conftype>/
+
 # polyakovloop_MCtime.pdf     | shows the MCMC time series of the polyakovloop at a large flow time
 
+# 2.1.3 Interpolation
 # Interpolate the EE correlator in Euclidean time and in flow time, such that a common set of normalized flow times
 # is available across all lattices and temperatures.
 ./$tmppath/3_spline_interpolate.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
-# Afterwards, the following files have been created:
-
+# Afterwards, the following files have been created inside
 # $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/
+
 # EE_<conftype>_relflows.txt                         | Normalized flow times (\sqrt{8_\tau_F}/\tau)
-# EE_<conftype>_interpolation_relflow_mean.npy       | Mean of the interpolated EE correlator for the corresponding normalized flow times (binary format, npy)
+# EE_<conftype>_interpolation_relflow_mean.npy       | Median of the interpolated EE correlator for the corresponding normalized flow times (binary format, npy)
 # EE_<conftype>_interpolation_relflow_samples.npy    | Interpolations of each individual bootstrap sample of the EE correlator for the corresponding normalized flow times (binary format, npy)
 
+# and inside
 # $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/<conftype>/
+
 # EE_interpolation_relflow.pdf                       | Multi-page PDF containing plots of interpolation in Eucl. time at different normalized flow times
 # EE_interpolation_relflow_combined.pdf              | Plot of interpolation in Eucl. time for two normalized flow times
 
-
-# continuum extrapolation
+# 2.1.4 Continuum extrapolation
+# Take the continuum limit of the EE correlator using a combined fit on each sample
 ./$tmppath/4_continuum_extr.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
-# TODO
+# Afterwards, the following files have been created inside:
+# $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/T<Temp-in-MeV>/cont_extr/
 
-# flow time extrapolation
+# EE_cont_relflows.dat        | Normalized flow times at which the continuum extrapolation was done
+# EE_cont_relflow.dat         | Median of continuum-extrapolated EE correlator at corresponding normalized flow times
+# EE_cont_relflow_err.dat     | Std dev of continuum-extrapolated EE correlator at corresponding normalized flow times
+# EE_cont_relflow_samples.npy | Continuum extrapolations of the EE correlator on each individual bootstrap sample
+
+# and inside
+# $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/T<Temp-in-MeV>/
+
+# EE_cont_quality_relflow.pdf | FIG 4 in the paper. Multi-page PDF containing plots of continuum extrapolation of
+# EE correlator for the corresponding normalized flow times
+
+# 2.1.5 Flow-time-to-zero extrapolation
+# Take the flow-time-to-zero limit of the EE correlator using a combined fit on each sample
 ./$tmppath/5_flowtime_extr.sh hisq_ms5_zeuthenFlow EE $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
-# TODO
+# Afterwards, the following files have been created inside
+# $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/T<Temp-in-MeV>/
 
-# create relative flow time plots
+# EE_flow_extr_relflow.npy | Flow-time-to-zero extrapolated continuum EE correlator for each bootstrap sample
+# EE_flow_extr_relflow.txt | Median and std dev of flow-time-to-zero extrapolated continuum EE correlator
+
+# and inside
+# $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/T<Temp-in-MeV>/
+
+# EE_flow_extr_quality_relflow.pdf | FIG 5 in the paper.
+
+# 2.2 Spectral reconstruction
+./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh $BASEPATH_WORK_DATA NO $NPROC
+
+# Afterwards, the following files have been created inside
+# $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/T<Temp-in-MeV>/spf/<model>_<rhoUV>_Nf3_T<Temp-in-MeV>_<min_scale>_<scale>_tauTgtr<min_tauT>_<suffix>
+# and in
+# $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype-with-smallest-lattice-spacing>/spf
+# which reflect fits to the double-extrapolated EE correlator as well as finite lattice spacing and flow time fits,
+# respectively.
+
+# corrfit.dat            | Median input EE correlator and fitted model correlator
+# params_samples.npy     | Model spectral function fit parameters for each bootstrap sample, as well as chisq/dof
+# params.dat             | Median spectral function fit parameters and 34th percentiles
+# phIUV.npy              | UV part of fitted model spectral function as function of omega/T (binary numpy format)
+# samples.npy            | Copy of the input correlator bootstrap samples but multiplied by Gnorm (= actual fit input)
+# spffit.npy             | Median spectral function with left/right 34th percentiles as function of omega/T
+
+
+# 2.3 Create correlator plots at fixed normalized flow time
 ./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
 
-# TODO
+# Afterwards, the following files have been created inside
+# $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/
 
-# plot 2piTD figure
+# EE_relflow_hisq_final.pdf | Fig. 2 in the paper
+# EE_relflow_hisq_0.25.pdf  | Top panel of Fig. 1 in the paper
+# EE_relflow_hisq_0.30.pdf  | Bottom panel of Fig. 1 in the paper
+
+# and inside
+# $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/relflow/
+
+# EE_relflow_0.25.dat       | EE correlator at normalized flow time 0.25 (see Fig. 1)
+# EE_relflow_0.30.dat       | EE correlator at normalized flow time 0.30 (see Fig. 1)
+
+
+# 2.4.1 Plot spectral reconstruction fit results #1
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
+
+# Afterwards, the following files have been created inside
+# $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/T<T-in-MeV>/
+
+# EE_spf_T<T-in-MeV>_paper.pdf      | Fig. 6 in the paper
+# EE_corrfit_T<T-in-MeV>_paper.pdf  | Fig. 7 in the paper
+# EE_kappa_T<T-in-MeV>_paper.pdf    | Fig. 9 in the paper
+
+# and inside
+# $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/T<Temp-in-MeV>/
+
+# EE_kappa_T<T-in_MeV>_paper.txt | Final results for kappa, see Table III in the paper
+
+# and inside
+# $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/
+
+# EE_kappa_T<T-in-MeV>_finiteflow_paper.txt | Final results for kappa from finite a and tau_F data, see Table III in the paper
+
+# 2.4.2 Plot spectral reconstruction fit results #2
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
+
+# Afterwards, the following files have been created inside
+# $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/
+
+# EE_kfactor.pdf | Fig. 8 in the paper
+
+
+# 2.4.3 Plot spectral reconstruction fit results #3
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
+
+# Afterwards, the following files have been created inside
+# $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/
+
+# kappa_hisq_paper.pdf | Fig. 10 in the paper
+
+
+# 2.4.4 Plot 2piTD figure (Fig. 3 in the paper)
 (
     cd 2piTD_plot || exit
     gnuplot 2piTDs.plt
 )
 
-# TODO
+# Afterwards, the following files have been created inside
+# 2piTD_plot
 
-# spf fits. The data line is optional
-./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh $BASEPATH_WORK_DATA NO
-
-# TODO
-
-# plot spf fit results
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
-
-# TODO
-
-# k factor
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
-
-# TODO
-
-# plot final kappa plot
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
+# TODO get "clean" data from new folder on influx
+# however, re-use spf fit data as it would take too long probably.

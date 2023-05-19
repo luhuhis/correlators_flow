@@ -92,7 +92,7 @@ def plot_relative_flow(args, ax, plot_offset):
             fillstyle = fillstyles[i]
             label_suffix = leg_labels[i]
             x_scale = x_scales[i]
-            inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype, basepath="../../../../data/merged/")
+            inputfolder = lpd.get_merged_data_path(qcdtype, corr, conftype, args.basepath)
             these_flowtimes = numpy.loadtxt(inputfolder + "flowtimes_" + conftype + ".dat")
             XX = numpy.loadtxt(inputfolder + corr + "_" + conftype + ".dat")
             XX_err = numpy.loadtxt(inputfolder + corr + "_err_" + conftype + ".dat")
@@ -323,6 +323,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--basepath', default="../../../../data/merged/")
     parser.add_argument('--plot_flow_extr', help='paths to files containing flow-extr data.', default=None, type=str, nargs='*')
     parser.add_argument('--flow_extr_custom_units', nargs='*', type=float)
     parser.add_argument('--plot_cont_extr', help='paths to files containing continuum-extr data.', default=None, type=str, nargs='*')

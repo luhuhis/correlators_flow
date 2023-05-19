@@ -1,7 +1,9 @@
 #!/bin/bash
 
 qcdtype="hisq_ms5_zeuthenFlow"
-basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}$qcdtype/EE/"
+
+basepath=${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}
+basepath_work_data="$basepath/$qcdtype/EE/"
 basepath_plot="${2:-"/work/home/altenkort/work/correlators_flow/plots/"}$qcdtype/EE/"
 
 suffix="" #_paper"
@@ -29,7 +31,7 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators() {
 
         # TODO revert ylims 4 9.5, leg_pos to 0 0.6 and leg_loc to "center left"
         ../plot_rec_corr_fixFlowBytauT.py \
-            --output_path $basepath_plot \
+            --output_path $basepath_plot --basepath $basepath\
             ${x_units} \
             --ylims 3 9.5 \
             --usetex \
@@ -66,7 +68,7 @@ plot_comparison_of_lattice_spacing_and_temperature_effects() {
         ../plot_rec_corr_fixFlowBytauT.py \
             ${xparam} \
             --min_flowradius 0.05 \
-            --output_path $basepath_plot \
+            --output_path $basepath_plot --basepath $basepath\
             --ylims 3 9.25 \
             --flowradiusBytauT $flowradiusBytauT \
             --qcdtype $qcdtype --corr EE \
@@ -112,7 +114,7 @@ plot_comparison_of_temperature_effects_phys() {
         ../plot_rec_corr_fixFlowBytauT.py \
             ${xparam} \
             --min_flowradius 0.05 \
-            --output_path $basepath_plot \
+            --output_path $basepath_plot --basepath $basepath\
             --ylims 0 9.25 \
             --flowradiusBytauT $flowradiusBytauT \
             --qcdtype $qcdtype --corr EE \
