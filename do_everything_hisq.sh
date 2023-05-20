@@ -56,7 +56,7 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)/AnalysisToolbox
 mkdir input && cd input
 
 # Unzip raw data (gradientFlow output from SIMULATeQCD). This will create a new folder "hisq_ms5_zeuthenFlow".
-tar -xzf /path/to/hisq_ms5_zeuthenFlow.tar.gz
+tar -xzf ../input_data.tar.gz
 
 # Add the *parent* directory of the new folder (i.e., the "input" directory where you called the "tar" command) to the
 # environment. This should usually be $(pwd).
@@ -74,21 +74,25 @@ cd ..
 mkdir output_data
 mkdir figures
 
-export BASEPATH_WORK_DATA=/path/to/output_data
-export BASEPATH_PLOT=/path/to/figures
-
-# Note that the finished figures are also contained in "figures.tar.gz" and can just be extracted for convenience,
-# skipping the whole data processing steps.
-
-# Note that the finished output data is also contained in "output_data.tar.gz" and can just be extracted for
-# convenience, skipping the whole processing steps.
+export BASEPATH_WORK_DATA=$(pwd)/output_data
+export BASEPATH_PLOT=$(pwd)/figures
 
 # Specify how many processes can be created for parallelization.
 export NPROC=1
 
+# Note that the finished figures are also contained in "figures.tar.gz" and can just be extracted for convenience,
+# skipping the whole data processing steps.
+# tar -xzf figures.tar.gz
+
+# Note that the finished output data is also contained in "output_data.tar.gz" and can just be extracted for
+# convenience, skipping the whole processing steps.
+# tar -xzf output_data.tar.gz
+
+
 # 2. RUN SCRIPTS
 
 # 2.1 Double extrapolation
+#
 # Files are either saved in plain text (.txt, .dat) or in numpy binary format (.npy).
 # Some steps output median and standard deviation over all bootstrap samples as plain text files, and then the
 # actual underlying bootstrap samples in numpy format (binary).
@@ -260,3 +264,6 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # 2.4.4 Plot Figure 3 (2piTD)
 tar -xzf figure_3_2piTD.tar.gz
 # Please refer to the README file: ./figure_3_2piTD/README
+cd ./figure_3_2piTD/
+sh 2piTDs.sh
+# Now, ./figure_3_2piTD/2piTDs.pdf exists.
