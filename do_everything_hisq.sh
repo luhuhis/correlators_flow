@@ -34,39 +34,54 @@
 # Unzip the analysis scripts. This will create a new folder "correlators_flow" in the current directory.
 tar -xzf correlators_flow.tar.gz
 # OR
-# git clone https://github.com/luhuhis/correlators_flow.git # TODO fix release tag
+# git clone https://github.com/luhuhis/correlators_flow.git
+# TODO fix release tag
 
 # Add the scripts folder to the PYTHONPATH.
-PYTHONPATH=$PYTHONPATH:$(pwd)/correlators_flow
-export PYTHONPATH
+export PYTHONPATH=$PYTHONPATH:$(pwd)/correlators_flow
 
 # Unzip the AnalysisToolbox, which is a dependency of "correlators_flow". This will create a folder "AnalysisToobox"
 tar -xzf AnalysisToolbox.tar.gz
 # OR
-# git clone https://github.com/LatticeQCD/AnalysisToolbox.git # TODO fix commit tag
+# git clone https://github.com/LatticeQCD/AnalysisToolbox.git
+# cd AnalysisToolbox
+# git checkout f9eee73d45d7b981153db75cfaf2efa2b4cefa9c
+# cd ..
 
 # Add the AnalysisToolbox folder to the PYTHONPATH.
-PYTHONPATH=$PYTHONPATH:$(pwd)/AnalysisToolbox
-export PYTHONPATH
+export PYTHONPATH=$PYTHONPATH:$(pwd)/AnalysisToolbox
+
+
+# Create new directory for input data and change into it
+mkdir input && cd input
 
 # Unzip raw data (gradientFlow output from SIMULATeQCD). This will create a new folder "hisq_ms5_zeuthenFlow".
-tar -xzf hisq_ms5_zeuthenFlow.tar.gz
+tar -xzf /path/to/hisq_ms5_zeuthenFlow.tar.gz
 
-# Add the *parent* directory of the new folder (i.e., the directory where you called the "tar" command) to the environment.
-# This should usually be $(pwd).
-# For example, if you called tar in the folder /home/data, then a new folder /home/data/hisq_ms5_zeuthenFlow has been created. The parent of that directory is then /home/data.
-BASEPATH_RAW_DATA=$(pwd)
-export BASEPATH_RAW_DATA
+# Add the *parent* directory of the new folder (i.e., the "input" directory where you called the "tar" command) to the
+# environment. This should usually be $(pwd).
+# For example, if you called tar in the folder /home/data/input, then a new folder
+# /home/data/input/hisq_ms5_zeuthenFlow has been created. The parent of that directory is then /home/data/input.
+export BASEPATH_RAW_DATA=$(pwd)
 
-# Unzip perturbative correlator data. This will create a new folder "pertLO". We want to add this new folder to the environment, e.g. /home/data/pertLO.
-tar -xzf pertLO
-G_PERT_LO_DIR=$(pwd)/pertLO
-export G_PERT_LO_DIR
+# We also need to add another subdirectory to the environment
+export G_PERT_LO_DIR=$BASEPATH_RAW_DATA/hisq_ms5_zeuthenFlow/pertLO
 
-# Create two directories where you want to store the data of the intermediate steps
-# (resampling, interpolation, extrapolations, ...) as well as final output data and plots.
-export BASEPATH_WORK_DATA=#<YOUR-PATH-HERE>
-export BASEPATH_PLOT=#<YOUR-PATH-HERE>
+# Now, create two directories where you want to store the data of the intermediate steps
+# (resampling, interpolation, extrapolations, ...) as well as final output data and figures.
+
+cd ..
+mkdir output_data
+mkdir figures
+
+export BASEPATH_WORK_DATA=/path/to/output_data
+export BASEPATH_PLOT=/path/to/figures
+
+# Note that the finished figures are also contained in "figures.tar.gz" and can just be extracted for convenience,
+# skipping the whole data processing steps.
+
+# Note that the finished output data is also contained in "output_data.tar.gz" and can just be extracted for
+# convenience, skipping the whole processing steps.
 
 # Specify how many processes can be created for parallelization.
 export NPROC=1
@@ -77,12 +92,11 @@ export NPROC=1
 # Files are either saved in plain text (.txt, .dat) or in numpy binary format (.npy).
 # Some steps output median and standard deviation over all bootstrap samples as plain text files, and then the
 # actual underlying bootstrap samples in numpy format (binary).
-# TODO If we supply the bootstrap samples, comment on that these files already exist
 
 # 2.1.1 Merge individual small text files into large binary (npy) files
 # Merge individual EE correlator measurement text files (output from SIMULATeQCD) into a small number of larger numpy files (binary format).
 # Meta data is saved to text files. This can take some time, mostly depending on file system speed (with conventional HDDs it may take hours).
-tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usage"
+export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usage"
 ./$tmppath/1_merge_data.sh hisq_ms5_zeuthenFlow EE $BASEPATH_RAW_DATA $BASEPATH_WORK_DATA $BASEPATH_RAW_DATA/hisq_ms5_zeuthenFlow/reference_flowtimes
 
 # Afterwards, the following files have been created inside
@@ -170,7 +184,7 @@ tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usa
 
 # EE_flow_extr_quality_relflow.pdf | FIG 5 in the paper.
 
-# 2.2 Spectral reconstruction
+# 2.2 Spectral reconstruction [OPTIONAL, this takes a lot of computing time, so the output files are already included]
 ./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh $BASEPATH_WORK_DATA NO $NPROC
 
 # Afterwards, the following files have been created inside
@@ -243,14 +257,6 @@ tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usa
 # kappa_hisq_paper.pdf | Fig. 10 in the paper
 
 
-# 2.4.4 Plot 2piTD figure (Fig. 3 in the paper)
-(
-    cd 2piTD_plot || exit
-    gnuplot 2piTDs.plt
-)
-
-# Afterwards, the following files have been created inside
-# 2piTD_plot
-
-# TODO get "clean" data from new folder on influx
-# however, re-use spf fit data as it would take too long probably.
+# 2.4.4 Plot Figure 3 (2piTD)
+tar -xzf figure_3_2piTD.tar.gz
+# Please refer to the README file: ./figure_3_2piTD/README

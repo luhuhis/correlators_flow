@@ -115,8 +115,6 @@ submit_hisq(){
         "--model max $NLO"
         "--model smax $LO"
         "--model smax $NLO"
-        "--model plaw_any $LO --OmegaByT_UV $OmegaByT_UV" # --prevent_overfitting 1
-        "--model plaw_any $NLO --OmegaByT_UV $OmegaByT_UV" #--prevent_overfitting 1
         "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
         "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV $OmegaByT_UV"
     )
