@@ -11,6 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 import warnings
 warnings.filterwarnings('ignore', r'All-NaN slice encountered.*')
+matplotlib.rcParams['figure.max_open_warning'] = 0  # suppress warning due to possibly large number of figures...
 
 
 def interpolate_XX_flow(xdata, ydata, ydata_norm, output_xdata1, output_xdata2):
