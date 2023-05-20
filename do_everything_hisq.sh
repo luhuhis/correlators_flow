@@ -25,17 +25,13 @@
 # ---
 # INSTRUCTIONS
 # These instructions can be copied into a bash 5.0 shell.
-# If the files are not executable by default, you can make them executable via chmod +x <filename>.
-# If the correct bash interpreter is not found automatically, you can execute the scripts with bash "manually" via
-# "bash <path/to/script>"
 
 # 1. SET UP THE ENVIRONMENT
 
 # Unzip the analysis scripts. This will create a new folder "correlators_flow" in the current directory.
 tar -xzf correlators_flow.tar.gz
 # OR
-# git clone https://github.com/luhuhis/correlators_flow.git
-# TODO fix release tag
+# git clone --branch v0.1.0 https://github.com/luhuhis/correlators_flow.git
 
 # Add the scripts folder to the PYTHONPATH.
 export PYTHONPATH=$PYTHONPATH:$(pwd)/correlators_flow
@@ -96,6 +92,9 @@ export NPROC=1
 # Files are either saved in plain text (.txt, .dat) or in numpy binary format (.npy).
 # Some steps output median and standard deviation over all bootstrap samples as plain text files, and then the
 # actual underlying bootstrap samples in numpy format (binary).
+
+# IMPORTANT: If the files are not executable by default, just make every file inside ./correlators_flow/
+# executable using chmod +x.
 
 # 2.1.1 Merge individual small text files into large binary (npy) files
 # Merge individual EE correlator measurement text files (output from SIMULATeQCD) into a small number of larger numpy files (binary format).
