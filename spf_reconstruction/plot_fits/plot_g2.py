@@ -24,7 +24,7 @@ def main():
 
     args = parse_args()
 
-    fig, ax, plots = lpd.create_figure(xlabel=r'$\omega/T$', ylabel=r'$g^2(\mu)$', xlims=args.xlims, ylims=args.ylims)
+    fig, ax, plots = lpd.create_figure(xlabel=r'$\mu/T$', ylabel=r'$g^2$', xlims=args.xlims, ylims=args.ylims)
 
     # ax.set_yscale('log')
     ax.set_xscale('log')
