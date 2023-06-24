@@ -454,3 +454,19 @@ def get_corr_subscript(corr):
 
 def float_ceil(a, precision=0):
     return numpy.true_divide(numpy.ceil(a * 10**precision), 10**precision)
+
+
+def get_g2_pert(mu, Nf, Nloop=5):
+    import rundec
+    crd = rundec.CRunDec()
+    # check Nf
+    if Nf == 0:
+        Lambda_MSbar = 0.253  # (JHEP11(2017)206)
+    elif Nf == 3:
+        Lambda_MSbar = 0.339  # 2111.09849 (p.11)
+    else:
+        print("ERROR: I don't know any LambdaMSbar for this Nf")
+        exit(1)
+    Alphas = crd.AlphasLam(Lambda_MSbar, mu, Nf, Nloop)
+    g2 = 4. * numpy.pi * Alphas
+    return g2

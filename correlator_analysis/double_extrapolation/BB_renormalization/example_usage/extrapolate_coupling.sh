@@ -1,9 +1,10 @@
 #!/bin/bash
 
+# TODO convert all paths to inputs of the script instead of hard-coding them
 
 extrapolate_coupling(){
     ../extrapolate_coupling.py \
-        --ref_scale r0 \
+        --ref_scale T_via_r0Tc \
         --calc_cont \
         --input_basepath "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/" \
         --input_files \
