@@ -470,3 +470,11 @@ def get_g2_pert(mu, Nf, Nloop=5):
     Alphas = crd.AlphasLam(Lambda_MSbar, mu, Nf, Nloop)
     g2 = 4. * numpy.pi * Alphas
     return g2
+
+
+def get_relflow_range():
+    min_relflow = 0.2
+    max_relflow = 0.33
+    stepsize = 0.005
+    relflow_range = numpy.arange(min_relflow, max_relflow + stepsize, stepsize)
+    return relflow_range

@@ -270,11 +270,7 @@ def plot_relative_flow_ints_combined(indices, args, relflow_range, orig_XX_sampl
 def new_interpolation(args, merged_data_path, flowtimes, XX_samples):
     _, _, nt, nt_half = lpd.parse_conftype(args.conftype)
 
-    # TODO convert these to input arguments
-    min_relflow = 0.2
-    max_relflow = 0.33
-    stepsize = 0.005
-    relflow_range = numpy.arange(min_relflow, max_relflow + stepsize, stepsize)
+    relflow_range = lpd.get_relflow_range()
     nflow = len(relflow_range)
 
     orig_xdata = lpd.get_tauTs(nt)

@@ -29,14 +29,7 @@ def fit_sample(ydata, xdata, edata):
     return [*fitparams, this_chisqdof]
 
 
-def load_data(args, scalefunc):
-    # declare a few arrays
-    tauFbyScale_arr = []
-    g2_arr = []
-    g2_err_arr = []
-    g2_ints = []
-    g2_err_ints = []
-
+def flow_coupling(tauF2E, a2bytauF):
     # some constants
     prefactor = numpy.pi**2 / 8
     c_0 = 3/128
@@ -44,50 +37,111 @@ def load_data(args, scalefunc):
     # c_4 = 343/327680
     c_2 = 0
     c_4 = 0
+
+    flow_coupling = prefactor * tauF2E / (c_0 + c_2 * a2bytauF + c_4 * a2bytauF ** 2)
+
+    return flow_coupling
+
+
+def convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau, tauT):
+    muFByT = 1/(sqrt8taufTByTau*tauT)
+    return muFByT
+
+# def convert_taufT2_to_sqrt8tauFByr0(taufT2, TbyTc=1.5, r0Tc=0.7457):
+#     return numpy.sqrt(8*taufT2)/(TbyTc*r0Tc)
+#
+#
+# def convert_sqrt8taufT_to_sqrt8tauFByr0(sqrt8taufT, TbyTc=1.5, r0Tc=0.7457):
+#     return sqrt8taufT / (TbyTc*r0Tc)
+
+
+min_muF_by_T = convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.3, tauT=0.5)
+max_muF_by_T = convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.25, tauT=0.25)
+
+min_muF_by_T_plot = convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.33, tauT=0.5)
+max_muF_by_T_plot = convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.20, tauT=0.25)
+
+
+def get_min_and_max_indices(muF_by_T, min_muF_by_T, max_muF_by_T):
+    min_idx = numpy.where(muF_by_T > min_muF_by_T)[0][0]-1
+    max_idx = numpy.where(muF_by_T > max_muF_by_T)[0][0]+1
+    return min_idx, max_idx
+
+
+def load_data_and_interpolate(args, scalefunc):
+    # declare a few arrays
+    muF_by_T_arr = []
+    g2_arr = []
+    g2_err_arr = []
+    g2_ints = []
+    g2_err_ints = []
+
     order = 3
+
+    largest_min_muF_by_T = 0
 
     # load data and save various "versions" of it
     for i in range(len(args.input_files)):
         tauFbya2, tauF2E, tauF2E_err = numpy.loadtxt(args.input_basepath + "/" + args.input_files[i], unpack=True)
 
-        a2bytauF = 1/tauFbya2
+        # convert to a more intuitive scale than lattice spacing. It's wrong to simply use the Nt of the finite temp lattices here to get, e.g. tauFT^2, because
+        # then you actually have a slightly different scale for each lattice since there is some slight temperature mistuning in the scale setting.
+        # for the continuum extrapolation you want to have a fixed scale.
+        # Choices:
+        # tauF/r0**2 or tauF/t0 or taufF_T^2 (via r0Tc and T/Tc==1.500)
+        tauFbyScale = tauFbya2 / scalefunc(args.betas[i])**2
+        muF_by_T = numpy.flip(1/numpy.sqrt(8*tauFbyScale))
+        muF_by_T_arr.append(muF_by_T)
 
-        # flow times
-        tauFbyScale_arr.append(tauFbya2 / scalefunc(args.betas[i])**2)  # tauF/r0**2 or tauF/t0 or taufF_T^2
-        # tauFbyScale_arr.append(tauFbya2 / args.Nts[i]**2)  # tauF/r0**2 or tauF/t0
+        largest_min_muF_by_T = max(largest_min_muF_by_T, muF_by_T[0])
 
         # coupling
-        thisg2 = prefactor * tauF2E / (c_0 + c_2 * a2bytauF + c_4 * a2bytauF**2)
-        thisg2_err = numpy.fabs(prefactor * tauF2E_err / (c_0 + c_2 * a2bytauF + c_4 * a2bytauF**2))
+        thisg2 = numpy.flip(flow_coupling(tauF2E, 1/tauFbya2))
+        thisg2_err = numpy.flip(numpy.fabs(flow_coupling(tauF2E_err, 1/tauFbya2)))
         g2_arr.append(thisg2)
         g2_err_arr.append(thisg2_err)
-        g2_ints.append(scipy.interpolate.InterpolatedUnivariateSpline(tauFbyScale_arr[-1], g2_arr[-1], k=order, ext=2))
-        g2_err_ints.append(scipy.interpolate.InterpolatedUnivariateSpline(tauFbyScale_arr[-1], g2_err_arr[-1], k=order, ext=2))
 
-    return tauFbyScale_arr, g2_arr, g2_err_arr, g2_ints, g2_err_ints
+    for i in range(len(args.input_files)):
+        muF_by_T = muF_by_T_arr[i]
+        thisg2 = g2_arr[i]
+        thisg2_err = g2_err_arr[i]
+        min_idx, max_idx = get_min_and_max_indices(muF_by_T, min_muF_by_T_plot, max_muF_by_T_plot)
+
+        g2_ints.append(scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T[0:max_idx], thisg2[0:max_idx], k=order, ext=2))
+        g2_err_ints.append(scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T[0:max_idx], thisg2_err[0:max_idx], k=order, ext=2))
+
+    return muF_by_T_arr, g2_arr, g2_err_arr, g2_ints, g2_err_ints, largest_min_muF_by_T
 
 
-def temperature(beta):
+def virtual_nt(beta):
     r0Tc = 0.7457
+
+    # below we implicitly use the scale setting of our finite temp lattices. Note that we do not account for the slight mistuning of the temperatures
+    # (i.e., we set T=1.5Tc for all lattices instead of 1.47, 1.51...) since what we actually want here is to continuum extrapolate g^2 at a fixed scale.
     TbyTc = 1.5
+
     r0_T = r0Tc * TbyTc
-    inv_T_a = sq.r0_div_a(beta) / r0_T  # 1/(a T). a is lattice spacing.
+    inv_T_a = sq.r0_div_a(beta) / r0_T  # 1/(a T). a is lattice spacing. this is a virtual Nt (= the Nt, that we should have chosen to get T=1.5Tc while keeping beta fixed.)
+    print(inv_T_a)
     return inv_T_a
 
 
 def get_scale_params(scale):
-    if scale == "r0":
-        plotlabel = r'r_0'
-        label = "r0"
-        scalefunc = sq.r0_div_a
-    elif scale == "T_via_r0Tc":
+    if scale == "T_via_r0Tc":
         plotlabel = r'T'
         label = "T_via_r0Tc"
-        scalefunc = temperature
-    elif scale == "t0":
-        plotlabel = r'\sqrt{t_0}'
-        label = "t0"
-        scalefunc = sq.sqrtt0
+        scalefunc = virtual_nt
+    else:
+        print("Scales other than T_via_r0Tc are deprecated")
+        exit(1)
+    # if scale == "r0":
+    #     plotlabel = r'r_0'
+    #     label = "r0"
+    #     scalefunc = sq.r0_div_a
+    # elif scale == "t0":
+    #     plotlabel = r'\sqrt{t_0}'
+    #     label = "t0"
+    #     scalefunc = sq.sqrtt0
 
     return plotlabel, label, scalefunc
 
@@ -98,22 +152,13 @@ def get_ylabel():
     return r'$ \displaystyle g^{2}$'
 
 
-def convert_taufT2_to_sqrt8tauFByr0(taufT2, TbyTc=1.5, r0Tc=0.7457):
-    return numpy.sqrt(8*taufT2)/(TbyTc*r0Tc)
-
-
-def convert_sqrt8taufT_to_sqrt8tauFByr0(sqrt8taufT, TbyTc=1.5, r0Tc=0.7457):
-    return sqrt8taufT / (TbyTc*r0Tc)
-
-
-def plot1(args, tauFbyScale_arr, g2_arr, g2_err_arr, cont, flowstart, flowend, plotlabel, label):
+def plot1(args, muF_by_T_arr, g2_arr, g2_err_arr, muF_by_T_samples, cont, plotlabel, label):
 
     def plot_pert_g2(ax, mus):
         g2s = []
         for mu in mus:
-            g2s.append(lpd.get_g2_pert(mu, Nf=0))
-
-        ax.errorbar(mus/0.472, g2s, fmt='-.', lw=0.5,  markersize=0, label=r'pert. ($\bar{\mu} = \mu_\mathrm{F} \equiv 1/\sqrt{8\tau_F} $)', zorder=-1)
+            g2s.append(lpd.get_g2_pert(mu*0.472, Nf=0))
+        ax.errorbar(mus, g2s, fmt='-.', lw=0.5,  markersize=0, label=r'pert. ($\bar{\mu} = \mu_\mathrm{F} \equiv 1/\sqrt{8\tau_F} $)', zorder=-1)
 
     def plot_nonpert_g2_with_pert_running(ax, g2_0, mu0, mus, color):
         alpha_s0 = g2_0 / (4 * numpy.pi)
@@ -130,46 +175,42 @@ def plot1(args, tauFbyScale_arr, g2_arr, g2_err_arr, cont, flowstart, flowend, p
                 g2s.append(g2)
                 plot_mus.append(mu)
 
-        ax.errorbar(numpy.asarray(plot_mus)/0.472, g2s, fmt='--', markersize=0, lw=0.75,  label='cont. + pert. run', zorder=-1, color=color)
+        ax.errorbar(numpy.asarray(plot_mus), g2s, fmt='--', markersize=0, lw=0.75,  label='cont. + pert. run', zorder=-1, color=color)
         # ax.axvline(mu0/0.472, alpha=1, dashes=(2,2), zorder=-10000, lw=0.5, color=color)
 
     def plot_lattice_data(ax):
         for i, Nt in enumerate(args.Nts):
-            muF_scale = 1 / numpy.sqrt(8 * tauFbyScale_arr[i])
-            ax.errorbar(muF_scale, g2_arr[i], fmt='-', lw=0.75, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$', zorder=-i - 10)
+            ax.errorbar(muF_by_T_arr[i], g2_arr[i], fmt='-', lw=0.75, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$', zorder=-i - 10)
         ax.fill_between([1 / (0.5 * 0.3), 1 / (0.25 * 0.25)],
                          [-1, -1], [4, 4], facecolor='k', alpha=0.15, zorder=-1000)
+
+    def plot_cont(ax2, cont, muF_by_T_samples):
+        cont_data = cont[:, 0]
+        ax2.errorbar(muF_by_T_samples, cont_data, fmt='-', markersize=0, lw=0.75, label=r'cont., linear in $a^' + str(Ntexp) + r'$', zorder=-1)
+
+    def nonpert_ref_with_pert_run_wrapper(ax2, cont, muF_by_T_samples):
+        # smallest mu
+        ref_idx = 0
+        g2_0 = cont[ref_idx, 0]
+        mu_0 = muF_by_T_samples[ref_idx]
+        plot_nonpert_g2_with_pert_running(ax2, g2_0, mu_0, muF_by_T_samples, "tab:cyan")
+
+        # largest mu
+        ref_idx = numpy.where(muF_by_T_samples > min_muF_by_T)[0][0] - 1
+        g2_0 = cont[ref_idx, 0]
+        mu_0 = muF_by_T_samples[ref_idx]
+        plot_nonpert_g2_with_pert_running(ax2, g2_0, mu_0, muF_by_T_samples, "k")
 
     # plot coupling for all lattices
     fig2, ax2, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / ' + plotlabel + r'$', ylabel=get_ylabel())
     ax2.set_ylim(0, 4.5)
     ax2.set_xlim(1, 900)
-
-    mu_inv = numpy.sqrt(8*tauFbyScale_arr[0])
-
-    cont_data = cont[:,0]
-    muF_scale_cont = 1/numpy.sqrt(8*tauFbyScale_arr[0][:len(cont_data)])
-    ax2.errorbar(muF_scale_cont, cont[:, 0], fmt='-', markersize=0, lw=0.75, label=r'cont., linear in $a^'+str(Ntexp)+r'$', zorder=-1)
+    ax2.set_xscale('log')
 
     plot_lattice_data(ax2)
-
-    # ax2.set_xticks((0, 0.05, 0.1, 0.15, 0.2, 0.25))
-
-    plot_pert_g2(ax2, numpy.logspace(0, 4, 200))
-
-    # smallest mu
-    ref_idx = min(numpy.abs(mu_inv - 0.4).argmin(), len(cont[:, 0])-1)
-    g2_0 = cont[ref_idx, 0]
-    mu_0 = muF_scale_cont[ref_idx]*0.472
-    plot_nonpert_g2_with_pert_running(ax2, g2_0, mu_0, muF_scale_cont*0.472, "tab:cyan")
-
-    # largest mu
-    ref_idx = numpy.abs(mu_inv - 0.5*0.3).argmin()
-    g2_0 = cont[ref_idx, 0]
-    mu_0 = muF_scale_cont[ref_idx]*0.472
-    plot_nonpert_g2_with_pert_running(ax2, g2_0, mu_0, muF_scale_cont*0.472, "k")
-
-    ax2.set_xscale('log')
+    plot_cont(ax2, cont, muF_by_T_samples)
+    nonpert_ref_with_pert_run_wrapper(ax2, cont, muF_by_T_samples)
+    plot_pert_g2(ax2, numpy.geomspace(muF_by_T_samples[0], muF_by_T_samples[-1], 50))
 
     ax2.legend(**lpd.leg_err_size(), loc="upper right", bbox_to_anchor=(1, 1), handlelength=1, fontsize=8, framealpha=0)
 
@@ -178,31 +219,28 @@ def plot1(args, tauFbyScale_arr, g2_arr, g2_err_arr, cont, flowstart, flowend, p
     fig2.savefig(file)
 
 
-def plot2(args, data, data_err, cont, slope, tauFbyScale_arr, flowstart, flowend, plotlabel, label):
+def plot2(args, data, data_err, cont, slope, muF_by_T_samples, plotlabel, label):
+
     # plot continuum extrapolation at different flow times
-    nflow = flowend - flowstart
-
     xlabel = r'$N_\tau^{-'+str(Ntexp)+r'}$'
-
     fig3, ax3, _ = lpd.create_figure(xlabel=xlabel, ylabel=get_ylabel())
 
-    min_idx = numpy.abs(numpy.sqrt(8*tauFbyScale_arr[0])-convert_sqrt8taufT_to_sqrt8tauFByr0(0.25*0.25)).argmin()-1
-    max_idx = numpy.abs(numpy.sqrt(8*tauFbyScale_arr[0])-convert_sqrt8taufT_to_sqrt8tauFByr0(0.5*0.3)).argmin()+1
+    min_idx, max_idx = get_min_and_max_indices(muF_by_T_samples, min_muF_by_T, max_muF_by_T)
 
     counter = 0
     xpoints = numpy.linspace(0, 1 / args.Nts[-1] ** Ntexp, 10)
-    for i in range(flowend - 1, flowstart, -1):
-        if (counter % 5 == 0 and min_idx < i < max_idx) or (i == min_idx) or (i == max_idx):
-            color = lpd.get_color(range(nflow), i, min_idx, max_idx, 0.95)
+    for i in range(min_idx, max_idx+1):
+        if (counter % 30 == 0 and min_idx < i < max_idx+1) or (i == min_idx) or (i == max_idx):
+            color = lpd.get_color(range(max_idx-min_idx+1), i-min_idx, 0, max_idx-min_idx, 0.95)
             ax3.errorbar(numpy.insert(1 / numpy.asarray(args.Nts)**Ntexp, 0, 0),
                          numpy.insert(data[i], 0, cont[i, 0]),
                          numpy.insert(data_err[i], 0, cont[i, 1]),
                          color=color,
-                         fmt='|', label=lpd.format_float(numpy.sqrt(8*tauFbyScale_arr[0][i])), zorder=-i)
+                         fmt='|', label=lpd.format_float(muF_by_T_samples[i], 2), zorder=-i)
             ax3.errorbar(xpoints, extrapolation_ansatz(xpoints, slope[i, 0] * factor, cont[i, 0]),
                          **lpd.fitlinestyle, color=color)
         counter += 1
-    ax3.legend(title=r'$\displaystyle \frac{\sqrt{8\tau_\mathrm{F}}}{' + plotlabel + r'}$', loc="center left", bbox_to_anchor=(1, 0.5), **lpd.leg_err_size())
+    ax3.legend(title=r'$\displaystyle \mu_\mathrm{F}/ ' + plotlabel + r'$', loc="center left", bbox_to_anchor=(1, 0.5), **lpd.leg_err_size())
 
     # thisylims = ax3.get_ylim()
     # ax3.set_ylim((0, thisylims[1]*1.1))
@@ -221,22 +259,29 @@ def plot2(args, data, data_err, cont, slope, tauFbyScale_arr, flowstart, flowend
     fig3.savefig(file)
 
 
-def do_cont_extr(args, tauFbyScale_arr, g2_ints, g2_err_ints, output_file):
+def do_cont_extr(args, g2_ints, g2_err_ints, output_file, largest_min_muF_by_T):
+
+    muF_by_T_samples = numpy.geomspace(largest_min_muF_by_T, max_muF_by_T, 10)
+
+    necessary_muF_by_T = numpy.asarray([])
+
+    for tauT in numpy.arange(0.25, 0.51, 1/36):
+        necessary_muF_by_T = numpy.concatenate((necessary_muF_by_T, convert_sqrt8taufTByTau_to_muFByT(lpd.get_relflow_range(), tauT)))
+
+    muF_by_T_samples = numpy.sort(numpy.unique(numpy.concatenate((muF_by_T_samples, necessary_muF_by_T))))
+
+    nflow = len(muF_by_T_samples)
+
     nNts = len(args.Nts)
-    smallest_last_value = numpy.min([arr[-1] for arr in tauFbyScale_arr])
-    largest_initial_value = numpy.max([arr[0] for arr in tauFbyScale_arr])
-    flowend = (numpy.abs(tauFbyScale_arr[0] - smallest_last_value)).argmin() - 1
-    flowstart = (numpy.abs(tauFbyScale_arr[0] - largest_initial_value)).argmin() + 1
-    nflow = flowend - flowstart
     data = numpy.empty((nflow, nNts))
     data_err = numpy.empty((nflow, nNts))
     cont = numpy.empty((nflow, 2))
     slope = numpy.empty((nflow, 2))
     chisqdof = numpy.empty((nflow, 2))
 
-    for i in range(flowstart, flowend):
-        data[i - flowstart] = [spline(tauFbyScale_arr[0][i]) for spline in g2_ints]
-        data_err[i - flowstart] = [spline(tauFbyScale_arr[0][i]) for spline in g2_err_ints]
+    for i, muF_by_T in enumerate(muF_by_T_samples):
+        data[i] = [spline(muF_by_T) for spline in g2_ints]
+        data_err[i] = [spline(muF_by_T) for spline in g2_err_ints]
 
     if args.calc_cont:
         for i in range(nflow):
@@ -252,7 +297,7 @@ def do_cont_extr(args, tauFbyScale_arr, g2_ints, g2_err_ints, output_file):
             slope[i, 1] = fitparams_err[0]
 
         print("saving", output_file)
-        numpy.savetxt(output_file, numpy.column_stack((tauFbyScale_arr[0][flowstart:flowend], cont, slope, chisqdof)),
+        numpy.savetxt(output_file, numpy.column_stack((muF_by_T_samples, cont, slope, chisqdof)),
                       header="mu_F/T g2_cont    err     slope     err     chisqdof    err")
     else:
         try:
@@ -266,7 +311,7 @@ def do_cont_extr(args, tauFbyScale_arr, g2_ints, g2_err_ints, output_file):
             slope[i, 0] = m[i]
             slope[i, 1] = merr[i]
 
-    return flowstart, flowend, data, data_err, cont, slope
+    return muF_by_T_samples, data, data_err, cont, slope
 
 
 def parse_args():
@@ -295,10 +340,10 @@ def main():
     args = parse_args()
     plotlabel, label, scalefunc = get_scale_params(args.ref_scale)
     output_file = args.outputpath_data + "g2_" + label + "_cont_extr.txt"
-    tauFbyScale_arr, g2_arr, g2_err_arr, g2_ints, g2_err_ints = load_data(args, scalefunc)
-    flowstart, flowend, data, data_err, cont, slope = do_cont_extr(args, tauFbyScale_arr, g2_ints, g2_err_ints, output_file)
-    plot1(args, tauFbyScale_arr, g2_arr, g2_err_arr, cont, flowstart, flowend, plotlabel, label)
-    plot2(args, data, data_err, cont, slope, tauFbyScale_arr, flowstart, flowend, plotlabel, label)
+    muF_by_T_arr, g2_arr, g2_err_arr, g2_ints, g2_err_ints, largest_min_muF_by_T = load_data_and_interpolate(args, scalefunc)
+    muF_by_T_samples, data, data_err, cont, slope = do_cont_extr(args, g2_ints, g2_err_ints, output_file, largest_min_muF_by_T)
+    plot1(args, muF_by_T_arr, g2_arr, g2_err_arr, muF_by_T_samples, cont, plotlabel, label)
+    plot2(args, data, data_err, cont, slope, muF_by_T_samples, plotlabel, label)
 
 
 if __name__ == '__main__':
