@@ -478,3 +478,10 @@ def get_relflow_range():
     stepsize = 0.005
     relflow_range = numpy.arange(min_relflow, max_relflow + stepsize, stepsize)
     return relflow_range
+
+
+def save_columns_to_file(filename, columns, labels):
+    format_str = '{:>23}' + ' {:>25}' * (len(labels)-1)
+    header_str = format_str.format(*labels)
+    numpy.savetxt(filename, numpy.column_stack(columns), header=header_str, fmt='% .18e')
+    print("saved", filename)

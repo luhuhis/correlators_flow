@@ -26,7 +26,21 @@ extrapolate_coupling(){
 compute_Zf2(){
     ../compute_Zf2.py \
     --T_by_Tc 1.5 \
-    --g2_file "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_r0_cont_extr.txt" \
+    --g2_files \
+    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_pert.txt" \
+    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_cont_extr.txt" \
+    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_2.69_pertrun.txt" \
+    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_6.67_pertrun.txt" \
+    --filelabels \
+    "pert" \
+    "nonpert" \
+    "mu02.69" \
+    "mu06.66" \
+    --plotlabels \
+    "pert." \
+    "nonpert." \
+    '\begin{flushleft}nonpert. at $\mu_\mathrm{F}/T=2.69$\newline+ pert. run\end{flushleft}' \
+    '\begin{flushleft}nonpert. at $\mu_\mathrm{F}/T=6.66$\newline+ pert. run\end{flushleft}' \
     --outputpath_plot "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/" \
     --outputpath_data "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
 }

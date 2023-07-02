@@ -39,6 +39,7 @@ max_muF_by_T_in_plot = numpy.max(necessary_muF_by_T)
 min_muF_by_T_in_plot = numpy.min(necessary_muF_by_T)
 
 muB_by_T = 19.179
+T_in_GeV = 0.472
 
 
 def get_min_and_max_indices(muF_by_T, min_muF_by_T, max_muF_by_T):
@@ -96,13 +97,14 @@ def plot2(args, data, data_err, cont, slope, muF_by_T_samples, plotlabel, label)
 
 def plot1(args, muF_by_T_arr, g2_arr, g2_err_arr, muF_by_T_samples, cont, plotlabel, label):
 
-    def plot_pert_g2(ax, mus):
+    def plot_pert_g2(ax, mus, suffix="pert"):
         g2s = []
         for mu in mus:
-            g2s.append(lpd.get_g2_pert(mu*0.472, Nf=0))
+            g2s.append(lpd.get_g2_pert(mu*T_in_GeV, Nf=0))
         ax.errorbar(mus, g2s, fmt='-.', lw=0.5,  markersize=0, label=r'pert. ($\bar{\mu} = \mu_\mathrm{F} \equiv 1/\sqrt{8\tau_F} $)', zorder=-1)
+        lpd.save_columns_to_file(args.outputpath_data + "g2_muF_" + suffix + ".txt", (mus, g2s), ["mu_F/T", "g2s"])
 
-    def plot_nonpert_g2_with_pert_running(ax, g2_0, mu0, mus, color):
+    def plot_nonpert_g2_with_pert_running(ax, g2_0, mu0, mus, color, suffix):
         alpha_s0 = g2_0 / (4 * numpy.pi)
         import rundec
         crd = rundec.CRunDec()
@@ -116,9 +118,9 @@ def plot1(args, muF_by_T_arr, g2_arr, g2_err_arr, muF_by_T_samples, cont, plotla
                 g2 = 4. * numpy.pi * Alphas
                 g2s.append(g2)
                 plot_mus.append(mu)
-
-        ax.errorbar(numpy.asarray(plot_mus), g2s, fmt='--', markersize=0, lw=0.75,  label='cont. + pert. run', zorder=-1, color=color)
-        # ax.axvline(mu0/0.472, alpha=1, dashes=(2,2), zorder=-10000, lw=0.5, color=color)
+        plot_mus = numpy.asarray(plot_mus)
+        ax.errorbar(plot_mus, g2s, fmt='--', markersize=0, lw=0.75,  label='cont. + pert. run', zorder=-1, color=color)
+        lpd.save_columns_to_file(args.outputpath_data + "g2_muF_" + suffix + ".txt", (plot_mus, g2s), ["mu_F/T", "g2s"])
 
     def plot_lattice_data(ax):
         for i, Nt in enumerate(args.Nts):
@@ -130,25 +132,15 @@ def plot1(args, muF_by_T_arr, g2_arr, g2_err_arr, muF_by_T_samples, cont, plotla
         cont_data = cont[:, 0]
         ax2.errorbar(muF_by_T_samples, cont_data, fmt='-', markersize=0, lw=0.75, label=r'cont., linear in $a^' + str(Ntexp) + r'$', zorder=-1)
 
-    def nonpert_ref_with_pert_run_wrapper(ax2, cont, muF_by_T_samples):
-        # smallest mu
-        print(muF_by_T_samples[0])
-        ref_idx = 0
+    def nonpert_ref_with_pert_run_wrapper(ax2, cont, muF_by_T_samples, color, ref_idx):
         g2_0 = cont[ref_idx, 0]
         mu_0 = muF_by_T_samples[ref_idx]
-        plot_nonpert_g2_with_pert_running(ax2, g2_0, mu_0, muF_by_T_samples, "tab:cyan")
-
-        # largest mu
-        ref_idx = numpy.fabs(muF_by_T_samples-min_muF_by_T_in_extr).argmin()
-        g2_0 = cont[ref_idx, 0]
-        mu_0 = muF_by_T_samples[ref_idx]
-        print(mu_0)
-        plot_nonpert_g2_with_pert_running(ax2, g2_0, mu_0, muF_by_T_samples, "k")
+        plot_nonpert_g2_with_pert_running(ax2, g2_0, mu_0, muF_by_T_samples, color, "mu0_"+lpd.format_float(mu_0,2)+"_pertrun")
 
     # plot coupling for all lattices
     fig2, ax2, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / ' + plotlabel + r'$', ylabel=get_ylabel())
     ax2.set_ylim(0, 4.5)
-    ax2.set_xlim(1, 200)
+    ax2.set_xlim(1, 100)
     ax2.set_xscale('log')
 
     plot_lattice_data(ax2)
@@ -158,8 +150,9 @@ def plot1(args, muF_by_T_arr, g2_arr, g2_err_arr, muF_by_T_samples, cont, plotla
     cont = cont[mask]
 
     plot_cont(ax2, cont, target_muF_by_T)
-    nonpert_ref_with_pert_run_wrapper(ax2, cont, target_muF_by_T)
-    plot_pert_g2(ax2, numpy.geomspace(min_muF_by_T_in_extr, target_muF_by_T[-1], 50))
+    nonpert_ref_with_pert_run_wrapper(ax2, cont, target_muF_by_T, "tab:cyan", ref_idx=0)  # smallest mu
+    nonpert_ref_with_pert_run_wrapper(ax2, cont, target_muF_by_T, "k", ref_idx=numpy.fabs(muF_by_T_samples - min_muF_by_T_in_extr).argmin())  # largest mu
+    plot_pert_g2(ax2, numpy.geomspace(min_muF_by_T_in_extr, target_muF_by_T[-1], 200))
 
     ax2.axvline(muB_by_T, alpha=1, dashes=(2, 2), zorder=-10000, lw=0.5, color='k')
 
@@ -189,7 +182,7 @@ def fit_sample(ydata, xdata, edata):
 
 def do_cont_extr(args, g2_ints, g2_err_ints, output_file, largest_min_muF_by_T):
 
-    muF_by_T_samples = numpy.geomspace(largest_min_muF_by_T, max_muF_by_T_in_plot, 100)
+    muF_by_T_samples = numpy.geomspace(largest_min_muF_by_T, max_muF_by_T_in_plot, 200)
     muF_by_T_samples = numpy.sort(numpy.unique(numpy.concatenate((muF_by_T_samples, necessary_muF_by_T, [muB_by_T, ]))))
     nflow = len(muF_by_T_samples)
 
@@ -217,9 +210,10 @@ def do_cont_extr(args, g2_ints, g2_err_ints, output_file, largest_min_muF_by_T):
             slope[i, 0] = fitparams[0]
             slope[i, 1] = fitparams_err[0]
 
-        print("saving", output_file)
-        numpy.savetxt(output_file, numpy.column_stack((muF_by_T_samples, cont, slope, chisqdof)),
-                      header="mu_F/T g2_cont    err     slope     err     chisqdof    err")
+        columns = (muF_by_T_samples, cont, slope, chisqdof)
+        labels = ["mu_F/T", "g2", "err", "slope", "err", "chisqdof", "err"]
+        lpd.save_columns_to_file(output_file, columns, labels)
+
     else:
         try:
             _, b, berr, m, merr, chisqdof, chisqdof_err = numpy.loadtxt(output_file, unpack=True)
@@ -310,7 +304,7 @@ def virtual_nt(beta):
 def get_scale_params(scale):
     if scale == "T_via_r0Tc":
         plotlabel = r'T'
-        label = "T_via_r0Tc"
+        label = ""
         scalefunc = virtual_nt
     else:
         print("Scales other than T_via_r0Tc are deprecated")
@@ -352,7 +346,7 @@ def main():
 
     args = parse_args()
     plotlabel, label, scalefunc = get_scale_params(args.ref_scale)
-    output_file = args.outputpath_data + "g2_" + label + "_cont_extr.txt"
+    output_file = args.outputpath_data + "g2_muF" + label + "_cont_extr.txt"
     muF_by_T_arr, g2_arr, g2_err_arr, g2_ints, g2_err_ints, largest_min_muF_by_T = load_data_and_interpolate(args, scalefunc)
     muF_by_T_samples, data, data_err, cont, slope = do_cont_extr(args, g2_ints, g2_err_ints, output_file, largest_min_muF_by_T)
 
