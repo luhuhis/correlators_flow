@@ -175,7 +175,12 @@ def do_flow_extr(index, tauTs, cont_samples, data_std, n_samples, args, flowstep
     return results, indices
 
 
-def load_data(args, basepath):  # TODO flowtimes
+def convert_sqrt8tauFByTau_to_taufT2(sqrt8tauFByTau, tauT):
+    taufT2 = (sqrt8tauFByTau*tauT)**2/8
+    return taufT2
+
+
+def load_data(args, basepath, flowsteps):  # TODO flowtimes
     if not args.relflow_file:
         samples = numpy.load(basepath + "/cont_extr/" + args.corr + "_cont_samples.npy")
         cont_samples = samples[:, :, :, 0]
@@ -184,14 +189,28 @@ def load_data(args, basepath):  # TODO flowtimes
         nt_finest_half = int(args.finest_Nt/2)
         cont_samples = samples[:, :, :nt_finest_half]
     n_samples = len(cont_samples)
-    # TODO for BB, also take care of Zf2 in relflow units
-    # if args.Zf2_file is not None:
-    #     tfT2, Zf2 = numpy.loadtxt(args.Zf2_file, unpack=True)
-    #     Zf2_int = scipy.interpolate.InterpolatedUnivariateSpline(tfT2, Zf2, k=3, ext=1)
-    #     for j in range(len(flowtimes)):
-    #         if Zf2_int(flowtimes[j]) == 0:
-    #             print("warn", flowtimes[j])
-    #         cont_samples[:, j, :] *= Zf2_int(flowtimes[j])
+    # TODO figure out which taufT2 to use for which relflow here for BB
+    if args.Zf2_file is not None:
+        tfT2, Zf2 = numpy.loadtxt(args.Zf2_file, unpack=True)
+        Zf2_int = scipy.interpolate.InterpolatedUnivariateSpline(numpy.flip(tfT2), numpy.flip(Zf2), k=3, ext=2)
+        print(numpy.min(tfT2), numpy.max(tfT2))
+        ntau_half = cont_samples.shape[2]
+        nflow = cont_samples.shape[1]
+        for tau in range(ntau_half):
+            tauT = (tau+1)/(2*ntau_half)
+            print(tauT)
+            if tauT >= 0.25:
+                for j in range(nflow):
+                    relflow = flowsteps[j]
+                    if relflow >= 0.25:
+                        taufT2 = convert_sqrt8tauFByTau_to_taufT2(relflow, tauT)
+                        print(flowsteps[j], taufT2, tauT)
+                        cont_samples[:, j, tau] *= Zf2_int(taufT2)
+
+        print(flowsteps.shape, flowsteps)
+        print(cont_samples.shape)
+        # TODO convert taufT2 to relflow index
+
     cont_samples = numpy.swapaxes(cont_samples, 1, 2)
     data_std = lpd.dev_by_dist(cont_samples, axis=0)
     # shape: (1000, 18, 221)
@@ -453,7 +472,7 @@ def main():
     finest_tauTs = lpd.get_tauTs(args.finest_Nt)
     ntauT = len(finest_tauTs)
 
-    cont_samples, data_std, n_samples = load_data(args, basepath)  # TODO flowtimes for BB
+    cont_samples, data_std, n_samples = load_data(args, basepath, flowsteps)
 
     if args.n_samples is None:
         args.nsamples = cont_samples.shape[0]

@@ -23,7 +23,7 @@ fi
                 --qcdtype quenched_1.50Tc_zeuthenFlow \
                 --custom_ylims $ylims \
                 --finest_Nt 36 \
-                --relflow_file "$basepath_work_data/$qcdtype/$corr/s144t36_b0754400/EE_s144t36_b0754400_relflows.txt" \
+                --relflow_file "$basepath_work_data/$qcdtype/$corr/s144t36_b0754400/${corr}_s144t36_b0754400_relflows.txt" \
                 --max_FlowradiusBytauT 0.3 \
                 --min_FlowradiusBytauT 0.25 \
                 --basepath $basepath_work_data --basepath_plot $basepath_plot \
@@ -38,8 +38,8 @@ fi
             ylims="2.5 3.8"
             noextr="--no_extr"
             output_suffix="--output_suffix _no_extr"
-            quenched_extr
-            Zf2file="--Zf2_file $basepath_work_data/$qcdtype/coupling/Z2_cont.dat"
+#            quenched_extr
+            Zf2file="--Zf2_file $basepath_work_data/$qcdtype/coupling/Z2_taufT2_nonpert.dat"
             ylims="2.9 4"
         fi
         output_suffix="--output_suffix _relflow"
@@ -61,7 +61,7 @@ fi
                 --custom_ylims ${ylims[idx]} \
                 --finest_Nt ${fine_Nts[idx]} \
                 --combined_fit \
-                --relflow_file "$basepath_work_data/$qcdtype/$corr/s096t${fine_Nts[idx]}_b0824900_m002022_m01011/EE_s096t${fine_Nts[idx]}_b0824900_m002022_m01011_relflows.txt" \
+                --relflow_file "$basepath_work_data/$qcdtype/$corr/s096t${fine_Nts[idx]}_b0824900_m002022_m01011/${corr}_s096t${fine_Nts[idx]}_b0824900_m002022_m01011_relflows.txt" \
                 --temp_subfolder T${temps[idx]} \
                 --max_FlowradiusBytauT 0.3 \
                 --min_FlowradiusBytauT 0.25 \
