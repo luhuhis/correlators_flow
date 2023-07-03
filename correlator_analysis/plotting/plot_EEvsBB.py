@@ -12,8 +12,8 @@ def main():
     args = parser.parse_args()
 
     # TODO make this an input
-    EE = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr.txt", unpack=True)
-    BB = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr.txt", unpack=True)
+    EE = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.txt", unpack=True)
+    BB = numpy.loadtxt("/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow.txt", unpack=True)
 
     plotstyle = dict(fmt='.', markersize=0, fillstyle='none')
 

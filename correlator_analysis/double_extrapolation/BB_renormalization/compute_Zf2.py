@@ -35,10 +35,7 @@ def convert_sqrt8taufT_to_tfT2(sqrt8taufT):
 
 
 def plot_Zf2(args, data, reference_tauF_T2):
-    fig2, ax2, plots2 = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$', ylabel=r'$Z_f^2$')
-
-    # min_idx = numpy.abs(numpy.asarray(taufT2)-convert_sqrt8taufT_to_tfT2(0.25*0.25)).argmin()-1
-    # max_idx = numpy.abs(numpy.asarray(taufT2)-convert_sqrt8taufT_to_tfT2(0.5*0.3)).argmin()+1
+    fig2, ax2, plots2 = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$', ylabel=r'$Z_f$')
 
     counter = 0
     for _, value in data.items():
@@ -50,7 +47,7 @@ def plot_Zf2(args, data, reference_tauF_T2):
     ax2.fill_between([6.66, 16],
                      [-1, -1], [1.25, 1.25], facecolor='grey', alpha=0.25, zorder=-1000)
     ax2.axhline(y=1, **lpd.horizontallinestyle)
-    ax2.set_ylim((0.95,  1.225))
+    ax2.set_ylim((0.75, 1.01))
     ax2.set_xlim(0, 20)
     ax2.legend(title=r'$g^2$', fontsize=fontsize, title_fontsize=fontsize, framealpha=0)
     file = args.outputpath_plot+"Zf2.pdf"
@@ -60,14 +57,14 @@ def plot_Zf2(args, data, reference_tauF_T2):
 
 def calc_Zf(args, muF_by_Ts, integrand, reference_muF_by_T, label):
 
-    lowindex = find_index(muF_by_Ts, reference_muF_by_T)
+    highindex = find_index(muF_by_Ts, reference_muF_by_T)
 
     Z2 = []
-    x = []
     for muF_by_T in muF_by_Ts:
-        highindex = find_index(muF_by_Ts, muF_by_T)
+        lowindex = find_index(muF_by_Ts, muF_by_T)
 
         if highindex < lowindex:
+            print('bla', muF_by_T)
             this_y = integrand[highindex:lowindex+1]
             this_x = muF_by_Ts[highindex:lowindex+1]
             sign = -1
@@ -78,15 +75,14 @@ def calc_Zf(args, muF_by_Ts, integrand, reference_muF_by_T, label):
 
         integral = integrate.trapz(this_y, this_x)
         Z2.append(numpy.exp(sign * integral))
-        x.append(muF_by_T)
 
-    muFbyT = numpy.asarray(x)
-    taufT2 = 1/(muFbyT**2 / 8)
+    taufT2 = (1/muF_by_Ts)**2 / 8
+    print(numpy.min(taufT2), numpy.max(taufT2))
 
-    lpd.save_columns_to_file(args.outputpath_data + "/Z2_muFByT_"+label+".dat", (x, Z2), ["mu_F/T", "Z_f"])
+    lpd.save_columns_to_file(args.outputpath_data + "/Z2_muFByT_"+label+".dat", (muF_by_Ts, Z2), ["mu_F/T", "Z_f"])
     lpd.save_columns_to_file(args.outputpath_data + "/Z2_taufT2_" + label + ".dat", (taufT2, Z2), ["tau_F T^2", "Z_f"])
 
-    return x, Z2
+    return Z2
 
 
 T_in_GeV = 0.472
@@ -122,7 +118,7 @@ def main():
     for file, filelabel, plotlabel in zip(args.g2_files, args.filelabels, args.plotlabels):
         muF_by_T, g2, integrand = load_data(file)
         data_integrand[filelabel] = (muF_by_T, integrand, plotlabel)
-        muF_by_T, Zf2 = calc_Zf(args, muF_by_T, integrand, reference_muF_by_T, filelabel)
+        Zf2 = calc_Zf(args, muF_by_T, integrand, reference_muF_by_T, filelabel)
         data_Zf[filelabel] = (muF_by_T, Zf2, plotlabel)
 
     plot_integrand(args, data_integrand, reference_muF_by_T)

@@ -63,33 +63,33 @@ submit_quenched_EE(){
 
 submit_quenched_BB(){
 
-    OmegaByT_UV=3.1416
+#    OmegaByT_UV=3.1416
 
     LO="--PhiUV_order LO --omega_prefactor 1 --min_scale $minscale"
-    NLO="--PhiUV_order LO --omega_prefactor optBB --min_scale $minscale"
+    NLO="--PhiUV_order NLO --omega_prefactor optBB --min_scale $minscale"
 
     models=(
         "--model max $LO"
         "--model max $NLO"
         "--model smax $LO"
         "--model smax $NLO"
-        "--model plaw_any $LO --OmegaByT_UV $OmegaByT_UV"
-        "--model plaw_any $NLO --OmegaByT_UV $OmegaByT_UV"
+        "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
+        "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
         "--model trig $LO --mu alpha --nmax 1 "
-        "--model trig $LO --mu beta --nmax 1 "
-        "--model trig $NLO --mu alpha --nmax 1 "
+#        "--model trig $LO --mu beta --nmax 1 "
+#        "--model trig $NLO --mu alpha --nmax 1 "
         "--model trig $NLO --mu beta --nmax 1 "
         "--model trig $LO --mu alpha --nmax 2 "
-        "--model trig $LO --mu beta --nmax 2 "
-        "--model trig $NLO --mu alpha --nmax 2 "
+#        "--model trig $LO --mu beta --nmax 2 "
+#        "--model trig $NLO --mu alpha --nmax 2 "
         "--model trig $NLO --mu beta --nmax 2 "
     )
 
-    nsamples=10000
+    nsamples=250
     for i in "${!models[@]}" ; do
          spfbatch ../spf_reconstruct.py \
             --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
-            --add_suffix 23-01-30 \
+            --add_suffix 23-07-03 \
             --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow.npy \
             --min_tauT 0.24 \
             --nproc $nproc \
@@ -190,9 +190,9 @@ submit_hisq_finite_a_and_tf(){
 (
     cd "$(dirname $0)" || exit
 
-    #submit_quenched_EE
-    #submit_quenched_BB
-    submit_hisq
-    submit_hisq_finite_a_and_tf
+#    submit_quenched_EE
+    submit_quenched_BB
+#    submit_hisq
+#    submit_hisq_finite_a_and_tf
 
 )

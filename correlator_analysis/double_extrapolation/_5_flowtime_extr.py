@@ -42,7 +42,7 @@ def plot_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_extr, indice
     ylims = (2.5, 3.8) if not args.custom_ylims else args.custom_ylims
     ylabel_prefix = ""
     if args.Zf2_file is not None:
-        ylabel_prefix = r'Z_f^2'
+        ylabel_prefix = r'Z_f'
     fig, ax, _ = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{'+ylabel_prefix+r'G'+lpd.get_corr_subscript(args.corr)+r'}{G^\text{norm}}$',
                                        xlabel=r'$'+displaystyle+r'{8\tau_\mathrm{F}}/{\tau^2}$')
                                        # r'\frac{Z_f^2 G_B}{G^\text{norm}}$', UseTex=args.use_tex)
@@ -193,23 +193,16 @@ def load_data(args, basepath, flowsteps):  # TODO flowtimes
     if args.Zf2_file is not None:
         tfT2, Zf2 = numpy.loadtxt(args.Zf2_file, unpack=True)
         Zf2_int = scipy.interpolate.InterpolatedUnivariateSpline(numpy.flip(tfT2), numpy.flip(Zf2), k=3, ext=2)
-        print(numpy.min(tfT2), numpy.max(tfT2))
         ntau_half = cont_samples.shape[2]
         nflow = cont_samples.shape[1]
+        print(cont_samples.shape)
         for tau in range(ntau_half):
             tauT = (tau+1)/(2*ntau_half)
-            print(tauT)
             if tauT >= 0.25:
                 for j in range(nflow):
                     relflow = flowsteps[j]
-                    if relflow >= 0.25:
-                        taufT2 = convert_sqrt8tauFByTau_to_taufT2(relflow, tauT)
-                        print(flowsteps[j], taufT2, tauT)
-                        cont_samples[:, j, tau] *= Zf2_int(taufT2)
-
-        print(flowsteps.shape, flowsteps)
-        print(cont_samples.shape)
-        # TODO convert taufT2 to relflow index
+                    taufT2 = convert_sqrt8tauFByTau_to_taufT2(relflow, tauT)
+                    cont_samples[:, j, tau] = cont_samples[:, j, tau] * Zf2_int(taufT2)
 
     cont_samples = numpy.swapaxes(cont_samples, 1, 2)
     data_std = lpd.dev_by_dist(cont_samples, axis=0)
@@ -271,7 +264,7 @@ def plot_combined_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_ext
     ylims = (2.5, 3.8) if not args.custom_ylims else args.custom_ylims
     ylabel_prefix = ""
     if args.Zf2_file is not None:
-        ylabel_prefix = r'Z_f^2'
+        ylabel_prefix = r'Z_f'
     fig, ax, _ = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{'+ylabel_prefix+r'G'+lpd.get_corr_subscript(args.corr)+r'}{G^\text{norm}}$',
                                        xlabel=r'$'+displaystyle+r'{8\tau_\mathrm{F}}/{\tau^2}$')
                                        # r'\frac{Z_f^2 G_B}{G^\text{norm}}$', UseTex=args.use_tex)

@@ -38,9 +38,8 @@ fi
             ylims="2.5 3.8"
             noextr="--no_extr"
             output_suffix="--output_suffix _no_extr"
-#            quenched_extr
+            quenched_extr
             Zf2file="--Zf2_file $basepath_work_data/$qcdtype/coupling/Z2_taufT2_nonpert.dat"
-            ylims="2.9 4"
         fi
         output_suffix="--output_suffix _relflow"
         noextr=""
