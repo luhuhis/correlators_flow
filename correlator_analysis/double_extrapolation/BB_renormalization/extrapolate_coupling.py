@@ -6,18 +6,28 @@ import argparse
 import scipy.optimize
 import scipy.interpolate
 import latqcdtools.physics.referenceScales as sq
+from dataclasses import dataclass
 
-try:
-    import colored_traceback.auto
-except ImportError:
-    pass
+from nptyping import NDArray, Float64
+from typing import Literal as Shape
+from beartype import beartype
+from beartype.typing import List
 
 Ntexp=2
 factor = 96**Ntexp
 
 
+def typed_frozen_data(f):
+    return beartype(dataclass(frozen=True)(f))
+
+
 def convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau, tauT):
     muFByT = 1/(sqrt8taufTByTau*tauT)
+    return muFByT
+
+
+def convert_taufT2_to_muFByT(taufT2):
+    muFByT = 1/numpy.sqrt(8*taufT2)
     return muFByT
 
 
@@ -31,14 +41,17 @@ def get_necessary_muF_by_T():
     return necessary_muF_by_T
 
 
-min_muF_by_T_in_extr = convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.3, tauT=0.5)
-max_muF_by_T_in_extr = convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.25, tauT=0.25)
+muB_by_T = 19.179
+min_muF_by_T_in_flow_extr = convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.3, tauT=0.5)
+max_muF_by_T_in_flow_extr = convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.25, tauT=0.25)
+
+print(min_muF_by_T_in_flow_extr, max_muF_by_T_in_flow_extr)
 
 necessary_muF_by_T = get_necessary_muF_by_T()
-max_muF_by_T_in_plot = numpy.max(necessary_muF_by_T)
-min_muF_by_T_in_plot = numpy.min(necessary_muF_by_T)
+max_muF_by_T_for_running = numpy.max([*necessary_muF_by_T, muB_by_T])
+min_muF_by_T_for_running = numpy.min([*necessary_muF_by_T, muB_by_T])
 
-muB_by_T = 19.179
+
 T_in_GeV = 0.472
 
 
@@ -55,7 +68,7 @@ def get_ylabel():
     return r'$ \displaystyle g^{2}$'
 
 
-def plot2(args, data, data_err, cont, slope, muF_by_T_samples, plotlabel, label):
+def plot2(args, cont_data_container):
 
     # plot continuum extrapolation at different flow times
     xlabel = r'$N_\tau^{-'+str(Ntexp)+r'}$'
@@ -63,20 +76,20 @@ def plot2(args, data, data_err, cont, slope, muF_by_T_samples, plotlabel, label)
 
     xpoints = numpy.linspace(0, 1 / args.Nts[-1] ** Ntexp, 10)
 
-    plot_muF_by_T = numpy.geomspace(min_muF_by_T_in_extr, muB_by_T, 10)
+    plot_muF_by_T = numpy.geomspace(min_muF_by_T_in_flow_extr, max_muF_by_T_for_running, 10)
 
     for j, muF_by_T in enumerate(plot_muF_by_T):
-        i = (numpy.fabs(muF_by_T_samples - muF_by_T)).argmin()
+        i = (numpy.fabs(cont_data_container.muF_by_T_samples - muF_by_T)).argmin()
         color = lpd.get_color(plot_muF_by_T, j)
         ax3.errorbar(numpy.insert(1 / numpy.asarray(args.Nts)**Ntexp, 0, 0),
-                     numpy.insert(data[i], 0, cont[i, 0]),
-                     numpy.insert(data_err[i], 0, cont[i, 1]),
+                     numpy.insert(cont_data_container.data[i], 0, cont_data_container.cont[i, 0]),
+                     numpy.insert(cont_data_container.data_err[i], 0, cont_data_container.cont[i, 1]),
                      color=color,
-                     fmt='|', label=lpd.format_float(muF_by_T_samples[i], 2), zorder=-i)
-        ax3.errorbar(xpoints, extrapolation_ansatz(xpoints, slope[i, 0] * factor, cont[i, 0]),
+                     fmt='|', label=lpd.format_float(cont_data_container.muF_by_T_samples[i], 2), zorder=-i)
+        ax3.errorbar(xpoints, extrapolation_ansatz(xpoints, cont_data_container.slope[i, 0] * factor, cont_data_container.cont[i, 0]),
                      **lpd.fitlinestyle, color=color)
         # counter += 1
-    ax3.legend(title=r'$\displaystyle \mu_\mathrm{F}/ ' + plotlabel + r'$', loc="center left", bbox_to_anchor=(1, 0.5), **lpd.leg_err_size())
+    ax3.legend(title=r'$\displaystyle \mu_\mathrm{F}/ T$', loc="center left", bbox_to_anchor=(1, 0.5), **lpd.leg_err_size())
 
     # thisylims = ax3.get_ylim()
     # ax3.set_ylim((0, thisylims[1]*1.1))
@@ -90,18 +103,20 @@ def plot2(args, data, data_err, cont, slope, muF_by_T_samples, plotlabel, label)
     ax3.xaxis.offsetText.set_visible(False)
     ax3.xaxis.set_label_text(xlabel + " " + offset)
 
-    file = args.outputpath_plot + "g2_" + label + "_cont_extr_imp.pdf"
+    file = args.outputpath_plot + "g2" + "_cont_extr.pdf"
     print("saving", file)
     fig3.savefig(file)
 
 
-def plot1(args, muF_by_T_arr, g2_arr, g2_err_arr, muF_by_T_samples, cont, plotlabel, label):
+def plot1(args, raw_data_container, cont_data_container):
+
+    linewidth = 1
 
     def plot_pert_g2(ax, mus, suffix="pert"):
         g2s = []
         for mu in mus:
             g2s.append(lpd.get_g2_pert(mu*T_in_GeV, Nf=0))
-        ax.errorbar(mus, g2s, fmt='-.', lw=0.5,  markersize=0, label=r'pert. ($\bar{\mu} = \mu_\mathrm{F} \equiv 1/\sqrt{8\tau_F} $)', zorder=-1)
+        ax.errorbar(mus, g2s, fmt='-.', lw=linewidth,  markersize=0, label=r'pert. ($\mu = \mu_\mathrm{F} \equiv 1/\sqrt{8\tau_F} $)', zorder=-1)
         lpd.save_columns_to_file(args.outputpath_data + "g2_muF_" + suffix + ".txt", (mus, g2s), ["mu_F/T", "g2s"])
 
     def plot_nonpert_g2_with_pert_running(ax, g2_0, mu0, mus, color, suffix):
@@ -119,18 +134,20 @@ def plot1(args, muF_by_T_arr, g2_arr, g2_err_arr, muF_by_T_samples, cont, plotla
                 g2s.append(g2)
                 plot_mus.append(mu)
         plot_mus = numpy.asarray(plot_mus)
-        ax.errorbar(plot_mus, g2s, fmt='--', markersize=0, lw=0.75,  label='cont. + pert. run', zorder=-1, color=color)
+        ax.errorbar(plot_mus, g2s, fmt='--', markersize=0, lw=linewidth,  label='cont. + pert. run', zorder=-1, color=color)
         lpd.save_columns_to_file(args.outputpath_data + "g2_muF_" + suffix + ".txt", (plot_mus, g2s), ["mu_F/T", "g2s"])
 
     def plot_lattice_data(ax):
         for i, Nt in enumerate(args.Nts):
-            ax.errorbar(muF_by_T_arr[i], g2_arr[i], fmt='-', lw=0.75, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$', zorder=-i - 10)
-        ax.fill_between([min_muF_by_T_in_extr, max_muF_by_T_in_extr],
+            ax.errorbar(raw_data_container.muF_by_T_arr[i], raw_data_container.g2_arr[i], fmt='-', lw=linewidth, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$', zorder=-i - 10)
+        ax.fill_between([min_muF_by_T_in_flow_extr, max_muF_by_T_in_flow_extr],
                          [-1, -1], [100, 100], facecolor='k', alpha=0.15, zorder=-1000)
 
     def plot_cont(ax2, cont, muF_by_T_samples):
         cont_data = cont[:, 0]
-        ax2.errorbar(muF_by_T_samples, cont_data, fmt='-', markersize=0, lw=0.75, label=r'cont., linear in $a^' + str(Ntexp) + r'$', zorder=-1)
+        ax2.errorbar(muF_by_T_samples, cont_data, fmt='-', markersize=0, lw=linewidth, label=r'cont., linear in $a^' + str(Ntexp) + r'$', zorder=-1)
+        tmp_idx = numpy.fabs(muF_by_T_samples-19.179).argmin()
+        print(muF_by_T_samples[tmp_idx], cont_data[tmp_idx])
 
     def nonpert_ref_with_pert_run_wrapper(ax2, cont, muF_by_T_samples, color, ref_idx):
         g2_0 = cont[ref_idx, 0]
@@ -138,27 +155,27 @@ def plot1(args, muF_by_T_arr, g2_arr, g2_err_arr, muF_by_T_samples, cont, plotla
         plot_nonpert_g2_with_pert_running(ax2, g2_0, mu_0, muF_by_T_samples, color, "mu0_"+lpd.format_float(mu_0,2)+"_pertrun")
 
     # plot coupling for all lattices
-    fig2, ax2, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / ' + plotlabel + r'$', ylabel=get_ylabel())
+    fig2, ax2, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=get_ylabel())
     ax2.set_ylim(0, 4.5)
     ax2.set_xlim(1, 100)
     ax2.set_xscale('log')
 
     plot_lattice_data(ax2)
 
-    mask = muB_by_T >= muF_by_T_samples
-    target_muF_by_T = muF_by_T_samples[mask]
-    cont = cont[mask]
+    mask = max_muF_by_T_for_running >= cont_data_container.muF_by_T_samples
+    target_muF_by_T = cont_data_container.muF_by_T_samples[mask]
+    cont = cont_data_container.cont[mask]
 
     plot_cont(ax2, cont, target_muF_by_T)
     nonpert_ref_with_pert_run_wrapper(ax2, cont, target_muF_by_T, "tab:cyan", ref_idx=0)  # smallest mu
-    nonpert_ref_with_pert_run_wrapper(ax2, cont, target_muF_by_T, "k", ref_idx=numpy.fabs(muF_by_T_samples - min_muF_by_T_in_extr).argmin())  # largest mu
-    plot_pert_g2(ax2, numpy.geomspace(min_muF_by_T_in_extr, target_muF_by_T[-1], 200))
+    nonpert_ref_with_pert_run_wrapper(ax2, cont, target_muF_by_T, "k", ref_idx=numpy.fabs(cont_data_container.muF_by_T_samples - min_muF_by_T_in_flow_extr).argmin())  # largest mu
+    plot_pert_g2(ax2, numpy.geomspace(min_muF_by_T_in_flow_extr, target_muF_by_T[-1], 200))
 
-    ax2.axvline(muB_by_T, alpha=1, dashes=(2, 2), zorder=-10000, lw=0.5, color='k')
+    ax2.axvline(muB_by_T, alpha=1, dashes=(2, 2), zorder=-10000, lw=linewidth, color='k')
 
     ax2.legend(**lpd.leg_err_size(), loc="lower left", bbox_to_anchor=(0, 0), handlelength=1, fontsize=8, framealpha=0)
 
-    file = args.outputpath_plot + "g2_" + label + "_imp.pdf"
+    file = args.outputpath_plot + "g2.pdf"
     print("saving", file)
     fig2.savefig(file)
 
@@ -180,10 +197,19 @@ def fit_sample(ydata, xdata, edata):
     return [*fitparams, this_chisqdof]
 
 
-def do_cont_extr(args, g2_ints, g2_err_ints, output_file, largest_min_muF_by_T):
+@typed_frozen_data
+class ContDataContainer:
+    muF_by_T_samples: NDArray[Shape["*"], Float64]
+    data: NDArray[Shape["*, *"], Float64]
+    data_err: NDArray[Shape["*, *"], Float64]
+    cont: NDArray[Shape["*, *"], Float64]
+    slope: NDArray[Shape["*, *"], Float64]
 
-    muF_by_T_samples = numpy.geomspace(largest_min_muF_by_T, max_muF_by_T_in_plot, 200)
-    muF_by_T_samples = numpy.sort(numpy.unique(numpy.concatenate((muF_by_T_samples, necessary_muF_by_T, [muB_by_T, ]))))
+
+def do_cont_extr(args, raw_data_container):
+
+    a = numpy.geomspace(raw_data_container.largest_min_muF_by_T, max_muF_by_T_for_running, 200)
+    muF_by_T_samples = numpy.asarray(numpy.sort(numpy.unique(numpy.concatenate((a, necessary_muF_by_T, [muB_by_T, ])))))
     nflow = len(muF_by_T_samples)
 
     nNts = len(args.Nts)
@@ -194,8 +220,10 @@ def do_cont_extr(args, g2_ints, g2_err_ints, output_file, largest_min_muF_by_T):
     chisqdof = numpy.empty((nflow, 2))
 
     for i, muF_by_T in enumerate(muF_by_T_samples):
-        data[i] = [spline(muF_by_T) for spline in g2_ints]
-        data_err[i] = [spline(muF_by_T) for spline in g2_err_ints]
+        data[i] = [spline(muF_by_T) for spline in raw_data_container.g2_ints]
+        data_err[i] = [spline(muF_by_T) for spline in raw_data_container.g2_err_ints]
+
+    output_file = args.outputpath_data + "g2_muF" + "_cont_extr.txt"
 
     if args.calc_cont:
         for i in range(nflow):
@@ -212,6 +240,7 @@ def do_cont_extr(args, g2_ints, g2_err_ints, output_file, largest_min_muF_by_T):
 
         columns = (muF_by_T_samples, cont, slope, chisqdof)
         labels = ["mu_F/T", "g2", "err", "slope", "err", "chisqdof", "err"]
+
         lpd.save_columns_to_file(output_file, columns, labels)
 
     else:
@@ -226,7 +255,7 @@ def do_cont_extr(args, g2_ints, g2_err_ints, output_file, largest_min_muF_by_T):
             slope[i, 0] = m[i]
             slope[i, 1] = merr[i]
 
-    return muF_by_T_samples, data, data_err, cont, slope
+    return ContDataContainer(muF_by_T_samples, data, data_err, cont, slope)
 
 
 def flow_coupling(tauF2E, a2bytauF):
@@ -243,7 +272,17 @@ def flow_coupling(tauF2E, a2bytauF):
     return flow_coupling
 
 
-def load_data_and_interpolate(args, scalefunc):
+@typed_frozen_data
+class RawDataContainer:
+    muF_by_T_arr: NDArray[Shape["*, *"], Float64]
+    g2_arr: NDArray[Shape["*, *"], Float64]
+    g2_err_arr: NDArray[Shape["*, *"], Float64]
+    g2_ints: List[scipy.interpolate._fitpack2.InterpolatedUnivariateSpline]
+    g2_err_ints: List[scipy.interpolate._fitpack2.InterpolatedUnivariateSpline]
+    largest_min_muF_by_T: float
+
+
+def load_data_and_interpolate(args: argparse.Namespace, scalefunc: callable):
     # declare a few arrays
     muF_by_T_arr = []
     g2_arr = []
@@ -265,7 +304,7 @@ def load_data_and_interpolate(args, scalefunc):
         # Choices:
         # tauF/r0**2 or tauF/t0 or taufF_T^2 (via r0Tc and T/Tc==1.500)
         tauFbyScale = tauFbya2 / scalefunc(args.betas[i])**2
-        muF_by_T = numpy.flip(1/numpy.sqrt(8*tauFbyScale))
+        muF_by_T = numpy.flip(convert_taufT2_to_muFByT(tauFbyScale))
         muF_by_T_arr.append(muF_by_T)
 
         largest_min_muF_by_T = max(largest_min_muF_by_T, numpy.min(muF_by_T))
@@ -280,12 +319,12 @@ def load_data_and_interpolate(args, scalefunc):
         muF_by_T = muF_by_T_arr[i]
         thisg2 = g2_arr[i]
         thisg2_err = g2_err_arr[i]
-        min_idx, max_idx = get_min_and_max_indices(muF_by_T, min_muF_by_T_in_plot, max_muF_by_T_in_plot)
+        min_idx, max_idx = get_min_and_max_indices(muF_by_T, min_muF_by_T_for_running, max_muF_by_T_for_running)
         # print(min_idx, max_idx, min_muF_by_T_in_plot, max_muF_by_T_in_plot, muF_by_T[max_idx])
         g2_ints.append(scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T[0:max_idx], thisg2[0:max_idx], k=order, ext=2))
         g2_err_ints.append(scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T[0:max_idx], thisg2_err[0:max_idx], k=order, ext=2))
 
-    return muF_by_T_arr, g2_arr, g2_err_arr, g2_ints, g2_err_ints, largest_min_muF_by_T
+    return RawDataContainer(numpy.asarray(muF_by_T_arr), numpy.asarray(g2_arr), numpy.asarray(g2_err_arr), g2_ints, g2_err_ints, largest_min_muF_by_T)
 
 
 def virtual_nt(beta):
@@ -301,30 +340,9 @@ def virtual_nt(beta):
     return inv_T_a
 
 
-def get_scale_params(scale):
-    if scale == "T_via_r0Tc":
-        plotlabel = r'T'
-        label = ""
-        scalefunc = virtual_nt
-    else:
-        print("Scales other than T_via_r0Tc are deprecated")
-        exit(1)
-    # if scale == "r0":
-    #     plotlabel = r'r_0'
-    #     label = "r0"
-    #     scalefunc = sq.r0_div_a
-    # elif scale == "t0":
-    #     plotlabel = r'\sqrt{t_0}'
-    #     label = "t0"
-    #     scalefunc = sq.sqrtt0
-
-    return plotlabel, label, scalefunc
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--calc_cont', help='calc continuum extrapolation and save to file instead of reading it from the file', action="store_true")
-    parser.add_argument('--ref_scale', choices=["r0", "t0", "T_via_r0Tc"], required=True)
     parser.add_argument('--input_basepath', default="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/")
     parser.add_argument('--input_files', nargs='*', type=str, required=True)
     parser.add_argument('--outputpath_plot', default="/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/")
@@ -345,16 +363,17 @@ def main():
     # this script load tf^2 <E> from some files, then calculates the tree-level improved coupling g^2 and does a continuum extrapolation of g^2
 
     args = parse_args()
-    plotlabel, label, scalefunc = get_scale_params(args.ref_scale)
-    output_file = args.outputpath_data + "g2_muF" + label + "_cont_extr.txt"
-    muF_by_T_arr, g2_arr, g2_err_arr, g2_ints, g2_err_ints, largest_min_muF_by_T = load_data_and_interpolate(args, scalefunc)
-    muF_by_T_samples, data, data_err, cont, slope = do_cont_extr(args, g2_ints, g2_err_ints, output_file, largest_min_muF_by_T)
+    raw_data_container = load_data_and_interpolate(args, virtual_nt)
+    cont_data_container = do_cont_extr(args, raw_data_container)
+
+    print(numpy.amax(cont_data_container.data_err/cont_data_container.data))
+
+    plot1(args, raw_data_container, cont_data_container)
+    plot2(args, cont_data_container)
 
     # TODO. now that plot is correct, extract the four possibilities of g^2 before plotting, save it to file, and then pass them to the plot function.
     # I need g^2 as a function of mu_F/T in the range min_muF_by_T_in_extr to muB_by_T
 
-    plot1(args, muF_by_T_arr, g2_arr, g2_err_arr, muF_by_T_samples, cont, plotlabel, label)
-    plot2(args, data, data_err, cont, slope, muF_by_T_samples, plotlabel, label)
 
 
 if __name__ == '__main__':
