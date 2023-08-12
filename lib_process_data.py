@@ -10,6 +10,11 @@ import scipy.interpolate
 import concurrent.futures
 import os
 
+try:
+    import colored_traceback.auto
+except ImportError:
+    pass
+
 
 def format_float(number, digits=3):
     thisformat = '{0:.'+str(int(digits))+'f}'
@@ -188,7 +193,14 @@ def G_latt_LO_flow(tau_index: int, flowtime, corr: str, Nt: int, flowaction: str
 
     identifier = str(Nt)+flowaction+gaugeaction
 
-    G_PERT_LO_DIR = os.environ['G_PERT_LO_DIR']
+    default_G_PERT_LO_DIR = "/work/home/altenkort/work/correlators_flow/data/merged/pert_LO/"
+    G_PERT_LO_DIR = default_G_PERT_LO_DIR
+
+    try:
+        G_PERT_LO_DIR = os.environ['G_PERT_LO_DIR']
+    except KeyError:
+        pass
+
     if not G_PERT_LO_DIR:
         # print("Warn: environment variable G_PERT_LO_DIR is not set, using default path")
         G_PERT_LO_DIR = "/work/home/altenkort/work/correlators_flow/data/merged/pert_LO/"
