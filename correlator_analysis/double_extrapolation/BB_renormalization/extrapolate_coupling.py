@@ -89,7 +89,7 @@ def plot_g2_vs_1overNt2(args, cont_data_container):
 
     # thisylims = ax3.get_ylim()
     # ax3.set_ylim((0, thisylims[1]*1.1))
-    ax3.set_ylim(0.75, 2.85)
+    ax3.set_ylim(0.7, 2.8)
     thisxlims = ax3.get_xlim()
     ax3.set_xlim((thisxlims[0], thisxlims[1] * 1.025))
 
@@ -107,9 +107,9 @@ def plot_g2_vs_1overNt2(args, cont_data_container):
 class Plotter_g2_vs_mu:
     def __init__(self, args, raw_data_container, cont_data_container, msbar_data_container):
         self.args = args
-        self.raw_data_container = raw_data_container
-        self.cont_data_container = cont_data_container
-        self.msbar_data_container = msbar_data_container
+        self.raw_data_container: RawDataContainer = raw_data_container
+        self.cont_data_container: ContDataContainer = cont_data_container
+        self.msbar_data_container: MSBarDataContainer = msbar_data_container
         self.linewidth = 1
 
     def __setup_plot(self):
@@ -131,11 +131,26 @@ class Plotter_g2_vs_mu:
     def __plot_pert_g2(self, ax, mus, suffix="pert"):
         g2s = []
         for mu in mus:
-            g2s.append(lpd.get_g2_pert(mu*T_in_GeV, Nf=0))
+            g2s.append(lpd.get_g2_pert(mu*T_in_GeV, Nf=0, Nloop=3))
         ax.errorbar(mus, g2s, fmt='-.', lw=self.linewidth,  markersize=0, label=r'pert. ($\mu = \mu_\mathrm{F} \equiv 1/\sqrt{8\tau_F} $)', zorder=-1)
         lpd.save_columns_to_file(self.args.outputpath_data + "g2_muF_" + suffix + ".txt", (mus, g2s), ["mu_F/T", "g2s"])
 
-    def __plot_nonpert_g2_with_pert_running(self, ax, g2_0, mu0, mus, color, suffix):
+
+    def __plot_lattice_data(self, ax):
+        for i, Nt in enumerate(self.args.Nts):
+            ax.errorbar(self.raw_data_container.muF_by_T_arr[i], self.raw_data_container.g2_arr[i], fmt='-', lw=self.linewidth, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$', zorder=-i - 10)
+
+    def __plot_grey_flow_extr_band(self, ax):
+        ax.fill_between([min_muF_by_T_in_flow_extr, max_muF_by_T_in_flow_extr],
+                         [-1, -1], [100, 100], facecolor='k', alpha=0.15, zorder=-1000)
+
+    def __plot_cont(self, ax):
+        cont_data = self.cont_data_container.g2_cont[:, 0]
+        ax.errorbar(self.cont_data_container.muF_by_T_cont, cont_data, fmt='-', markersize=0, lw=self.linewidth, label=r'flow', zorder=-1)  # r'cont., linear in $a^' + str(Ntexp) + r'$'
+        # tmp_idx = numpy.fabs(self.cont_data_container.muF_by_T_cont-19.179).argmin()
+        # print(self.cont_data_container.muF_by_T_cont[tmp_idx], cont_data[tmp_idx])
+
+    def __plot_pert_run_starting_from_reference(self, ax, g2_0, mu_0, target_mus, color, suffix):
         alpha_s0 = g2_0 / (4 * numpy.pi)
         import rundec
         crd = rundec.CRunDec()
@@ -143,32 +158,21 @@ class Plotter_g2_vs_mu:
         nf = 0
         nloop = 5
         plot_mus = []
-        for mu in mus:
-            if mu >= mu0:
-                Alphas = crd.AlphasExact(alpha_s0, mu0, mu, nf, nloop)
+        for mu in target_mus:
+            if mu >= mu_0:
+                Alphas = crd.AlphasExact(alpha_s0, mu_0, mu, nf, nloop)
                 g2 = 4. * numpy.pi * Alphas
                 g2s.append(g2)
                 plot_mus.append(mu)
         plot_mus = numpy.asarray(plot_mus)
-        ax.errorbar(plot_mus, g2s, fmt='--', markersize=0, lw=self.linewidth,  label='cont. + pert. run', zorder=-1, color=color)
+        ax.errorbar(plot_mus, g2s, fmt='--', markersize=0, lw=self.linewidth, zorder=(int(mu_0))+20, color=color,
+                    label=r'\begin{flushleft}$\text{flow}\rightarrow\overline{\text{MS}}$ at ' + r' $\frac{\mu_\text{F}}{T}=' + lpd.format_float(mu_0, 1) + r'$ \newline with ' + str(nloop)+r'-loop run \end{flushleft}')
         lpd.save_columns_to_file(self.args.outputpath_data + "g2_muF_" + suffix + ".txt", (plot_mus, g2s), ["mu_F/T", "g2s"])
-
-    def __plot_lattice_data(self, ax):
-        for i, Nt in enumerate(self.args.Nts):
-            ax.errorbar(self.raw_data_container.muF_by_T_arr[i], self.raw_data_container.g2_arr[i], fmt='-', lw=self.linewidth, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$', zorder=-i - 10)
-        ax.fill_between([min_muF_by_T_in_flow_extr, max_muF_by_T_in_flow_extr],
-                         [-1, -1], [100, 100], facecolor='k', alpha=0.15, zorder=-1000)
-
-    def __plot_cont(self, ax):
-        cont_data = self.cont_data_container.g2_cont[:, 0]
-        ax.errorbar(self.cont_data_container.muF_by_T_cont, cont_data, fmt='-', markersize=0, lw=self.linewidth, label=r'cont., linear in $a^' + str(Ntexp) + r'$', zorder=-1)
-        tmp_idx = numpy.fabs(self.cont_data_container.muF_by_T_cont-19.179).argmin()
-        print(self.cont_data_container.muF_by_T_cont[tmp_idx], cont_data[tmp_idx])
 
     def __nonpert_ref_with_pert_run_wrapper(self, ax, cont, target_muF_by_T, color, ref_idx):
         g2_0 = cont[ref_idx, 0]
         mu_0 = target_muF_by_T[ref_idx]
-        self.__plot_nonpert_g2_with_pert_running(ax, g2_0, mu_0, target_muF_by_T, color, "mu0_"+lpd.format_float(mu_0,2)+"_pertrun")
+        self.__plot_pert_run_starting_from_reference(ax, g2_0, mu_0, target_muF_by_T, color, "mu0_"+lpd.format_float(mu_0,2)+"_pertrun")
 
     def __plot_various_pert_runs(self, ax):
         mask = max_muF_by_T_for_running >= self.cont_data_container.muF_by_T_cont
@@ -180,12 +184,26 @@ class Plotter_g2_vs_mu:
         self.__nonpert_ref_with_pert_run_wrapper(ax, cont, target_muF_by_T, "k", ref_idx)  # largest mu
         self.__plot_pert_g2(ax, numpy.geomspace(min_muF_by_T_in_flow_extr, target_muF_by_T[-1], 200))
 
+    def __plot_pert_run_from_converted_g2MSbar(self, ax):
+
+        for reference_muF_by_T, color in zip((4, 8), ("black", "red")):
+
+            mask = max_muF_by_T_for_running >= self.msbar_data_container.mubar_by_T
+            target_muF_by_T = self.msbar_data_container.mubar_by_T[mask]
+
+            ref_idx = numpy.fabs(self.msbar_data_container.mubar_by_T - reference_muF_by_T).argmin()
+            g2_0 = self.msbar_data_container.g2_MSBAR[ref_idx]
+            mu_0 = self.msbar_data_container.mubar_by_T[ref_idx]
+
+            self.__plot_pert_run_starting_from_reference(ax, g2_0, mu_0, target_muF_by_T, color, "mu0_"+lpd.format_float(mu_0,2)+"_pertrun")
+
     def __plot_MSBAR(self, ax):
-        ax.errorbar(*self.msbar_data_container, fmt='--', markersize=0, lw=self.linewidth, label='MSBAR')
+        ax.errorbar(*self.msbar_data_container, fmt='-', markersize=0, lw=self.linewidth, label=r'$\text{flow}\rightarrow\overline{\text{MS}}$')
 
     def plot_full(self, file_suffix="_all"):
         fig, ax = self.__setup_plot()
 
+        self.__plot_grey_flow_extr_band(ax)
         self.__plot_lattice_data(ax)
         self.__plot_cont(ax)
         self.__plot_various_pert_runs(ax)
@@ -196,8 +214,11 @@ class Plotter_g2_vs_mu:
     def plot_selected(self, file_suffix=""):
         fig, ax = self.__setup_plot()
 
+        self.__plot_grey_flow_extr_band(ax)
         self.__plot_cont(ax)
         self.__plot_MSBAR(ax)
+        self.__plot_pert_run_from_converted_g2MSbar(ax)
+        # self.__plot_pert_g2(ax, numpy.geomspace(2, muB_by_T, 200))
 
         self.__finalize_plot(fig, ax, file_suffix)
 
