@@ -16,6 +16,35 @@ except ImportError:
     pass
 
 
+# Data organization
+from dataclasses import dataclass
+from beartype import beartype
+
+
+def typed_frozen_data(cls):
+    # This is a decorator for classes.
+
+    # Define the __iter__ method for the class
+    # The __iter__ method is a special method in Python that allows an object to be iterable
+    # An iterable object can be looped over (e.g., in a for loop), and can be used with the unpacking operator *
+    def __iter__(self):
+        # vars(self) returns a dictionary of the instance's attributes (name-value pairs)
+        # .values() gets just the values of those attributes (i.e., the data stored in the instance)
+        # iter() returns an iterator over those values, allowing them to be looped over or unpacked
+        return iter(vars(self).values())
+
+    # Attach the __iter__ method to the class
+    # This makes instances of the class iterable, so they can be used with the * operator
+    setattr(cls, '__iter__', __iter__)
+
+    # Apply the beartype and dataclass decorators, with frozen=True
+    # beartype adds runtime type checking to the class
+    # dataclass automatically generates common special methods (e.g., __init__) for the class
+    # frozen=True makes instances of the class immutable (i.e., their attributes cannot be changed after creation)
+    # Return the modified class
+    return beartype(dataclass(frozen=True)(cls))
+
+
 def format_float(number, digits=3):
     thisformat = '{0:.'+str(int(digits))+'f}'
     return thisformat.format(number)
