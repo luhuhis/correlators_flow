@@ -1,11 +1,10 @@
 #!/bin/bash
 
 # TODO convert all paths to inputs of the script instead of hard-coding them
+# --calc_cont \
 
 extrapolate_coupling(){
     ../extrapolate_coupling.py \
-        --ref_scale T_via_r0Tc \
-        --calc_cont \
         --input_basepath "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/" \
         --input_files \
         flow_t2E_s096t144_b0754400.dat \
@@ -21,7 +20,18 @@ extrapolate_coupling(){
 # 7.035
 }
 
+# #    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_2.69_pertrun.txt" \
+# #    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_6.67_pertrun.txt" \
 
+#    "mu02.69" \
+#    "mu06.66" \
+
+#extrapolate_coupling
+
+
+
+mu_low=2.69
+mu_high=6.67
 
 compute_Zf2(){
     ../compute_Zf2.py \
@@ -29,25 +39,26 @@ compute_Zf2(){
     --g2_files \
     "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_pert.txt" \
     "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_cont_extr.txt" \
-    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_2.69_pertrun.txt" \
-    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_6.67_pertrun.txt" \
+    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_${mu_low}_pertrun.txt" \
+    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_${mu_high}_pertrun.txt" \
     --filelabels \
     "pert" \
     "nonpert" \
-    "mu02.69" \
-    "mu06.66" \
+    "mu0_${mu_low}" \
+    "mu0_${mu_high}" \
     --plotlabels \
     "pert." \
     "nonpert." \
-    '\begin{flushleft}nonpert. at $\mu_\mathrm{F}/T=2.69$\newline+ pert. run\end{flushleft}' \
-    '\begin{flushleft}nonpert. at $\mu_\mathrm{F}/T=6.66$\newline+ pert. run\end{flushleft}' \
+    '\begin{flushleft}nonpert. at closest $\tau_\mathrm{F}$\newline+ pert. run\end{flushleft}' \
+    '\begin{flushleft}nonpert. at largest $\tau_\mathrm{F}$ \newline+ pert. run\end{flushleft}' \
     --outputpath_plot "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/" \
     --outputpath_data "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
 }
 
-
-extrapolate_coupling
 compute_Zf2
+
+
+
 
 # flow_t2E_s064t64_b0687361.dat \
 # 6.87361

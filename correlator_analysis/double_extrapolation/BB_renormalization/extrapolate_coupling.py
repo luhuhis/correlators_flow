@@ -135,7 +135,6 @@ class Plotter_g2_vs_mu:
         ax.errorbar(mus, g2s, fmt='-.', lw=self.linewidth,  markersize=0, label=r'pert. ($\mu = \mu_\mathrm{F} \equiv 1/\sqrt{8\tau_F} $)', zorder=-1)
         lpd.save_columns_to_file(self.args.outputpath_data + "g2_muF_" + suffix + ".txt", (mus, g2s), ["mu_F/T", "g2s"])
 
-
     def __plot_lattice_data(self, ax):
         for i, Nt in enumerate(self.args.Nts):
             ax.errorbar(self.raw_data_container.muF_by_T_arr[i], self.raw_data_container.g2_arr[i], fmt='-', lw=self.linewidth, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$', zorder=-i - 10)
