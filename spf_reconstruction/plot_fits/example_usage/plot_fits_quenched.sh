@@ -3,7 +3,7 @@
 
 # quenched 1.5 Tc
 
-for corr in "EE" "BB" ; do # "EE"
+for corr in "BB" ; do # "EE"
 
     if [ "${corr}" == "EE" ] ; then
         input_suffix="23-02-26"
@@ -30,22 +30,22 @@ for corr in "EE" "BB" ; do # "EE"
         )
 
     elif [ "${corr}" == "BB" ] ; then
-        input_suffix="23-01-19"
-        nsamples=500
+        input_suffix="23-07-03"  # "23-01-19"
+        nsamples=250
         minscale=eff
         ylims="0.1 5000"
         add_suffix=""
 
-        labels_and_models=(
-            '$\text{max}_\text{NLO}$'                   "max_LO_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+        labels_and_models=(                              #max_LO_Nf0_T0.472_mineff_w1_250smpls_tauTgtr0.24_23-07-03
+            '$\text{max}_\text{NLO}$'                   "max_NLO_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
             '$\text{max}_\text{LO}$'                    "max_LO_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
-            '$\text{smax}_\text{NLO}$'                  "smax_LO_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+            '$\text{smax}_\text{NLO}$'                  "smax_NLO_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
             '$\text{smax}_\text{LO}$'                   "smax_LO_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
-            '$\text{plaw}_\text{NLO}$'                  "plaw_any_wUV3.1416_LO_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
-            '$\text{plaw}_\text{LO}$'                   "plaw_any_wUV3.1416_LO_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
-            '$\text{trig1}_\text{NLO}$'                 "trig_LO__beta_1_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+            '$\text{plaw}_\text{NLO}$'                  "plaw_wIR1.0_wUV6.2832_NLO_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+            '$\text{plaw}_\text{LO}$'                   "plaw_wIR1.0_wUV6.2832_LO_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+            '$\text{trig1}_\text{NLO}$'                 "trig_NLO__beta_1_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
             '$\text{trig1}_\text{LO}$'                  "trig_LO__alpha_1_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
-            '$\text{trig2}_\text{NLO}$'                 "trig_LO__beta_2_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+            '$\text{trig2}_\text{NLO}$'                 "trig_NLO__beta_2_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
             '$\text{trig2}_\text{LO}$'                  "trig_LO__alpha_2_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
         )
 
@@ -104,9 +104,9 @@ for corr in "EE" "BB" ; do # "EE"
     --ylims ${ylims}
     }
 
-    plot_spfs &
-    plot_kappa &
-    plot_fitcorr &
+    plot_spfs
+    plot_kappa
+    plot_fitcorr
 
 done
 wait
