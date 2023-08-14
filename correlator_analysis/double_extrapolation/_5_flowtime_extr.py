@@ -188,21 +188,28 @@ def load_data(args, basepath, flowsteps):  # TODO flowtimes
         samples = numpy.load(basepath + "/cont_extr/" + args.corr + "_cont_relflow_samples.npy")
         nt_finest_half = int(args.finest_Nt/2)
         cont_samples = samples[:, :, :nt_finest_half]
+        print(cont_samples.shape)
     n_samples = len(cont_samples)
-    # TODO figure out which taufT2 to use for which relflow here for BB
+
+    gamma_0 = 3 / (8 * numpy.pi**2)
+    g2 = 1.5
+    K = 8/3 + numpy.euler_gamma - numpy.log(2)
+    Z_K = 1 + 2*K * g2 * gamma_0
+    print(Z_K)
+
     if args.Zf2_file is not None:
         tfT2, Zf2 = numpy.loadtxt(args.Zf2_file, unpack=True)
         Zf2_int = scipy.interpolate.InterpolatedUnivariateSpline(numpy.flip(tfT2), numpy.flip(Zf2), k=3, ext=2)
         ntau_half = cont_samples.shape[2]
         nflow = cont_samples.shape[1]
         print(cont_samples.shape)
-        for tau in range(ntau_half):
-            tauT = (tau+1)/(2*ntau_half)
-            if tauT >= 0.25:
-                for j in range(nflow):
-                    relflow = flowsteps[j]
-                    taufT2 = convert_sqrt8tauFByTau_to_taufT2(relflow, tauT)
-                    cont_samples[:, j, tau] = cont_samples[:, j, tau] * Zf2_int(taufT2)
+        for j in range(nflow):
+            relflow = flowsteps[j]
+            for tau in range(ntau_half):
+                tauT = (tau+1)/(2*ntau_half)
+                taufT2 = convert_sqrt8tauFByTau_to_taufT2(relflow, tauT)
+                if tauT >= 0.25:
+                    cont_samples[:, j, tau] *= Zf2_int(taufT2) * Z_K
 
     cont_samples = numpy.swapaxes(cont_samples, 1, 2)
     data_std = lpd.dev_by_dist(cont_samples, axis=0)
@@ -264,7 +271,7 @@ def plot_combined_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_ext
     ylims = (2.5, 3.8) if not args.custom_ylims else args.custom_ylims
     ylabel_prefix = ""
     if args.Zf2_file is not None:
-        ylabel_prefix = r'Z_f'
+        ylabel_prefix = r'Z_f^2 Z_K^2'
     fig, ax, _ = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{'+ylabel_prefix+r'G'+lpd.get_corr_subscript(args.corr)+r'}{G^\text{norm}}$',
                                        xlabel=r'$'+displaystyle+r'{8\tau_\mathrm{F}}/{\tau^2}$')
                                        # r'\frac{Z_f^2 G_B}{G^\text{norm}}$', UseTex=args.use_tex)
