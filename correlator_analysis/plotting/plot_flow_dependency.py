@@ -53,7 +53,7 @@ def plot(args, tauT, flowtimesT2, XX, XX_err):
 
     fig, ax, _ = lpd.create_figure(xlims=args.xlims, ylims=args.ylims,
                                    xlabel=r'$8\tau_\mathrm{F} / \tau^2$',
-                                   ylabel=r'$\displaystyle \frac{G'+lpd.get_corr_subscript(args.corr)+r'}{G^{\mathrm{norm}}}$',
+                                   ylabel=r'$\displaystyle \frac{G'+lpd.get_corr_subscript(args.corr)+r'}{G^{\mathrm{norm}}_{(\tau_\mathrm{F}=0)}}$',
                                    ylabelbox=None)
 
     plots = []

@@ -7,6 +7,8 @@ conftypes_quenched=(
 "s144t36_b0754400"
 )
 
+# TODO add option to only plot EE or BB and decdie between quenched/hist
+
 
 for conftype in "${conftypes_quenched[@]}" ; do
     for corr in "EE" "BB" ; do
@@ -36,7 +38,7 @@ for conftype in "${conftypes_quenched[@]}" ; do
          --leg_pos 1 0.5 --leg_ncol 1 --leg_lw 0 --leg_pad 0.5 \
          --leg_loc "center left" \
          --suffix "zoom" \
-         &
+        &
 
     done
 done
@@ -56,7 +58,7 @@ qcdtype=hisq_ms5_zeuthenFlow
  --ticklocations 0.1 0.25 0.33 0.4 0.45 0.5 \
  --leg_pos 1 0.5 --leg_ncol 1 --leg_lw 0 --leg_pad 0.5 \
  --leg_loc "center left" \
- &
+&
 
 
      ../plot_flow_dependency.py \
@@ -71,6 +73,6 @@ qcdtype=hisq_ms5_zeuthenFlow
  --leg_pos 1 0.5 --leg_ncol 1 --leg_lw 0 --leg_pad 0.5 \
  --leg_loc "center left" \
  --suffix "zoom" \
- &
+&
 
 wait
