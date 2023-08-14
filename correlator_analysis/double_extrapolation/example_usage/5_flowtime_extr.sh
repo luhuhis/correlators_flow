@@ -35,7 +35,7 @@ fi
         ylims="2.2 4"
 
         if [ "$corr" == "BB" ]; then
-            ylims="2.5 3.8"
+            ylims="2 5.5"
             noextr="--no_extr"
             output_suffix="--output_suffix _no_extr"
             quenched_extr
