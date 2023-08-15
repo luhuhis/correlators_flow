@@ -29,28 +29,17 @@ extrapolate_coupling(){
 #extrapolate_coupling
 
 
+#
+#mu_low=2.69
+#mu_high=6.67
 
-mu_low=2.69
-mu_high=6.67
+# TODO: save MSBAR g^2 in the above script in some file, then use that file here.
+# TODO: add plots for all the different possibilities of Z_total
 
 compute_Zf2(){
     ../compute_Zf2.py \
-    --T_by_Tc 1.5 \
-    --g2_files \
-    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_pert.txt" \
-    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_cont_extr.txt" \
-    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_${mu_low}_pertrun.txt" \
-    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_${mu_high}_pertrun.txt" \
-    --filelabels \
-    "pert" \
-    "nonpert" \
-    "mu0_${mu_low}" \
-    "mu0_${mu_high}" \
-    --plotlabels \
-    "pert." \
-    "nonpert." \
-    '\begin{flushleft}nonpert. at closest $\tau_\mathrm{F}$\newline+ pert. run\end{flushleft}' \
-    '\begin{flushleft}nonpert. at largest $\tau_\mathrm{F}$ \newline+ pert. run\end{flushleft}' \
+    --g2_file \
+    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_MSBAR.dat" \
     --outputpath_plot "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/" \
     --outputpath_data "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
 }

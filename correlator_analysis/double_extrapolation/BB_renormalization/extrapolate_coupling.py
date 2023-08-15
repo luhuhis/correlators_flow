@@ -150,22 +150,24 @@ class Plotter_g2_vs_mu:
         # print(self.cont_data_container.muF_by_T_cont[tmp_idx], cont_data[tmp_idx])
 
     def __plot_pert_run_starting_from_reference(self, ax, g2_0, mu_0, target_mus, color, suffix):
-        alpha_s0 = g2_0 / (4 * numpy.pi)
+
         import rundec
         crd = rundec.CRunDec()
-        g2s = []
         nf = 0
         nloop = 5
-        plot_mus = []
-        for mu in target_mus:
-            if mu >= mu_0:
-                Alphas = crd.AlphasExact(alpha_s0, mu_0, mu, nf, nloop)
-                g2 = 4. * numpy.pi * Alphas
-                g2s.append(g2)
-                plot_mus.append(mu)
-        plot_mus = numpy.asarray(plot_mus)
+        alpha_s0 = g2_0 / (4 * numpy.pi)
+
+        def calc_mu_and_g2(mu):
+            Alphas = crd.AlphasExact(alpha_s0, mu_0, mu, nf, nloop)
+            g2 = 4. * numpy.pi * Alphas
+            return mu, g2
+
+        results = [calc_mu_and_g2(mu) for mu in target_mus if mu >= mu_0]
+        plot_mus, g2s = map(numpy.asarray, zip(*results))
+
         ax.errorbar(plot_mus, g2s, fmt='--', markersize=0, lw=self.linewidth, zorder=(int(mu_0))+20, color=color,
                     label=r'\begin{flushleft}$\text{flow}\rightarrow\overline{\text{MS}}$ at ' + r' $\frac{\mu_\text{F}}{T}=' + lpd.format_float(mu_0, 1) + r'$ \newline with ' + str(nloop)+r'-loop run \end{flushleft}')
+        # TODO change output file name
         lpd.save_columns_to_file(self.args.outputpath_data + "g2_muF_" + suffix + ".txt", (plot_mus, g2s), ["mu_F/T", "g2s"])
 
     def __nonpert_ref_with_pert_run_wrapper(self, ax, cont, target_muF_by_T, color, ref_idx):
@@ -189,6 +191,7 @@ class Plotter_g2_vs_mu:
 
             mask = max_muF_by_T_for_running >= self.msbar_data_container.mubar_by_T
             target_muF_by_T = self.msbar_data_container.mubar_by_T[mask]
+            # TODO extend targets to very large scales
 
             ref_idx = numpy.fabs(self.msbar_data_container.mubar_by_T - reference_muF_by_T).argmin()
             g2_0 = self.msbar_data_container.g2_MSBAR[ref_idx]
@@ -217,7 +220,7 @@ class Plotter_g2_vs_mu:
         self.__plot_cont(ax)
         self.__plot_MSBAR(ax)
         self.__plot_pert_run_from_converted_g2MSbar(ax)
-        # self.__plot_pert_g2(ax, numpy.geomspace(2, muB_by_T, 200))
+        self.__plot_pert_g2(ax, numpy.geomspace(2, muB_by_T, 200))
 
         self.__finalize_plot(fig, ax, file_suffix)
 
@@ -430,13 +433,9 @@ class MSBarDataContainer:
 
 def calc_g2_MSBAR(cont_data_container: ContDataContainer) -> MSBarDataContainer:
 
-    g2_MSBAR_arr = []
+    g2_MSBAR_arr = numpy.asarray([convert_g2_flow_to_MSBAR(g2flow[0]) for g2flow in cont_data_container.g2_cont])
 
-    for g2flow in cont_data_container.g2_cont:
-        g2_MSBAR = convert_g2_flow_to_MSBAR(g2flow[0])
-        g2_MSBAR_arr.append(g2_MSBAR)
-
-    return MSBarDataContainer(cont_data_container.muF_by_T_cont, numpy.asarray(g2_MSBAR_arr))
+    return MSBarDataContainer(cont_data_container.muF_by_T_cont, g2_MSBAR_arr)
 
 
 def main():
