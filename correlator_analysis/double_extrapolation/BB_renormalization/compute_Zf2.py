@@ -180,6 +180,7 @@ def compute_Z_phys(coupling_container, scale_choice):
     Z_phys = 1 + gamma_0 * coupling_container.g2_spline(scale_choice.muBarIR_by_T) * inner_bracket
     return Z_phys
 
+
 def main():
 
     args = parse_args()

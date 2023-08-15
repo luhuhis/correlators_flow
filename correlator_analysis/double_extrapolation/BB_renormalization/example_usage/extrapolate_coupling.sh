@@ -26,20 +26,19 @@ extrapolate_coupling(){
 #    "mu02.69" \
 #    "mu06.66" \
 
-#extrapolate_coupling
+extrapolate_coupling
 
 
 #
 #mu_low=2.69
 #mu_high=6.67
 
-# TODO: save MSBAR g^2 in the above script in some file, then use that file here.
-# TODO: add plots for all the different possibilities of Z_total
+# TODO add plots for all the different possibilities of Z_total
 
 compute_Zf2(){
     ../compute_Zf2.py \
     --g2_file \
-    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_MSBAR.dat" \
+    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_3.98_MSBAR_pertrun.txt" \
     --outputpath_plot "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/" \
     --outputpath_data "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
 }
