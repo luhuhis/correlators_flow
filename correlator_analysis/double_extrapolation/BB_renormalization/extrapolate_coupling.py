@@ -24,7 +24,8 @@ class RawDataContainer:
     g2_err_arr: NDArray[Shape["*, *"], Float64]
     g2_ints: List[scipy.interpolate._fitpack2.InterpolatedUnivariateSpline]
     g2_err_ints: List[scipy.interpolate._fitpack2.InterpolatedUnivariateSpline]
-    largest_min_muF_by_T: float
+    target_muF_by_T_for_cont_extr: NDArray[Shape["*"], Float64]
+
 
 @lpd.typed_frozen_data
 class ContDataContainer:
@@ -33,11 +34,15 @@ class ContDataContainer:
     g2_latt_from_int_err: NDArray[Shape["* nflow, * nNts"], Float64]
     g2_cont: NDArray[Shape["* nflow, [g2, g2err]"], Float64]
     g2_extr_slope: NDArray[Shape["* nflow, [slope, slope_err]"], Float64]
+    g2_extr_chisqdof: NDArray[Shape["* nflow, [chisqdof, chisqdof_err]"], Float64]
+    g2_cont_int: scipy.interpolate._fitpack2.InterpolatedUnivariateSpline
+
 
 @lpd.typed_frozen_data
 class MSBarDataContainer:
     mubar_by_T: NDArray[Shape["*"], Float64]
     g2_MSBAR: NDArray[Shape["*"], Float64]
+
 
 @lpd.typed_frozen_data
 class PertRunMSBarDataContainer:
@@ -274,62 +279,90 @@ def fit_sample(ydata, xdata, edata):
     return [*fitparams, this_chisqdof]
 
 
+class ContExtrapolator:
+    # Simply call this class to get a ContDataContainer object like so:
+    # my_cont_data_container = ContExtrapolator(args, my_raw_data_container)()
+    def __init__(self, args, raw_data_container):
+        self.calc_cont = args.calc_cont
+        self.output_file = args.outputpath_data + "g2_muF" + "_cont_extr.txt"
 
+        # raw data and corresponding parameters
+        self.raw_data_container = raw_data_container
+        self.nflow = len(raw_data_container.target_muF_by_T_for_cont_extr)
+        self.Nts = args.Nts
+        self.nNts = len(args.Nts)
 
+        # some empty numpy arrays
+        self.g2_latt_from_int = np.empty((self.nflow, self.nNts))
+        self.g2_latt_from_int_err = np.empty((self.nflow, self.nNts))
+        self.cont = np.empty((self.nflow, 2))
+        self.slope = np.empty((self.nflow, 2))
+        self.chisqdof = np.empty((self.nflow, 2))
 
-def do_cont_extr(args, raw_data_container):
-    muF_by_T_cont = np.sort(np.unique(np.concatenate((
-        np.geomspace(raw_data_container.largest_min_muF_by_T, max_muF_by_T_for_running, 200),
-        necessary_muF_by_T,
-        [muB_by_T, ]))))
-    nflow = len(muF_by_T_cont)
+        self.__get_cont_data()
 
-    nNts = len(args.Nts)
-    g2_latt_from_int = np.empty((nflow, nNts))
-    g2_latt_from_int_err = np.empty((nflow, nNts))
-    cont = np.empty((nflow, 2))
-    slope = np.empty((nflow, 2))
-    chisqdof = np.empty((nflow, 2))
+    def __get_interpolated_lattice_data(self):
+        for i, muF_by_T in enumerate(self.raw_data_container.target_muF_by_T_for_cont_extr):
+            self.g2_latt_from_int[i] = [spline(muF_by_T) for spline in self.raw_data_container.g2_ints]
+            self.g2_latt_from_int_err[i] = [spline(muF_by_T) for spline in self.raw_data_container.g2_err_ints]
+        print("max relative error in % in the lattice data:", np.amax(self.g2_latt_from_int_err / self.g2_latt_from_int) * 100)
 
-    for i, muF_by_T in enumerate(muF_by_T_cont):
-        g2_latt_from_int[i] = [spline(muF_by_T) for spline in raw_data_container.g2_ints]
-        g2_latt_from_int_err[i] = [spline(muF_by_T) for spline in raw_data_container.g2_err_ints]
-
-    output_file = args.outputpath_data + "g2_muF" + "_cont_extr.txt"
-
-    if args.calc_cont:
-        for i in range(nflow):
-            fitparams, fitparams_err = bootstr.bootstr_from_gauss(fit_sample, data=g2_latt_from_int[i], data_std_dev=g2_latt_from_int_err[i], numb_samples=100,
-                                                                  sample_size=1, return_sample=False,
-                                                                  args=[1 / np.asarray(args.Nts) ** Ntexp * factor, g2_latt_from_int_err[i]],
-                                                                  parallelize=True, nproc=20)
-            chisqdof[i, 0] = fitparams[2]
-            chisqdof[i, 1] = fitparams_err[2]
-            cont[i, 0] = fitparams[1]
-            cont[i, 1] = fitparams_err[1]
-            slope[i, 0] = fitparams[0]
-            slope[i, 1] = fitparams_err[0]
-
-        columns = (muF_by_T_cont, cont, slope, chisqdof)
+    def __save_cont_extr_to_disk(self):
+        columns = (self.raw_data_container.target_muF_by_T_for_cont_extr, self.cont, self.slope, self.chisqdof)
         labels = ["mu_F/T", "g2", "err", "slope", "err", "chisqdof", "err"]
 
-        lpd.save_columns_to_file(output_file, columns, labels)
+        lpd.save_columns_to_file(self.output_file, columns, labels)
 
-    else:
+    def __load_cont_extr_from_disk(self):
         try:
-            _, b, berr, m, merr, chisqdof, chisqdof_err = np.loadtxt(output_file, unpack=True)
+            _, b, berr, m, merr, chisqdof, chisqdof_err = np.loadtxt(self.output_file, unpack=True)
         except OSError:
-            print("Error: could not find ", output_file)
+            print("Error: could not find ", self.output_file)
             exit(1)
-        for i in range(nflow):
-            cont[i, 0] = b[i]
-            cont[i, 1] = berr[i]
-            slope[i, 0] = m[i]
-            slope[i, 1] = merr[i]
+        for i in range(self.nflow):
+            self.cont[i, 0] = b[i]
+            self.cont[i, 1] = berr[i]
+            self.slope[i, 0] = m[i]
+            self.slope[i, 1] = merr[i]
+            # here we could also load the chisqdof, but we don't do anything with it later, so we don't load it.
 
-    print("max relative error in %:", np.amax(g2_latt_from_int_err / g2_latt_from_int) * 100)
+    def __do_cont_extr(self):
+        for i in range(self.nflow):
+            fitparams, fitparams_err = bootstr.bootstr_from_gauss(
+                fit_sample, data=self.g2_latt_from_int[i], data_std_dev=self.g2_latt_from_int_err[i],
+                numb_samples=100, sample_size=1, return_sample=False,
+                args=[1 / np.asarray(self.Nts) ** Ntexp * factor, self.g2_latt_from_int_err[i]], parallelize=True,
+                nproc=20)
+            self.chisqdof[i, 0] = fitparams[2]
+            self.chisqdof[i, 1] = fitparams_err[2]
+            self.cont[i, 0] = fitparams[1]
+            self.cont[i, 1] = fitparams_err[1]
+            self.slope[i, 0] = fitparams[0]
+            self.slope[i, 1] = fitparams_err[0]
 
-    return ContDataContainer(muF_by_T_cont, g2_latt_from_int, g2_latt_from_int_err, cont, slope)
+    def __get_cont_data(self):
+
+        self.__get_interpolated_lattice_data()
+        if self.calc_cont:
+
+            self.__do_cont_extr()
+            self.__save_cont_extr_to_disk()
+        else:
+            self.__load_cont_extr_from_disk()
+
+        g2_cont_spline = scipy.interpolate.InterpolatedUnivariateSpline(self.raw_data_container.target_muF_by_T_for_cont_extr,
+                                                                        self.cont[:, 0], k=3, ext=2)
+
+        self.cont_data = ContDataContainer(self.raw_data_container.target_muF_by_T_for_cont_extr,
+                                           self.g2_latt_from_int,
+                                           self.g2_latt_from_int_err,
+                                           self.cont,
+                                           self.slope,
+                                           self.chisqdof,
+                                           g2_cont_spline)
+
+    def __call__(self):
+        return self.cont_data
 
 
 def flow_coupling(tauF2E: float, a2bytauF: float) -> float:
@@ -404,7 +437,12 @@ def load_data_and_interpolate(args: argparse.Namespace) -> RawDataContainer:
         g2_ints.append(scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T[0:max_idx], thisg2[0:max_idx], k=order, ext=2))
         g2_err_ints.append(scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T[0:max_idx], thisg2_err[0:max_idx], k=order, ext=2))
 
-    return RawDataContainer(np.asarray(muF_by_T_arr), np.asarray(g2_arr), np.asarray(g2_err_arr), g2_ints, g2_err_ints, largest_min_muF_by_T)
+    target_muF_by_T_for_cont_extr = np.sort(np.unique(np.concatenate((
+        np.geomspace(largest_min_muF_by_T, max_muF_by_T_for_running, 200),
+        necessary_muF_by_T,
+        [muB_by_T, ]))))
+
+    return RawDataContainer(np.asarray(muF_by_T_arr), np.asarray(g2_arr), np.asarray(g2_err_arr), g2_ints, g2_err_ints, target_muF_by_T_for_cont_extr)
 
 
 def parse_args() -> argparse.Namespace:
@@ -444,9 +482,6 @@ def convert_g2_flow_to_MSBAR(g2_flow: float, nf: int = 0) -> float:
     return real_solution
 
 
-
-
-
 def calc_g2_MSBAR(cont_data_container: ContDataContainer) -> MSBarDataContainer:
     g2_MSBAR_arr = np.asarray([convert_g2_flow_to_MSBAR(g2flow[0]) for g2flow in cont_data_container.g2_cont])
     return MSBarDataContainer(cont_data_container.muF_by_T_cont, g2_MSBAR_arr)
@@ -472,8 +507,9 @@ def calc_pert_run_of_g2_MSBAR(MSBar_data_container):
     ref_mu_by_T_choices = [4, 8]
 
     results = [inner_loop(reference_muF_by_T) for reference_muF_by_T in ref_mu_by_T_choices]
-    PertRunMSBarDataContainer(map(np.asarray, zip(*results))
-    arr_of_PertRunMSBarDataContainer = []
+    print(results)
+    # PertRunMSBarDataContainer(map(np.asarray, zip(*results)))
+    # arr_of_PertRunMSBarDataContainer = []
 
     return
 
@@ -484,18 +520,21 @@ def main():
     args = parse_args()
 
     raw_data_container = load_data_and_interpolate(args)
-    cont_data_container = do_cont_extr(args, raw_data_container)
+    cont_data_container = ContExtrapolator(args, raw_data_container)()
+    # cont_data_container = do_cont_extr(args, raw_data_container)
     MSBar_data_container = calc_g2_MSBAR(cont_data_container)
+
+    # TODO 1. confirm that this function works as intended
     pertRun_MSBar_data_container = calc_pert_run_of_g2_MSBAR(MSBar_data_container)
 
-    # TODO move data creation out of the plotting! Instead use data containers
-    # TODO move data saving out of the plotting as well! just do it here in the main
+    # TODO 2. move data creation out of the plotting! Instead use data containers
+    # TODO 3. move data saving out of the plotting as well! just do it here in the main
 
-    plotter_g2_vs_mu = Plotter_g2_vs_mu(args, raw_data_container, cont_data_container, MSBar_data_container)
-    plotter_g2_vs_mu.plot_full()
-    plotter_g2_vs_mu.plot_selected()
-
-    plot_g2_vs_1overNt2(args, cont_data_container)
+    # plotter_g2_vs_mu = Plotter_g2_vs_mu(args, raw_data_container, cont_data_container, MSBar_data_container)
+    # plotter_g2_vs_mu.plot_full()
+    # plotter_g2_vs_mu.plot_selected()
+    #
+    # plot_g2_vs_1overNt2(args, cont_data_container)
 
 
 if __name__ == '__main__':
