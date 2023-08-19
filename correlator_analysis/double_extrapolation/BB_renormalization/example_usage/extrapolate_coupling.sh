@@ -2,9 +2,10 @@
 
 # TODO convert all paths to inputs of the script instead of hard-coding them
 
-#        --calc_cont \
+#
 extrapolate_coupling(){
     ../extrapolate_coupling.py \
+        --calc_cont \
         --input_basepath "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/" \
         --input_files \
         flow_t2E_s096t144_b0754400.dat \
@@ -26,7 +27,7 @@ extrapolate_coupling(){
 #    "mu02.69" \
 #    "mu06.66" \
 
-#extrapolate_coupling
+extrapolate_coupling
 
 
 #

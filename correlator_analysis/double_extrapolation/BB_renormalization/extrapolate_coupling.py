@@ -217,19 +217,6 @@ def extrapolation_ansatz(x, m, b):
     return m * x + + b
 
 
-def chisqdof(fitparams, xdata, ydata, edata):  # remove edata?
-    return np.sum(((ydata - extrapolation_ansatz(xdata, *fitparams))/edata)**2) / (len(ydata)-len(fitparams))
-
-
-def fit_sample(ydata, xdata, edata):
-    fitparams = scipy.optimize.minimize(chisqdof, x0=np.asarray([-1, 2]), args=(xdata, ydata, edata))
-    fitparams = fitparams.x
-
-    this_chisqdof = chisqdof(fitparams, xdata, ydata, edata)
-
-    return [*fitparams, this_chisqdof]
-
-
 class ContinuumExtrapolator:
     def __init__(self, args, raw_data_container):
         self.calc_cont = args.calc_cont
@@ -276,10 +263,20 @@ class ContinuumExtrapolator:
             self.slope[i, 1] = merr[i]
             # here we could also load the chisqdof, but we don't do anything with it later, so we don't load it.
 
+    @classmethod
+    def _fit_sample(cls, ydata, xdata, edata):
+        def chisqdof_func(fitparams, xdata, ydata, edata):  # remove edata?
+            return np.sum(((ydata - extrapolation_ansatz(xdata, *fitparams)) / edata) ** 2) / (
+                    len(ydata) - len(fitparams))
+        fitparams = scipy.optimize.minimize(chisqdof_func, x0=np.asarray([-1, 2]), args=(xdata, ydata, edata))
+        fitparams = fitparams.x
+        this_chisqdof = chisqdof_func(fitparams, xdata, ydata, edata)
+        return [*fitparams, this_chisqdof]
+
     def __do_cont_extr(self):
         for i in range(self.nflow):
             fitparams, fitparams_err = bootstr.bootstr_from_gauss(
-                fit_sample, data=self.g2_latt_from_int[i], data_std_dev=self.g2_latt_from_int_err[i],
+                ContinuumExtrapolator._fit_sample, data=self.g2_latt_from_int[i], data_std_dev=self.g2_latt_from_int_err[i],
                 numb_samples=100, sample_size=1, return_sample=False,
                 args=[1 / np.asarray(self.Nts) ** Ntexp * factor, self.g2_latt_from_int_err[i]], parallelize=True,
                 nproc=20)
@@ -291,7 +288,6 @@ class ContinuumExtrapolator:
             self.slope[i, 1] = fitparams_err[0]
 
     def __get_cont_data(self):
-
         self.__get_interpolated_lattice_data()
         if self.calc_cont:
             self.__do_cont_extr()
