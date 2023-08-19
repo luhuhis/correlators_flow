@@ -6,6 +6,7 @@ import argparse
 import scipy.optimize
 import scipy.interpolate
 import latqcdtools.physics.referenceScales as rS
+import rundec
 
 # Type hints
 from nptyping import NDArray, Float64
@@ -41,14 +42,15 @@ class ContDataContainer:
 @lpd.typed_frozen_data
 class MSBarDataContainer:
     mubar_by_T: NDArray[Shape["*"], Float64]
-    g2_MSBAR: NDArray[Shape["*"], Float64]
+    g2_MSBAR_spline: scipy.interpolate._fitpack2.InterpolatedUnivariateSpline
 
 
 @lpd.typed_frozen_data
 class PertRunMSBarDataContainer:
     mubar_by_T: NDArray[Shape["*"], Float64]
-    g2_MSBAR_pert_run: NDArray[Shape["*"], Float64]
-    mu_Ref: Float64
+    g2_MSBAR_pert_run: scipy.interpolate._fitpack2.InterpolatedUnivariateSpline
+    mu_Ref: float
+    nloop: int
 
 
 def convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau, tauT):
@@ -138,11 +140,12 @@ def plot_g2_vs_1overNt2(args, cont_data_container):
 
 
 class Plotter_g2_vs_mu:
-    def __init__(self, args, raw_data_container, cont_data_container, msbar_data_container):
+    def __init__(self, args, raw_data_container, cont_data_container, msbar_data_container, list_of_pertRun_MSBar_data_container):
         self.args = args
         self.raw_data_container: RawDataContainer = raw_data_container
         self.cont_data_container: ContDataContainer = cont_data_container
         self.msbar_data_container: MSBarDataContainer = msbar_data_container
+        self.list_of_pertRun_MSBar_data_container = list_of_pertRun_MSBar_data_container
         self.linewidth = 1
 
     def __setup_plot(self):
@@ -182,84 +185,32 @@ class Plotter_g2_vs_mu:
         # tmp_idx = np.fabs(self.cont_data_container.muF_by_T_cont-19.179).argmin()
         # print(self.cont_data_container.muF_by_T_cont[tmp_idx], cont_data[tmp_idx])
 
-    def __plot_pert_run_starting_from_reference(self, ax, g2_0, mu_0, target_mus, color, suffix):
-
-        import rundec
-        crd = rundec.CRunDec()
-        nf = 0
-        nloop = 5
-        alpha_s0 = g2_0 / (4 * np.pi)
-
-        def calc_mu_and_g2(mu):
-            Alphas = crd.AlphasExact(alpha_s0, mu_0, mu, nf, nloop)
-            g2 = 4. * np.pi * Alphas
-            return mu, g2
-
-        results = [calc_mu_and_g2(mu) for mu in target_mus if mu >= mu_0]
-        plot_mus, g2s = map(np.asarray, zip(*results))
-
-        ax.errorbar(plot_mus, g2s, fmt='--', markersize=0, lw=self.linewidth, zorder=(int(mu_0))+20, color=color,
-                    label=r'\begin{flushleft}$\text{flow}\rightarrow\overline{\text{MS}}$ at ' + r' $\frac{\mu_\text{F}}{T}=' + lpd.format_float(mu_0, 1) + r'$ \newline with ' + str(nloop)+r'-loop run \end{flushleft}')
-        # TODO change output file name
-        lpd.save_columns_to_file(self.args.outputpath_data + "g2_muF_" + suffix + ".txt", (plot_mus, g2s), ["mu_F/T", "g2s"])
-
-    def __nonpert_ref_with_pert_run_wrapper(self, ax, cont, target_muF_by_T, color, ref_idx):
-        g2_0 = cont[ref_idx, 0]
-        mu_0 = target_muF_by_T[ref_idx]
-        self.__plot_pert_run_starting_from_reference(ax, g2_0, mu_0, target_muF_by_T, color, "mu0_"+lpd.format_float(mu_0,2)+"_pertrun")
-
-    def __plot_various_pert_runs(self, ax):
-        mask = max_muF_by_T_for_running >= self.cont_data_container.muF_by_T_cont
-        target_muF_by_T = self.cont_data_container.muF_by_T_cont[mask]
-        cont = self.cont_data_container.g2_cont[mask]
-        self.__nonpert_ref_with_pert_run_wrapper(ax, cont, target_muF_by_T, "tab:cyan", ref_idx=0)  # smallest mu
-
-        ref_idx = np.fabs(self.cont_data_container.muF_by_T_cont - min_muF_by_T_in_flow_extr).argmin()
-        self.__nonpert_ref_with_pert_run_wrapper(ax, cont, target_muF_by_T, "k", ref_idx)  # largest mu
-        self.__plot_pert_g2(ax, np.geomspace(min_muF_by_T_in_flow_extr, target_muF_by_T[-1], 200))
-
     def __plot_pert_run_from_converted_g2MSbar(self, ax):
-
-        for reference_muF_by_T, color in zip((4, 8), ("black", "red")):
-
-            mask = max_muF_by_T_for_running >= self.msbar_data_container.mubar_by_T
-            muF_by_T_targets_from_cont = self.msbar_data_container.mubar_by_T[mask]
-            muF_by_T_targets_extra = np.geomspace(np.max(muF_by_T_targets_from_cont), 220, 200)
-            target_muF_by_T = (
-                np.sort(
-                    np.unique(
-                        np.concatenate((muF_by_T_targets_from_cont, muF_by_T_targets_extra)))))
-
-            ref_idx = np.fabs(self.msbar_data_container.mubar_by_T - reference_muF_by_T).argmin()
-            g2_0 = self.msbar_data_container.g2_MSBAR[ref_idx]
-            mu_0 = self.msbar_data_container.mubar_by_T[ref_idx]
-
-            self.__plot_pert_run_starting_from_reference(ax, g2_0, mu_0, target_muF_by_T, color, "mu0_"+lpd.format_float(mu_0, 2)+"_MSBAR_pertrun")
+        for data in self.list_of_pertRun_MSBar_data_container:
+            ax.errorbar(data.mubar_by_T, data.g2_MSBAR_pert_run(data.mubar_by_T), fmt='--', markersize=0, lw=self.linewidth, zorder=(int(data.mubar_by_T[0]))+20,
+                        label=r'\begin{flushleft}$\text{flow}\rightarrow\overline{\text{MS}}$ at ' + r' $\frac{\mu_\text{F}}{T}=' + lpd.format_float(data.mubar_by_T[0], 1) + r'$ \newline with ' + str(data.nloop)+r'-loop run \end{flushleft}')
 
     def __plot_MSBAR(self, ax):
-        ax.errorbar(*self.msbar_data_container, fmt='-', markersize=0, lw=self.linewidth, label=r'$\text{flow}\rightarrow\overline{\text{MS}}$')
+        ax.errorbar(self.msbar_data_container.mubar_by_T,
+                    self.msbar_data_container.g2_MSBAR_spline(self.msbar_data_container.mubar_by_T),
+                    fmt='-', markersize=0, lw=self.linewidth, label=r'$\text{flow}\rightarrow\overline{\text{MS}}$')
 
-    def plot_full(self, file_suffix="_all"):
+    def _plot(self, file_suffix):
         fig, ax = self.__setup_plot()
 
         self.__plot_grey_flow_extr_band(ax)
         self.__plot_lattice_data(ax)
         self.__plot_cont(ax)
-        self.__plot_various_pert_runs(ax)
-        self.__plot_MSBAR(ax)
-
-        self.__finalize_plot(fig, ax, file_suffix)
-
-    def plot_selected(self, file_suffix=""):
-        fig, ax = self.__setup_plot()
-
-        self.__plot_grey_flow_extr_band(ax)
-        self.__plot_cont(ax)
         self.__plot_MSBAR(ax)
         self.__plot_pert_run_from_converted_g2MSbar(ax)
-        self.__plot_pert_g2(ax, np.geomspace(2, muB_by_T, 200))
-
+        # self.__plot_pert_g2(ax, np.geomspace(2, muB_by_T, 200))
         self.__finalize_plot(fig, ax, file_suffix)
+
+    @classmethod
+    def plot(cls, args, raw_data_container, cont_data_container, msbar_data_container, list_of_pertRun_MSBar_data_container, file_suffix=""):
+        # This method only exists such that you don't have to manually instantiate the class.
+        instance = cls(args, raw_data_container, cont_data_container, msbar_data_container, list_of_pertRun_MSBar_data_container)
+        return instance._plot(file_suffix)
 
 
 def extrapolation_ansatz(x, m, b):
@@ -279,9 +230,7 @@ def fit_sample(ydata, xdata, edata):
     return [*fitparams, this_chisqdof]
 
 
-class ContExtrapolator:
-    # Simply call this class to get a ContDataContainer object like so:
-    # my_cont_data_container = ContExtrapolator(args, my_raw_data_container)()
+class ContinuumExtrapolator:
     def __init__(self, args, raw_data_container):
         self.calc_cont = args.calc_cont
         self.output_file = args.outputpath_data + "g2_muF" + "_cont_extr.txt"
@@ -299,6 +248,7 @@ class ContExtrapolator:
         self.slope = np.empty((self.nflow, 2))
         self.chisqdof = np.empty((self.nflow, 2))
 
+        # start reading here
         self.__get_cont_data()
 
     def __get_interpolated_lattice_data(self):
@@ -344,12 +294,12 @@ class ContExtrapolator:
 
         self.__get_interpolated_lattice_data()
         if self.calc_cont:
-
             self.__do_cont_extr()
             self.__save_cont_extr_to_disk()
         else:
             self.__load_cont_extr_from_disk()
 
+        # don't save/load this to/from disk. just recompute it every time.
         g2_cont_spline = scipy.interpolate.InterpolatedUnivariateSpline(self.raw_data_container.target_muF_by_T_for_cont_extr,
                                                                         self.cont[:, 0], k=3, ext=2)
 
@@ -361,8 +311,11 @@ class ContExtrapolator:
                                            self.chisqdof,
                                            g2_cont_spline)
 
-    def __call__(self):
-        return self.cont_data
+    @classmethod
+    def extrapolate(cls, args, raw_data_container):
+        # This method only exists such that you don't have to manually instantiate the class.
+        instance = cls(args, raw_data_container)
+        return instance.cont_data
 
 
 def flow_coupling(tauF2E: float, a2bytauF: float) -> float:
@@ -377,9 +330,6 @@ def flow_coupling(tauF2E: float, a2bytauF: float) -> float:
     flow_coupling = prefactor * tauF2E / (c_0 + c_2 * a2bytauF + c_4 * a2bytauF ** 2)
 
     return flow_coupling
-
-
-
 
 
 def load_data_and_interpolate(args: argparse.Namespace) -> RawDataContainer:
@@ -482,36 +432,59 @@ def convert_g2_flow_to_MSBAR(g2_flow: float, nf: int = 0) -> float:
     return real_solution
 
 
-def calc_g2_MSBAR(cont_data_container: ContDataContainer) -> MSBarDataContainer:
-    g2_MSBAR_arr = np.asarray([convert_g2_flow_to_MSBAR(g2flow[0]) for g2flow in cont_data_container.g2_cont])
-    return MSBarDataContainer(cont_data_container.muF_by_T_cont, g2_MSBAR_arr)
+def calc_g2_MSBAR(cont_data_container: ContDataContainer, target_muF_by_T_for_cont_extr) -> MSBarDataContainer:
+    g2_MSBAR = np.asarray([convert_g2_flow_to_MSBAR(cont_data_container.g2_cont_int(mu_by_T))
+                               for mu_by_T in target_muF_by_T_for_cont_extr])
+    g2_MSBAR_spline = scipy.interpolate.InterpolatedUnivariateSpline(
+        target_muF_by_T_for_cont_extr,
+        g2_MSBAR, k=3, ext=2)
+    return MSBarDataContainer(cont_data_container.muF_by_T_cont, g2_MSBAR_spline)
 
 
-def calc_pert_run_of_g2_MSBAR(MSBar_data_container):
+class BetaFunction:
+    def __init__(self, args, MSBar_data_container):
+        self.MSBar_data_container = MSBar_data_container
+        self.crd = rundec.CRunDec()
+        self.nf: int = 0
+        self.nloop: int = 5
+        self.outputpath_data = args.outputpath_data
+        self.list_of_data_containers = []
+        self.calc_pert_run_of_g2_MSBAR()
 
-    def inner_loop(reference_muF_by_T):
-        mask = max_muF_by_T_for_running >= MSBar_data_container.mubar_by_T
-        muF_by_T_targets_from_cont = MSBar_data_container.mubar_by_T[mask]
-        muF_by_T_targets_extra = np.geomspace(np.max(muF_by_T_targets_from_cont), 220, 200)
+    def calc_mu_and_g2(self, mu, g2_0, mu_0):
+        alpha_s0 = g2_0 / (4 * np.pi)
+        Alphas = self.crd.AlphasExact(alpha_s0, mu_0, mu, self.nf, self.nloop)
+        g2 = 4. * np.pi * Alphas
+        return g2
+
+    def calc_pert_run_of_g2_MSBAR(self):
+
+        muF_by_T_targets_extra = np.geomspace(np.max(self.MSBar_data_container.mubar_by_T), 220, 200)
         target_muF_by_T = (
             np.sort(
                 np.unique(
-                    np.concatenate((muF_by_T_targets_from_cont, muF_by_T_targets_extra)))))
+                    np.concatenate((self.MSBar_data_container.mubar_by_T, muF_by_T_targets_extra)))))
 
-        # TODO don't use this ref index stuff. instead use a interpolation!!
-        ref_idx = np.fabs(MSBar_data_container.mubar_by_T - reference_muF_by_T).argmin()
-        g2_0 = MSBar_data_container.g2_MSBAR[ref_idx]
-        mu_0 = MSBar_data_container.mubar_by_T[ref_idx]
-        return mu_0, g2_0
+        ref_mu_by_T_choices = [4.0, ]
+        for reference_muF_by_T in ref_mu_by_T_choices:
 
-    ref_mu_by_T_choices = [4, 8]
+            mu_0 = reference_muF_by_T
+            g2_0 = self.MSBar_data_container.g2_MSBAR_spline(mu_0)
 
-    results = [inner_loop(reference_muF_by_T) for reference_muF_by_T in ref_mu_by_T_choices]
-    print(results)
-    # PertRunMSBarDataContainer(map(np.asarray, zip(*results)))
-    # arr_of_PertRunMSBarDataContainer = []
+            these_target_mus = np.asarray([mu for mu in target_muF_by_T if mu >= mu_0])
 
-    return
+            g2s = np.asarray([self.calc_mu_and_g2(mu, g2_0, mu_0) for mu in these_target_mus])
+            g2_spline = scipy.interpolate.InterpolatedUnivariateSpline(these_target_mus, g2s, k=3, ext=2)
+            self.list_of_data_containers.append(PertRunMSBarDataContainer(these_target_mus, g2_spline, reference_muF_by_T, self.nloop))
+
+            lpd.save_columns_to_file(self.outputpath_data + "g2_MSBAR_runFromMu_" + lpd.format_float(reference_muF_by_T, 1) + ".txt",
+                                     (these_target_mus, g2s), ["mu/T", "g^2"])
+
+    @classmethod
+    def run(cls, args, MSBar_data_container):
+        # This method only exists such that you don't have to manually instantiate the class.
+        instance = cls(args, MSBar_data_container)
+        return instance.list_of_data_containers
 
 
 def main():
@@ -520,21 +493,12 @@ def main():
     args = parse_args()
 
     raw_data_container = load_data_and_interpolate(args)
-    cont_data_container = ContExtrapolator(args, raw_data_container)()
-    # cont_data_container = do_cont_extr(args, raw_data_container)
-    MSBar_data_container = calc_g2_MSBAR(cont_data_container)
+    cont_data_container = ContinuumExtrapolator.extrapolate(args, raw_data_container)
+    MSBar_data_container = calc_g2_MSBAR(cont_data_container, raw_data_container.target_muF_by_T_for_cont_extr)
+    list_of_pertRun_MSBar_data_container = BetaFunction.run(args, MSBar_data_container)
 
-    # TODO 1. confirm that this function works as intended
-    pertRun_MSBar_data_container = calc_pert_run_of_g2_MSBAR(MSBar_data_container)
-
-    # TODO 2. move data creation out of the plotting! Instead use data containers
-    # TODO 3. move data saving out of the plotting as well! just do it here in the main
-
-    # plotter_g2_vs_mu = Plotter_g2_vs_mu(args, raw_data_container, cont_data_container, MSBar_data_container)
-    # plotter_g2_vs_mu.plot_full()
-    # plotter_g2_vs_mu.plot_selected()
-    #
-    # plot_g2_vs_1overNt2(args, cont_data_container)
+    Plotter_g2_vs_mu.plot(args, raw_data_container, cont_data_container, MSBar_data_container, list_of_pertRun_MSBar_data_container)
+    plot_g2_vs_1overNt2(args, cont_data_container)
 
 
 if __name__ == '__main__':

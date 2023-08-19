@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # TODO convert all paths to inputs of the script instead of hard-coding them
-# --calc_cont \
 
+#        --calc_cont \
 extrapolate_coupling(){
     ../extrapolate_coupling.py \
         --input_basepath "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/" \
@@ -26,7 +26,7 @@ extrapolate_coupling(){
 #    "mu02.69" \
 #    "mu06.66" \
 
-extrapolate_coupling
+#extrapolate_coupling
 
 
 #
@@ -38,7 +38,7 @@ extrapolate_coupling
 compute_Zf2(){
     ../compute_Zf2.py \
     --g2_file \
-    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_muF_mu0_3.98_MSBAR_pertrun.txt" \
+    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_MSBAR_runFromMu_4.0.txt" \
     --outputpath_plot "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/" \
     --outputpath_data "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
 }
