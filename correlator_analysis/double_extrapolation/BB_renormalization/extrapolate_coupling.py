@@ -13,8 +13,43 @@ from nptyping import NDArray, Float64
 from typing import Literal as Shape
 from beartype.typing import List
 
-Ntexp = 2
-factor = 96 ** Ntexp
+
+class ScaleFunctions:
+    @classmethod
+    def convert_sqrt8taufTByTau_to_muFByT(cls, sqrt8taufTByTau, tauT):
+        muFByT = 1 / (sqrt8taufTByTau * tauT)
+        return muFByT
+
+    @classmethod
+    def convert_taufT2_to_muFByT(cls, taufT2):
+        muFByT = 1 / np.sqrt(8 * taufT2)
+        return muFByT
+
+    @classmethod
+    def get_muF_by_T_where_we_measure(cls):
+        muF_by_T_where_we_measure = np.sort(np.unique(np.concatenate([cls.convert_sqrt8taufTByTau_to_muFByT(lpd.get_relflow_range(), tauT)
+                                                                      for tauT in np.arange(0.25, 0.501, 1 / 36)])))
+        return muF_by_T_where_we_measure
+
+    @classmethod
+    def get_min_and_max_indices(cls, muF_by_T, min_muF_by_T, max_muF_by_T):
+        min_idx = np.where(muF_by_T <= min_muF_by_T)[0][-1]
+        max_idx = np.where(muF_by_T >= max_muF_by_T)[0][0] + 1
+        return min_idx, max_idx
+
+
+@lpd.typed_frozen_data
+class GeneralParameters:
+    Ntexp: int  # We extrapolate linear in a**Ntexp
+    factor: int  # Scale factor to make cont. extr. converge
+    T_in_GeV: float
+    muUV_by_T_LO: float  # The "physical" scale we run to
+    muUV_by_T_NLO: float
+    min_muF_by_T_in_flow_extr: float  # The minimum flow scale inside the flow extrapolation at which we measure the correlator on the lattice.
+    max_muF_by_T_in_flow_extr: float  # The maximum "
+    max_muBar_by_T: float  # Largest scale we ever want to run to.
+    ref_muF_by_T: float  # The scale where we convert the flow coupling to MSBar, from where we then run to some target scale.
+    muF_by_T_where_we_measure: NDArray[Shape["*"], Float64]
 
 
 @lpd.typed_frozen_data
@@ -52,69 +87,29 @@ class PertRunMSBarDataContainer:
     nloop: int
 
 
-def convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau, tauT):
-    muFByT = 1 / (sqrt8taufTByTau * tauT)
-    return muFByT
-
-
-def convert_taufT2_to_muFByT(taufT2):
-    muFByT = 1 / np.sqrt(8 * taufT2)
-    return muFByT
-
-
-def get_necessary_muF_by_T():
-    necessary_muF_by_T = np.asarray([])
-
-    for tauT in np.arange(0.25, 0.51, 1 / 36):
-        tmp = convert_sqrt8taufTByTau_to_muFByT(lpd.get_relflow_range(), tauT)
-        necessary_muF_by_T = np.concatenate((necessary_muF_by_T, tmp))
-
-    return necessary_muF_by_T
-
-
-muB_by_T = 19.179
-min_muF_by_T_in_flow_extr = convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.3, tauT=0.5)
-max_muF_by_T_in_flow_extr = convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.25, tauT=0.25)
-
-print(min_muF_by_T_in_flow_extr, max_muF_by_T_in_flow_extr)
-
-necessary_muF_by_T = get_necessary_muF_by_T()
-max_muF_by_T_for_running = np.max([*necessary_muF_by_T, muB_by_T])
-min_muF_by_T_for_running = np.min([*necessary_muF_by_T, muB_by_T])
-
-T_in_GeV = 0.472
-
-
-def get_min_and_max_indices(muF_by_T, min_muF_by_T, max_muF_by_T):
-    # print(np.where(muF_by_T > min_muF_by_T))
-    min_idx = np.where(muF_by_T <= min_muF_by_T)[0][-1]
-    max_idx = np.where(muF_by_T >= max_muF_by_T)[0][0] + 1
-    return min_idx, max_idx
-
-
 def get_ylabel():
     return r'$ \displaystyle g^{2}$'
 
 
 # TODO refactor this into a class?
-def plot_g2_vs_1overNt2(args, cont_data_container):
+def plot_g2_vs_1overNt2(args, general_params, cont_data_container):
     # plot continuum extrapolation at different flow times
-    xlabel = r'$N_\tau^{-' + str(Ntexp) + r'}$'
+    xlabel = r'$N_\tau^{-' + str(general_params.Ntexp) + r'}$'
     fig3, ax3, _ = lpd.create_figure(xlabel=xlabel, ylabel=get_ylabel())
 
-    xpoints = np.linspace(0, 1 / args.Nts[-1] ** Ntexp, 10)
+    xpoints = np.linspace(0, 1 / args.Nts[-1] ** general_params.Ntexp, 10)
 
-    plot_muF_by_T = np.geomspace(min_muF_by_T_in_flow_extr, max_muF_by_T_for_running, 10)
+    plot_muF_by_T = np.geomspace(general_params.ref_muF_by_T, general_params.max_muF_by_T_in_flow_extr, 10)
 
     for j, muF_by_T in enumerate(plot_muF_by_T):
         i = (np.fabs(cont_data_container.muF_by_T_cont - muF_by_T)).argmin()
         color = lpd.get_color(plot_muF_by_T, j)
-        ax3.errorbar(np.insert(1 / np.asarray(args.Nts) ** Ntexp, 0, 0),
+        ax3.errorbar(np.insert(1 / np.asarray(args.Nts) ** general_params.Ntexp, 0, 0),
                      np.insert(cont_data_container.g2_latt_from_int[i], 0, cont_data_container.g2_cont[i, 0]),
                      np.insert(cont_data_container.g2_latt_from_int_err[i], 0, cont_data_container.g2_cont[i, 1]),
                      color=color,
                      fmt='|', label=lpd.format_float(cont_data_container.muF_by_T_cont[i], 2), zorder=-i)
-        ax3.errorbar(xpoints, extrapolation_ansatz(xpoints, cont_data_container.g2_extr_slope[i, 0] * factor,
+        ax3.errorbar(xpoints, extrapolation_ansatz(xpoints, cont_data_container.g2_extr_slope[i, 0] * general_params.factor,
                                                    cont_data_container.g2_cont[i, 0]),
                      **lpd.fitlinestyle, color=color)
         # counter += 1
@@ -123,13 +118,12 @@ def plot_g2_vs_1overNt2(args, cont_data_container):
 
     # thisylims = ax3.get_ylim()
     # ax3.set_ylim((0, thisylims[1]*1.1))
-    ax3.set_ylim(0.7, 2.8)
+    ax3.set_ylim(0.95, 3.65)
     thisxlims = ax3.get_xlim()
     ax3.set_xlim((thisxlims[0], thisxlims[1] * 1.025))
 
     ax3.figure.canvas.draw()
     offset = ax3.xaxis.get_major_formatter().get_offset()
-    print(offset)
     ax3.xaxis.offsetText.set_visible(False)
     ax3.xaxis.set_label_text(xlabel + " " + offset)
 
@@ -139,87 +133,79 @@ def plot_g2_vs_1overNt2(args, cont_data_container):
 
 
 class Plotter_g2_vs_mu:
-    def __init__(self, args, raw_data_container, cont_data_container, msbar_data_container,
-                 list_of_pertRun_MSBar_data_container):
+    def __init__(self, args, general_params, raw_data_container, cont_data_container, msbar_data_container,
+                 list_of_pertRun_MSBar_data_container, file_suffix=""):
         self.args = args
+        self.general_params: GeneralParameters = general_params
         self.raw_data_container: RawDataContainer = raw_data_container
         self.cont_data_container: ContDataContainer = cont_data_container
         self.msbar_data_container: MSBarDataContainer = msbar_data_container
-        self.list_of_pertRun_MSBar_data_container = list_of_pertRun_MSBar_data_container
-        self.linewidth = 1
+        self.list_of_pertRun_MSBar_data_container: List[PertRunMSBarDataContainer] = list_of_pertRun_MSBar_data_container
+        self.linewidth: float = 1
+        self.file_suffix: str = file_suffix
 
     def __setup_plot(self):
-        fig, ax, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=get_ylabel())
-        ax.set_ylim(0, 4.5)
-        ax.set_xlim(1, 100)
-        ax.set_xscale('log')
-        return fig, ax
+        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=get_ylabel())
+        self.ax.set_ylim(0, 4.5)
+        self.ax.set_xlim(1, 600)
+        self.ax.set_xscale('log')
 
-    def __finalize_plot(self, fig, ax, file_suffix):
-        ax.axvline(muB_by_T, alpha=1, dashes=(2, 2), zorder=-10000, lw=self.linewidth, color='k')
-
-        ax.legend(**lpd.leg_err_size(), loc="lower left", bbox_to_anchor=(0, 0), handlelength=1, fontsize=8,
-                  framealpha=0)
-
-        file = self.args.outputpath_plot + "g2" + file_suffix + ".pdf"
+    def __finalize_plot(self):
+        self.ax.axvline(self.general_params.muUV_by_T_NLO, alpha=0.5, dashes=(2, 2), zorder=-10000, lw=self.linewidth/2, color='k')
+        self.ax.axvline(self.general_params.muUV_by_T_LO, alpha=0.5, dashes=(2, 2), zorder=-10000, lw=self.linewidth/2, color='k')
+        self.ax.legend(**lpd.leg_err_size(), loc="upper right", bbox_to_anchor=(1, 1), handlelength=1, fontsize=8, framealpha=0)
+        file = self.args.outputpath_plot + "g2" + self.file_suffix + ".pdf"
         print("saving", file)
-        fig.savefig(file)
+        self.fig.savefig(file)
 
-    def __plot_pert_g2(self, ax, mus, suffix="pert"):
-        g2s = []
-        for mu in mus:
-            g2s.append(lpd.get_g2_pert(mu * T_in_GeV, Nf=0, Nloop=3))
-        ax.errorbar(mus, g2s, fmt='-.', lw=self.linewidth, markersize=0,
-                    label=r'pert. ($\mu = \mu_\mathrm{F} \equiv 1/\sqrt{8\tau_F} $)', zorder=-1)
+    def __plot_pert_g2(self, mus, suffix="pert"):
+        g2s = np.asarray([lpd.get_g2_pert(mu * self.general_params.T_in_GeV, Nf=0, Nloop=3) for mu in mus])
+        self.ax.errorbar(mus, g2s, fmt='-.', lw=self.linewidth, markersize=0,
+                         label=r'pert. ($\mu = \mu_\mathrm{F} \equiv 1/\sqrt{8\tau_F} $)', zorder=-1)
         lpd.save_columns_to_file(self.args.outputpath_data + "g2_muF_" + suffix + ".txt", (mus, g2s), ["mu_F/T", "g2s"])
 
-    def __plot_lattice_data(self, ax):
+    def __plot_lattice_data(self):
         for i, Nt in enumerate(self.args.Nts):
-            ax.errorbar(self.raw_data_container.muF_by_T_arr[i], self.raw_data_container.g2_arr[i], fmt='-',
-                        lw=self.linewidth, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$', zorder=-i - 10)
+            self.ax.errorbar(self.raw_data_container.muF_by_T_arr[i], self.raw_data_container.g2_arr[i], fmt='-',
+                             lw=self.linewidth, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$', zorder=-i - 10)
 
-    def __plot_grey_flow_extr_band(self, ax):
-        ax.fill_between([min_muF_by_T_in_flow_extr, max_muF_by_T_in_flow_extr],
-                        [-1, -1], [100, 100], facecolor='k', alpha=0.15, zorder=-1000)
+    def __plot_grey_flow_extr_band(self):
+        self.ax.fill_between([self.general_params.min_muF_by_T_in_flow_extr, self.general_params.max_muF_by_T_in_flow_extr],
+                             [-1, -1], [100, 100], facecolor='k', alpha=0.15, zorder=-1000)
 
-    def __plot_cont(self, ax):
+    def __plot_cont(self):
         cont_data = self.cont_data_container.g2_cont[:, 0]
-        ax.errorbar(self.cont_data_container.muF_by_T_cont, cont_data, fmt='-', markersize=0, lw=self.linewidth,
-                    label=r'flow', zorder=-1)  # r'cont., linear in $a^' + str(Ntexp) + r'$'
-        # tmp_idx = np.fabs(self.cont_data_container.muF_by_T_cont-19.179).argmin()
-        # print(self.cont_data_container.muF_by_T_cont[tmp_idx], cont_data[tmp_idx])
+        self.ax.errorbar(self.cont_data_container.muF_by_T_cont, cont_data, fmt='-', markersize=0, lw=self.linewidth,
+                         label=r'flow', zorder=-1)
 
-    def __plot_pert_run_from_converted_g2MSbar(self, ax):
+    def __plot_pert_run_from_converted_g2MSbar(self):
         for data in self.list_of_pertRun_MSBar_data_container:
-            ax.errorbar(data.mubar_by_T, data.g2_MSBAR_pert_run(data.mubar_by_T), fmt='--', markersize=0,
-                        lw=self.linewidth, zorder=(int(data.mubar_by_T[0])) + 20,
-                        label=r'\begin{flushleft}$\text{flow}\rightarrow\overline{\text{MS}}$ at ' + r' $\frac{\mu_\text{F}}{T}=' + lpd.format_float(
-                            data.mubar_by_T[0], 1) + r'$ \newline with ' + str(
-                            data.nloop) + r'-loop run \end{flushleft}')
+            self.ax.errorbar(data.mubar_by_T, data.g2_MSBAR_pert_run(data.mubar_by_T), fmt='--', markersize=0,
+                             lw=self.linewidth, zorder=(int(data.mubar_by_T[0])) + 20,
+                             label=r'\begin{flushleft}$\text{flow}\rightarrow\overline{\text{MS}}$ at ' + r' $\frac{\mu_\text{F}}{T}=' + lpd.format_float(
+                             data.mubar_by_T[0], 1) + r'$ \newline with ' + str(
+                             data.nloop) + r'-loop run \end{flushleft}')
 
-    def __plot_MSBAR(self, ax):
-        ax.errorbar(self.msbar_data_container.mubar_by_T,
+    def __plot_MSBAR(self):
+        self.ax.errorbar(self.msbar_data_container.mubar_by_T,
                     self.msbar_data_container.g2_MSBAR_spline(self.msbar_data_container.mubar_by_T),
                     fmt='-', markersize=0, lw=self.linewidth, label=r'$\text{flow}\rightarrow\overline{\text{MS}}$')
 
-    def _plot(self, file_suffix):
-        fig, ax = self.__setup_plot()
-
-        self.__plot_grey_flow_extr_band(ax)
-        self.__plot_lattice_data(ax)
-        self.__plot_cont(ax)
-        self.__plot_MSBAR(ax)
-        self.__plot_pert_run_from_converted_g2MSbar(ax)
+    def _plot(self):
+        self.__setup_plot()
+        self.__plot_grey_flow_extr_band()
+        self.__plot_lattice_data()
+        self.__plot_cont()
+        self.__plot_MSBAR()
+        self.__plot_pert_run_from_converted_g2MSbar()
         # self.__plot_pert_g2(ax, np.geomspace(2, muB_by_T, 200))
-        self.__finalize_plot(fig, ax, file_suffix)
+        self.__finalize_plot()
 
     @classmethod
-    def plot(cls, args, raw_data_container, cont_data_container, msbar_data_container,
-             list_of_pertRun_MSBar_data_container, file_suffix=""):
+    def plot(cls, *args, **kwargs):
         # This method only exists such that you don't have to manually instantiate the class.
-        instance = cls(args, raw_data_container, cont_data_container, msbar_data_container,
-                       list_of_pertRun_MSBar_data_container)
-        return instance._plot(file_suffix)
+        instance = cls(*args, **kwargs)
+        return instance._plot()
 
 
 def extrapolation_ansatz(x, m, b):
@@ -227,11 +213,12 @@ def extrapolation_ansatz(x, m, b):
 
 
 class ContinuumExtrapolator:
-    def __init__(self, args, raw_data_container):
+    def __init__(self, args, general_parameters, raw_data_container):
         self.calc_cont = args.calc_cont
         self.output_file = args.outputpath_data + "g2_muF" + "_cont_extr.txt"
 
         # raw data and corresponding parameters
+        self.general_parameters = general_parameters
         self.raw_data_container = raw_data_container
         self.nflow = len(raw_data_container.target_muF_by_T_for_cont_extr)
         self.Nts = args.Nts
@@ -263,6 +250,7 @@ class ContinuumExtrapolator:
     def __load_cont_extr_from_disk(self):
         try:
             _, b, berr, m, merr, chisqdof, chisqdof_err = np.loadtxt(self.output_file, unpack=True)
+            print("load", self.output_file)
         except OSError:
             print("Error: could not find ", self.output_file)
             exit(1)
@@ -289,7 +277,7 @@ class ContinuumExtrapolator:
                 ContinuumExtrapolator._fit_sample, data=self.g2_latt_from_int[i],
                 data_std_dev=self.g2_latt_from_int_err[i],
                 numb_samples=100, sample_size=1, return_sample=False,
-                args=[1 / np.asarray(self.Nts) ** Ntexp * factor, self.g2_latt_from_int_err[i]], parallelize=True,
+                args=[1 / np.asarray(self.Nts) ** self.general_parameters.Ntexp * self.general_parameters.factor, self.g2_latt_from_int_err[i]], parallelize=True,
                 nproc=20)
             self.chisqdof[i, 0] = fitparams[2]
             self.chisqdof[i, 1] = fitparams_err[2]
@@ -320,9 +308,9 @@ class ContinuumExtrapolator:
                                            g2_cont_spline)
 
     @classmethod
-    def extrapolate(cls, args, raw_data_container):
+    def extrapolate(cls, *args):
         # This method only exists such that you don't have to manually instantiate the class.
-        instance = cls(args, raw_data_container)
+        instance = cls(*args)
         return instance.cont_data
 
 
@@ -340,19 +328,16 @@ def flow_coupling(tauF2E: float, a2bytauF: float) -> float:
     return this_flow_coupling
 
 
-def load_data_and_interpolate(args: argparse.Namespace) -> RawDataContainer:
-    def virtual_nt(beta):
+def load_data_and_interpolate(args: argparse.Namespace, general_params: GeneralParameters) -> RawDataContainer:
+    def pseudo_nt_for_1point5_Tc(beta):
         r0Tc = 0.7457
-
-        # below we implicitly use the scale setting of our finite temp lattices. Note that we do not account for the slight mistuning of the temperatures
-        # (i.e., we set T=1.5Tc for all lattices instead of 1.47, 1.51...) since what we actually want here is to continuum extrapolate g^2 at a fixed scale.
         TbyTc = 1.5
-
         r0_T = r0Tc * TbyTc
-        inv_T_a = rS.r0_div_a(
-            beta) / r0_T  # 1/(a T). a is lattice spacing. this is a virtual Nt (= the Nt, that we should have chosen to get T=1.5Tc while keeping beta fixed.)
-        # print(inv_T_a)
-        return inv_T_a
+
+        # 1/(a T). a is lattice spacing. this is a "pseudo" Nt
+        # (= the Nt, that we should have chosen to get T=1.5Tc while keeping beta fixed.)
+        one_over_aT = rS.r0_div_a(beta) / r0_T
+        return one_over_aT
 
     # declare a few arrays
     muF_by_T_arr = []
@@ -369,13 +354,13 @@ def load_data_and_interpolate(args: argparse.Namespace) -> RawDataContainer:
     for i in range(len(args.input_files)):
         tauFbya2, tauF2E, tauF2E_err = np.loadtxt(args.input_basepath + "/" + args.input_files[i], unpack=True)
 
-        # convert to a more intuitive scale than lattice spacing. It's wrong to simply use the Nt of the finite temp lattices here to get, e.g. tauFT^2, because
-        # then you actually have a slightly different scale for each lattice since there is some slight temperature mistuning in the scale setting.
-        # for the continuum extrapolation you want to have a fixed scale.
-        # Choices:
-        # tauF/r0**2 or tauF/t0 or taufF_T^2 (via r0Tc and T/Tc==1.500)
-        tauFbyScale = tauFbya2 / virtual_nt(args.betas[i]) ** 2
-        muF_by_T = np.flip(convert_taufT2_to_muFByT(tauFbyScale))
+        # The continuum extrapolation happens at fixed physical scale, so we need to "align" the lattice measurements as they
+        # have different lattice spacings. The most intuitive scale is the "target" temperature T=1.500Tc.
+        # But, due to slight mistuning of the beta values, not all lattices are at this exact same temperature.
+        # However, using r0Tc and the r0-scale, we can compute a non-integer "pseudo" Nt that we can use to convert
+        # from the individual lattice spacing scales to a common 1.500Tc=1/(a Nt_pseudo) scale.
+        tauFbyScale = tauFbya2 / pseudo_nt_for_1point5_Tc(args.betas[i]) ** 2
+        muF_by_T = np.flip(ScaleFunctions.convert_taufT2_to_muFByT(tauFbyScale))
         muF_by_T_arr.append(muF_by_T)
 
         largest_min_muF_by_T = max(largest_min_muF_by_T, np.min(muF_by_T))
@@ -390,17 +375,16 @@ def load_data_and_interpolate(args: argparse.Namespace) -> RawDataContainer:
         muF_by_T = muF_by_T_arr[i]
         thisg2 = g2_arr[i]
         thisg2_err = g2_err_arr[i]
-        min_idx, max_idx = get_min_and_max_indices(muF_by_T, min_muF_by_T_for_running, max_muF_by_T_for_running)
-        # print(min_idx, max_idx, min_muF_by_T_in_plot, max_muF_by_T_in_plot, muF_by_T[max_idx])
+        # _, max_idx = ScaleFunctions.get_min_and_max_indices(muF_by_T, general_params.ref_muF_by_T*0.9, general_params.max_muF_by_T_in_flow_extr)
         g2_ints.append(
-            scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T[0:max_idx], thisg2[0:max_idx], k=order, ext=2))
+            scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T, thisg2, k=order, ext=2))
         g2_err_ints.append(
-            scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T[0:max_idx], thisg2_err[0:max_idx], k=order, ext=2))
+            scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T, thisg2_err, k=order, ext=2))
 
     target_muF_by_T_for_cont_extr = np.sort(np.unique(np.concatenate((
-        np.geomspace(largest_min_muF_by_T, max_muF_by_T_for_running, 200),
-        necessary_muF_by_T,
-        [muB_by_T, ]))))
+        np.geomspace(largest_min_muF_by_T, general_params.muUV_by_T_NLO, 500),
+        general_params.muF_by_T_where_we_measure,
+        [general_params.muUV_by_T_LO, general_params.muUV_by_T_NLO]))))
 
     return RawDataContainer(np.asarray(muF_by_T_arr), np.asarray(g2_arr), np.asarray(g2_err_arr), g2_ints, g2_err_ints,
                             target_muF_by_T_for_cont_extr)
@@ -497,10 +481,33 @@ class BetaFunction:
                 (these_target_mus, g2s), ["mu/T", "g^2"])
 
     @classmethod
-    def run(cls, args, MSBar_data_container):
+    def run(cls, *args):
         # This method only exists such that you don't have to manually instantiate the class.
-        instance = cls(args, MSBar_data_container)
+        instance = cls(*args)
         return instance.list_of_data_containers
+
+
+def get_general_parameters():
+    NTEXP = 2
+    max_muF_by_T_in_flow_extr = ScaleFunctions.convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.25, tauT=0.25)
+    muUV_by_T_NLO = 19.179
+    muBar_by_muF_NLO = np.sqrt(4*np.exp(np.euler_gamma+8/3))
+    general_params = GeneralParameters(
+        Ntexp=NTEXP,
+        factor=96 ** NTEXP,
+        T_in_GeV=0.472,
+        muUV_by_T_LO=2*np.pi,
+        muUV_by_T_NLO=muUV_by_T_NLO,
+        min_muF_by_T_in_flow_extr=ScaleFunctions.convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.3, tauT=0.5),
+        max_muF_by_T_in_flow_extr=max_muF_by_T_in_flow_extr,
+        max_muBar_by_T=np.fmax(muBar_by_muF_NLO*max_muF_by_T_in_flow_extr, muUV_by_T_NLO),
+        ref_muF_by_T=4.0,
+        muF_by_T_where_we_measure=ScaleFunctions.get_muF_by_T_where_we_measure())
+
+    # max_muF_by_T_for_running = np.max([*necessary_muF_by_T, muB_by_T])
+    # min_muF_by_T_for_running = np.min([*necessary_muF_by_T, muB_by_T])
+
+    return general_params
 
 
 def main():
@@ -508,14 +515,15 @@ def main():
 
     args = parse_args()
 
-    raw_data_container = load_data_and_interpolate(args)
-    cont_data_container = ContinuumExtrapolator.extrapolate(args, raw_data_container)
-    MSBar_data_container = calc_g2_MSBAR(cont_data_container, raw_data_container.target_muF_by_T_for_cont_extr)
-    list_of_pertRun_MSBar_data_container = BetaFunction.run(args, MSBar_data_container)
+    general_params = get_general_parameters()
+    raw_data = load_data_and_interpolate(args, general_params)
+    cont_data = ContinuumExtrapolator.extrapolate(args, general_params, raw_data)
+    MSBar_data = calc_g2_MSBAR(cont_data, raw_data.target_muF_by_T_for_cont_extr)
+    list_of_pertRun_MSBar_data = BetaFunction.run(args, MSBar_data)
 
-    Plotter_g2_vs_mu.plot(args, raw_data_container, cont_data_container, MSBar_data_container,
-                          list_of_pertRun_MSBar_data_container)
-    plot_g2_vs_1overNt2(args, cont_data_container)
+    Plotter_g2_vs_mu.plot(args, general_params, raw_data, cont_data, MSBar_data,
+                          list_of_pertRun_MSBar_data)
+    plot_g2_vs_1overNt2(args, general_params, cont_data)
 
 
 if __name__ == '__main__':
