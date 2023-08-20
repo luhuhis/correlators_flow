@@ -45,9 +45,15 @@ def typed_frozen_data(cls):
     return beartype(dataclass(frozen=True)(cls))
 
 
-def format_float(number, digits=3):
-    thisformat = '{0:.'+str(int(digits))+'f}'
+def format_float(number, digits=3, width=0):
+    thisformat = '{0:' + str(width) + '.' + str(int(digits)) + 'f}'
     return thisformat.format(number)
+
+def format_float_latex(number, digits=3, width=0):
+    formatted_number = '{0:.' + str(int(digits)) + 'f}'
+    number_str = formatted_number.format(number)
+    padding = r'\phantom{0}' * (width - len(number_str))  # Using LaTeX's space command
+    return r'{' + padding + number_str + r'}'
 
 
 def save_script_call(add_folder=None):
