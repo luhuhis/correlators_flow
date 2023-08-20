@@ -2,7 +2,7 @@
 
 # TODO convert all paths to inputs of the script instead of hard-coding them
 
-#
+
 extrapolate_coupling(){
     ../extrapolate_coupling.py \
         --calc_cont \
