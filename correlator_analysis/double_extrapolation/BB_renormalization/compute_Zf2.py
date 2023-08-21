@@ -196,7 +196,7 @@ class ZFactorComputer:
         g2_MSBar = self.coupling_container.g2_spline(muBarUV_by_T)
         inner_bracket = np.log(muBarUV_by_T ** 2 / self.coupling_container.input_mu_by_T ** 2) - 2 * np.log(
             2) - np.euler_gamma - 8 / 3
-        Zk = 1 - gamma_0 * g2_MSBar * inner_bracket # TODO!!!!! CLARIFY THIS 1/(1+x) VS 1-x
+        Zk = np.exp( - gamma_0 * g2_MSBar * inner_bracket)  # TODO!!!!! CLARIFY THIS 1/(1+x) VS 1-x
         return Zk
 
     def compute_Z_run(self):
@@ -216,7 +216,7 @@ class ZFactorComputer:
 
     def compute_Z_phys(self):
         inner_bracket = np.log(self.scale_choice.muBarIR_by_T**2 / ((np.pi*4)**2)) - 2 + 2*np.euler_gamma
-        Z_phys = 1 + gamma_0 * self.coupling_container.g2_spline(self.scale_choice.muBarIR_by_T) * inner_bracket
+        Z_phys = np.exp( gamma_0 * self.coupling_container.g2_spline(self.scale_choice.muBarIR_by_T) * inner_bracket)
         return Z_phys
 
     @classmethod
