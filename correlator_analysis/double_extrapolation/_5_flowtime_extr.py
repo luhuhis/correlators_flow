@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import numpy
+import numpy as np
 import matplotlib
 import lib_process_data as lpd
 import scipy.optimize
@@ -24,7 +24,7 @@ def chisq(params, args):
     if args[3] is not None:
         corr_inv = args[3]
     else:
-        corr_inv = numpy.identity(len(ydata))
+        corr_inv = np.identity(len(ydata))
 
     r = (ydata - extrapolation_ansatz(xdata, params[0], params[1]))/edata
     return r.T @ corr_inv @ r
@@ -42,8 +42,8 @@ def plot_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_extr, indice
     ylims = (2.5, 3.8) if not args.custom_ylims else args.custom_ylims
     ylabel_prefix = ""
     if args.Zf2_file is not None:
-        ylabel_prefix = r'Z_f'
-    fig, ax, _ = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{'+ylabel_prefix+r'G'+lpd.get_corr_subscript(args.corr)+r'}{G^\text{norm}}$',
+        ylabel_prefix = r'Z_\text{match}'
+    fig, ax, _ = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{'+ylabel_prefix+r'G^\text{flow}'+lpd.get_corr_subscript(args.corr)+r'}{G^\text{norm}}$',
                                        xlabel=r'$'+displaystyle+r'{8\tau_\mathrm{F}}/{\tau^2}$')
                                        # r'\frac{Z_f^2 G_B}{G^\text{norm}}$', UseTex=args.use_tex)
     ax.set_xlim([-0.005, args.max_FlowradiusBytauT**2 * 1.15])
@@ -63,12 +63,12 @@ def plot_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_extr, indice
                 xdataplot = xdata*8/tauT**2
             mycolor = lpd.get_color(tauTs, i, mintauTindex, finest_Nt_half - 1)
 
-            if not args.no_extr and not numpy.isnan(ydata_extr[i][1]):
+            if not args.no_extr and not np.isnan(ydata_extr[i][1]):
                 # plot fit result at tf=0
                 plots.append(ax.errorbar(0, ydata_extr[i][1], edata_extr[i][1], fmt='|', color=mycolor, zorder=1, label='{0:.3f}'.format(tauT)))
 
                 # plot linear fit line
-                x = numpy.asarray([0, xdataplot[-1]])
+                x = np.asarray([0, xdataplot[-1]])
                 ax.errorbar(x, extrapolation_ansatz(x, *ydata_extr[i]), color=mycolor, **lpd.fitlinestyle, zorder=-10000)
 
                 # plot data points used in extrapolation
@@ -85,10 +85,10 @@ def plot_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_extr, indice
 
     # second x-axis for flow radius
     ax2 = ax.twiny()
-    new_tick_locations = numpy.array([args.min_FlowradiusBytauT**2, args.max_FlowradiusBytauT**2])
+    new_tick_locations = np.array([args.min_FlowradiusBytauT**2, args.max_FlowradiusBytauT**2])
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticks(new_tick_locations)
-    ax2.set_xticklabels(["%.1f" % z if z == 0 else "%.2f" % z for z in numpy.sqrt(new_tick_locations)])
+    ax2.set_xticklabels(["%.1f" % z if z == 0 else "%.2f" % z for z in np.sqrt(new_tick_locations)])
     ax2.set_xlabel(r'$'+displaystyle+r'{\sqrt{8\tau_\mathrm{F}}}/{\tau}$', horizontalalignment='right', verticalalignment='top', zorder=999999, bbox=lpd.labelboxstyle)
     ax2.xaxis.set_label_coords(0.97, 0.97)
     ax2.tick_params(direction='in', pad=0, width=0.5)
@@ -126,30 +126,30 @@ def do_flow_extr(index, tauTs, cont_samples, data_std, n_samples, args, flowstep
 
     tauT = tauTs[index]
 
-    results = numpy.empty((n_samples, 2))
-    results[:] = numpy.nan
+    results = np.empty((n_samples, 2))
+    results[:] = np.nan
 
     if args.relflow_file:
         relflows = flowsteps
-        flowend = numpy.fabs(relflows - args.max_FlowradiusBytauT).argmin()
-        flowstart = numpy.fabs(relflows - args.min_FlowradiusBytauT).argmin()
-        midpoint = numpy.abs(relflows - (args.max_FlowradiusBytauT+args.min_FlowradiusBytauT)/2).argmin()
-        indices = numpy.unique([flowstart, midpoint, flowend])
+        flowend = np.fabs(relflows - args.max_FlowradiusBytauT).argmin()
+        flowstart = np.fabs(relflows - args.min_FlowradiusBytauT).argmin()
+        midpoint = np.abs(relflows - (args.max_FlowradiusBytauT+args.min_FlowradiusBytauT)/2).argmin()
+        indices = np.unique([flowstart, midpoint, flowend])
         # indices = range(flowstart, flowend+1)
         xdatatmp = relflows[indices]**2
     else:
         flowtimes = flowsteps
-        flowradii = numpy.sqrt(8*flowtimes)
-        flowend = numpy.abs(flowradii - lpd.upper_flowradius_limit_(tauT, args.max_FlowradiusBytauT, 0)).argmin()
-        flowstart = numpy.abs(flowradii - lpd.upper_flowradius_limit_(tauT, args.min_FlowradiusBytauT, 0)).argmin()
-        geom_mean = (numpy.abs(flowtimes - numpy.sqrt(flowtimes[flowstart] * flowtimes[flowend]))).argmin()
-        indices = numpy.unique([flowstart, geom_mean, flowend])
+        flowradii = np.sqrt(8*flowtimes)
+        flowend = np.abs(flowradii - lpd.upper_flowradius_limit_(tauT, args.max_FlowradiusBytauT, 0)).argmin()
+        flowstart = np.abs(flowradii - lpd.upper_flowradius_limit_(tauT, args.min_FlowradiusBytauT, 0)).argmin()
+        geom_mean = (np.abs(flowtimes - np.sqrt(flowtimes[flowstart] * flowtimes[flowend]))).argmin()
+        indices = np.unique([flowstart, geom_mean, flowend])
         xdatatmp = flowtimes[indices] * 8 / tauT ** 2
 
     if len(indices) >= 2:
 
         edatatmp = data_std[index][indices]
-        mask = numpy.isnan(cont_samples[0][index][indices])
+        mask = np.isnan(cont_samples[0][index][indices])
         xdata = xdatatmp[~mask]
         edata = edatatmp[~mask]
         ydatas = []
@@ -160,18 +160,18 @@ def do_flow_extr(index, tauTs, cont_samples, data_std, n_samples, args, flowstep
             ydata = ydatatmp[~mask]
             ydatas.append(ydata)
             # TODO undo this again when working on corr matrix again
-            # this_cov = cov[i][index[:, numpy.newaxis], index]
+            # this_cov = cov[i][index[:, np.newaxis], index]
 
             if len(xdata) >= 2:  # minimum amount for linear fit
 
                 if not args.no_extr:
-                    fitparams = scipy.optimize.minimize(chisq, x0=numpy.asarray([0, 3]), bounds=(args.slope_bounds, (None, None)), args=[xdata, ydata, edata, None])
+                    fitparams = scipy.optimize.minimize(chisq, x0=np.asarray([0, 3]), bounds=(args.slope_bounds, (None, None)), args=[xdata, ydata, edata, None])
                     fitparams = fitparams.x
 
                     results[n] = fitparams
 
-        print(xdata, numpy.nanmedian(numpy.asarray(ydatas), axis=0), edata)
-    print("done ", '{0:.3f}'.format(tauT))  # TODO , ", taufT2=[", lpd.format_float(numpy.sqrt(8*flowtimes[flowstart])), ", ", lpd.format_float(numpy.sqrt(8*flowtimes[flowend])), "]", sep="")
+        print(xdata, np.nanmedian(np.asarray(ydatas), axis=0), edata)
+    print("done ", '{0:.3f}'.format(tauT))  # TODO , ", taufT2=[", lpd.format_float(np.sqrt(8*flowtimes[flowstart])), ", ", lpd.format_float(np.sqrt(8*flowtimes[flowend])), "]", sep="")
     return results, indices
 
 
@@ -182,36 +182,36 @@ def convert_sqrt8tauFByTau_to_taufT2(sqrt8tauFByTau, tauT):
 
 def load_data(args, basepath, flowsteps):  # TODO flowtimes
     if not args.relflow_file:
-        samples = numpy.load(basepath + "/cont_extr/" + args.corr + "_cont_samples.npy")
+        samples = np.load(basepath + "/cont_extr/" + args.corr + "_cont_samples.npy")
         cont_samples = samples[:, :, :, 0]
     else:
-        samples = numpy.load(basepath + "/cont_extr/" + args.corr + "_cont_relflow_samples.npy")
+        samples = np.load(basepath + "/cont_extr/" + args.corr + "_cont_relflow_samples.npy")
         nt_finest_half = int(args.finest_Nt/2)
         cont_samples = samples[:, :, :nt_finest_half]
         print(cont_samples.shape)
     n_samples = len(cont_samples)
 
-    gamma_0 = 3 / (8 * numpy.pi**2)
-    g2 = 1.5
-    K = 8/3 + numpy.euler_gamma - numpy.log(2)
-    Z_K = 1 + 2*K * g2 * gamma_0
-    print(Z_K)
-
     if args.Zf2_file is not None:
-        tfT2, Zf2 = numpy.loadtxt(args.Zf2_file, unpack=True)
-        Zf2_int = scipy.interpolate.InterpolatedUnivariateSpline(numpy.flip(tfT2), numpy.flip(Zf2), k=3, ext=2)
+        sqrt8taufT, Z = np.loadtxt(args.Zf2_file, unpack=True)
+
         ntau_half = cont_samples.shape[2]
         nflow = cont_samples.shape[1]
         print(cont_samples.shape)
         for j in range(nflow):
             relflow = flowsteps[j]
             for tau in range(ntau_half):
-                tauT = (tau+1)/(2*ntau_half)
-                taufT2 = convert_sqrt8tauFByTau_to_taufT2(relflow, tauT)
+                tauT = (tau + 1) / (2 * ntau_half)
+                # taufT2 = convert_sqrt8tauFByTau_to_taufT2(relflow, tauT)
                 if tauT >= 0.25:
-                    cont_samples[:, j, tau] *= Zf2_int(taufT2) * Z_K
+                    this_sqrt8taufT = relflow * tauT
+                    idx = np.fabs(sqrt8taufT - this_sqrt8taufT).argmin()
+                    mybool = np.fabs(this_sqrt8taufT - sqrt8taufT[idx]) < 1e-6
+                    if not mybool:
+                        print("target:", this_sqrt8taufT, "found:", sqrt8taufT[idx], "tauT=", tauT, "relflow=", relflow)
+                    this_Z = Z[idx]
+                    cont_samples[:, j, tau] *= this_Z
 
-    cont_samples = numpy.swapaxes(cont_samples, 1, 2)
+    cont_samples = np.swapaxes(cont_samples, 1, 2)
     data_std = lpd.dev_by_dist(cont_samples, axis=0)
     # shape: (1000, 18, 221)
 
@@ -225,7 +225,7 @@ def parse_args():
     parser.add_argument('--flowtimes_finest', help='file with list of all dimensionless flowtimes of the finest lattice', type=str)
     parser.add_argument('--finest_Nt', help='finest Nt used in previous cont extr.', type=int, required=True)
     parser.add_argument('--use_tex', action="store_true", default=False)
-    parser.add_argument('--max_FlowradiusBytauT', type=float, default=numpy.sqrt(8 * 0.014),
+    parser.add_argument('--max_FlowradiusBytauT', type=float, default=np.sqrt(8 * 0.014),
                         help='modify the flow filter based on tauT to be more/less strict. default value of 0.33 means that for each flow radius the tauT '
                              'cannot be greater than 3*flowradius, or that for each tauT the flow radius must be less than 0.33*tauT.')
     parser.add_argument('--min_FlowradiusBytauT', type=float, default=0.2)
@@ -254,7 +254,7 @@ def parse_args():
 def independent_extrapolation(args, ntauT, finest_tauTs, cont_samples, data_std, n_samples, flowsteps):
     fitparams, indices = lpd.parallel_function_eval(do_flow_extr, range(0, ntauT), args.nproc, finest_tauTs, cont_samples, data_std, n_samples, args, flowsteps)
 
-    results = numpy.swapaxes(numpy.asarray(fitparams), 0, 1)
+    results = np.swapaxes(np.asarray(fitparams), 0, 1)
 
     return results, indices
 
@@ -294,12 +294,12 @@ def plot_combined_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_ext
 
             print(ydata_extr[i], edata_extr[i])
 
-            if not args.no_extr and not numpy.isnan(ydata_extr[i]):
+            if not args.no_extr and not np.isnan(ydata_extr[i]):
                 # plot fit result at tf=0
                 plots.append(ax.errorbar(0, ydata_extr[i], edata_extr[i], fmt='|', color=mycolor, zorder=1, label='{0:.3f}'.format(tauT)))
 
                 # plot linear fit line
-                x = numpy.asarray([0, xdataplot[-1]])
+                x = np.asarray([0, xdataplot[-1]])
                 ax.errorbar(x, combined_fit_ansatz(x, tauT, ydata_extr[i], *ydata_extr[len(ydata):-1]), color=mycolor, **lpd.fitlinestyle, zorder=-10000)
 
                 # plot data points used in extrapolation
@@ -316,10 +316,10 @@ def plot_combined_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_ext
 
     # second x-axis for flow radius
     ax2 = ax.twiny()
-    new_tick_locations = numpy.array([args.min_FlowradiusBytauT**2, args.max_FlowradiusBytauT**2])
+    new_tick_locations = np.array([args.min_FlowradiusBytauT**2, args.max_FlowradiusBytauT**2])
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticks(new_tick_locations)
-    ax2.set_xticklabels(["%.1f" % z if z == 0 else "%.2f" % z for z in numpy.sqrt(new_tick_locations)])
+    ax2.set_xticklabels(["%.1f" % z if z == 0 else "%.2f" % z for z in np.sqrt(new_tick_locations)])
     ax2.set_xlabel(r'$'+displaystyle+r'{\sqrt{8\tau_\mathrm{F}}}/{\tau}$', horizontalalignment='right', verticalalignment='top', zorder=999999, bbox=lpd.labelboxstyle)
     ax2.xaxis.set_label_coords(0.97, 0.97)
     ax2.tick_params(direction='in', pad=0, width=0.5)
@@ -349,7 +349,7 @@ def combined_chisqdof(fitparams, ydata, xdata, edata, tauTs):
     combined_fitparams = fitparams[ntauT:]
 
     for i in range(ntauT):
-        chisq += numpy.nansum(((combined_fit_ansatz(xdata, tauTs[i], fitparams[i], *combined_fitparams) - ydata[i])/edata[i]) ** 2)
+        chisq += np.nansum(((combined_fit_ansatz(xdata, tauTs[i], fitparams[i], *combined_fitparams) - ydata[i])/edata[i]) ** 2)
 
     nfitparams = len(fitparams)
     chisqdof = chisq / (ndata-nfitparams)
@@ -357,14 +357,14 @@ def combined_chisqdof(fitparams, ydata, xdata, edata, tauTs):
 
 
 def perform_combined_fit(ydata, xdata, tauTs, edata, nparams):
-    # fitparams = scipy.optimize.minimize(chisq, x0=numpy.asarray([0, 3]), bounds=(args.slope_bounds, (None, None)), args=[xdata, ydata, edata, None])
+    # fitparams = scipy.optimize.minimize(chisq, x0=np.asarray([0, 3]), bounds=(args.slope_bounds, (None, None)), args=[xdata, ydata, edata, None])
     # fitparams = fitparams.x
     #
     # results[n] = fitparams
 
     ntauT = len(tauTs)
     # print(xdata, ydata, edata)
-    fitparams = scipy.optimize.minimize(combined_chisqdof, x0=numpy.asarray([*[1 for _ in range(ntauT)], *[1 for _ in range(nparams)]]),
+    fitparams = scipy.optimize.minimize(combined_chisqdof, x0=np.asarray([*[1 for _ in range(ntauT)], *[1 for _ in range(nparams)]]),
                                         bounds=([*[(0, 20) for _ in range(ntauT)], (None, 0), *[(None, None) for _ in range(nparams-2)]]), args=(ydata, xdata, edata, tauTs))
     fitparams = fitparams.x
     chisqdof = combined_chisqdof(fitparams, ydata, xdata, edata, tauTs)
@@ -386,27 +386,27 @@ def combined_extrapolation(args, ntauT, finest_tauTs, cont_samples, data_std, n_
     """ do the extrapolation for all samples of one tauT"""
 
     # make a flag for rel flows and change flowtimes / flowradii in this function accordingly. maybe make a general flow variable instead of calling flow"times" and flow"radii".
-    results = numpy.empty((n_samples, ntauT+n_additional_fitparams+1))
-    results[:] = numpy.nan
+    results = np.empty((n_samples, ntauT+n_additional_fitparams+1))
+    results[:] = np.nan
 
     relflows = flowsteps
-    flowend = numpy.fabs(relflows - args.max_FlowradiusBytauT).argmin()
-    flowstart = numpy.fabs(relflows - args.min_FlowradiusBytauT).argmin()
-    midpoint = numpy.abs(relflows - (args.max_FlowradiusBytauT+args.min_FlowradiusBytauT)/2).argmin()
-    indices = numpy.unique([flowstart, midpoint, flowend])
+    flowend = np.fabs(relflows - args.max_FlowradiusBytauT).argmin()
+    flowstart = np.fabs(relflows - args.min_FlowradiusBytauT).argmin()
+    midpoint = np.abs(relflows - (args.max_FlowradiusBytauT+args.min_FlowradiusBytauT)/2).argmin()
+    indices = np.unique([flowstart, midpoint, flowend])
     xdata = relflows[indices]**2
 
     if len(indices) >= 3:
 
-        edata = numpy.asarray([data_std[i][indices] for i in range(ntauT)])
-        mask = numpy.isnan(edata).any(axis=1)  # this should have shape tauT
+        edata = np.asarray([data_std[i][indices] for i in range(ntauT)])
+        mask = np.isnan(edata).any(axis=1)  # this should have shape tauT
         edata = edata[~mask]
         offset = count_falses_from_start(~mask)
         for n in range(args.n_samples):
             ydatatmp = []
             for t in range(ntauT):
                 ydatatmp.append(cont_samples[n][t][indices])
-            ydata = numpy.asarray(ydatatmp)[~mask]  # ydata has now length of valid tauTs, and contains three flow points. same as edata should have
+            ydata = np.asarray(ydatatmp)[~mask]  # ydata has now length of valid tauTs, and contains three flow points. same as edata should have
 
             if len(xdata) >= 3:  # minimum amount for linear fit
                 fitresults = perform_combined_fit(ydata, xdata, finest_tauTs[~mask], edata, n_additional_fitparams)
@@ -429,28 +429,28 @@ def plot_final_corr_and_savetxt(args, results_mean, results_std, ntauT, finest_t
         ydata_extr = results_mean[:, 1]
         edata_extr = results_std[:, 1]
     plot_corr(args, finest_tauTs, ydata_extr, edata_extr, plotbasepath)
-    correlator = numpy.column_stack((finest_tauTs, ydata_extr, edata_extr))
+    correlator = np.column_stack((finest_tauTs, ydata_extr, edata_extr))
     print(correlator)
-    numpy.set_printoptions(linewidth=numpy.inf, precision=4, threshold=numpy.inf, floatmode="fixed")
+    np.set_printoptions(linewidth=np.inf, precision=4, threshold=np.inf, floatmode="fixed")
     print(finest_tauTs)
     print(ydata_extr)
     print(edata_extr)
 
     file = basepath + "/" + args.corr + "_flow_extr"+suffix+".txt"
     print("saving mean and error in ", file)
-    numpy.savetxt(file, correlator, header="                tauT                G/Gnorm                    err", fmt='%22.15e')
+    np.savetxt(file, correlator, header="                tauT                G/Gnorm                    err", fmt='%22.15e')
 
 
 def save_extr_samples(args, basepath, suffix, results):
     file = basepath + "/" + args.corr + "_flow_extr"+suffix+".npy"
     print("saving all samples in", file)
-    numpy.save(file, results)
+    np.save(file, results)
     print("results shape:", results.shape)
 
 
 def plot_flow_extr(args, flowsteps, cont_samples, data_std, results_mean, results_std, indices, plotbasepath):
 
-    data_mean = numpy.nanmedian(cont_samples, axis=0)  # original data points
+    data_mean = np.nanmedian(cont_samples, axis=0)  # original data points
     if args.combined_fit:
         plot_combined_extrapolation(args, flowsteps, data_mean, data_std, results_mean, results_std, indices, plotbasepath)
     else:
@@ -465,9 +465,9 @@ def main():
 
     # parse some more arguments
     if not args.relflow_file:
-        flowsteps = numpy.loadtxt(args.flowtimes_finest)/args.finest_Nt**2  # flowsteps = flowtimes T^2
+        flowsteps = np.loadtxt(args.flowtimes_finest)/args.finest_Nt**2  # flowsteps = flowtimes T^2
     else:
-        flowsteps = numpy.loadtxt(args.relflow_file)  # flowsteps = relative flow radii
+        flowsteps = np.loadtxt(args.relflow_file)  # flowsteps = relative flow radii
 
     finest_tauTs = lpd.get_tauTs(args.finest_Nt)
     ntauT = len(finest_tauTs)
@@ -483,17 +483,18 @@ def main():
         results, indices = independent_extrapolation(args, ntauT, finest_tauTs, cont_samples, data_std, n_samples, flowsteps)
 
     suffix = ""
-    if args.relflow_file:
-        suffix = "_relflow"
+    # if args.relflow_file:
+    #     suffix = "_relflow"
+    suffix = args.output_suffix
 
     save_extr_samples(args, basepath, suffix, results)
 
     # plots
-    results_mean = numpy.nanmedian(results[:args.n_samples], axis=0)
+    results_mean = np.nanmedian(results[:args.n_samples], axis=0)
     results_std = lpd.dev_by_dist(results[:args.n_samples], axis=0)
 
     if not args.combined_fit:
-        print(numpy.column_stack((results_mean[:, 0], results_std[:, 0])))
+        print(np.column_stack((results_mean[:, 0], results_std[:, 0])))
     plotbasepath = lpd.get_plot_path(args.qcdtype, args.corr, "", args.basepath_plot) + args.temp_subfolder
     plot_flow_extr(args, flowsteps, cont_samples, data_std, results_mean, results_std, indices, plotbasepath)
     plot_final_corr_and_savetxt(args, results_mean, results_std, ntauT, finest_tauTs, plotbasepath, basepath, suffix)

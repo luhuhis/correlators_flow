@@ -168,6 +168,7 @@ class ZContainer:
     Z_run: NDArray[Shape["*"], Float64]
     Z_total: NDArray[Shape["*"], Float64]
 
+
 @lpd.typed_frozen_data
 class ScaleChoice:
     muRef_by_T: float
@@ -260,13 +261,21 @@ def get_scale_choices():
                 choice_label_for_plot = (#r'$\mu_\text{ref}/T='+lpd.format_float(muRef_by_T,1)
                                          r'$\bar{\mu}_\text{UV}/\mu_\text{F}='+lpd.format_float_latex(muBarUV_by_muF_choice,2, 5)
                                          + r',\ \bar{\mu}_\text{IR}/T='+lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)+r'$')
+                print(choice_label_for_plot)
                 scale_choices.append(ScaleChoice(muRef_by_T, muBarUV_by_muF_choice, muBarIR_by_T_choice, choice_label, choice_label_for_plot))
     return scale_choices
 
 
+def save_Z_to_file(args, Z_container, scale_choice):
+    outputfolder = args.outputpath_data
+    file = "Z_match_"+scale_choice.choice_label+".dat"
+    filename = outputfolder+file
+    sqrt8taufT = np.flip(1/Z_container.mu_By_T)
+    Z = np.flip(Z_container.Z_total)
+    lpd.save_columns_to_file(filename, (sqrt8taufT, Z), ("sqrt(8tauF)T", "Z"))
+
 
 def main():
-
     args = parse_args()
     coupling_container = load_data(args)
     scale_choices = get_scale_choices()
@@ -279,11 +288,13 @@ def main():
     Z_containers = [ZFactorComputer.compute(coupling_container, scale_choice) for scale_choice in scale_choices]
     for Z_container, scale_choice in zip(Z_containers, scale_choices):
         ZIndividualPlotter.plot(args, Z_container, fontsize, scale_choice)
+        save_Z_to_file(args, Z_container, scale_choice)
 
     ZTotalPlotter.plot(args, Z_containers, fontsize, scale_choices)
     ZTotalPlotterFlowtime.plot(args, Z_containers, fontsize, scale_choices, "_flowtime")
 
     # TODO save Zs!
+    # add suffix formalism to extrapolation
 
 
 if __name__ == '__main__':

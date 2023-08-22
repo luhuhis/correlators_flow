@@ -35,16 +35,27 @@ fi
         ylims="2.2 4"
 
         if [ "$corr" == "BB" ]; then
-            ylims="2 5.5"
+
+            ylims="3 4.9"
+
+            # first just plot without extrapolation
             noextr="--no_extr"
             output_suffix="--output_suffix _no_extr"
             quenched_extr
-            Zf2file="--Zf2_file $basepath_work_data/$qcdtype/coupling/Z2_taufT2_nonpert.dat"
-        fi
-        output_suffix="--output_suffix _relflow"
-        noextr=""
 
-        quenched_extr
+            # now plot for each Zf2 file
+            noextr=""
+            Zf2filesuffixes=("UVNLO_IRLO" "UVNLO_IRNLO" "UVLO_IRLO" "UVLO_IRNLO")
+            for Zf2filesuffix in "${Zf2filesuffixes[@]}"; do
+                Zf2file="--Zf2_file $basepath_work_data/$qcdtype/coupling/Z_match_ref4.0_${Zf2filesuffix}.dat"
+                output_suffix="--output_suffix _relflow_${Zf2filesuffix}"
+            quenched_extr
+            done
+        else
+          output_suffix="--output_suffix _relflow"
+          noextr=""
+          quenched_extr
+        fi
 
     elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ]; then
         fine_Nts=(36 32 28 24)
