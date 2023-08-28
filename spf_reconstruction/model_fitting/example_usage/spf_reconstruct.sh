@@ -75,28 +75,37 @@ submit_quenched_BB(){
         "--model smax $NLO"
         "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
         "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
-        "--model trig $LO --mu alpha --nmax 1 "
+#        "--model trig $LO --mu alpha --nmax 1 "
 #        "--model trig $LO --mu beta --nmax 1 "
 #        "--model trig $NLO --mu alpha --nmax 1 "
-        "--model trig $NLO --mu beta --nmax 1 "
-        "--model trig $LO --mu alpha --nmax 2 "
+#        "--model trig $NLO --mu beta --nmax 1 "
+#        "--model trig $LO --mu alpha --nmax 2 "
 #        "--model trig $LO --mu beta --nmax 2 "
 #        "--model trig $NLO --mu alpha --nmax 2 "
-        "--model trig $NLO --mu beta --nmax 2 "
+#        "--model trig $NLO --mu beta --nmax 2 "
     )
 
-    nsamples=250
+    input_corr_suffixes=(
+    "ref4.0_UVLO_IRLO"
+    "ref4.0_UVLO_IRNLO"
+    "ref4.0_UVNLO_IRLO"
+    "ref4.0_UVNLO_IRNLO"
+    )
+
+    nsamples=100
     for i in "${!models[@]}" ; do
+      for input_corr_suffix in "${input_corr_suffixes[@]}" ; do
          spfbatch ../spf_reconstruct.py \
             --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
-            --add_suffix 23-07-03 \
-            --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow.npy \
+            --add_suffix 23-08-27-${input_corr_suffix} \
+            --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow_${input_corr_suffix}.npy \
             --min_tauT 0.24 \
             --nproc $nproc \
             --T_in_GeV 0.472 \
             --Nf 0 \
             --nsamples $nsamples \
             ${models[i]}
+        done
     done
 }
 
