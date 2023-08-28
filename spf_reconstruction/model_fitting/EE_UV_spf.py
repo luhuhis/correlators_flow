@@ -70,7 +70,7 @@ def set_omega_prefactor(omega_prefactor, Nc, Nf, T_in_GeV, min_scale):
     return omega_prefactor, omega_exponent
 
 
-def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoints, Nloop):
+def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor_input, Npoints, Nloop):
     # check Nf
     if Nf == 0:
         Lambda_MSbar = 0.253  # (JHEP11(2017)206)
@@ -90,9 +90,11 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
     r20 = Nc * (149. / 36. - 11. * np.log(2.) / 6. - 2 * np.pi ** 2 / 3.) - Nf * (5. / 9. - np.log(2.) / 3.)
     r21 = (11. * Nc - 2. * Nf) / 12.
     C_F = (Nc ** 2 - 1) / 2 / Nc
+    b_0 = 11 / (16 * np.pi**2)
+    gamma_0 = 3 / (8 * np.pi**2)
 
     min_scale = set_minscale(min_scale, T_in_GeV, Nc, Nf)
-    omega_prefactor, omega_exponent = set_omega_prefactor(omega_prefactor, Nc, Nf, T_in_GeV, min_scale)
+    omega_prefactor, omega_exponent = set_omega_prefactor(omega_prefactor_input, Nc, Nf, T_in_GeV, min_scale)
 
     crd = rundec.CRunDec()
 
@@ -112,10 +114,17 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor, Npoint
         g2 = 4. * np.pi * Alphas
         g2_arr.append(g2)
         lo_spf = g2 * C_F * OmegaByT ** 3 / 6. / np.pi
-        l = np.log((scale / T_in_GeV) ** 2 / OmegaByT ** 2)  # TODO should this be scale or mu? 
+        l = np.log((scale / T_in_GeV) ** 2 / OmegaByT ** 2)  # TODO should this be scale or mu?
+
+        if omega_prefactor_input == "optBB":
+            BB_inner_bracket = (b_0-gamma_0) * np.log(scale**2 / (OmegaByT*T_in_GeV)**2) + gamma_0 * np.log(scale**2/min_scale**2)
+            BB_bracket = (1 + g2 * BB_inner_bracket)
+            NLO_SPF.append(lo_spf * BB_bracket)
+        else:
+            NLO_SPF.append(lo_spf * (1 + (r20 + r21 * l) * Alphas / np.pi))
         OmegaByT_arr.append(OmegaByT)
         LO_SPF.append(lo_spf)
-        NLO_SPF.append(lo_spf * (1 + (r20 + r21 * l) * Alphas / np.pi))
+
     OmegaByT_arr = np.asarray(OmegaByT_arr)
     g2_arr = np.asarray(g2_arr)
     LO_SPF = np.array(LO_SPF)
