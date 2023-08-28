@@ -45,9 +45,9 @@ fi
 
             # now plot for each Zf2 file
             noextr=""
-            Zf2filesuffixes=("UVNLO_IRLO" "UVNLO_IRNLO" "UVLO_IRLO" "UVLO_IRNLO")
+            Zf2filesuffixes=("ref4.0_UVNLO_IRLO" "ref4.0_UVNLO_IRNLO" "ref4.0_UVLO_IRLO" "ref4.0_UVLO_IRNLO")
             for Zf2filesuffix in "${Zf2filesuffixes[@]}"; do
-                Zf2file="--Zf2_file $basepath_work_data/$qcdtype/coupling/Z_match_ref4.0_${Zf2filesuffix}.dat"
+                Zf2file="--Zf2_file $basepath_work_data/$qcdtype/coupling/Z_match_${Zf2filesuffix}.dat"
                 output_suffix="--output_suffix _relflow_${Zf2filesuffix}"
             quenched_extr
             done

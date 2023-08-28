@@ -4,7 +4,7 @@ from scipy import integrate, interpolate
 import argparse
 import lib_process_data as lpd
 import matplotlib.pyplot
-from extrapolate_coupling import ScaleFunctions
+from correlator_analysis.double_extrapolation.BB_renormalization.extrapolate_coupling import ScaleFunctions
 
 # Type hints
 from nptyping import NDArray, Float64
@@ -176,6 +176,7 @@ class ScaleChoice:
     muBarIR_by_T: float
     choice_label: str
     choice_label_for_plot: str
+    choice_label_for_plot_short: str
 
 
 def load_data(args: argparse.Namespace) -> CouplingContainer:
@@ -258,11 +259,13 @@ def get_scale_choices():
                 muBarUV_by_muF_choice = muBarUV_by_muF_choices[UV]
                 muBarIR_by_T_choice = muBarIR_by_T_choices[IR]
                 muRef_by_T = muRef_by_T_choices[ref]
-                choice_label_for_plot = (#r'$\mu_\text{ref}/T='+lpd.format_float(muRef_by_T,1)
-                                         r'$\bar{\mu}_\text{UV}/\mu_\text{F}='+lpd.format_float_latex(muBarUV_by_muF_choice,2, 5)
-                                         + r',\ \bar{\mu}_\text{IR}/T='+lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)+r'$')
-                print(choice_label_for_plot)
-                scale_choices.append(ScaleChoice(muRef_by_T, muBarUV_by_muF_choice, muBarIR_by_T_choice, choice_label, choice_label_for_plot))
+                choice_label_for_plot = (r'$\bar{\mu}_\text{UV}/\mu_\text{F}='
+                                         + lpd.format_float_latex(muBarUV_by_muF_choice, 2, 5)
+                                         + r',\ \bar{\mu}_\text{IR}/T='
+                                         + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)+r'$')
+                # r'$\mu_\text{ref}/T='+lpd.format_float(muRef_by_T,1)
+                choice_label_for_plot_short = lpd.format_float_latex(muBarUV_by_muF_choice,2, 5) + r',\ ' + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)
+                scale_choices.append(ScaleChoice(muRef_by_T, muBarUV_by_muF_choice, muBarIR_by_T_choice, choice_label, choice_label_for_plot, choice_label_for_plot_short))
     return scale_choices
 
 
@@ -292,9 +295,6 @@ def main():
 
     ZTotalPlotter.plot(args, Z_containers, fontsize, scale_choices)
     ZTotalPlotterFlowtime.plot(args, Z_containers, fontsize, scale_choices, "_flowtime")
-
-    # TODO save Zs!
-    # add suffix formalism to extrapolation
 
 
 if __name__ == '__main__':
