@@ -13,7 +13,6 @@ from typing import Literal as Shape
 gamma_0 = 3 / (8 * np.pi ** 2)
 
 
-
 class ZIndividualPlotter:
     def __init__(self, args, Z_container, fontsize, scale_choice):
         self.Z_container = Z_container
