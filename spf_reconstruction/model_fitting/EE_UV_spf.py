@@ -4,6 +4,9 @@ import numpy as np
 import argparse
 import lib_process_data as lpd
 import BB_UV_functions as BB
+from nptyping import NDArray, Float64
+from typing import Literal as Shape
+from scipy import interpolate,integrate
 
 
 def smooth_max(a, b):
@@ -78,17 +81,6 @@ def print_min_scale(scale, min_scale, first, OmegaByT):
     return first
 
 
-def get_constants(Nf):
-    Nc = 3
-    r20 = Nc * (149. / 36. - 11. * np.log(2.) / 6. - 2 * np.pi ** 2 / 3.) - Nf * (5. / 9. - np.log(2.) / 3.)
-    r21 = (11. * Nc - 2. * Nf) / 12.
-    C_F = (Nc ** 2 - 1) / 2 / Nc
-    b_0 = 11 / (16 * np.pi**2)
-    gamma_0 = 3 / (8 * np.pi**2)
-
-    return Nc, r20, r21, C_F, b_0, gamma_0
-
-
 def get_maxfunc(max_type):
     if max_type == "smooth":
         maxfunc = smooth_max
@@ -115,27 +107,77 @@ def get_g2_and_alphas_and_lospf(crd, Lambda_MSbar, mu, Nf, Nloop, C_F, OmegaByT)
     return g2, Alphas, lo_spf
 
 
-def inner_loop(index, omega_prefactor, omega_exponent, omega_prefactor_input, OmegaByT_values, maxfunc, r20, r21, T_in_GeV, min_scale, Lambda_MSbar, Nf, Nc, Nloop, C_F, cBsq):
+@lpd.typed_frozen_data
+class SpfParams:
+    omega_prefactor_input: str
+    OmegaByT_values: NDArray[Shape["*"], Float64]
+    max_type: str
+    T_in_GeV: float
+    min_scale: float
+    Lambda_MSbar: float
+    Nf: int
+    Nloop: int
+    omega_prefactor: float
+    omega_exponent: float
+    Nc: int
+    r20: float
+    r21: float
+    C_F: float
+    b_0: float
+    gamma_0: float
+    Npoints: int
+
+
+def get_cBsq(params: SpfParams):
     crd = rundec.CRunDec()
-    OmegaByT = OmegaByT_values[index]
-    if omega_prefactor_input == "optBB":
-        mu = np.sqrt(4 * (OmegaByT * T_in_GeV) ** 2 + min_scale ** 2)
-        g2, Alphas, lo_spf = get_g2_and_alphas_and_lospf(crd, Lambda_MSbar, mu, Nf, Nloop, C_F, OmegaByT)
+
+    # add the first point
+    g2_arr = [4. * np.pi * crd.AlphasLam(params.Lambda_MSbar, params.min_scale, params.Nf, params.Nloop)]  # TODO min_scale vs distinct IR scale?
+    mu_arr = [params.min_scale]  # TODO min_scale vs distinct IR scale?
+    for OmegaByT in params.OmegaByT_values:
+        # TODO use matched coupling instead of the perturbative one???
+        mu = np.sqrt(4 * (OmegaByT * params.T_in_GeV) ** 2. + params.min_scale ** 2)  # TODO min_scale vs distinct IR scale?
+        g2, _, _ = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
+        mu_arr.append(mu)
+        g2_arr.append(g2)
+    g2_arr = np.asarray(g2_arr)
+    mu_arr = np.asarray(mu_arr)
+
+    integrand_spline = interpolate.InterpolatedUnivariateSpline(mu_arr, 2/mu_arr*params.gamma_0*g2_arr, k=3, ext=2)
+
+    # Leave out the first value in mu_arr to get the correct length. TODO minscale vs distinct IR scale?
+    cBsq = np.asarray(lpd.parallel_function_eval(calc_cBsq, mu_arr[1:], 128, integrand_spline, params.min_scale))
+
+    return cBsq
+
+
+def calc_cBsq(start_scale, integrand_spline, ir_scale):
+    integral = integrate.quad(integrand_spline, ir_scale, start_scale)[0]
+    return np.exp(integral)
+
+
+def inner_loop(index, params: SpfParams, cBsq):
+    crd = rundec.CRunDec()
+    OmegaByT = params.OmegaByT_values[index]
+    maxfunc = get_maxfunc(params.max_type)
+
+    if params.omega_prefactor_input == "optBB":
+        mu = np.sqrt(4 * (OmegaByT * params.T_in_GeV) ** 2 + params.min_scale ** 2)
+        g2, Alphas, lo_spf = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
 
         # === NLO ===
         # The following equations follow C.23 of https://arxiv.org/pdf/2204.14075.pdf
-
-        first_paren = 5./3. * np.log(mu**2/(2*OmegaByT*T_in_GeV)**2) + 134./9. - 2*np.pi**2/3.  # Guy changed the last term: -8*np.pi**2/3 to -2*np.pi**2/3.
-        second_paren = 2./3 * np.log(mu**2/(2*OmegaByT*T_in_GeV)**2) + 26./9.
-        mu_dep_part = lo_spf * (1 + g2 / (4 * np.pi)**2 * (Nc * first_paren - Nf * second_paren))
-        #mu_free_part = (g2**2*C_F)/(12*np.pi**3) * BB.get_mu_free(OmegaByT, Nc, Nf)  # from line 3 to the end of eq.(C.23)
+        first_paren = 5./3. * np.log(mu**2/(2*OmegaByT*params.T_in_GeV)**2) + 134./9. - 2*np.pi**2/3.  # Guy changed the last term: -8*np.pi**2/3 to -2*np.pi**2/3.
+        second_paren = 2./3 * np.log(mu**2/(2*OmegaByT*params.T_in_GeV)**2) + 26./9.
+        mu_dep_part = lo_spf * (1 + g2 / (4 * np.pi)**2 * (params.Nc * first_paren - params.Nf * second_paren))
+        # mu_free_part = (g2**2*C_F)/(12*np.pi**3) * BB.get_mu_free(OmegaByT, Nc, Nf)  # from line 3 to the end of eq.(C.23)
         mu_free_part = 0
         nlo_spf = cBsq[index] * (mu_dep_part + mu_free_part)
 
     else:
-        scale = omega_prefactor * (OmegaByT * T_in_GeV) ** omega_exponent
-        mu = maxfunc(min_scale, scale)
-        g2, Alphas, lo_spf = get_g2_and_alphas_and_lospf(crd, Lambda_MSbar, mu, Nf, Nloop, C_F, OmegaByT)
+        scale = params.omega_prefactor * (OmegaByT * params.T_in_GeV) ** params.omega_exponent
+        mu = maxfunc(params.min_scale, scale)
+        g2, Alphas, lo_spf = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
 
         # === NLO ===
         # Technically there are two scales here: "mu" and "scale".
@@ -146,50 +188,42 @@ def inner_loop(index, omega_prefactor, omega_exponent, omega_prefactor_input, Om
         # Effectively, we recover the LO spf with an "NLO scale choice" this way since the NLO terms are always canceled.
         # However, all of this is a technicality since this distinction only matters at thermal scales where we do not
         # use the UV spf anyway, but plots are less confusing this way :)
-        l_ = np.log((scale / T_in_GeV) ** 2 / OmegaByT ** 2)
-        nlo_spf = lo_spf * (1 + (r20 + r21 * l_) * Alphas / np.pi)
+        l_ = np.log((scale / params.T_in_GeV) ** 2 / OmegaByT ** 2)
+        nlo_spf = lo_spf * (1 + (params.r20 + params.r21 * l_) * Alphas / np.pi)
 
     return OmegaByT, lo_spf, nlo_spf, g2
 
 
-# def get_spf_serial(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor_input, Npoints, Nloop):
-#     Lambda_MSbar = get_lambdamsbar(Nf)
-#     maxfunc = get_maxfunc(max_type)
-#     Nc, r20, r21, C_F, b_0, gamma_0 = get_constants(Nf)
-#     min_scale = get_minscale(min_scale, T_in_GeV, Nc, Nf)
-#     omega_prefactor, omega_exponent = get_omega_prefactor(omega_prefactor_input, Nc, Nf, T_in_GeV, min_scale)
-#
-#     crd = rundec.CRunDec()
-#
-#     cBsq = BB.get_cBsq(min_scale, T_in_GeV, Npoints, gamma_0, Lambda_MSbar, Nf, Nloop)
-#
-#     OmegaByT_arr, LO_SPF, NLO_SPF, g2_arr = zip(*[
-#         inner_loop(
-#             index, omega_prefactor, omega_exponent, omega_prefactor_input, OmegaByT, maxfunc,
-#             r20, r21, T_in_GeV, min_scale, crd, Lambda_MSbar, Nf, Nc, Nloop, C_F, cBsq
-#         )
-#         for index, OmegaByT in enumerate(np.logspace(-6, 3, Npoints, base=10))
-#     ])
-#
-#     return np.asarray(OmegaByT_arr), np.asarray(g2_arr), np.asarray(LO_SPF), np.asarray(NLO_SPF)
-
-
-def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor_input, Npoints, Nloop):
+def get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop):
+    # set some parameters
     Lambda_MSbar = get_lambdamsbar(Nf)
-    maxfunc = get_maxfunc(max_type)
-    Nc, r20, r21, C_F, b_0, gamma_0 = get_constants(Nf)
-    min_scale = get_minscale(min_scale, T_in_GeV, Nc, Nf)
+    Nc = 3
+    min_scale = get_minscale(min_scale_str, T_in_GeV, Nc, Nf)
     omega_prefactor, omega_exponent = get_omega_prefactor(omega_prefactor_input, Nc, Nf, T_in_GeV, min_scale)
-
-    cBsq = BB.get_cBsq(min_scale, T_in_GeV, Npoints, gamma_0, Lambda_MSbar, Nf, Nloop)
-
     OmegaByT_values = np.logspace(-6, 3, Npoints, base=10)
-    additional_params = (
-        omega_prefactor, omega_exponent, omega_prefactor_input, OmegaByT_values, maxfunc,
-        r20, r21, T_in_GeV, min_scale, Lambda_MSbar, Nf, Nc, Nloop, C_F, cBsq
-    )
 
-    OmegaByT_arr, LO_SPF, NLO_SPF, g2_arr = lpd.parallel_function_eval(inner_loop, range(len(OmegaByT_values)), 128, *additional_params)
+    r20 = Nc * (149. / 36. - 11. * np.log(2.) / 6. - 2 * np.pi ** 2 / 3.) - Nf * (5. / 9. - np.log(2.) / 3.)
+    r21 = (11. * Nc - 2. * Nf) / 12.
+    C_F = (Nc ** 2 - 1) / 2 / Nc
+    b_0 = 11 / (16 * np.pi ** 2)
+    gamma_0 = 3 / (8 * np.pi ** 2)
+
+    additional_params = SpfParams(omega_prefactor_input, OmegaByT_values, max_type, T_in_GeV, min_scale, Lambda_MSbar,
+                                  Nf, Nloop, omega_prefactor, omega_exponent, Nc, r20, r21, C_F, b_0, gamma_0, Npoints)
+
+    return additional_params
+
+
+def get_spf(Nf: int, max_type: str, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop):
+    params = get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop)
+
+    cBsq = get_cBsq(params)
+
+    OmegaByT_arr, LO_SPF, NLO_SPF, g2_arr = lpd.parallel_function_eval(inner_loop,
+                                                                       range(len(params.OmegaByT_values)),
+                                                                       128,
+                                                                       params,
+                                                                       cBsq)
 
     return np.asarray(OmegaByT_arr), np.asarray(g2_arr), np.asarray(LO_SPF), np.asarray(NLO_SPF)
 

@@ -1,5 +1,4 @@
-from scipy import integrate
-from scipy.interpolate import CubicSpline
+from scipy import integrate, interpolate
 import rundec
 import numpy as np
 import lib_process_data as lpd
@@ -50,30 +49,4 @@ def get_mu_free(OmegaByT, Nc, Nf):
         return 0 if Nc * colorPart + Nf * flavorPart > 0 else Nc * colorPart + Nf * flavorPart
 
 
-def get_cBsq(ir_scale, T_in_GeV, Npoints, gamma_0, Lambda_MSbar, Nf, Nloop):
-    crd = rundec.CRunDec()
-    g2_arr = []
-    for OmegaByT in np.logspace(-6, 3, Npoints, base=10):
-        mu = np.sqrt(4 * (OmegaByT * T_in_GeV) ** 2. + ir_scale ** 2)
-        Alphas = crd.AlphasLam(Lambda_MSbar, mu, Nf, Nloop)
-        g2 = 4. * np.pi * Alphas
-        g2_arr.append([mu, g2])
-    g2_arr = np.array(g2_arr)
 
-    threshold = 1e-10
-    diff = np.empty(len(g2_arr))
-    diff[0] = np.inf  # always retain the 1st element
-    diff[1:] = np.diff(g2_arr[:, 0])
-    mask = diff > threshold
-    new_arr = g2_arr[mask]
-
-    spl = CubicSpline(new_arr[:, 0], new_arr[:, 1], axis=0, bc_type=((2, 0), (2, 0)), extrapolate=True)
-    cBsq = np.asarray(lpd.parallel_function_eval(calc, range(len(g2_arr)), 128, g2_arr, spl, gamma_0))
-    return cBsq
-
-
-def calc(index, g2_arr, spl, gamma_0):
-    this_x = g2_arr[:index, 0]
-    this_y = 2. / np.array(this_x) * (gamma_0 * spl(this_x))
-    integral = integrate.trapz(this_y, this_x)
-    return np.exp(integral)
