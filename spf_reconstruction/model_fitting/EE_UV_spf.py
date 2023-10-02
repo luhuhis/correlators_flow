@@ -23,7 +23,7 @@ def add_args(parser):
     parser.add_argument("--max_type", choices=["smooth", "hard"], help="whether to use max(a,b) (hard) or sqrt(a^2+b^2) (smooth) maximum to determine the scale",
                         default="hard")
 
-    parser.add_argument("--Npoints", default=100000, type=int, help="number of points between min and max OmegaByT")
+    parser.add_argument("--Npoints", default=10000, type=int, help="number of points between min and max OmegaByT")
     parser.add_argument("--Nloop", help="number of loops", type=int, default=5)
     return
 
@@ -115,7 +115,9 @@ def get_g2_and_alphas_and_lospf(crd, Lambda_MSbar, mu, Nf, Nloop, C_F, OmegaByT)
     return g2, Alphas, lo_spf
 
 
-def inner_loop(index, omega_prefactor, omega_exponent, omega_prefactor_input, OmegaByT, maxfunc, r20, r21, T_in_GeV, min_scale, crd, Lambda_MSbar, Nf, Nc, Nloop, C_F, cBsq):
+def inner_loop(index, omega_prefactor, omega_exponent, omega_prefactor_input, OmegaByT_values, maxfunc, r20, r21, T_in_GeV, min_scale, Lambda_MSbar, Nf, Nc, Nloop, C_F, cBsq):
+    crd = rundec.CRunDec()
+    OmegaByT = OmegaByT_values[index]
     if omega_prefactor_input == "optBB":
         mu = np.sqrt(4 * (OmegaByT * T_in_GeV) ** 2 + min_scale ** 2)
         g2, Alphas, lo_spf = get_g2_and_alphas_and_lospf(crd, Lambda_MSbar, mu, Nf, Nloop, C_F, OmegaByT)
@@ -126,7 +128,8 @@ def inner_loop(index, omega_prefactor, omega_exponent, omega_prefactor_input, Om
         first_paren = 5./3. * np.log(mu**2/(2*OmegaByT*T_in_GeV)**2) + 134./9. - 2*np.pi**2/3.  # Guy changed the last term: -8*np.pi**2/3 to -2*np.pi**2/3.
         second_paren = 2./3 * np.log(mu**2/(2*OmegaByT*T_in_GeV)**2) + 26./9.
         mu_dep_part = lo_spf * (1 + g2 / (4 * np.pi)**2 * (Nc * first_paren - Nf * second_paren))
-        mu_free_part = (g2**2*C_F)/(12*np.pi**3) * BB.get_mu_free(OmegaByT, Nc, Nf)  # from line 3 to the end of eq.(C.23)
+        #mu_free_part = (g2**2*C_F)/(12*np.pi**3) * BB.get_mu_free(OmegaByT, Nc, Nf)  # from line 3 to the end of eq.(C.23)
+        mu_free_part = 0
         nlo_spf = cBsq[index] * (mu_dep_part + mu_free_part)
 
     else:
@@ -149,6 +152,28 @@ def inner_loop(index, omega_prefactor, omega_exponent, omega_prefactor_input, Om
     return OmegaByT, lo_spf, nlo_spf, g2
 
 
+# def get_spf_serial(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor_input, Npoints, Nloop):
+#     Lambda_MSbar = get_lambdamsbar(Nf)
+#     maxfunc = get_maxfunc(max_type)
+#     Nc, r20, r21, C_F, b_0, gamma_0 = get_constants(Nf)
+#     min_scale = get_minscale(min_scale, T_in_GeV, Nc, Nf)
+#     omega_prefactor, omega_exponent = get_omega_prefactor(omega_prefactor_input, Nc, Nf, T_in_GeV, min_scale)
+#
+#     crd = rundec.CRunDec()
+#
+#     cBsq = BB.get_cBsq(min_scale, T_in_GeV, Npoints, gamma_0, Lambda_MSbar, Nf, Nloop)
+#
+#     OmegaByT_arr, LO_SPF, NLO_SPF, g2_arr = zip(*[
+#         inner_loop(
+#             index, omega_prefactor, omega_exponent, omega_prefactor_input, OmegaByT, maxfunc,
+#             r20, r21, T_in_GeV, min_scale, crd, Lambda_MSbar, Nf, Nc, Nloop, C_F, cBsq
+#         )
+#         for index, OmegaByT in enumerate(np.logspace(-6, 3, Npoints, base=10))
+#     ])
+#
+#     return np.asarray(OmegaByT_arr), np.asarray(g2_arr), np.asarray(LO_SPF), np.asarray(NLO_SPF)
+
+
 def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor_input, Npoints, Nloop):
     Lambda_MSbar = get_lambdamsbar(Nf)
     maxfunc = get_maxfunc(max_type)
@@ -156,17 +181,15 @@ def get_spf(Nf: int, max_type: str, min_scale, T_in_GeV, omega_prefactor_input, 
     min_scale = get_minscale(min_scale, T_in_GeV, Nc, Nf)
     omega_prefactor, omega_exponent = get_omega_prefactor(omega_prefactor_input, Nc, Nf, T_in_GeV, min_scale)
 
-    crd = rundec.CRunDec()
-
     cBsq = BB.get_cBsq(min_scale, T_in_GeV, Npoints, gamma_0, Lambda_MSbar, Nf, Nloop)
 
-    OmegaByT_arr, LO_SPF, NLO_SPF, g2_arr = zip(*[
-        inner_loop(
-            index, omega_prefactor, omega_exponent, omega_prefactor_input, OmegaByT, maxfunc,
-            r20, r21, T_in_GeV, min_scale, crd, Lambda_MSbar, Nf, Nc, Nloop, C_F, cBsq
-        )
-        for index, OmegaByT in enumerate(np.logspace(-6, 3, Npoints, base=10))
-    ])
+    OmegaByT_values = np.logspace(-6, 3, Npoints, base=10)
+    additional_params = (
+        omega_prefactor, omega_exponent, omega_prefactor_input, OmegaByT_values, maxfunc,
+        r20, r21, T_in_GeV, min_scale, Lambda_MSbar, Nf, Nc, Nloop, C_F, cBsq
+    )
+
+    OmegaByT_arr, LO_SPF, NLO_SPF, g2_arr = lpd.parallel_function_eval(inner_loop, range(len(OmegaByT_values)), 128, *additional_params)
 
     return np.asarray(OmegaByT_arr), np.asarray(g2_arr), np.asarray(LO_SPF), np.asarray(NLO_SPF)
 
