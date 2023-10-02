@@ -3,7 +3,7 @@ import rundec
 import numpy as np
 import argparse
 import lib_process_data as lpd
-import BB_UV_functions as BB
+import BB_NLO_SPF_term as BB
 from nptyping import NDArray, Float64
 from typing import Literal as Shape
 from scipy import interpolate,integrate
@@ -42,10 +42,12 @@ def get_minscale(min_scale, T_in_GeV, Nc, Nf):
         min_scale = 2 * np.pi * T_in_GeV
     elif min_scale == "eff":
         min_scale = effective_theory_thermal_scale
+    elif min_scale == "mu_IR_NLO":
+        min_scale = 4 * np.pi * np.exp(1-np.euler_gamma) * T_in_GeV
     else:
         min_scale = float(min_scale)
 
-    print("min_scale = ", lpd.format_float(min_scale))
+    print("min_scale = ", lpd.format_float(min_scale/T_in_GeV), "T")
 
     return min_scale
 
@@ -53,7 +55,7 @@ def get_minscale(min_scale, T_in_GeV, Nc, Nf):
 def get_omega_prefactor(omega_prefactor, Nc, Nf, T_in_GeV, min_scale):
 
     mu_opt_omega_term = 2 * np.exp(((24 * np.pi ** 2 - 149) * Nc + 20 * Nf) / (6 * (11 * Nc - 2 * Nf)))  # see eq. 4.17 of arXiv:1006.0867
-    omega_exponent = 1
+    omega_exponent = 1.0
     if omega_prefactor == "opt":
         omega_prefactor = mu_opt_omega_term  # ~14.743 for Nf=3, ~7.6 for Nf=0
     elif omega_prefactor == "optBB":
@@ -143,9 +145,9 @@ def get_cBsq(params: SpfParams):
     g2_arr = np.asarray(g2_arr)
     mu_arr = np.asarray(mu_arr)
 
-    integrand_spline = interpolate.InterpolatedUnivariateSpline(mu_arr, 2/mu_arr*params.gamma_0*g2_arr, k=3, ext=2)
+    integrand = 2/mu_arr*params.gamma_0*g2_arr
+    integrand_spline = interpolate.InterpolatedUnivariateSpline(mu_arr, integrand, k=3, ext=2)
 
-    # Leave out the first value in mu_arr to get the correct length. TODO minscale vs distinct IR scale?
     cBsq = np.asarray(lpd.parallel_function_eval(calc_cBsq, mu_arr[1:], 128, integrand_spline, params.min_scale))
 
     return cBsq
@@ -162,6 +164,7 @@ def inner_loop(index, params: SpfParams, cBsq):
     maxfunc = get_maxfunc(params.max_type)
 
     if params.omega_prefactor_input == "optBB":
+        # Note that "omega_prefactor" is actually not used here.
         mu = np.sqrt(4 * (OmegaByT * params.T_in_GeV) ** 2 + params.min_scale ** 2)
         g2, Alphas, lo_spf = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
 
@@ -178,16 +181,6 @@ def inner_loop(index, params: SpfParams, cBsq):
         scale = params.omega_prefactor * (OmegaByT * params.T_in_GeV) ** params.omega_exponent
         mu = maxfunc(params.min_scale, scale)
         g2, Alphas, lo_spf = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
-
-        # === NLO ===
-        # Technically there are two scales here: "mu" and "scale".
-        # "mu" is a scale which is bounded from below (lower bound = thermal scale) and used to evaluate g2.
-        # Above the thermal scale it is given by "scale".
-        # "scale" also occurs in the NLO terms of the spf and is (if omega_prefactor_input=="opt") defined to exactly
-        # cancel the NLO terms (including the log), even below the thermal scale. Therefore, it is not bounded from below.
-        # Effectively, we recover the LO spf with an "NLO scale choice" this way since the NLO terms are always canceled.
-        # However, all of this is a technicality since this distinction only matters at thermal scales where we do not
-        # use the UV spf anyway, but plots are less confusing this way :)
         l_ = np.log((scale / params.T_in_GeV) ** 2 / OmegaByT ** 2)
         nlo_spf = lo_spf * (1 + (params.r20 + params.r21 * l_) * Alphas / np.pi)
 
@@ -200,7 +193,7 @@ def get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input,
     Nc = 3
     min_scale = get_minscale(min_scale_str, T_in_GeV, Nc, Nf)
     omega_prefactor, omega_exponent = get_omega_prefactor(omega_prefactor_input, Nc, Nf, T_in_GeV, min_scale)
-    OmegaByT_values = np.logspace(-6, 3, Npoints, base=10)
+    OmegaByT_values = np.logspace(-5, 3, Npoints, base=10)
 
     r20 = Nc * (149. / 36. - 11. * np.log(2.) / 6. - 2 * np.pi ** 2 / 3.) - Nf * (5. / 9. - np.log(2.) / 3.)
     r21 = (11. * Nc - 2. * Nf) / 12.
