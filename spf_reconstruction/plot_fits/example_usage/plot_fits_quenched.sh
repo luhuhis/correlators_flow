@@ -49,16 +49,18 @@ for corr in "BB" ; do # "EE"
     add_suffix=""
 
     input_corr_suffixes=(
-    "ref4.0_UVLO_IRLO"
     "ref4.0_UVLO_IRNLO"
-    "ref4.0_UVNLO_IRLO"
+    "ref4.0_UVLO_IRLO"
     "ref4.0_UVNLO_IRNLO"
+    "ref4.0_UVNLO_IRLO"
     )
 
 
     for input_corr_suffix in "${input_corr_suffixes[@]}" ; do
 
-        input_suffix="23-08-27-${input_corr_suffix}"
+        # 08-27
+        # 10-01
+        input_suffix="23-10-01-${input_corr_suffix}"
 
         labels_and_models=(                              #max_LO_Nf0_T0.472_mineff_w1_250smpls_tauTgtr0.24_23-07-03
             '$\text{max}_\text{NLO}$'                   "max_NLO_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
@@ -129,9 +131,9 @@ for corr in "BB" ; do # "EE"
     --ylims ${ylims}
     }
 
-    plot_spfs
+#    plot_spfs
     plot_kappa
-    plot_fitcorr
+#    plot_fitcorr
 
 done
 wait
