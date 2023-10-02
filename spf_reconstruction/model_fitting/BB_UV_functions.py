@@ -2,7 +2,7 @@ from scipy import integrate
 from scipy.interpolate import CubicSpline
 import rundec
 import numpy as np
-
+import lib_process_data as lpd
 
 def nb(x):
     if x > 200:
@@ -68,11 +68,12 @@ def get_cBsq(ir_scale, T_in_GeV, Npoints, gamma_0, Lambda_MSbar, Nf, Nloop):
     new_arr = g2_arr[mask]
 
     spl = CubicSpline(new_arr[:, 0], new_arr[:, 1], axis=0, bc_type=((2, 0), (2, 0)), extrapolate=True)
+    cBsq = np.asarray(lpd.parallel_function_eval(calc, range(len(g2_arr)), 128, g2_arr, spl, gamma_0))
+    return cBsq
 
-    cBsq = []
-    for index in range(len(g2_arr)):
-        this_x = g2_arr[:index, 0]
-        this_y = 2. / np.array(this_x) * (gamma_0 * spl(this_x))
-        integral = integrate.trapz(this_y, this_x)
-        cBsq.append(np.exp(integral))
-    return np.array(cBsq)
+
+def calc(index, g2_arr, spl, gamma_0):
+    this_x = g2_arr[:index, 0]
+    this_y = 2. / np.array(this_x) * (gamma_0 * spl(this_x))
+    integral = integrate.trapz(this_y, this_x)
+    return np.exp(integral)
