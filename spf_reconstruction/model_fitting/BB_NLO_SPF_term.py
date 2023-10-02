@@ -1,7 +1,6 @@
-from scipy import integrate, interpolate
-import rundec
+from scipy import integrate
 import numpy as np
-import lib_process_data as lpd
+
 
 def nb(x):
     if x > 200:
