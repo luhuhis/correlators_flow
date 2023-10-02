@@ -1,28 +1,29 @@
 #!/bin/bash
 
-
 basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}"
 use_cluster="${2:-"yes"}"
 nproc="${3:-"1"}"
 
-
-if [ "$use_cluster" == "yes" ] ; then
+if [ "$use_cluster" == "yes" ]; then
     nproc=128
     spfbatch() {
-    sbatch --qos=debug --partition=cpu_compute --time=10-00:00:00 --ntasks=1 --cpus-per-task=128 --nodes=1 "$@"
+        sbatch --qos=debug --partition=cpu_compute --time=10-00:00:00 --ntasks=1 --cpus-per-task=128 --nodes=1 "$@"
     }
 else
-    spfbatch(){ "$@"; }
+    spfbatch() {
+        export LD_LIBRARY_PATH=$HOME/libffi/lib64:$LD_LIBRARY_PATH
+        "$@"
+    }
 fi
 
 minscale=eff
 
-set_UV_params_EE(){
+set_UV_params_EE() {
     LO="--PhiUV_order LO --omega_prefactor 1 --min_scale $minscale"
     NLO="--PhiUV_order NLO --omega_prefactor opt --min_scale $minscale"
 }
 
-set_models_EE(){
+set_models_EE() {
     models=(
         "--model max $LO"
         "--model max $NLO"
@@ -39,7 +40,7 @@ set_models_EE(){
     )
 }
 
-submit_quenched_EE(){
+submit_quenched_EE() {
 
     OmegaByT_UV=3.1416
 
@@ -47,8 +48,8 @@ submit_quenched_EE(){
     set_models_EE
 
     nsamples=1000
-    for i in "${!models[@]}" ; do
-         spfbatch ../spf_reconstruct.py \
+    for i in "${!models[@]}"; do
+        spfbatch ../spf_reconstruct.py \
             --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/spf/ \
             --add_suffix 23-02-26_2piT \
             --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.npy \
@@ -61,56 +62,63 @@ submit_quenched_EE(){
     done
 }
 
-submit_quenched_BB(){
+submit_quenched_BB() {
 
-#    OmegaByT_UV=3.1416
-
-    LO="--PhiUV_order LO --omega_prefactor 1 --min_scale $minscale"
-    NLO="--PhiUV_order NLO --omega_prefactor optBB --min_scale $minscale"
-
-    models=(
-        "--model max $LO"
-        "--model max $NLO"
-        "--model smax $LO"
-        "--model smax $NLO"
-        "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
-        "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
-#        "--model trig $LO --mu alpha --nmax 1 "
-#        "--model trig $LO --mu beta --nmax 1 "
-#        "--model trig $NLO --mu alpha --nmax 1 "
-#        "--model trig $NLO --mu beta --nmax 1 "
-#        "--model trig $LO --mu alpha --nmax 2 "
-#        "--model trig $LO --mu beta --nmax 2 "
-#        "--model trig $NLO --mu alpha --nmax 2 "
-#        "--model trig $NLO --mu beta --nmax 2 "
-    )
+    #    OmegaByT_UV=3.1416
 
     input_corr_suffixes=(
-    "ref4.0_UVLO_IRLO"
-    "ref4.0_UVLO_IRNLO"
-    "ref4.0_UVNLO_IRLO"
-    "ref4.0_UVNLO_IRNLO"
+        "ref4.0_UVLO_IRLO"
+        "ref4.0_UVLO_IRNLO"
+        "ref4.0_UVNLO_IRLO"
+        "ref4.0_UVNLO_IRNLO"
     )
 
     nsamples=100
-    for i in "${!models[@]}" ; do
-      for input_corr_suffix in "${input_corr_suffixes[@]}" ; do
-         spfbatch ../spf_reconstruct.py \
-            --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
-            --add_suffix 23-08-27-${input_corr_suffix} \
-            --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow_${input_corr_suffix}.npy \
-            --min_tauT 0.24 \
-            --nproc $nproc \
-            --T_in_GeV 0.472 \
-            --Nf 0 \
-            --nsamples $nsamples \
-            ${models[i]}
+    for input_corr_suffix in "${input_corr_suffixes[@]}"; do
+
+        # Adjusting the minscale based on the suffix
+        if [[ $input_corr_suffix == *"_IRLO" ]]; then
+            minscale="2piT" # replace with the desired value
+        elif [[ $input_corr_suffix == *"_IRNLO" ]]; then
+            minscale="mu_IR_NLO" # replace with the desired value
+        fi
+
+        LO="--PhiUV_order LO --omega_prefactor 1 --min_scale $minscale"       # TODO in the BB case, "omega_prefactor" only decides between which mu is used ( sqrt( (2omega)^2 + mu_IR^2 ) vs max(omega, mu_T)
+        NLO="--PhiUV_order NLO --omega_prefactor optBB --min_scale $minscale" #$minscale
+
+        models=(
+            "--model max $LO"
+            "--model max $NLO"
+            "--model smax $LO"
+            "--model smax $NLO"
+            "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
+            "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
+            #        "--model trig $LO --mu alpha --nmax 1 "
+            #        "--model trig $LO --mu beta --nmax 1 "
+            #        "--model trig $NLO --mu alpha --nmax 1 "
+            #        "--model trig $NLO --mu beta --nmax 1 "
+            #        "--model trig $LO --mu alpha --nmax 2 "
+            #        "--model trig $LO --mu beta --nmax 2 "
+            #        "--model trig $NLO --mu alpha --nmax 2 "
+            #        "--model trig $NLO --mu beta --nmax 2 "
+        )
+
+        for i in "${!models[@]}"; do
+            spfbatch ../spf_reconstruct.py \
+                --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
+                --add_suffix 23-10-01-${input_corr_suffix} \
+                --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow_${input_corr_suffix}.npy \
+                --min_tauT 0.24 \
+                --nproc $nproc \
+                --T_in_GeV 0.472 \
+                --Nf 0 \
+                --nsamples $nsamples \
+                ${models[i]}
         done
     done
 }
 
-
-submit_hisq(){
+submit_hisq() {
 
     OmegaByT_UV=6.2832
 
@@ -130,13 +138,13 @@ submit_hisq(){
 
     nsamples=1000
 
-    for j in "${!temps[@]}" ; do
-#        if [ $j -eq 0 ] ; then
+    for j in "${!temps[@]}"; do
+        #        if [ $j -eq 0 ] ; then
         temp=${temps[j]}
         int_nt=${int_nts[j]}
-        for i in "${!models[@]}" ; do
-#            if [ $i -eq 0 ] ; then
-             spfbatch ../spf_reconstruct.py \
+        for i in "${!models[@]}"; do
+            #            if [ $i -eq 0 ] ; then
+            spfbatch ../spf_reconstruct.py \
                 --output_path $basepath_work_data/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/ \
                 --add_suffix 23-02-16_relflow \
                 --input_corr $basepath_work_data/hisq_ms5_zeuthenFlow/EE//T${temp}/EE_flow_extr${relflowsuffix}.npy \
@@ -146,18 +154,18 @@ submit_hisq(){
                 --Nf 3 \
                 --nsamples $nsamples \
                 ${models[i]}
-#            fi
+            #            fi
         done
-#        fi
+        #        fi
     done
 }
 
-submit_hisq_finite_a_and_tf(){
+submit_hisq_finite_a_and_tf() {
 
     OmegaByT_UV=6.2832
 
-    Nts=(36 32 28 24 20)  #
-    temps=(195 220 251 293 352)  #
+    Nts=(36 32 28 24 20)        #
+    temps=(195 220 251 293 352) #
     set_UV_params_EE
 
     models=(
@@ -171,7 +179,7 @@ submit_hisq_finite_a_and_tf(){
 
     nsamples=1000
 
-    for j in "${!Nts[@]}" ; do
+    for j in "${!Nts[@]}"; do
         Nt=${Nts[j]}
         temp=${temps[j]}
         if [ "${temp}" == "352" ]; then
@@ -179,8 +187,8 @@ submit_hisq_finite_a_and_tf(){
         else
             mintauT=0.24
         fi
-        for i in "${!models[@]}" ; do
-             spfbatch ../spf_reconstruct.py \
+        for i in "${!models[@]}"; do
+            spfbatch ../spf_reconstruct.py \
                 --output_path $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/spf/ \
                 --add_suffix 23-02-16_0.30 --relflow 0.30 \
                 --input_corr $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/EE_s096t${Nt}_b0824900_m002022_m01011_interpolation_relflow_samples.npy \
@@ -195,13 +203,12 @@ submit_hisq_finite_a_and_tf(){
     done
 }
 
-
 (
     cd "$(dirname $0)" || exit
 
-#    submit_quenched_EE
+    #    submit_quenched_EE
     submit_quenched_BB
-#    submit_hisq
-#    submit_hisq_finite_a_and_tf
+    #    submit_hisq
+    #    submit_hisq_finite_a_and_tf
 
 )
