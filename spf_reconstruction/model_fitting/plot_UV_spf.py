@@ -11,10 +11,12 @@ import spf_reconstruct
 from nptyping import NDArray, Float64
 from typing import Literal as Shape
 
+from correlator_analysis.double_extrapolation.BB_renormalization.compute_Zf2 import get_scale_choices
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--outputpath_plot', type=str)
+    parser.add_argument('--inputfolder', type=str)
     # compute_UV_spf.add_args(parser)
     args = parser.parse_args()
     return args
@@ -48,6 +50,7 @@ class SpfPlotter:
     def __init__(self, args, uv_spf_data_list):
         self.uv_spf_data_list = uv_spf_data_list
         self.outputpath_plot = args.outputpath_plot
+        self.inputfolder = args.inputfolder
 
     def __setup_plot(self):
         self.fig, self.ax1, _ = lpd.create_figure(xlabel=r'$\omega/T$',
@@ -59,20 +62,34 @@ class SpfPlotter:
         self.ax1.set_xscale('log')
 
         self.ax2 = self.fig.add_subplot(122)
-        ax = lpd.apply_ax_settings(self.ax2, (0, 0.51), (0.95, 2), r'$\tau T$', r'$\frac{G^\text{UV}}{G^\text{UV}(\tau T =1/36)}$')
+        ax = lpd.apply_ax_settings(self.ax2, (0, 0.51), (2, 4.5), r'$\tau T$', r'$G^\text{UV}\frac{G_B(0.25)}{G^\text{UV}(0.25)}$')
+
+    def _plot_BB(self):
+        scale_choices = get_scale_choices()
+        for scale_choice in scale_choices:
+            if scale_choice.choice_label == "ref4.0_UVLO_IRLO":
+                BB = np.loadtxt(self.inputfolder + "/BB/BB_flow_extr_relflow_" + scale_choice.choice_label + ".txt", unpack=True)
+                self.ax2.errorbar(BB[0], BB[1], BB[2])
+                self.norm_value = BB[1][8]
 
     def _plot(self):
         self.__setup_plot()
-        title = r'Order, $\bar{\mu}$'
+
+        # TODO also plot our BB correlator data here
+
+        title = r'Order, $\bar{\mu}_\omega$'
         self.ax1.errorbar(1, 1, fmt='.', markersize=0, label=title)
         self.ax2.errorbar(1, 1, fmt='.', markersize=0, label=title)
         self.ax1.set_prop_cycle(None)
         self.ax2.set_prop_cycle(None)
+
+        self._plot_BB()
+
         for uv_spf_data in self.uv_spf_data_list:
             self.ax1.errorbar(uv_spf_data.OmegaByT_arr, twoRhoByomegaTsq(uv_spf_data.OmegaByT_arr, uv_spf_data.PhiUVByT3),
                               fmt=uv_spf_data.input_params.fmt, label=uv_spf_data.input_params.plotlabel)
 
-            self.ax2.errorbar(np.arange(1/36, 0.501, 1/36), uv_spf_data.corr/uv_spf_data.corr[0], label=uv_spf_data.input_params.plotlabel, fmt=uv_spf_data.input_params.fmt)
+            self.ax2.errorbar(np.arange(1/36, 0.501, 1/36), uv_spf_data.corr/uv_spf_data.corr[8]*self.norm_value, label=uv_spf_data.input_params.plotlabel, fmt=uv_spf_data.input_params.fmt)
 
         self.ax1.axvline(x=2*np.pi, **lpd.verticallinestyle)
         self.ax1.axvline(x=19.18, **lpd.verticallinestyle)
@@ -81,7 +98,7 @@ class SpfPlotter:
 
     def __finalize_plot(self):
         self.ax1.legend(loc="center left", bbox_to_anchor=(0, 0.7), fontsize=6, title_fontsize=6, framealpha=0, handlelength=1)
-        self.ax2.legend(loc="upper right", bbox_to_anchor=(1, 1), fontsize=6, title_fontsize=6, framealpha=0, handlelength=1)
+        self.ax2.legend(loc="upper right", bbox_to_anchor=(1, 0.5), fontsize=6, title_fontsize=6, framealpha=0, handlelength=1)
         file = self.outputpath_plot+"/UV_spf.pdf"
         self.fig.savefig(file)
         print("saved", file)
@@ -125,6 +142,7 @@ def get_spf_and_corr(Nf, T_in_GeV, Npoints, Nloop, input_params):
 def parallelwrapper(input_param, Nf, T_in_GeV, Npoints, Nloop):
     return UVSpfData(*get_spf_and_corr(Nf, T_in_GeV, Npoints, Nloop, input_param))
 
+
 def main():
 
     args = parse_args()
@@ -144,8 +162,6 @@ def main():
                     InputParams(corr, "NLO", "2piT",      "2", "smooth", r'NLO, $\mathrm{max}(2\omega, 2 \pi T)$',   '--'),
                     InputParams(corr, "NLO", "mu_IR_NLO", "2", "smooth", r'NLO, $\mathrm{max}(2\omega, 19.18 T)$',   '--'),
                     ]
-
-    # TODO also plot our BB correlator data here
 
     uv_spf_data = lpd.parallel_function_eval(parallelwrapper, input_params, 10, Nf, T_in_GeV, Npoints, Nloop)
 
