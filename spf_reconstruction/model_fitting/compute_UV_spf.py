@@ -176,13 +176,11 @@ def inner_loop(index, params: SpfParams, cBsq):
     OmegaByT = params.OmegaByT_values[index]
     maxfunc = get_maxfunc(params.max_type)
 
-    # TODO figure out what to do about the scale in the BB LO case. I guess we should use the same choices as in the EE case.
-    # TODO For testing we could leave this as different, but we could combine the LO code for the two cases.
-    # TODO I think I can already rework this to not use any hard code. Use max_type smooth, use omega_prefactor=2, use min_scale = min_scale (already in use).
+    scale = params.omega_prefactor * (OmegaByT * params.T_in_GeV) ** params.omega_exponent
+    mu = maxfunc(params.min_scale, scale)
 
     if params.corr == "BB":
         # Note that "omega_prefactor" is actually not used here.
-        mu = np.sqrt(4 * (OmegaByT * params.T_in_GeV) ** 2 + params.min_scale ** 2)
         g2, Alphas, PhiUVByT3 = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop,
                                                             params.C_F, OmegaByT)
 
@@ -198,8 +196,6 @@ def inner_loop(index, params: SpfParams, cBsq):
             PhiUVByT3 = cBsq[index] * (mu_dep_part + mu_free_part)
 
     elif params.corr == "EE":
-        scale = params.omega_prefactor * (OmegaByT * params.T_in_GeV) ** params.omega_exponent
-        mu = maxfunc(params.min_scale, scale)
         g2, Alphas, PhiUVByT3 = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop,
                                                             params.C_F, OmegaByT)
         if params.order == "NLO":
