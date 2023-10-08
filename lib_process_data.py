@@ -352,6 +352,25 @@ def set_rc_params():
     matplotlib.rcParams['legend.title_fontsize'] = plot_fontsize
 
 
+def apply_ax_settings(ax, xlims, ylims, xlabel, ylabel, xlabelpos=(0.98, 0.01), ylabelpos=(0.01, 0.98), tickpad=1, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle, minorticks=True):
+    if xlabelpos is not None:
+        ax.xaxis.set_label_coords(*xlabelpos)
+    if ylabelpos is not None:
+        ax.yaxis.set_label_coords(*ylabelpos)
+    ax.minorticks_off()
+    ax.tick_params(pad=tickpad, width=axeslinewidth, direction="out")
+    if xlims is not None:
+        ax.set_xlim(xlims)
+    if ylims is not None:
+        ax.set_ylim(ylims)
+    ax.set_xlabel(xlabel, horizontalalignment='right', verticalalignment='bottom', bbox=xlabelbox)
+    ax.set_ylabel(ylabel, horizontalalignment='left', verticalalignment='top', rotation=0, bbox=ylabelbox)
+    if minorticks:
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+    return ax
+
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98, 0.01), ylabelpos=(0.01, 0.98), tickpad=1,
                   figsize=None, UseTex=True, fig=None, subplot=111, no_ax=False,
                   constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle, ytwinticks=True, minorticks=True):
@@ -377,18 +396,7 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98,
         fig.set_constrained_layout_pads(w_pad=0.01*1/2.54, h_pad=0.01*1/2.54)  # set 0.1mm (instead of 0) padding to not clip any axes lines.
     if not no_ax:
         ax = fig.add_subplot(subplot)
-        if xlabelpos is not None:
-            ax.xaxis.set_label_coords(*xlabelpos)
-        if ylabelpos is not None:
-            ax.yaxis.set_label_coords(*ylabelpos)
-        ax.minorticks_off()
-        ax.tick_params(pad=tickpad, width=axeslinewidth, direction="out")
-        if xlims is not None:
-            ax.set_xlim(xlims)
-        if ylims is not None:
-            ax.set_ylim(ylims)
-        ax.set_xlabel(xlabel, horizontalalignment='right', verticalalignment='bottom', bbox=xlabelbox)
-        ax.set_ylabel(ylabel, horizontalalignment='left', verticalalignment='top', rotation=0, bbox=ylabelbox)
+        ax = apply_ax_settings(ax, xlims, ylims, xlabel, ylabel, xlabelpos, ylabelpos, tickpad, xlabelbox, ylabelbox, minorticks)
     else:
         ax = None
 
@@ -398,11 +406,8 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98,
         axtwiny.set_ylim(ax.get_ylim())
         axtwiny.tick_params(axis='y', which='both', direction='in', width=axeslinewidth, left=False, top=False, right=True, bottom=False, labelleft=False, labeltop=False,
                         labelright=False, labelbottom=False)
-
-    if minorticks:
-        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
-        axtwiny.yaxis.set_minor_locator(AutoMinorLocator(2))
-        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+        if minorticks:
+            axtwiny.yaxis.set_minor_locator(AutoMinorLocator(2))
 
     matplotlib.rc('image', cmap='Set1')
     return fig, ax, axtwiny
