@@ -6,7 +6,7 @@ import scipy.interpolate
 import scipy.integrate
 import argparse
 import matplotlib.pyplot
-from spf_reconstruction.model_fitting.EE_UV_spf import get_spf, add_args
+from spf_reconstruction.model_fitting.compute_UV_spf import get_spf, add_args
 
 
 def Kernel(OmegaByT, tauT):
@@ -33,7 +33,7 @@ def integrand(args):
     # if not args.PathPhiUV:
     #     thisPhiUVByT3 = PHIUVLOByT3
     # else:
-    OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF = get_spf(0, args.max_type, "eff", 0.472, 1, args.Npoints, args.Nloop)
+    OmegaByT_arr, g2_arr, LO_SPF = get_spf(0, args.max_type, "eff", 0.472, 1, args.Npoints, args.Nloop, order="LO", corr="EE")
     thisPhiUVByT3 = scipy.interpolate.InterpolatedUnivariateSpline(OmegaByT_arr, LO_SPF, k=3, ext=2)
         # PhiUV = numpy.loadtxt(args.PathPhiUV)
         # PhiUV = PhiUV[:, 0:2]
@@ -84,7 +84,7 @@ def model_corrs(args):
     Gmodel_smax_LO_UV_kappa1 = []
     Gmodel_smax_LO_UV_kappa2 = []
     Gmodel_smax_LO_UV_kappa3 = []
-    OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF = get_spf(0, args.max_type, "eff", 0.472, 1, args.Npoints, args.Nloop)
+    OmegaByT_arr, g2_arr, LO_SPF = get_spf(0, args.max_type, "eff", 0.472, 1, args.Npoints, args.Nloop, order="LO", corr="EE")
 
     for tauT in tauTs:
         tmp = scipy.integrate.quad(lambda OmegaByT: PHIUVLOByT3(OmegaByT) * Kernel(OmegaByT, tauT)/numpy.pi, 0, 1000)[0]

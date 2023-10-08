@@ -7,7 +7,7 @@ import scipy.optimize
 import scipy.interpolate
 from typing import NamedTuple
 import argparse
-from spf_reconstruction.model_fitting.EE_UV_spf import get_spf, add_args
+from spf_reconstruction.model_fitting.compute_UV_spf import get_spf, add_args
 # import numba
 
 
@@ -178,7 +178,7 @@ def fit_single_sample_wrapper(index, ydata, spfargs):
     # wrapper for the true bootstrap
     ydata_sample = ydata[index]
     result = fit_single_sample(ydata_sample, spfargs)
-    print(index, end=" ")
+    # print(index, end=" ")
     return result
 
 
@@ -303,14 +303,9 @@ def readin_corr_data(args):
 
 
 def load_PhiUV(args):
-    OmegaByT_arr, g2, LO, NLO = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor, args.Npoints, args.Nloop)
-    if args.PhiUV_order == "LO":
-        PhiUVByT3 = LO
-    elif args.PhiUV_order == "NLO":
-        PhiUVByT3 = NLO
-    else:
-        print("ERROR: unknown --PhiUV_order")
-        exit(1)
+    OmegaByT_arr, g2, PhiUVByT3 = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor,
+                                          args.Npoints, args.Nloop, args.PhiUV_order, args.corr)
+
     # interpolate the UV spf for the integration. spline order: 1 linear, 2 quadratic, 3 cubic ...
     order = 3
     PhiUVByT3_interpolation = scipy.interpolate.InterpolatedUnivariateSpline(OmegaByT_arr, PhiUVByT3, k=order, ext=2)

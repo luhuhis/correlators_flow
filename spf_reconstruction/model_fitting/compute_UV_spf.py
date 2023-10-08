@@ -6,11 +6,11 @@ import lib_process_data as lpd
 import BB_NLO_SPF_term as BB
 from nptyping import NDArray, Float64
 from typing import Literal as Shape
-from scipy import interpolate,integrate
+from scipy import interpolate, integrate
 
 
 def smooth_max(a, b):
-    return np.sqrt(a**2+b**2)
+    return np.sqrt(a ** 2 + b ** 2)
 
 
 def add_args(parser):
@@ -23,17 +23,23 @@ def add_args(parser):
                              "From lattice calculations of the moments of quarkonium "
                              "correlators we know that going to lower than 1.3 GeV is probably unreasonable for Nf=3.")
     parser.add_argument("--omega_prefactor", help="mu = prefactor * omega. choices: opt, or any number.", default=1)
-    parser.add_argument("--max_type", choices=["smooth", "hard"], help="whether to use max(a,b) (hard) or sqrt(a^2+b^2) (smooth) maximum to determine the scale",
+    parser.add_argument("--max_type", choices=["smooth", "hard"],
+                        help="whether to use max(a,b) (hard) or sqrt(a^2+b^2) (smooth) maximum to determine the scale",
                         default="hard")
 
     parser.add_argument("--Npoints", default=10000, type=int, help="number of points between min and max OmegaByT")
     parser.add_argument("--Nloop", help="number of loops", type=int, default=5)
+    parser.add_argument("--order", help="perturbative order. decide between LO or NLO.", choices=["LO", "NLO"],
+                        type=str, required=True)
+    parser.add_argument("--corr",
+                        help="decide between EE or BB correlator function forms. LO is identical but the scale we use may change.",
+                        type=int, default=5, required=True)
     return
 
 
 def get_minscale(min_scale, T_in_GeV, Nc, Nf):
-
-    effective_theory_thermal_scale = 4 * np.pi * T_in_GeV * np.exp(-np.euler_gamma) * np.exp((-Nc + 4 * Nf * np.log(4)) / (22 * Nc - 4 * Nf))
+    effective_theory_thermal_scale = 4 * np.pi * T_in_GeV * np.exp(-np.euler_gamma) * np.exp(
+        (-Nc + 4 * Nf * np.log(4)) / (22 * Nc - 4 * Nf))
 
     # check min_scale
     if min_scale == "piT":
@@ -43,18 +49,18 @@ def get_minscale(min_scale, T_in_GeV, Nc, Nf):
     elif min_scale == "eff":
         min_scale = effective_theory_thermal_scale
     elif min_scale == "mu_IR_NLO":
-        min_scale = 4 * np.pi * np.exp(1-np.euler_gamma) * T_in_GeV
+        min_scale = 4 * np.pi * np.exp(1 - np.euler_gamma) * T_in_GeV
     else:
         min_scale = float(min_scale)
 
-    print("min_scale = ", lpd.format_float(min_scale/T_in_GeV), "T")
+    print("min_scale = ", lpd.format_float(min_scale / T_in_GeV), "T")
 
     return min_scale
 
 
 def get_omega_prefactor(omega_prefactor, Nc, Nf, T_in_GeV, min_scale):
-
-    mu_opt_omega_term = 2 * np.exp(((24 * np.pi ** 2 - 149) * Nc + 20 * Nf) / (6 * (11 * Nc - 2 * Nf)))  # see eq. 4.17 of arXiv:1006.0867
+    mu_opt_omega_term = 2 * np.exp(
+        ((24 * np.pi ** 2 - 149) * Nc + 20 * Nf) / (6 * (11 * Nc - 2 * Nf)))  # see eq. 4.17 of arXiv:1006.0867
     omega_exponent = 1.0
     if omega_prefactor == "opt":
         omega_prefactor = mu_opt_omega_term  # ~14.743 for Nf=3, ~7.6 for Nf=0
@@ -128,24 +134,31 @@ class SpfParams:
     b_0: float
     gamma_0: float
     Npoints: int
+    order: str
+    corr: str
 
 
 def get_cBsq(params: SpfParams):
+    # TODO add a distinct parameter for the IR scale instead of reusing the min_scale? Guy prefers to use only one scale definition for everything.
+    # TODO use matched coupling instead of the perturbative one
+
     crd = rundec.CRunDec()
 
     # add the first point
-    g2_arr = [4. * np.pi * crd.AlphasLam(params.Lambda_MSbar, params.min_scale, params.Nf, params.Nloop)]  # TODO min_scale vs distinct IR scale?
-    mu_arr = [params.min_scale]  # TODO min_scale vs distinct IR scale?
+    g2_arr = [4. * np.pi * crd.AlphasLam(params.Lambda_MSbar, params.min_scale, params.Nf,
+                                         params.Nloop)]
+    mu_arr = [params.min_scale]
     for OmegaByT in params.OmegaByT_values:
-        # TODO use matched coupling instead of the perturbative one???
-        mu = np.sqrt(4 * (OmegaByT * params.T_in_GeV) ** 2. + params.min_scale ** 2)  # TODO min_scale vs distinct IR scale?
-        g2, _, _ = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
+        mu = np.sqrt(
+            4 * (OmegaByT * params.T_in_GeV) ** 2. + params.min_scale ** 2)  # TODO min_scale vs distinct IR scale?
+        g2, _, _ = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F,
+                                               OmegaByT)
         mu_arr.append(mu)
         g2_arr.append(g2)
     g2_arr = np.asarray(g2_arr)
     mu_arr = np.asarray(mu_arr)
 
-    integrand = 2/mu_arr*params.gamma_0*g2_arr
+    integrand = 2 / mu_arr * params.gamma_0 * g2_arr
     integrand_spline = interpolate.InterpolatedUnivariateSpline(mu_arr, integrand, k=3, ext=2)
 
     cBsq = np.asarray(lpd.parallel_function_eval(calc_cBsq, mu_arr[1:], 128, integrand_spline, params.min_scale))
@@ -163,31 +176,48 @@ def inner_loop(index, params: SpfParams, cBsq):
     OmegaByT = params.OmegaByT_values[index]
     maxfunc = get_maxfunc(params.max_type)
 
-    if params.omega_prefactor_input == "optBB":
+    # TODO figure out what to do about the scale in the BB LO case. I guess we should use the same choices as in the EE case.
+    # TODO For testing we could leave this as different, but we could combine the LO code for the two cases.
+    # TODO I think I can already rework this to not use any hard code. Use max_type smooth, use omega_prefactor=2, use min_scale = min_scale (already in use).
+
+    if params.corr == "BB":
         # Note that "omega_prefactor" is actually not used here.
         mu = np.sqrt(4 * (OmegaByT * params.T_in_GeV) ** 2 + params.min_scale ** 2)
-        g2, Alphas, lo_spf = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
+        g2, Alphas, PhiUVByT3 = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop,
+                                                            params.C_F, OmegaByT)
 
-        # === NLO ===
-        # The following equations follow C.23 of https://arxiv.org/pdf/2204.14075.pdf
-        first_paren = 5./3. * np.log(mu**2/(2*OmegaByT*params.T_in_GeV)**2) + 134./9. - 2*np.pi**2/3.  # Guy changed the last term: -8*np.pi**2/3 to -2*np.pi**2/3.
-        second_paren = 2./3 * np.log(mu**2/(2*OmegaByT*params.T_in_GeV)**2) + 26./9.
-        mu_dep_part = lo_spf * (1 + g2 / (4 * np.pi)**2 * (params.Nc * first_paren - params.Nf * second_paren))
-        # mu_free_part = (g2**2*C_F)/(12*np.pi**3) * BB.get_mu_free(OmegaByT, Nc, Nf)  # from line 3 to the end of eq.(C.23)
-        mu_free_part = 0
-        nlo_spf = cBsq[index] * (mu_dep_part + mu_free_part)
+        if params.order == "NLO":
+            # === NLO ===
+            # The following equations follow C.23 of https://arxiv.org/pdf/2204.14075.pdf
+            first_paren = 5. / 3. * np.log(mu ** 2 / (
+                    2 * OmegaByT * params.T_in_GeV) ** 2) + 134. / 9. - 2 * np.pi ** 2 / 3.  # Guy changed the last term: -8*np.pi**2/3 to -2*np.pi**2/3.
+            second_paren = 2. / 3 * np.log(mu ** 2 / (2 * OmegaByT * params.T_in_GeV) ** 2) + 26. / 9.
+            mu_dep_part = PhiUVByT3 * (1 + g2 / (4 * np.pi) ** 2 * (params.Nc * first_paren - params.Nf * second_paren))
+            # mu_free_part = (g2**2*C_F)/(12*np.pi**3) * BB.get_mu_free(OmegaByT, Nc, Nf)  # from line 3 to the end of eq.(C.23)
+            mu_free_part = 0
+            PhiUVByT3 = cBsq[index] * (mu_dep_part + mu_free_part)
 
-    else:
+    elif params.corr == "EE":
         scale = params.omega_prefactor * (OmegaByT * params.T_in_GeV) ** params.omega_exponent
         mu = maxfunc(params.min_scale, scale)
-        g2, Alphas, lo_spf = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
-        l_ = np.log((scale / params.T_in_GeV) ** 2 / OmegaByT ** 2)
-        nlo_spf = lo_spf * (1 + (params.r20 + params.r21 * l_) * Alphas / np.pi)
+        g2, Alphas, PhiUVByT3 = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop,
+                                                            params.C_F, OmegaByT)
+        if params.order == "NLO":
+            l_ = np.log((scale / params.T_in_GeV) ** 2 / OmegaByT ** 2)
+            PhiUVByT3 = PhiUVByT3 * (1 + (params.r20 + params.r21 * l_) * Alphas / np.pi)
 
-    return OmegaByT, lo_spf, nlo_spf, g2
+    else:
+        print("Error: unknown corr", params.corr)
+        exit(1)
+
+    return OmegaByT, PhiUVByT3, g2
 
 
-def get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop):
+def get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop, order, corr):
+    if order not in ["LO", "NLO"]:
+        print("Error: unknown UV spf order", order)
+        exit(1)
+
     # set some parameters
     Lambda_MSbar = get_lambdamsbar(Nf)
     Nc = 3
@@ -202,26 +232,28 @@ def get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input,
     gamma_0 = 3 / (8 * np.pi ** 2)
 
     additional_params = SpfParams(omega_prefactor_input, OmegaByT_values, max_type, T_in_GeV, min_scale, Lambda_MSbar,
-                                  Nf, Nloop, omega_prefactor, omega_exponent, Nc, r20, r21, C_F, b_0, gamma_0, Npoints)
+                                  Nf, Nloop, omega_prefactor, omega_exponent, Nc, r20, r21, C_F, b_0, gamma_0, Npoints,
+                                  order, corr)
 
     return additional_params
 
 
-def get_spf(Nf: int, max_type: str, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop):
-    params = get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop)
+def get_spf(Nf: int, max_type: str, min_scale_str: str, T_in_GeV: float, omega_prefactor_input, Npoints: int,
+            Nloop: int, order: str, corr: str):
+    params = get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop, order, corr)
 
     cBsq = get_cBsq(params)
 
-    OmegaByT_arr, LO_SPF, NLO_SPF, g2_arr = lpd.parallel_function_eval(inner_loop,
-                                                                       range(len(params.OmegaByT_values)),
-                                                                       128,
-                                                                       params,
-                                                                       cBsq)
+    OmegaByT_arr, PhiUVByT3, g2_arr = lpd.parallel_function_eval(inner_loop,
+                                                                 range(len(params.OmegaByT_values)),
+                                                                 128,
+                                                                 params,
+                                                                 cBsq)
 
-    return np.asarray(OmegaByT_arr), np.asarray(g2_arr), np.asarray(LO_SPF), np.asarray(NLO_SPF)
+    return np.asarray(OmegaByT_arr), np.asarray(g2_arr), np.asarray(PhiUVByT3)
 
 
-def save_UV_spf(args, OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF):
+def save_UV_spf(args, OmegaByT_arr, g2_arr, PhiUVByT3):
     # prepare file names
     try:
         float(args.min_scale)
@@ -242,7 +274,8 @@ def save_UV_spf(args, OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF):
     if args.prefix != "":
         args.prefix = args.prefix + "_"
     prefix = args.outputpath + "/" + args.prefix
-    middle_part = "Nf" + str(args.Nf) + "_" + '{0:.3f}'.format(args.T_in_GeV) + "_" + min_scale_label + "_" + omega_prefactor_label + "_" + max_label
+    middle_part = "Nf" + str(args.Nf) + "_" + '{0:.3f}'.format(
+        args.T_in_GeV) + "_" + min_scale_label + "_" + omega_prefactor_label + "_" + max_label
 
     # save files
 
@@ -250,13 +283,9 @@ def save_UV_spf(args, OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF):
     print("saving ", file)
     np.save(file, np.column_stack((OmegaByT_arr, g2_arr)))
 
-    file = prefix + "SPF_LO_" + middle_part + args.suffix + ".npy"  # format: 'omega/T g^2'
+    file = prefix + "SPF_" + args.corr + "_" + args.order + "_" + middle_part + args.suffix + ".npy"  # format: 'omega/T g^2'
     print("saving ", file)
-    np.save(file, np.column_stack((OmegaByT_arr, LO_SPF)))  # format: 'omega/T rho/T^3'
-
-    file = prefix + "SPF_NLO_" + middle_part + args.suffix + ".npy"
-    print("saving ", file)
-    np.save(file, np.column_stack((OmegaByT_arr, NLO_SPF)))  # format: 'omega/T rho/T^3'
+    np.save(file, np.column_stack((OmegaByT_arr, PhiUVByT3)))  # format: 'omega/T rho/T^3'
 
 
 def main():
@@ -269,9 +298,10 @@ def main():
 
     args = parser.parse_args()
 
-    OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor, args.Npoints, args.Nloop)
+    OmegaByT_arr, g2_arr, PhiUVByT3 = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV,
+                                              args.omega_prefactor, args.Npoints, args.Nloop, args.order, args.corr)
 
-    save_UV_spf(args, OmegaByT_arr, g2_arr, LO_SPF, NLO_SPF)
+    save_UV_spf(args, OmegaByT_arr, g2_arr, PhiUVByT3)
 
 
 if __name__ == '__main__':
