@@ -191,8 +191,8 @@ def inner_loop(index, params: SpfParams, cBsq):
                     2 * OmegaByT * params.T_in_GeV) ** 2) + 134. / 9. - 2 * np.pi ** 2 / 3.  # Guy changed the last term: -8*np.pi**2/3 to -2*np.pi**2/3.
             second_paren = 2. / 3 * np.log(mu ** 2 / (2 * OmegaByT * params.T_in_GeV) ** 2) + 26. / 9.
             mu_dep_part = PhiUVByT3 * (1 + g2 / (4 * np.pi) ** 2 * (params.Nc * first_paren - params.Nf * second_paren))
-            # mu_free_part = (g2**2*C_F)/(12*np.pi**3) * BB.get_mu_free(OmegaByT, Nc, Nf)  # from line 3 to the end of eq.(C.23)
-            mu_free_part = 0
+            mu_free_part = (g2**2*params.C_F)/(12*np.pi**3) * BB.get_mu_free(OmegaByT, params.Nc, params.Nf)  # from line 3 to the end of eq.(C.23)
+            # mu_free_part = 0
             PhiUVByT3 = cBsq[index] * (mu_dep_part + mu_free_part)
 
     elif params.corr == "EE":
