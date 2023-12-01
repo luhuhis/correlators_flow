@@ -535,5 +535,8 @@ def get_relflow_range():
 def save_columns_to_file(filename, columns, labels):
     format_str = '{:>23}' + ' {:>25}' * (len(labels)-1)
     header_str = format_str.format(*labels)
+    folder = os.path.dirname(filename)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
     numpy.savetxt(filename, numpy.column_stack(columns), header=header_str, fmt='% .18e')
     print("saved", filename)

@@ -7,6 +7,7 @@ import scipy.optimize
 import scipy.interpolate
 import latqcdtools.physics.referenceScales as rS
 import rundec
+import os
 
 # Type hints
 from nptyping import NDArray, Float64
@@ -128,6 +129,7 @@ def plot_g2_vs_1overNt2(args, general_params, cont_data_container):
     ax3.xaxis.set_label_text(xlabel + " " + offset)
 
     file = args.outputpath_plot + "g2" + "_cont_extr.pdf"
+    lpd.create_folder(os.path.dirname(file))
     print("saving", file)
     fig3.savefig(file)
 
@@ -156,6 +158,7 @@ class Plotter_g2_vs_mu:
         self.ax.legend(**lpd.leg_err_size(), loc="upper right", bbox_to_anchor=(1, 1), handlelength=1, fontsize=8, framealpha=0)
         file = self.args.outputpath_plot + "g2" + self.file_suffix + ".pdf"
         print("saving", file)
+        lpd.create_folder(os.path.dirname(file))
         self.fig.savefig(file)
 
     def __plot_pert_g2(self, mus, suffix="pert"):
