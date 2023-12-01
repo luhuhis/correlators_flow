@@ -3,7 +3,7 @@
 import lib_process_data as lpd
 import numpy
 import argparse
-from correlator_analysis.double_extrapolation.BB_renormalization.compute_Zf2 import get_scale_choices
+from correlator_analysis.double_extrapolation.BB_renormalization.compute_Z import get_scale_choices
 import matplotlib.pyplot
 
 

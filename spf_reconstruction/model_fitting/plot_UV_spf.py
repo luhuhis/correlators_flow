@@ -11,7 +11,7 @@ import spf_reconstruct
 from nptyping import NDArray, Float64
 from typing import Literal as Shape
 
-from correlator_analysis.double_extrapolation.BB_renormalization.compute_Zf2 import get_scale_choices
+from correlator_analysis.double_extrapolation.BB_renormalization.compute_Z import get_scale_choices
 
 
 def parse_args():
