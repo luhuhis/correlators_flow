@@ -19,8 +19,8 @@ fi
 minscale=eff
 
 set_UV_params_EE() {
-    LO="--PhiUV_order LO --omega_prefactor 1 --min_scale $minscale"
-    NLO="--PhiUV_order NLO --omega_prefactor opt --min_scale $minscale"
+    LO="--order LO --omega_prefactor 1 --min_scale $minscale"
+    NLO="--order NLO --omega_prefactor opt --min_scale $minscale"
 }
 
 set_models_EE() {
@@ -56,6 +56,7 @@ submit_quenched_EE() {
             --min_tauT 0.24 \
             --nproc $nproc \
             --T_in_GeV 0.472 \
+            --corr EE \
             --Nf 0 \
             --nsamples $nsamples \
             ${models[i]}
@@ -65,7 +66,6 @@ submit_quenched_EE() {
 submit_quenched_BB() {
 
     #    OmegaByT_UV=3.1416
-
     input_corr_suffixes=(
         "ref4.0_UVLO_IRLO"
         "ref4.0_UVLO_IRNLO"
@@ -83,8 +83,8 @@ submit_quenched_BB() {
             minscale="mu_IR_NLO" # replace with the desired value
         fi
 
-        LO="--PhiUV_order LO --omega_prefactor 1 --min_scale $minscale"       # TODO in the BB case, "omega_prefactor" only decides between which mu is used ( sqrt( (2omega)^2 + mu_IR^2 ) vs max(omega, mu_T)
-        NLO="--PhiUV_order NLO --omega_prefactor optBB --min_scale $minscale" #$minscale
+        LO="--order LO   --omega_prefactor 1 --min_scale $minscale"
+        NLO="--order NLO --omega_prefactor 2 --min_scale $minscale"
 
         models=(
             "--model max $LO"
@@ -106,11 +106,12 @@ submit_quenched_BB() {
         for i in "${!models[@]}"; do
             spfbatch ../spf_reconstruct.py \
                 --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
-                --add_suffix 23-10-01-${input_corr_suffix} \
+                --add_suffix 23-10-23-${input_corr_suffix} \
                 --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow_${input_corr_suffix}.npy \
                 --min_tauT 0.24 \
                 --nproc $nproc \
                 --T_in_GeV 0.472 \
+                --corr BB \
                 --Nf 0 \
                 --nsamples $nsamples \
                 ${models[i]}
@@ -151,6 +152,7 @@ submit_hisq() {
                 --min_tauT 0.24 \
                 --nproc $nproc \
                 --T_in_GeV 0.${temp} --corr_from_combined_fit_nt $int_nt \
+                --corr EE \
                 --Nf 3 \
                 --nsamples $nsamples \
                 ${models[i]}
@@ -195,6 +197,7 @@ submit_hisq_finite_a_and_tf() {
                 --min_tauT $mintauT \
                 --relflow_file $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/EE_s096t${Nt}_b0824900_m002022_m01011_relflows.txt \
                 --nproc $nproc \
+                --corr EE \
                 --T_in_GeV 0.${temp} \
                 --Nf 3 \
                 --nsamples $nsamples \
