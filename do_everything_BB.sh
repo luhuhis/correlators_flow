@@ -1,16 +1,13 @@
 #!/bin/bash
 
 # ---
-# Data publication for "Heavy Quark Diffusion from 2+1 Flavor Lattice QCD with 320 MeV Pion Mass", 2023, arXiv 2302.08501
+# Data publication for "Lattice B-field correlators for heavy quarks", 2023, arXiv # TODO
 # Authors:
 #   Luis Altenkort, altenkort@physik.uni-bielefeld.de, Universität Bielefeld
+#   David de la Cruz, TU Darmstadt
 #   Olaf Kaczmarek, Universität Bielefeld
-#   Rasmus Larsen, University of Stavanger
-#   Swagato Mukherjee, Brookhaven National Laboratory
-#   Peter Petreczky, Brookhaven National Laboratory
-#   Hai-Tao Shu, Universität Regensburg
-#   Simon Stendebach, TU Darmstadt
-#   (HotQCD collaboration)
+#   Guy D. Moore, TU Darmstadt
+#   Hai-Tao Shu, Brookhaven National Laboratory
 # ---
 
 # ---
@@ -18,7 +15,7 @@
 # - bash 5.0 (Linux shell)
 # - python 3.11
 #   - packages: matplotlib numpy scipy rundec natsort colorama
-# - working latex installation (e.g. texlive-full) for matplotlib tex rendering
+# - working latex installation with packages amsmath and mathtools for matplotlib tex rendering
 # - gnuplot 5
 #---
 
@@ -32,6 +29,7 @@
 tar -xzf correlators_flow.tar.gz
 # OR
 # git clone --branch v0.1.0 https://github.com/luhuhis/correlators_flow.git
+# TODO update git
 
 # Add the scripts folder to the PYTHONPATH.
 export PYTHONPATH=$PYTHONPATH:$(pwd)/correlators_flow
