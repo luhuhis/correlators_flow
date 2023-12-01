@@ -197,7 +197,7 @@ class ZFactorComputer:
         g2_MSBar = self.coupling_container.g2_spline(muBarUV_by_T)
         inner_bracket = np.log(muBarUV_by_T ** 2 / self.coupling_container.input_mu_by_T ** 2) - 2 * np.log(
             2) - np.euler_gamma - 8 / 3
-        Zk = np.exp( - gamma_0 * g2_MSBar * inner_bracket)  # TODO!!!!! CLARIFY THIS 1/(1+x) VS 1-x
+        Zk = np.exp(- gamma_0 * g2_MSBar * inner_bracket)
         return Zk
 
     def compute_Z_run(self):
@@ -246,13 +246,13 @@ def parse_args():
 def get_scale_choices():
     scale_choices = []
 
-    muBarIR_by_T_choices = [2 * np.pi, 4 * np.pi * np.exp(1 - np.euler_gamma)]
-    muBarUV_by_muF_choices = [1., np.sqrt(4 * np.exp(np.euler_gamma + 8 / 3))]
+    muBarIR_by_T_choices = [2 * np.pi, ]  # 4 * np.pi * np.exp(1 - np.euler_gamma)]
+    muBarUV_by_muF_choices = [1., np.sqrt(4 * np.exp(-np.euler_gamma))]
     order_string = ["LO", "NLO"]
     muRef_by_T_choices = [4.,]
 
-    for UV in range(2):  # UV
-        for IR in range(1, -1, -1):
+    for UV in range(len(muBarUV_by_muF_choices)):  # UV
+        for IR in range(len(muBarIR_by_T_choices)):
             for ref in range(1):
                 choice_label = "ref" + str(muRef_by_T_choices[ref])+"_UV"+order_string[UV] + "_IR" + order_string[IR]
                 muBarUV_by_muF_choice = muBarUV_by_muF_choices[UV]
@@ -263,7 +263,7 @@ def get_scale_choices():
                                          + r',\ \bar{\mu}_\text{IR}/T='
                                          + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)+r'$')
                 # r'$\mu_\text{ref}/T='+lpd.format_float(muRef_by_T,1)
-                choice_label_for_plot_short = lpd.format_float_latex(muBarUV_by_muF_choice,2, 5) + r',\ ' + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)
+                choice_label_for_plot_short = lpd.format_float_latex(muBarUV_by_muF_choice, 2, 5) + r',\ ' + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)
                 scale_choices.append(ScaleChoice(muRef_by_T, muBarUV_by_muF_choice, muBarIR_by_T_choice, choice_label, choice_label_for_plot, choice_label_for_plot_short))
     return scale_choices
 
