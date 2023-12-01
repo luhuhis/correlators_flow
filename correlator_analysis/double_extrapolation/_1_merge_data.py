@@ -168,7 +168,9 @@ def main():
         numpy.savetxt(outfile, numpy.asarray(n_files_per_stream), header='number of confs contained in each stream respectively', fmt='%i')
         outfile.write('# confnums, ordered by stream\n')
         numpy.savetxt(outfile, numpy.asarray(conf_nums), fmt='%i')
-    numpy.savetxt(outputfolder+'flowtimes_'+args.conftype+'.dat', flow_times, header=r'flow times \tau_F for '+args.qcdtype+' '+args.conftype)
+    flowtime_filename = outputfolder+'flowtimes_'+args.conftype+'.dat'
+    print("write ", flowtime_filename)
+    numpy.savetxt(flowtime_filename, flow_times, header=r'flow times \tau_F for '+args.qcdtype+' '+args.conftype)
 
     # these have the following shape (nconf, nflow, Ntau/2)
     numpy.save(lpd.print_var("write", outputfolder + args.corr + '_real_' + args.conftype + '_merged.npy'), XX_numerator_real)
