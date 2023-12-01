@@ -33,7 +33,7 @@ def add_args(parser):
                         type=str, required=True)
     parser.add_argument("--corr",
                         help="decide between EE or BB correlator function forms. LO is identical but the scale we use may change.",
-                        type=int, default=5, required=True)
+                        type=str, choices=["EE", "BB"], required=True)
     return
 
 
