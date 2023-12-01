@@ -14,6 +14,7 @@ if [ -z "$qcdtype" ] || [ -z "$corr" ] || [ -z "$basepath_raw_data" ] || [ -z "$
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
     echo "choices for corr: EE BB EE_clover BB_clover"
     echo "Usage example: $0 hisq_ms5_zeuthenFlow EE /work/data/altenkort/gradientFlow ../../../../data/merged/ /home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"
+    echo "Usage example: $0 quenched_1.50Tc_zeuthenFlow BB ../../../../data/raw/ ../../../../data/merged/"
     exit
 fi
 
@@ -24,10 +25,10 @@ if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     # here we need to adjust the file names via --acc_sts due to historical reasons
     if [ "$corr" == "EE" ] ; then
         acc_sts="--acc_sts acc0.000010_sts0.000010"
-        add_args="--legacy --basepath ../../../../data/raw/"
+        add_args="--legacy --basepath $basepath_raw_data"
     elif [ "$corr" == "BB" ] ; then
         acc_sts="--acc_sts sts0.150000"
-        add_args="--basepath ../../../../data/raw/"
+        add_args="--basepath $basepath_raw_data"
     fi
 
 elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
@@ -55,6 +56,9 @@ elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
         fi
         flowradii_refs+=("--reference_flowradii $reffile")
     done
+else
+    echo "Unknown qcdtype. Choices: quenched_1.50Tc_zeuthenFlow, hisq_ms5_zeuthenFlow"
+    exit
 fi
 
 
