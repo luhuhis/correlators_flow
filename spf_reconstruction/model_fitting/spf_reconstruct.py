@@ -238,7 +238,7 @@ def get_fileidentifier(args):
         return model_str
 
     constrainstr = "s1" if not args.constrain else "s2"  # s1 = dont constrain, s2 = constrain
-    model_str = get_model_str(args.model, args.PhiUV_order, args.mu, constrainstr, args.nmax, args.p, args.OmegaByT_IR, args.OmegaByT_UV)
+    model_str = get_model_str(args.model, args.order, args.mu, constrainstr, args.nmax, args.p, args.OmegaByT_IR, args.OmegaByT_UV)
 
     # PhiUV identifiers
     if args.Nf is not None:
@@ -304,7 +304,7 @@ def readin_corr_data(args):
 
 def load_PhiUV(args):
     OmegaByT_arr, g2, PhiUVByT3 = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor,
-                                          args.Npoints, args.Nloop, args.PhiUV_order, args.corr)
+                                          args.Npoints, args.Nloop, args.order, args.corr)
 
     # interpolate the UV spf for the integration. spline order: 1 linear, 2 quadratic, 3 cubic ...
     order = 3
@@ -439,8 +439,6 @@ def parse_args():
     # === spf model selection ===
     requiredNamed.add_argument('--model', help='which model to use', choices=["max", "smax", "line", "step_any", "pnorm", "plaw", "plaw_any", "sum", "fourier", "trig"], type=str,
                                required=True)
-    requiredNamed.add_argument('--PhiUV_order', help='specify it this is LO or NLO.', type=str,
-                               choices=["LO", "NLO"])
 
     # parameters for fourier model
     parser.add_argument('--mu', help='which "en" function to use', choices=["alpha", "beta"], type=str)
