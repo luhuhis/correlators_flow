@@ -291,7 +291,9 @@ def new_interpolation(args, merged_data_path, flowtimes, XX_samples):
                                                                    args, flow_int_XX_samples, int_xdata)
     plot_tauT_int_flow_int_XX_samples = numpy.asarray(plot_tauT_int_flow_int_XX_samples).swapaxes(0, 1)
 
-    numpy.savetxt(merged_data_path + args.corr + "_" + args.conftype + "_relflows.txt", relflow_range, fmt='%.4f')
+    relflow_filename = merged_data_path + args.corr + "_" + args.conftype + "_relflows.txt"
+    print("save", relflow_filename)
+    numpy.savetxt(relflow_filename, relflow_range, fmt='%.4f')
     save_data(args, merged_data_path, tauT_int_flow_int_XX_samples, numpy.median(plot_tauT_int_flow_int_XX_samples, axis=0), suffix="interpolation_relflow")
 
     # create figs
