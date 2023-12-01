@@ -433,6 +433,7 @@ def main():
         if args.skip_binning:
             for val in y_eq_spaced:
                 y_binned.append(val)
+                total_ndata += 1
         else:
             ndata = len(y_eq_spaced) - best_start
             total_ndata += ndata
