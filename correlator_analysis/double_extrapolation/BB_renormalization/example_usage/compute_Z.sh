@@ -1,14 +1,23 @@
 #!/bin/bash
 
+basepath_work_data=$1
+basepath_plot=$2
 
 # TODO add plots for all the different possibilities of Z_total
 
-compute_Zf2(){
-    ../compute_Zf2.py \
-    --g2_file \
-    "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/g2_MSBAR_runFromMu_4.0.txt" \
-    --outputpath_plot "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/" \
-    --outputpath_data "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
+compute_Z(){
+    ../compute_Z.py \
+    --g2_file "$basepath_work_data/quenched_1.50Tc_zeuthenFlow/coupling/g2_MSBAR_runFromMu_4.0.txt" \
+    --outputpath_plot "$basepath_plot/quenched_1.50Tc_zeuthenFlow/coupling/" \
+    --outputpath_data "$basepath_work_data/quenched_1.50Tc_zeuthenFlow/coupling/"
 }
 
-compute_Zf2
+
+(
+    cd "$(dirname "$0")" || exit
+    mycmd="compute_Z"
+    eval $mycmd
+)
+
+
+

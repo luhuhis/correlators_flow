@@ -25,6 +25,11 @@
 
 # 1. SET UP THE ENVIRONMENT
 
+# TODO add a summary / one-liner of setting the env
+
+export NPROC=100 && export PYTHONPATH=$(pwd)/correlators_flow:$(pwd)/AnalysisToolbox:$PYTHONPATH && export BASEPATH_RAW_DATA=$(pwd) && export BASEPATH_WORK_DATA=$(pwd)/output_data && export BASEPATH_PLOT=$(pwd)/figures && export G_PERT_LO_DIR=$BASEPATH_RAW_DATA/quenched_1.50Tc_zeuthenFlow/pert_LO && export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usage"
+
+
 # Unzip the analysis scripts. This will create a new folder "correlators_flow" in the current directory.
 tar -xzf correlators_flow.tar.gz
 # OR
@@ -92,7 +97,7 @@ export NPROC=1
 # actual underlying bootstrap samples in numpy format (binary).
 
 # IMPORTANT: If the files are not executable by default, just make every file in ./correlators_flow/
-# executable using chmod +x.
+# executable using chmod +x. # TODO make this fix part of the readme
 
 # 2.1.1 Merge individual small text files into large binary (npy) files
 # Merge individual BB correlator measurement text files (output from SIMULATeQCD) into a small number of larger numpy files (binary format).
@@ -185,15 +190,29 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # and in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/
 
-# g2.pdf                      | Flow- and MSBAR-scheme couplings (g^2) as a function of scale in temperature units
+# g2.pdf                      | Flow- and MSBAR-scheme couplings (g^2) as a function of scale in temperature units # TODO change this plot, decide what to show and what not
 # g2_cont_extr.pdf            | Flow-scheme coupling (g^2) as a function of squared lattice spacing (= inverse Nt^2 at fixed temperature)
 
 
-# 2.1.6 Then compute Z factor.
+# 2.1.6 Carry out renormalization of G_B by computing \Zmatch(\mubarir,\mubaruv,\muflow)
+
+./correlators_flow/correlator_analysis/double_extrapolation/BB_renormalization/example_usage/compute_Z.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
+
 # TODO use new input_data.tar.gz
 
-# TODO which files are created by this?
+# Afterward, the following files have been created in
+# $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/coupling/
 
+# Z_match_ref4.0_UVLO_IRLO.dat   | Z_match as a function of scale, with mu=... # TODO
+# Z_match_ref4.0_UVNLO_IRLO.dat  | Z_match as a function of scale, with mu=... # TODO
+
+# $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/
+
+# integrand.pdf          | integrand plot # TODO remove
+# Zref4.0_UVLO_IRLO.pdf  | individual Z factors for chice  # TODO remove
+# Zref4.0_UVNLO_IRLO.pdf | individual Z factors  # TODO remove
+# Z_total.pdf            | All considered versions of Z_match as a function of flow scale
+# Z_total_flowtime.pdf   | All considered versions of Z_match as a function of flow radius 1/(8 tau_F) T
 
 # 2.1.7 Flow-time-to-zero extrapolation
 # Take the flow-time-to-zero limit of the BB correlator using a combined fit on each sample

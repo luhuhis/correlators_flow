@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# TODO convert all paths to inputs of the script instead of hard-coding them
-
 basepath_raw_data=$1
 basepath_work_data=$2
 basepath_plot=$3
@@ -35,13 +33,10 @@ extrapolate_coupling(){
 # 7.035
 }
 
-
 (
     cd "$(dirname "$0")" || exit
-
     mycmd="extrapolate_coupling"
     eval $mycmd
-
 )
 
 
