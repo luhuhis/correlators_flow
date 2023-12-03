@@ -91,7 +91,7 @@ export NPROC=1
 # Some steps output median and standard deviation over all bootstrap samples as plain text files, and then the
 # actual underlying bootstrap samples in numpy format (binary).
 
-# IMPORTANT: If the files are not executable by default, just make every file inside ./correlators_flow/
+# IMPORTANT: If the files are not executable by default, just make every file in ./correlators_flow/
 # executable using chmod +x.
 
 # 2.1.1 Merge individual small text files into large binary (npy) files
@@ -100,10 +100,10 @@ export NPROC=1
 export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/example_usage"
 ./$tmppath/1_merge_data.sh quenched_1.50Tc_zeuthenFlow BB $BASEPATH_RAW_DATA $BASEPATH_WORK_DATA
 
-# Afterwards, the following files have been created inside
+# Afterwards, the following files have been created in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/<conftype>/
 
-# flowtimes_<conftype>.dat              | flowtimes that were measured, corresponding to the data inside the .npy files
+# flowtimes_<conftype>.dat              | flowtimes that were measured, corresponding to the data in the .npy files
 # n_datafiles_<conftype>.dat            | metadata (number of files per stream, MCMC trajectory number, etc.)
 # BB_imag_<conftype>_merged.npy         | merged raw data, imaginary part of BB correlator
 # BB_real_<conftype>_merged.npy         | merged raw data, real part of BB correlator
@@ -121,7 +121,7 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # Then bin configurations according to the integrated autocorrelation time, then perform bootstrap resampling of the uncorrelated blocks and save the samples to numpy files (binary format).
 ./$tmppath/2_reduce_data.sh quenched_1.50Tc_zeuthenFlow BB $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
-# Afterward, the following files have been created inside
+# Afterward, the following files have been created in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/<conftype>/
 
 # BB_<conftype>_samples.npy   | bootstrap samples of BB correlator
@@ -129,7 +129,7 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # BB_<conftype>.dat           | median BB correlator (useful for checking the data / plotting)
 # BB_err_<conftype>.dat       | std_dev of BB correlator (useful for checking the data / plotting)
 
-# and inside
+# and in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/<conftype>/
 
 # polyakovloop_MCtime.pdf     | shows the MCMC time series of the polyakovloop at a large flow time
@@ -139,14 +139,14 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # is available across all lattices and temperatures.
 ./$tmppath/3_spline_interpolate.sh quenched_1.50Tc_zeuthenFlow BB $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
-# Afterward, the following files have been created inside
+# Afterward, the following files have been created in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/<conftype>/
 
 # BB_<conftype>_relflows.txt                         | Normalized flow times (\sqrt{8_\tau_F}/\tau)
 # BB_<conftype>_interpolation_relflow_mean.npy       | Median of the interpolated BB correlator for the corresponding normalized flow times (binary format, npy)
 # BB_<conftype>_interpolation_relflow_samples.npy    | Interpolations of each individual bootstrap sample of the BB correlator for the corresponding normalized flow times (binary format, npy)
 
-# and inside
+# and in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/<conftype>/
 
 # BB_interpolation_relflow.pdf                       | Multi-page PDF containing plots of interpolation in Eucl. time at different normalized flow times
@@ -156,7 +156,7 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # Take the continuum limit of the BB correlator using a combined fit on each sample
 ./$tmppath/4_continuum_extr.sh quenched_1.50Tc_zeuthenFlow BB $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
-# Afterward, the following files have been created inside:
+# Afterward, the following files have been created in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/cont_extr/
 
 # BB_cont_relflows.dat        | Normalized flow times at which the continuum extrapolation was done
@@ -164,35 +164,48 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # BB_cont_relflow_err.dat     | Std dev of continuum-extrapolated BB correlator at corresponding normalized flow times
 # BB_cont_relflow_samples.npy | Continuum extrapolations of the BB correlator on each individual bootstrap sample
 
-# and inside
+# and in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
 
 # BB_cont_quality_relflow.pdf | FIG 4 in the paper. Multipage PDF containing plots of continuum extrapolation of
 # BB correlator for the corresponding normalized flow times
 
-# 2.1.5 Renormalization calculations
-# First, continuum extrapolate the coupling measured on zero temperature lattices, TODO is this already reflected in the paper?
-# including the conversion from flow scheme to the MSBAR coupling.
-# Then compute Z factor.
-# TODO use new input_data.tar.gz
+# 2.1.5 Coupling calculations
+# Continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices, TODO is this already reflected in the paper?
+# and conversion from flow scheme to the MSBAR coupling at one scale, then perturbative 5-loop running to other relevant scales.
 
 ./correlators_flow/correlator_analysis/double_extrapolation/BB_renormalization/example_usage/extrapolate_coupling.sh $BASEPATH_RAW_DATA $BASEPATH_WORK_DATA $BASEPATH_PLOT
+
+# Afterward, the following files have been created in
+# $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/coupling/
+
+# g2_muF_cont_extr.txt        | Continuum-extrapolated flow scheme coupling (g^2) as function of flow scale mu_F=1/sqrt(8 tau_F) in units of temperature T
+# g2_MSBAR_runFromMu_4.0.txt  | Continuum MS-BAR coupling (g^2) as a function of MS-BAR scale mu in units of temperature T (matched at mu_F/T=4 and then perturbatively run)
+
+# and in
+# $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/
+
+# g2.pdf                      | Flow- and MSBAR-scheme couplings (g^2) as a function of scale in temperature units
+# g2_cont_extr.pdf            | Flow-scheme coupling (g^2) as a function of squared lattice spacing (= inverse Nt^2 at fixed temperature)
+
+
+# 2.1.6 Then compute Z factor.
+# TODO use new input_data.tar.gz
 
 # TODO which files are created by this?
 
 
-
-# 2.1.6 Flow-time-to-zero extrapolation
+# 2.1.7 Flow-time-to-zero extrapolation
 # Take the flow-time-to-zero limit of the BB correlator using a combined fit on each sample
 ./$tmppath/5_flowtime_extr.sh quenched_1.50Tc_zeuthenFlow BB $BASEPATH_WORK_DATA $BASEPATH_PLOT $NPROC
 
-# Afterward, the following files have been created inside
+# Afterward, the following files have been created in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/
 
 # BB_flow_extr_relflow.npy | Flow-time-to-zero extrapolated continuum BB correlator for each bootstrap sample
 # BB_flow_extr_relflow.txt | Median and std dev of flow-time-to-zero extrapolated continuum BB correlator
 
-# and inside
+# and in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
 
 # BB_flow_extr_quality_relflow.pdf | FIG 5 in the paper.
@@ -200,7 +213,7 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # 2.2 Spectral reconstruction [OPTIONAL, this takes a lot of computing time, so the output files are already included]
 ./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh $BASEPATH_WORK_DATA NO $NPROC
 
-# Afterward, the following files have been created inside
+# Afterward, the following files have been created in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/spf/<model>_<rhoUV>_Nf3_T<Temp-in-MeV>_<min_scale>_<scale>_tauTgtr<min_tauT>_<suffix>
 # and in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/<conftype-with-smallest-lattice-spacing>/spf
@@ -218,14 +231,14 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # 2.3 Create correlator plots at fixed normalized flow time
 ./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
 
-# Afterwards, the following files have been created inside
+# Afterwards, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
 
 # BB_relflow_hisq_final.pdf | Fig. 2 in the paper
 # BB_relflow_hisq_0.25.pdf  | Top panel of Fig. 1 in the paper
 # BB_relflow_hisq_0.30.pdf  | Bottom panel of Fig. 1 in the paper
 
-# and inside
+# and in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/<conftype>/relflow/
 
 # BB_relflow_0.25.dat       | BB correlator at normalized flow time 0.25 (see Fig. 1)
@@ -235,19 +248,19 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # 2.4.1 Plot spectral reconstruction fit results #1
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
 
-# Afterwards, the following files have been created inside
+# Afterwards, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/T<T-in-MeV>/
 
 # BB_spf_T<T-in-MeV>_paper.pdf      | Fig. 6 in the paper
 # BB_corrfit_T<T-in-MeV>_paper.pdf  | Fig. 7 in the paper
 # BB_kappa_T<T-in-MeV>_paper.pdf    | Fig. 9 in the paper
 
-# and inside
+# and in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/T<Temp-in-MeV>/
 
 # BB_kappa_T<T-in_MeV>_paper.txt | Final results for kappa, see Table III in the paper
 
-# and inside
+# and in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/<conftype>/
 
 # BB_kappa_T<T-in-MeV>_finiteflow_paper.txt | Final results for kappa from finite a and tau_F data, see Table III in the paper
@@ -255,7 +268,7 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # 2.4.2 Plot spectral reconstruction fit results #2
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
 
-# Afterwards, the following files have been created inside
+# Afterwards, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
 
 # BB_kfactor.pdf | Fig. 8 in the paper
@@ -264,7 +277,7 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # 2.4.3 Plot spectral reconstruction fit results #3
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
 
-# Afterwards, the following files have been created inside
+# Afterwards, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
 
 # kappa_hisq_paper.pdf | Fig. 10 in the paper
