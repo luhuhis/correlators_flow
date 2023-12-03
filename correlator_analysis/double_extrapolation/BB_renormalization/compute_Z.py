@@ -195,8 +195,7 @@ class ZFactorComputer:
         muF_by_T = self.coupling_container.input_mu_by_T
         muBarUV_by_T = self.scale_choice.muBarUV_by_muF * muF_by_T
         g2_MSBar = self.coupling_container.g2_spline(muBarUV_by_T)
-        inner_bracket = np.log(muBarUV_by_T ** 2 / self.coupling_container.input_mu_by_T ** 2) - 2 * np.log(
-            2) - np.euler_gamma - 8 / 3
+        inner_bracket = np.log(muBarUV_by_T ** 2 / (4*self.coupling_container.input_mu_by_T ** 2)) + np.euler_gamma
         Zk = np.exp(- gamma_0 * g2_MSBar * inner_bracket)
         return Zk
 
