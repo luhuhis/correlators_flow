@@ -13,6 +13,8 @@ if [ -z "$qcdtype" ] || [ -z "$corr" ] || [ -z "$basepath_work_data" ] || [ -z "
     exit
 fi
 
+# TODO rename Zf2 to Z_match
+
 (
     cd "$(dirname $0)" || exit
 
@@ -36,7 +38,7 @@ fi
 
         if [ "$corr" == "BB" ]; then
 
-            ylims="3 4.9"
+            ylims="2.5 3.6"
 
             # first just plot without extrapolation
             noextr="--no_extr"
