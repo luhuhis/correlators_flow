@@ -8,8 +8,8 @@ basepath_plot=$3
 # multiple lattice spacings for each temperature that have different flow times
 flowradiusbasepath=$5
 
-if [ -z "$basepath_raw_data" ] || [ -z "$basepath_work_data" ] ; then
-    echo "Usage: $0 input_basepath output_basepath"
+if [ -z "$basepath_raw_data" ] || [ -z "$basepath_work_data" ] || [ -z "$basepath_plot" ]; then
+    echo "Usage: $0 basepath_raw_data basepath_work_data basepath_plot"
     echo "Example usage: $0 /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/ /work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/ /work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/"
     exit
 fi
