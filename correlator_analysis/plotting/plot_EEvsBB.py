@@ -14,7 +14,7 @@ class Plotter:
         self.plotstyle = dict(fmt='.', markersize=0, fillstyle='none')
 
     def _setup_plot(self):
-        self.fig, self.ax, self.plots = lpd.create_figure(xlims=(0.235, 0.51), ylims=(2.5, 4.4), xlabel=r'$\tau T$',
+        self.fig, self.ax, self.plots = lpd.create_figure(xlims=(0.235, 0.51), ylims=(2.5, 3.75), xlabel=r'$\tau T$',
                                                           ylabel=r'$\displaystyle \frac{G_X}{G^\mathrm{norm}}$')
         self.ax.errorbar(0, 0, label=r'$X,\, \frac{\bar{\mu}_\text{UV}}{\mu_\text{F}},\ \ \frac{\bar{\mu}_\text{IR}}{T}$',
                          markersize=0, alpha=0, lw=0)
