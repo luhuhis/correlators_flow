@@ -29,7 +29,15 @@ class ZIndividualPlotter:
     def __plot_Z(self):
         self.ax.errorbar(self.Z_container.mu_By_T, self.Z_container.Z_K, fmt='--', label="$Z_K$")
         self.ax.errorbar(self.Z_container.mu_By_T, self.Z_container.Z_run, fmt=':', label=r'$Z_\text{run}$')
-        self.ax.axhline(y=self.Z_container.Z_phys, xmin=self.Z_container.mu_By_T[0], xmax=self.Z_container.mu_By_T[-1],
+        # Retrieve the current x-axis limits
+        xlim = self.ax.get_xlim()
+        axis_range = xlim[1] - xlim[0]
+
+        # Calculate fractional positions for xmin and xmax
+        xmin_fraction = (self.Z_container.mu_By_T[0] - xlim[0]) / axis_range
+        xmax_fraction = (self.Z_container.mu_By_T[-1] - xlim[0]) / axis_range
+
+        self.ax.axhline(y=self.Z_container.Z_phys, xmin=xmin_fraction, xmax=xmax_fraction,
                         dashes=(1, 1), color='C4', label=r'$Z_\text{phys}$')
         self.ax.errorbar(self.Z_container.mu_By_T, self.Z_container.Z_total, fmt='-', label=r'$Z$', zorder=-1)
 
@@ -51,6 +59,8 @@ class ZIndividualPlotter:
         instance = cls(*args)
         instance._plot()
 
+global ylims
+ylims = (0.5, 1.65)
 
 class ZTotalPlotter:
     def __init__(self, args, Z_containers, fontsize, scale_choices, output_suffix=""):
@@ -63,7 +73,8 @@ class ZTotalPlotter:
     def _setup_plot(self):
         self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$',
                                                  ylabel=r'$ Z$')
-        self.ax.set_ylim((1, 1.65))
+        global ylims
+        self.ax.set_ylim(ylims)
         self.ax.set_xlim((0, 17))
 
     def _plot_grey_flow_extr_band(self):
@@ -98,7 +109,8 @@ class ZTotalPlotterFlowtime(ZTotalPlotter):
     def _setup_plot(self):
         self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\sqrt{8 \tau_\text{F}}T$',
                                                  ylabel=r'$ Z$')
-        self.ax.set_ylim((1, 1.65))
+        global ylims
+        self.ax.set_ylim(ylims)
         self.ax.set_xlim((0, 0.2))
 
     def _plot_grey_flow_extr_band(self):
@@ -216,7 +228,7 @@ class ZFactorComputer:
 
     def compute_Z_phys(self):
         inner_bracket = np.log(self.scale_choice.muBarIR_by_T**2 / ((np.pi*4)**2)) - 2 + 2*np.euler_gamma
-        Z_phys = np.exp( gamma_0 * self.coupling_container.g2_spline(self.scale_choice.muBarIR_by_T) * inner_bracket)
+        Z_phys = np.exp(gamma_0 * self.coupling_container.g2_spline(self.scale_choice.muBarIR_by_T) * inner_bracket)
         return Z_phys
 
     @classmethod
@@ -245,7 +257,7 @@ def parse_args():
 def get_scale_choices():
     scale_choices = []
 
-    muBarIR_by_T_choices = [2 * np.pi, ]  # 4 * np.pi * np.exp(1 - np.euler_gamma)]
+    muBarIR_by_T_choices = [2 * np.pi, 4 * np.pi * np.exp(1 - np.euler_gamma)]
     muBarUV_by_muF_choices = [1., np.sqrt(4 * np.exp(-np.euler_gamma))]
     order_string = ["LO", "NLO"]
     muRef_by_T_choices = [4.,]
