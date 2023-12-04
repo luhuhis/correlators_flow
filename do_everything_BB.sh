@@ -242,14 +242,11 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 
 
 # 2.2 Spectral reconstruction [OPTIONAL, this takes a lot of computing time, so the output files are already included]
+# TODO add some options to decide between BB, EE, quenched, ms5 ...
 ./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh $BASEPATH_WORK_DATA NO $NPROC
 
 # Afterward, the following files have been created in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/spf/<model>_<rhoUV>_Nf3_T<Temp-in-MeV>_<min_scale>_<scale>_tauTgtr<min_tauT>_<suffix>
-# and in
-# $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/<conftype-with-smallest-lattice-spacing>/spf
-# which reflect fits to the double-extrapolated BB correlator as well as finite lattice spacing and flow time fits,
-# respectively.
 
 # corrfit.dat            | Median input BB correlator and fitted model correlator
 # params_samples.npy     | Model spectral function fit parameters for each bootstrap sample, as well as chisq/dof
@@ -260,6 +257,7 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 
 
 # 2.3 Create correlator plots at fixed normalized flow time
+# TODO what aboutt his part? remove?
 ./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
 
 # Afterwards, the following files have been created in
@@ -277,10 +275,14 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 
 
 # 2.4.1 Plot spectral reconstruction fit results #1
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh BB $BASEPATH_WORK_DATA $BASEPATH_PLOT
 
 # Afterwards, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/T<T-in-MeV>/
+
+/home/altenkort/BB_datapub_test/figures/quenched_1.50Tc_zeuthenFlow/BB//BB_spf_quenched_1.5Tc.pdf
+/home/altenkort/BB_datapub_test/figures/quenched_1.50Tc_zeuthenFlow/BB//BB_kappa_quenched_1.5Tc.pdf
+/home/altenkort/BB_datapub_test/figures/quenched_1.50Tc_zeuthenFlow/BB//BB_corrfit_quenched_1.5Tc.pdf
 
 # BB_spf_T<T-in-MeV>_paper.pdf      | Fig. 6 in the paper
 # BB_corrfit_T<T-in-MeV>_paper.pdf  | Fig. 7 in the paper
