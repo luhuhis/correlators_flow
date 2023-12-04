@@ -3,7 +3,6 @@
 basepath_work_data=$1
 basepath_plot=$2
 
-# TODO add plots for all the different possibilities of Z_total
 
 compute_Z(){
     ../compute_Z.py \
