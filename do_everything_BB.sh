@@ -229,6 +229,18 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 
 # BB_flow_extr_quality_relflow.pdf | FIG 5 in the paper.
 
+# 2.1.8 Comparison plot: EE vs BB correlator after continuum and flow-time-to-zero extrapolations
+./correlators_flow/correlator_analysis/plotting/plot_EEvsBB.py --inputfolder $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/ --outputfolder $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/
+
+# Afterward, the following files have been created in
+# $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow
+
+# EEvsBB.pdf | Continuum- and flow-time-extrapolated color-magnetic and -electric correlators as a function of tau T at 1.5 Tc
+
+
+# TODO: add EE/EE_flow_extr_relflow.txt to output data somehow...
+
+
 # 2.2 Spectral reconstruction [OPTIONAL, this takes a lot of computing time, so the output files are already included]
 ./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh $BASEPATH_WORK_DATA NO $NPROC
 
