@@ -10,6 +10,13 @@ import argparse
 from spf_reconstruction.model_fitting.compute_UV_spf import get_spf, add_args
 # import numba
 
+import warnings
+# # warnings.simplefilter("ignore", OptimizeWarning)
+# warnings.simplefilter('error', UserWarning)
+warnings.filterwarnings('ignore', r'(.*?)The integral is probably divergent(.*?)')
+warnings.filterwarnings('ignore', r'(.*?)The algorithm does not converge(.*?)')
+warnings.filterwarnings('ignore', r'(.*?)The maximum number of subdivisions(.*?)')
+
 
 # @numba.njit(cache=True)
 def Gnorm(tauT: float):
