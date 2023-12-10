@@ -193,7 +193,7 @@ class ScaleChoice:
 def load_data(args: argparse.Namespace) -> CouplingContainer:
     muF_by_T, g2 = np.loadtxt(args.g2_file, unpack=True)[:2]
     g2_spline = interpolate.InterpolatedUnivariateSpline(muF_by_T, g2, k=3, ext=2)
-    integrand_spline = interpolate.InterpolatedUnivariateSpline(muF_by_T, 2*gamma_0 * g2 / muF_by_T, k=3, ext=2)
+    integrand_spline = interpolate.InterpolatedUnivariateSpline(muF_by_T, 2*gamma_0 * g2 / muF_by_T, k=3, ext=2)  # The factor 2 here is essential as we write the integral measure as dmu and not dmu^2
     input_mu_by_T = ScaleFunctions.get_muF_by_T_where_we_measure()
     return CouplingContainer(muF_by_T, g2, g2_spline, integrand_spline, input_mu_by_T)
 
