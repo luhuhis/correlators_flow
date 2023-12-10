@@ -147,7 +147,7 @@ def get_cBsq(params: SpfParams):
     # add the first point
     g2_arr = [4. * np.pi * crd.AlphasLam(params.Lambda_MSbar, params.min_scale, params.Nf,
                                          params.Nloop)]
-    mu_arr = [params.min_scale]
+    mu_arr = [params.min_scale]  # NOTE: min_scale is in units of GeV
     for OmegaByT in params.OmegaByT_values:
         mu = np.sqrt(
             4 * (OmegaByT * params.T_in_GeV) ** 2. + params.min_scale ** 2)  # TODO min_scale vs distinct IR scale?
