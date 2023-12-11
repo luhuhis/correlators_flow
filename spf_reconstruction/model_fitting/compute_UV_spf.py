@@ -142,6 +142,7 @@ def get_cBsq(params: SpfParams):
     # TODO add a distinct parameter for the IR scale instead of reusing the min_scale? Guy prefers to use only one scale definition for everything.
     # TODO use matched coupling instead of the perturbative one
 
+    maxfunc = get_maxfunc(params.max_type)
     crd = rundec.CRunDec()
 
     # add the first point
@@ -149,10 +150,11 @@ def get_cBsq(params: SpfParams):
                                          params.Nloop)]
     mu_arr = [params.min_scale]  # NOTE: min_scale is in units of GeV
     for OmegaByT in params.OmegaByT_values:
-        mu = np.sqrt(
-            4 * (OmegaByT * params.T_in_GeV) ** 2. + params.min_scale ** 2)  # TODO min_scale vs distinct IR scale?
-        g2, _, _ = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F,
-                                               OmegaByT)
+
+        scale = params.omega_prefactor * (OmegaByT * params.T_in_GeV) ** params.omega_exponent
+        mu = maxfunc(params.min_scale, scale)
+
+        g2, _, _ = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
         mu_arr.append(mu)
         g2_arr.append(g2)
     g2_arr = np.asarray(g2_arr)
