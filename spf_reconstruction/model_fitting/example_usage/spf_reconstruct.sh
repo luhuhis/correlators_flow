@@ -76,15 +76,17 @@ submit_quenched_BB() {
     nsamples=100
     for input_corr_suffix in "${input_corr_suffixes[@]}"; do
 
-        # Adjusting the minscale based on the suffix
+        #Adjusting the minscale based on the suffix
         if [[ $input_corr_suffix == *"_IRLO" ]]; then
-            minscale="2piT" # replace with the desired value
+            mu_IR_by_T="LO" # replace with the desired value
         elif [[ $input_corr_suffix == *"_IRNLO" ]]; then
-            minscale="mu_IR_NLO" # replace with the desired value
+            mu_IR_by_T="NLO" # replace with the desired value
         fi
 
-        LO="--order LO   --omega_prefactor 1 --min_scale $minscale"
-        NLO="--order NLO --omega_prefactor 2 --min_scale $minscale"
+        minscale="eff"
+
+        LO="--order LO   --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T"
+        NLO="--order NLO --omega_prefactor 2 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T"
 
         models=(
             "--model max $LO"
@@ -104,9 +106,11 @@ submit_quenched_BB() {
         )
 
         for i in "${!models[@]}"; do
+            echo "============================================================================================"
+            echo "${models[i]}"
             spfbatch ../spf_reconstruct.py \
                 --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
-                --add_suffix 23-10-23-${input_corr_suffix} \
+                --add_suffix 23-12-04-${input_corr_suffix} \
                 --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow_${input_corr_suffix}.npy \
                 --min_tauT 0.24 \
                 --nproc $nproc \

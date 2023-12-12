@@ -311,7 +311,7 @@ def readin_corr_data(args):
 
 def load_PhiUV(args):
     OmegaByT_arr, g2, PhiUVByT3 = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV, args.omega_prefactor,
-                                          args.Npoints, args.Nloop, args.order, args.corr)
+                                          args.Npoints, args.Nloop, args.order, args.corr, args.mu_IR_by_T)
 
     # interpolate the UV spf for the integration. spline order: 1 linear, 2 quadratic, 3 cubic ...
     order = 3
