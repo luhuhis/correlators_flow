@@ -13,30 +13,6 @@ def smooth_max(a, b):
     return np.sqrt(a ** 2 + b ** 2)
 
 
-def add_args(parser):
-    """ arguments that are relevant for get_spf() """
-    parser.add_argument("--T_in_GeV", type=float, required=True)
-    parser.add_argument("--Nf", help="number of flavors", type=int, required=True)
-
-    parser.add_argument("--min_scale", default=1.3,
-                        help="choices: piT, 2piT, or any number in GeV. limits how far the coupling will be run down. "
-                             "From lattice calculations of the moments of quarkonium "
-                             "correlators we know that going to lower than 1.3 GeV is probably unreasonable for Nf=3.")
-    parser.add_argument("--omega_prefactor", help="mu = prefactor * omega. choices: opt, or any number.", default=1)
-    parser.add_argument("--max_type", choices=["smooth", "hard"],
-                        help="whether to use max(a,b) (hard) or sqrt(a^2+b^2) (smooth) maximum to determine the scale",
-                        default="hard")
-
-    parser.add_argument("--Npoints", default=10000, type=int, help="number of points between min and max OmegaByT")
-    parser.add_argument("--Nloop", help="number of loops", type=int, default=5)
-    parser.add_argument("--order", help="perturbative order. decide between LO or NLO.", choices=["LO", "NLO"],
-                        type=str, required=True)
-    parser.add_argument("--corr",
-                        help="decide between EE or BB correlator function forms. LO is identical but the scale we use may change.",
-                        type=str, choices=["EE", "BB"], required=True)
-    return
-
-
 def get_minscale(min_scale, T_in_GeV, Nc, Nf):
     effective_theory_thermal_scale = 4 * np.pi * T_in_GeV * np.exp(-np.euler_gamma) * np.exp(
         (-Nc + 4 * Nf * np.log(4)) / (22 * Nc - 4 * Nf))
@@ -136,40 +112,42 @@ class SpfParams:
     Npoints: int
     order: str
     corr: str
+    mu_IR_by_T: float
 
 
 def get_cBsq(params: SpfParams):
-    # TODO add a distinct parameter for the IR scale instead of reusing the min_scale? Guy prefers to use only one scale definition for everything.
-    # TODO use matched coupling instead of the perturbative one
+    # Given input parameters This function returns
+
+    # c_B^2(mu,mubarir) =  exp(int^{\mu^2}_{\mubarir^2}\gamma_0 \gsqms(\mubar)\frac{d\mubar^2}{\mubar^2})
+    # one needs g^2 across the range from mu_IR_by_T to mu
 
     maxfunc = get_maxfunc(params.max_type)
     crd = rundec.CRunDec()
 
-    # add the first point
-    g2_arr = [4. * np.pi * crd.AlphasLam(params.Lambda_MSbar, params.min_scale, params.Nf,
-                                         params.Nloop)]
-    mu_arr = [params.min_scale]  # NOTE: min_scale is in units of GeV
-    for OmegaByT in params.OmegaByT_values:
+    # Get arrays of the scale mu and coupling g^2.
+    mu_in_GeV_arr = np.asarray([maxfunc(params.min_scale, params.omega_prefactor * (OmegaByT * params.T_in_GeV) ** params.omega_exponent)
+                                for OmegaByT in params.OmegaByT_values])
 
-        scale = params.omega_prefactor * (OmegaByT * params.T_in_GeV) ** params.omega_exponent
-        mu = maxfunc(params.min_scale, scale)
+    # run g^2 from the MSBAR coupling we found by measuring the flow coupling and converting it at mu_flow/T=mu_MSBAR/T=4
+    mu0 = 4.000425807761551766e+00 * params.T_in_GeV  # TODO remove hard coding of these values and instead read them from the corresponding file
+    alphas_0 = 2.742374650650232670e+00 / (4 * np.pi)
+    g2_arr = np.asarray([4. * np.pi * crd.AlphasExact(alphas_0, mu0, mu, params.Nf, params.Nloop)
+                         for mu in mu_in_GeV_arr])
 
-        g2, _, _ = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
-        mu_arr.append(mu)
-        g2_arr.append(g2)
-    g2_arr = np.asarray(g2_arr)
-    mu_arr = np.asarray(mu_arr)
+    integrand_arr = 2 * params.gamma_0 * g2_arr / mu_in_GeV_arr
+    integrand_spline = interpolate.InterpolatedUnivariateSpline(mu_in_GeV_arr, integrand_arr, k=3, ext=2)
 
-    integrand = 2 / mu_arr * params.gamma_0 * g2_arr
-    integrand_spline = interpolate.InterpolatedUnivariateSpline(mu_arr, integrand, k=3, ext=2)
+    # Both start_scale and ir_scale are in
+    cBsq_arr = np.asarray(
+        lpd.parallel_function_eval(calc_cBsq, mu_in_GeV_arr, 128, integrand_spline, params.mu_IR_by_T * params.T_in_GeV))
 
-    cBsq = np.asarray(lpd.parallel_function_eval(calc_cBsq, mu_arr[1:], 128, integrand_spline, params.min_scale))
+    cBsq = interpolate.InterpolatedUnivariateSpline(mu_in_GeV_arr, cBsq_arr, k=3, ext=2)
 
     return cBsq
 
 
-def calc_cBsq(start_scale, integrand_spline, ir_scale):
-    integral = integrate.quad(integrand_spline, ir_scale, start_scale)[0]
+def calc_cBsq(target_scale, integrand_spline, ir_scale):
+    integral = integrate.quad(integrand_spline, ir_scale, target_scale)[0]
     return np.exp(integral)
 
 
@@ -194,7 +172,7 @@ def inner_loop(index, params: SpfParams, cBsq):
             mu_dep_part = PhiUVByT3*(1 + g2/(4*np.pi)**2*(params.Nc*first_paren - params.Nf*second_paren))
             mu_free_part = (g2**2*params.C_F)/(12*np.pi**3) * BB.get_mu_free(OmegaByT, params.Nc, params.Nf)  # from line 3 to the end of eq.(C.23)
             # mu_free_part = 0
-            PhiUVByT3 = cBsq[index] * (mu_dep_part + mu_free_part)
+            PhiUVByT3 = cBsq(OmegaByT * params.T_in_GeV) * (mu_dep_part + mu_free_part)
 
     elif params.corr == "EE":
         g2, Alphas, PhiUVByT3 = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop,
@@ -210,7 +188,8 @@ def inner_loop(index, params: SpfParams, cBsq):
     return OmegaByT, PhiUVByT3, g2
 
 
-def get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop, order, corr):
+def get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop, order, corr,
+                   mu_IR_by_T):
     if order not in ["LO", "NLO"]:
         print("Error: unknown UV spf order", order)
         exit(1)
@@ -230,14 +209,15 @@ def get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input,
 
     additional_params = SpfParams(omega_prefactor_input, OmegaByT_values, max_type, T_in_GeV, min_scale, Lambda_MSbar,
                                   Nf, Nloop, omega_prefactor, omega_exponent, Nc, r20, r21, C_F, b_0, gamma_0, Npoints,
-                                  order, corr)
+                                  order, corr, mu_IR_by_T)
 
     return additional_params
 
 
 def get_spf(Nf: int, max_type: str, min_scale_str: str, T_in_GeV: float, omega_prefactor_input, Npoints: int,
-            Nloop: int, order: str, corr: str):
-    params = get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop, order, corr)
+            Nloop: int, order: str, corr: str, mu_IR_by_T):
+    params = get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop, order, corr,
+                            mu_IR_by_T)
 
     cBsq = get_cBsq(params)
 
@@ -285,6 +265,33 @@ def save_UV_spf(args, OmegaByT_arr, g2_arr, PhiUVByT3):
     np.save(file, np.column_stack((OmegaByT_arr, PhiUVByT3)))  # format: 'omega/T rho/T^3'
 
 
+def add_args(parser):
+    """ arguments that are relevant for get_spf() """
+    parser.add_argument("--T_in_GeV", type=float, required=True)
+    parser.add_argument("--Nf", help="number of flavors", type=int, required=True)
+
+    parser.add_argument("--min_scale", default=1.3,
+                        help="choices: piT, 2piT, or any number in GeV. limits how far the coupling will be run down. "
+                             "From lattice calculations of the moments of quarkonium "
+                             "correlators we know that going to lower than 1.3 GeV is probably unreasonable for Nf=3.")
+    parser.add_argument("--omega_prefactor", help="mu = prefactor * omega. choices: opt, or any number.", default=1)
+    parser.add_argument("--max_type", choices=["smooth", "hard"],
+                        help="whether to use max(a,b) (hard) or sqrt(a^2+b^2) (smooth) maximum to determine the scale",
+                        default="hard")
+
+    parser.add_argument("--Npoints", default=10000, type=int, help="number of points between min and max OmegaByT")
+    parser.add_argument("--Nloop", help="number of loops", type=int, default=5)
+    parser.add_argument("--order", help="perturbative order. decide between LO or NLO.", choices=["LO", "NLO"],
+                        type=str, required=True)
+    parser.add_argument("--corr",
+                        help="decide between EE or BB correlator function forms. LO is identical but the scale we use may change.",
+                        type=str, choices=["EE", "BB"], required=True)
+    parser.add_argument("--mu_IR_by_T", help="the scale to which the spectral function should be run", type=float,
+                        default=np.nan)
+
+    return
+
+
 def main():
     parser = argparse.ArgumentParser()
     add_args(parser)
@@ -296,7 +303,8 @@ def main():
     args = parser.parse_args()
 
     OmegaByT_arr, g2_arr, PhiUVByT3 = get_spf(args.Nf, args.max_type, args.min_scale, args.T_in_GeV,
-                                              args.omega_prefactor, args.Npoints, args.Nloop, args.order, args.corr)
+                                              args.omega_prefactor, args.Npoints, args.Nloop, args.order, args.corr,
+                                              args.mu_IR_by_T)
 
     save_UV_spf(args, OmegaByT_arr, g2_arr, PhiUVByT3)
 
