@@ -50,6 +50,8 @@ def get_omega_prefactor(omega_prefactor, Nc, Nf, T_in_GeV, min_scale):
         b_0 = 11 / (16 * np.pi ** 2)
         omega_exponent = (1 - gamma_0 / b_0)
         omega_prefactor = (np.pi * T_in_GeV) ** (gamma_0 / b_0)
+    elif omega_prefactor == "BB_NLO_full":
+        omega_prefactor = 2 * np.exp(3/10 * (2*np.pi**2/3 - 134/9))
     else:
         omega_prefactor = float(omega_prefactor)
 
@@ -85,7 +87,18 @@ def get_lambdamsbar(Nf):
 
 
 def get_g2_and_alphas_and_lospf(crd, Lambda_MSbar, mu, Nf, Nloop, C_F, OmegaByT):
+    # Here we use the full perturbative result, running from some Lambda_MSbar
     Alphas = crd.AlphasLam(Lambda_MSbar, mu, Nf, Nloop)
+    g2 = 4. * np.pi * Alphas
+    lo_spf = g2 * C_F * OmegaByT ** 3 / 6. / np.pi
+    return g2, Alphas, lo_spf
+
+
+def get_g2_and_alphas_and_lospf_from_reference_point(crd, mu, Nf, Nloop, C_F, OmegaByT):
+    # Here we use the reference point obtained from nonperturbative gradient-flow measurements, converted to MSBAR, and then run it
+    mu0 = 4.000425807761551766e+00 * 0.472  # TODO remove hard coding of these values and instead read them from the corresponding file
+    alphas_0 = 2.742374650650232670e+00 / (4 * np.pi)
+    Alphas = crd.AlphasExact(alphas_0, mu0, mu, Nf, Nloop)
     g2 = 4. * np.pi * Alphas
     lo_spf = g2 * C_F * OmegaByT ** 3 / 6. / np.pi
     return g2, Alphas, lo_spf
@@ -167,8 +180,7 @@ def inner_loop(index, params: SpfParams, cBsq):
 
     if params.corr == "BB":
         # Note that "omega_prefactor" is actually not used here.
-        g2, Alphas, PhiUVByT3 = get_g2_and_alphas_and_lospf(crd, params.Lambda_MSbar, mu, params.Nf, params.Nloop,
-                                                            params.C_F, OmegaByT)
+        g2, Alphas, PhiUVByT3 = get_g2_and_alphas_and_lospf_from_reference_point(crd, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
 
         if params.order == "NLO":
             # === NLO ===
@@ -207,7 +219,7 @@ def get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input,
     OmegaByT_values = np.logspace(-5, 3, Npoints, base=10)
 
     mu_IR_by_T = 4 * np.pi * np.exp(1-np.euler_gamma) if mu_IR_by_T_str == "NLO" else (2 * np.pi if mu_IR_by_T_str == "LO" else np.nan)
-    print("mu_IR_by_T=", mu_IR_by_T)
+    print("mu_IR_by_T=", lpd.format_float(mu_IR_by_T))
 
     r20 = Nc * (149. / 36. - 11. * np.log(2.) / 6. - 2 * np.pi ** 2 / 3.) - Nf * (5. / 9. - np.log(2.) / 3.)
     r21 = (11. * Nc - 2. * Nf) / 12.
