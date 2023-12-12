@@ -7,7 +7,7 @@
       <paths name="influx (project level)">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/altenkort/work/correlators_flow/scripts" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/altenkort/BB_datapub_test/correlators_flow" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
