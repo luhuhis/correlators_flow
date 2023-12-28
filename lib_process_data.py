@@ -326,8 +326,21 @@ axeslinewidth = 0.5
 plot_fontsize = 11
 
 
-def set_rc_params():
-    matplotlib.pyplot.rc('font', family='cmr10', size=plot_fontsize)
+def set_rc_params(use_pgf_backend=False):
+    if use_pgf_backend:
+        # This is used for leading whitespace in legend labels. Use
+        # matplotlib.pyplot.rc('font', size=plot_fontsize)
+        from matplotlib.backends.backend_pgf import FigureCanvasPgf
+        matplotlib.backend_bases.register_backend('pdf', FigureCanvasPgf)
+        pgf_with_latex = {
+            "text.usetex": True,
+            "pgf.rcfonts": False,  # Ignore Matplotlibrc
+            "pgf.preamble": r'\usepackage{amsmath,mathtools,color}\usepackage[T1]{fontenc}\usepackage[utf8]{inputenc}',
+            "font.size": plot_fontsize  # Set the global font size here
+        }
+        matplotlib.rcParams.update(pgf_with_latex)
+    else:
+        matplotlib.pyplot.rc('font', family='cmr10', size=plot_fontsize)
     matplotlib.pyplot.rc('axes', unicode_minus=False)
     matplotlib.rcParams['axes.formatter.use_mathtext'] = True
     matplotlib.rcParams['mathtext.fontset'] = 'cm'
@@ -352,6 +365,7 @@ def set_rc_params():
     matplotlib.rcParams['legend.title_fontsize'] = plot_fontsize
 
 
+
 def apply_ax_settings(ax, xlims, ylims, xlabel, ylabel, xlabelpos=(0.98, 0.01), ylabelpos=(0.01, 0.98), tickpad=1, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle, minorticks=True):
     if xlabelpos is not None:
         ax.xaxis.set_label_coords(*xlabelpos)
@@ -371,14 +385,15 @@ def apply_ax_settings(ax, xlims, ylims, xlabel, ylabel, xlabelpos=(0.98, 0.01), 
         ax.xaxis.set_minor_locator(AutoMinorLocator(2))
     return ax
 
+
 def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98, 0.01), ylabelpos=(0.01, 0.98), tickpad=1,
                   figsize=None, UseTex=True, fig=None, subplot=111, no_ax=False,
-                  constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle, ytwinticks=True, minorticks=True):
+                  constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle, ytwinticks=True, minorticks=True, use_pgf_backend=False):
 
-    set_rc_params()
+    set_rc_params(use_pgf_backend)
     if UseTex:
         matplotlib.pyplot.rc('text', usetex=True)
-        matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath}\usepackage{mathtools}')
+        matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath,mathtools,color}')
 
     if figsize == "fullwidth":
         figsize = (15, 7)
@@ -405,12 +420,17 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98,
         axtwiny = ax.twinx()
         axtwiny.set_ylim(ax.get_ylim())
         axtwiny.tick_params(axis='y', which='both', direction='in', width=axeslinewidth, left=False, top=False, right=True, bottom=False, labelleft=False, labeltop=False,
-                        labelright=False, labelbottom=False)
+                            labelright=False, labelbottom=False)
         if minorticks:
             axtwiny.yaxis.set_minor_locator(AutoMinorLocator(2))
 
     matplotlib.rc('image', cmap='Set1')
     return fig, ax, axtwiny
+
+
+def update_ytwinticks(ax, axtwiny):
+    axtwiny.set_ylim(ax.get_ylim())
+    axtwiny.yaxis.set_minor_locator(AutoMinorLocator(2))
 
 
 # class that is used in parallel_function_eval down below
