@@ -18,6 +18,7 @@ if [ "${corr}" == "EE" ] ; then
     minscale=eff
     ylims="1 200"
     add_suffix=""
+    xlims="--xlims -0.15 4.15 --xticks 0 1 2 3 4"
 
     labels_and_models=(
         '$\text{max}_\text{NLO}$'                   "max_NLO_Nf0_T0.472_min${minscale}_wopt_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
@@ -50,10 +51,11 @@ models=()
 labels=()
 
   # "23-01-19"
-nsamples=100
+nsamples=1000
 minscale=eff
 ylims="0.1 5000"
 add_suffix=""
+xlims="--xlims -0.15 2    --xticks 0 0.5 1 1.5 2"
 
 input_corr_suffixes=(
 "ref4.0_UVLO_IRNLO"
@@ -68,7 +70,7 @@ for input_corr_suffix in "${input_corr_suffixes[@]}" ; do
     # 08-27
     # 10-01
     # 10-23
-    input_suffix="23-12-04-${input_corr_suffix}"
+    input_suffix="23-12-16-${input_corr_suffix}"
 
     # smax_NLO_Nf0_T0.472_minmu_IR_NLO_w2_100smpls_tauTgtr0.24_23-10-23-ref4.0_UVLO_IRNLO
 
@@ -108,9 +110,9 @@ fi
 
 
 plot_kappa() {
+
     ../plot_kappa.py \
---xlims -0.15 4.15 \
---xticks 0 1 2 3 4 \
+$xlims \
 --model_ids "${models[@]}" \
 --labels "${labels[@]}" \
 --basepath $basepath_work_data/quenched_1.50Tc_zeuthenFlow/${corr}/spf/ \
