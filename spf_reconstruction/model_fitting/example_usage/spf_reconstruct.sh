@@ -73,7 +73,7 @@ submit_quenched_BB() {
         "ref4.0_UVNLO_IRNLO"
     )
 
-    nsamples=100
+    nsamples=1000
     for input_corr_suffix in "${input_corr_suffixes[@]}"; do
 
         #Adjusting the minscale based on the suffix
@@ -85,8 +85,8 @@ submit_quenched_BB() {
 
         minscale="eff"
 
-        LO="--order LO   --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T"
-        NLO="--order NLO --omega_prefactor 2 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T"
+        LO="--order LO   --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type hard"
+        NLO="--order NLO --omega_prefactor 2 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type hard"
 
         models=(
             "--model max $LO"
@@ -110,7 +110,7 @@ submit_quenched_BB() {
             echo "${models[i]}"
             spfbatch ../spf_reconstruct.py \
                 --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
-                --add_suffix 23-12-04-${input_corr_suffix} \
+                --add_suffix 23-12-16-${input_corr_suffix} \
                 --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow_${input_corr_suffix}.npy \
                 --min_tauT 0.24 \
                 --nproc $nproc \
