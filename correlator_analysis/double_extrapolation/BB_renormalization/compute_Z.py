@@ -5,12 +5,16 @@ import argparse
 import lib_process_data as lpd
 import matplotlib.pyplot
 from correlator_analysis.double_extrapolation.BB_renormalization.extrapolate_coupling import ScaleFunctions
+from itertools import cycle
+
 
 # Type hints
 from nptyping import NDArray, Float64
 from typing import Literal as Shape
 
 gamma_0 = 3 / (8 * np.pi ** 2)
+use_pgf_backend = True
+backend = 'pgf'
 
 
 class ZIndividualPlotter:
@@ -22,7 +26,7 @@ class ZIndividualPlotter:
 
     def __setup_plot(self):
         self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$',
-                                                 ylabel=r'$ Z$')
+                                                 ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend)
         self.ax.set_ylim((0.5, 2))
         self.ax.set_xlim((0, 21))
 
@@ -49,7 +53,7 @@ class ZIndividualPlotter:
     def __finalize_plot(self):
         self.ax.legend(fontsize=self.fontsize, title_fontsize=self.fontsize, framealpha=0, handlelength=4)
         file = self.outputpath_plot+"/Z"+self.scale_choice.choice_label+".pdf"
-        self.fig.savefig(file)
+        self.fig.savefig(file, backend=backend)
         print("saved", file)
         matplotlib.pyplot.close(self.fig)
 
@@ -60,7 +64,8 @@ class ZIndividualPlotter:
         instance._plot()
 
 global ylims
-ylims = (0.5, 1.65)
+ylims = (0.85, 1.11)
+
 
 class ZTotalPlotter:
     def __init__(self, args, Z_containers, fontsize, scale_choices, output_suffix=""):
@@ -71,19 +76,24 @@ class ZTotalPlotter:
         self.output_suffix = output_suffix
 
     def _setup_plot(self):
-        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$',
-                                                 ylabel=r'$ Z$')
+        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$', ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend)
         global ylims
         self.ax.set_ylim(ylims)
-        self.ax.set_xlim((0, 17))
+        lpd.update_ytwinticks(self.ax, self.ax_twiny)
+        self.ax.set_xlim((5, 17))
+        self.ax.errorbar(0, 0, markersize=0, lw=0, alpha=0, label=r'$\bar{\mu}_T/T, \ \ \bar{\mu}_{\tau_\mathrm{F}}/\mu_\mathrm{F}$')
+        self.ax.set_prop_cycle(None)
 
     def _plot_grey_flow_extr_band(self):
-        self.ax.fill_between([6.66, 16],
-                             [-1, -1], [100, 100], facecolor='k', alpha=0.15, zorder=-1000)
+        self.ax.axvline(x=6.66, ymax=0.75, color='k', linestyle='--', lw=0.5, alpha=0.5, zorder=-1000)
+        self.ax.axvline(x=16, ymax=0.75, color='k', linestyle='--', lw=0.5, alpha=0.5, zorder=-1000)
+        # self.ax.axhline(y=1, color='k', linestyle=':', lw=0.5, alpha=1, zorder=-1000)
+        # self.ax.fill_between([6.66, 16], [-1, -1], [100, 100], facecolor='k', alpha=0.1, zorder=-1000)
 
     def _plot_Z(self):
-        for Z_container, scale_choice in zip(self.Z_containers, self.scale_choices):
-            self.ax.errorbar(Z_container.mu_By_T, Z_container.Z_total, label=scale_choice.choice_label_for_plot)
+        line_styles = ['-', '--']
+        for Z_container, scale_choice, line_style in zip(self.Z_containers, self.scale_choices, cycle(line_styles)):
+            self.ax.errorbar(Z_container.mu_By_T, Z_container.Z_total, label=scale_choice.choice_label_for_plot, linestyle=line_style)
 
     def _plot(self):
         self._setup_plot()
@@ -92,9 +102,9 @@ class ZTotalPlotter:
         self._finalize_plot()
 
     def _finalize_plot(self):
-        self.ax.legend(fontsize=self.fontsize, title_fontsize=self.fontsize, framealpha=0, handlelength=3)
+        self.ax.legend(fontsize=self.fontsize, title_fontsize=self.fontsize, framealpha=0, handlelength=1.5, loc="upper right", bbox_to_anchor=(1,1))
         file = self.outputpath_plot + "/Z_total" + self.output_suffix + ".pdf"
-        self.fig.savefig(file)
+        self.fig.savefig(file, backend=backend)
         print("saved", file)
         matplotlib.pyplot.close(self.fig)
 
@@ -107,10 +117,11 @@ class ZTotalPlotter:
 
 class ZTotalPlotterFlowtime(ZTotalPlotter):
     def _setup_plot(self):
-        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\sqrt{8 \tau_\text{F}}T$',
-                                                 ylabel=r'$ Z$')
+        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\sqrt{8 \tau_\text{F}}T$',
+                                                 ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend)
         global ylims
         self.ax.set_ylim(ylims)
+        lpd.update_ytwinticks(self.ax, self.ax_twiny)
         self.ax.set_xlim((0, 0.2))
 
     def _plot_grey_flow_extr_band(self):
@@ -132,7 +143,7 @@ class IntegrandPlotter:
 
     def __setup_plot(self):
         self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$',
-                                                 ylabel=r'$ \frac{T}{\mu_\mathrm{F}} \displaystyle\gamma_0 g^2$')
+                                                 ylabel=r'$ \frac{T}{\mu_\mathrm{F}} \displaystyle\gamma_0 g^2$', use_pgf_backend=use_pgf_backend)
         # self.ax.set_ylim((-0.06, 0.005))
         # self.ax.set_xlim((0, 21))
 
@@ -146,7 +157,7 @@ class IntegrandPlotter:
 
     def __finalize_plot(self):
         file = self.outputpath_plot+"/integrand.pdf"
-        self.fig.savefig(file)
+        self.fig.savefig(file, backend=backend)
         print("saved", file)
         matplotlib.pyplot.close(self.fig)
 
@@ -257,22 +268,23 @@ def parse_args():
 def get_scale_choices():
     scale_choices = []
 
-    muBarIR_by_T_choices = [2 * np.pi, 4 * np.pi * np.exp(1 - np.euler_gamma)]
+    muBarIR_by_T_choices = [4 * np.pi * np.exp(1 - np.euler_gamma), 2 * np.pi]
     muBarUV_by_muF_choices = [1., np.sqrt(4 * np.exp(-np.euler_gamma))]
     order_string = ["LO", "NLO"]
     muRef_by_T_choices = [4.,]
 
-    for UV in range(len(muBarUV_by_muF_choices)):  # UV
-        for IR in range(len(muBarIR_by_T_choices)):
+    for IR in range(len(muBarIR_by_T_choices)):
+        for UV in range(len(muBarUV_by_muF_choices)):
             for ref in range(1):
                 choice_label = "ref" + str(muRef_by_T_choices[ref])+"_UV"+order_string[UV] + "_IR" + order_string[IR]
                 muBarUV_by_muF_choice = muBarUV_by_muF_choices[UV]
                 muBarIR_by_T_choice = muBarIR_by_T_choices[IR]
                 muRef_by_T = muRef_by_T_choices[ref]
-                choice_label_for_plot = (r'$\bar{\mu}_\text{UV}/\mu_\text{F}='
-                                         + lpd.format_float_latex(muBarUV_by_muF_choice, 2, 5)
-                                         + r',\ \bar{\mu}_\text{IR}/T='
-                                         + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)+r'$')
+                choice_label_for_plot = (r'\scalebox{0.01}{\textcolor{white}{.}}$ '
+                                         + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)
+                                         + r',\ \ \ '
+                                         + lpd.format_float_latex(muBarUV_by_muF_choice, 2, 4)
+                                         + r'$')
                 # r'$\mu_\text{ref}/T='+lpd.format_float(muRef_by_T,1)
                 choice_label_for_plot_short = lpd.format_float_latex(muBarUV_by_muF_choice, 2, 5) + r',\ ' + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)
                 scale_choices.append(ScaleChoice(muRef_by_T, muBarUV_by_muF_choice, muBarIR_by_T_choice, choice_label, choice_label_for_plot, choice_label_for_plot_short))
