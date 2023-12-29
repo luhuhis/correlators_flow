@@ -96,7 +96,7 @@ def get_ylabel():
 def plot_g2_vs_1overNt2(args, general_params, cont_data_container):
     # plot continuum extrapolation at different flow times
     xlabel = r'$N_\tau^{-' + str(general_params.Ntexp) + r'}$'
-    fig3, ax3, _ = lpd.create_figure(xlabel=xlabel, ylabel=get_ylabel())
+    fig3, ax3, _ = lpd.create_figure(xlabel=xlabel, ylabel=get_ylabel(), ylims=(0.95, 3.65))
 
     xpoints = np.linspace(0, 1 / args.Nts[-1] ** general_params.Ntexp, 10)
 
@@ -117,9 +117,6 @@ def plot_g2_vs_1overNt2(args, general_params, cont_data_container):
     ax3.legend(title=r'$\displaystyle \mu_\mathrm{F}/ T$', loc="center left", bbox_to_anchor=(1, 0.5),
                **lpd.leg_err_size())
 
-    # thisylims = ax3.get_ylim()
-    # ax3.set_ylim((0, thisylims[1]*1.1))
-    ax3.set_ylim(0.95, 3.65)
     thisxlims = ax3.get_xlim()
     ax3.set_xlim((thisxlims[0], thisxlims[1] * 1.025))
 
@@ -147,14 +144,10 @@ class Plotter_g2_vs_mu:
         self.file_suffix: str = file_suffix
 
     def __setup_plot(self):
-        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=get_ylabel())
-        self.ax.set_ylim(0, 4.5)
-        self.ax.set_xlim(1, 600)
+        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=get_ylabel(), ylims=(0, 4.5), xlims=(1, 200))
         self.ax.set_xscale('log')
 
     def __finalize_plot(self):
-        self.ax.axvline(self.general_params.muUV_by_T_NLO, alpha=0.5, dashes=(2, 2), zorder=-10000, lw=self.linewidth/2, color='k')
-        self.ax.axvline(self.general_params.muUV_by_T_LO, alpha=0.5, dashes=(2, 2), zorder=-10000, lw=self.linewidth/2, color='k')
         self.ax.legend(**lpd.leg_err_size(), loc="upper right", bbox_to_anchor=(1, 1), handlelength=1, fontsize=8, framealpha=0)
         file = self.args.outputpath_plot + "g2" + self.file_suffix + ".pdf"
         print("saving", file)
@@ -169,38 +162,41 @@ class Plotter_g2_vs_mu:
 
     def __plot_lattice_data(self):
         for i, Nt in enumerate(self.args.Nts):
-            self.ax.errorbar(self.raw_data_container.muF_by_T_arr[i], self.raw_data_container.g2_arr[i], fmt='-',
-                             lw=self.linewidth, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$', zorder=-i - 10)
+            self.ax.errorbar(self.raw_data_container.muF_by_T_arr[i], self.raw_data_container.g2_arr[i], fmt=':',
+                             lw=self.linewidth*0.75, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$ (flow)', zorder=-i - 10)
 
     def __plot_grey_flow_extr_band(self):
+        self.ax.axvline(self.general_params.muUV_by_T_NLO, alpha=0.5, dashes=(2, 2), zorder=-10000, lw=self.linewidth/2, color='k')
+        self.ax.axvline(self.general_params.muUV_by_T_LO, alpha=0.5, dashes=(2, 2), zorder=-10000, lw=self.linewidth/2, color='k')
         self.ax.fill_between([self.general_params.min_muF_by_T_in_flow_extr, self.general_params.max_muF_by_T_in_flow_extr],
                              [-1, -1], [100, 100], facecolor='k', alpha=0.15, zorder=-1000)
 
     def __plot_cont(self):
         cont_data = self.cont_data_container.g2_cont[:, 0]
         self.ax.errorbar(self.cont_data_container.muF_by_T_cont, cont_data, fmt='-', markersize=0, lw=self.linewidth,
-                         label=r'flow', zorder=-1)
+                         label=r'cont. (flow)', zorder=-1)
 
     def __plot_pert_run_from_converted_g2MSbar(self):
         for data in self.list_of_pertRun_MSBar_data_container:
-            self.ax.errorbar(data.mubar_by_T, data.g2_MSBAR_pert_run(data.mubar_by_T), fmt='--', markersize=0,
+            self.ax.errorbar(data.mubar_by_T, data.g2_MSBAR_pert_run(data.mubar_by_T), fmt='-', markersize=0,
                              lw=self.linewidth, zorder=(int(data.mubar_by_T[0])) + 20,
-                             label=r'\begin{flushleft}$\text{flow}\rightarrow\overline{\text{MS}}$ at ' + r' $\frac{\mu_\text{F}}{T}=' + lpd.format_float(
-                             data.mubar_by_T[0], 1) + r'$ \newline with ' + str(
+                             label=r'\begin{flushleft}$\text{cont. (flow)}\rightarrow\overline{\text{MS}}$ \newline at ' + r' ${\mu_\text{F}}/{T}=' + lpd.format_float(
+                             data.mubar_by_T[0], 1) + r'$, \newline then ' + str(
                              data.nloop) + r'-loop run \end{flushleft}')
 
     def __plot_MSBAR(self):
         self.ax.errorbar(self.msbar_data_container.mubar_by_T,
                     self.msbar_data_container.g2_MSBAR_spline(self.msbar_data_container.mubar_by_T),
-                    fmt='-', markersize=0, lw=self.linewidth, label=r'$\text{flow}\rightarrow\overline{\text{MS}}$')
+                    fmt='-', markersize=0, lw=self.linewidth, label=r'$\text{cont. (flow)}\rightarrow\overline{\text{MS}}$')
 
     def _plot(self):
         self.__setup_plot()
-        self.__plot_grey_flow_extr_band()
-        self.__plot_lattice_data()
-        self.__plot_cont()
-        self.__plot_MSBAR()
+        # self.__plot_grey_flow_extr_band()
         self.__plot_pert_run_from_converted_g2MSbar()
+        self.__plot_MSBAR()
+        self.__plot_cont()
+        self.__plot_lattice_data()
+
         # self.__plot_pert_g2(ax, np.geomspace(2, muB_by_T, 200))
         self.__finalize_plot()
 

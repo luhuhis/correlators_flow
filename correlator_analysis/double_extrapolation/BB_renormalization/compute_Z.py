@@ -72,11 +72,11 @@ class ZTotalPlotter:
         self.scale_choices = scale_choices
         self.output_suffix = output_suffix
         self.xlims_flow_extr_band = [6.666, 16]
-        self.ylims = (0.86, 1.07)
+        self.ylims = (0.86, 1.075)
         self.line_styles = ['-', '--']
         self.legend_loc = "lower right"
         self.legend_bbox_to_anchor = (1, 0.15)
-        self.xlims = (4, 25)
+        self.xlims = (5, 22.5)
 
     def _create_legend_title(self):
         # Aligned legend title (dummy entry)
@@ -125,10 +125,10 @@ class ZTotalPlotterFlowtime(ZTotalPlotter):
         self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\sqrt{8 \tau_\mathrm{F}}T$', ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend, ylims=self.ylims, xlims=self.xlims)
 
         # Overwrite some options
-        self.xlims_flow_extr_band = [1/16, 1/6.666]
+        self.xlims_flow_extr_band = [1/self.xlims_flow_extr_band[1], 1/self.xlims_flow_extr_band[0]]
         self.legend_loc = "upper right"
         self.legend_bbox_to_anchor = None
-        self.ax.set_xticks([0.05, 0.1, 0.15, 0.2])
+        self.ax.set_xticks([0.05, 0.1, 0.15])
 
     def _plot_Z(self):
         for Z_container, scale_choice, line_style in zip(self.Z_containers, self.scale_choices, cycle(self.line_styles)):
