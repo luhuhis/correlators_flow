@@ -13,8 +13,6 @@ if [ -z "$qcdtype" ] || [ -z "$corr" ] || [ -z "$basepath_work_data" ] || [ -z "
     exit
 fi
 
-# TODO rename Zf2 to Z_match
-
 (
     cd "$(dirname $0)" || exit
 
@@ -30,10 +28,10 @@ fi
                 --min_FlowradiusBytauT 0.25 \
                 --basepath $basepath_work_data --basepath_plot $basepath_plot \
                 --use_tex --min_tauT_plot 0.25 \
-                $Zf2file $noextr $output_suffix --nproc $nproc
+                $Zfile $noextr $output_suffix --nproc $nproc
         }
 
-        Zf2file=""
+        Zfile=""
         ylims="2.2 4"
 
         if [ "$corr" == "BB" ]; then
@@ -45,12 +43,12 @@ fi
             output_suffix="--output_suffix _no_extr"
             quenched_extr
 
-            # now plot for each Zf2 file
+            # now plot for each Z file
             noextr=""
-            Zf2filesuffixes=("ref4.0_UVNLO_IRLO" "ref4.0_UVNLO_IRNLO" "ref4.0_UVLO_IRLO" "ref4.0_UVLO_IRNLO")
-            for Zf2filesuffix in "${Zf2filesuffixes[@]}"; do
-                Zf2file="--Zf2_file $basepath_work_data/$qcdtype/coupling/Z_match_${Zf2filesuffix}.dat"
-                output_suffix="--output_suffix _relflow_${Zf2filesuffix}"
+            Zfilesuffixes=("ref4.0_UVNLO_IRLO" "ref4.0_UVNLO_IRNLO" "ref4.0_UVLO_IRLO" "ref4.0_UVLO_IRNLO")
+            for Zfilesuffix in "${Zfilesuffixes[@]}"; do
+                Zfile="--Z_file $basepath_work_data/$qcdtype/coupling/Z_match_${Zfilesuffix}.dat"
+                output_suffix="--output_suffix _relflow_${Zfilesuffix}"
             quenched_extr
             done
         else

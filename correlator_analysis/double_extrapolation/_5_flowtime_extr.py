@@ -41,7 +41,7 @@ def plot_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_extr, indice
     displaystyle = '' if not args.use_tex else r'\displaystyle'
     ylims = (2.5, 3.8) if not args.custom_ylims else args.custom_ylims
     ylabel_prefix = ""
-    if args.Zf2_file is not None:
+    if args.Z_file is not None:
         ylabel_prefix = r'Z_\text{match}'
     fig, ax, _ = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{'+ylabel_prefix+r'G^\text{flow}'+lpd.get_corr_subscript(args.corr)+r'}{G^\text{norm}}$',
                                        xlabel=r'$'+displaystyle+r'{8\tau_\mathrm{F}}/{\tau^2}$')
@@ -191,8 +191,8 @@ def load_data(args, basepath, flowsteps):  # TODO flowtimes
         print(cont_samples.shape)
     n_samples = len(cont_samples)
 
-    if args.Zf2_file is not None:
-        sqrt8taufT, Z = np.loadtxt(args.Zf2_file, unpack=True)
+    if args.Z_file is not None:
+        sqrt8taufT, Z = np.loadtxt(args.Z_file, unpack=True)
 
         ntau_half = cont_samples.shape[2]
         nflow = cont_samples.shape[1]
@@ -235,7 +235,7 @@ def parse_args():
     parser.add_argument('--temp_subfolder', help="suffix for input path, to incorporate subfolders for different temperatures", default="", type=str)
     parser.add_argument('--basepath', help='where to look for files', type=str)
     parser.add_argument('--basepath_plot', help='where to save plots', type=str)
-    parser.add_argument('--Zf2_file', help="Z_f^2 for BB correlator renormalization", default=None, type=str)
+    parser.add_argument('--Z_file', help="Z_f^2 for BB correlator renormalization", default=None, type=str)
     parser.add_argument('--output_suffix', help="add this string to the end of plot file names", default="", type=str)
     parser.add_argument('--slope_bounds', help="bound the slope fit parameter between these values", default=(None, None), nargs=2, type=float)
     parser.add_argument('--nproc', type=int, default=20)
@@ -270,7 +270,7 @@ def plot_combined_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_ext
     displaystyle = '' if not args.use_tex else r'\displaystyle'
     ylims = (2.5, 3.8) if not args.custom_ylims else args.custom_ylims
     ylabel_prefix = ""
-    if args.Zf2_file is not None:
+    if args.Z_file is not None:
         ylabel_prefix = r'Z_f^2 Z_K^2'
     fig, ax, _ = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{'+ylabel_prefix+r'G'+lpd.get_corr_subscript(args.corr)+r'}{G^\text{norm}}$',
                                        xlabel=r'$'+displaystyle+r'{8\tau_\mathrm{F}}/{\tau^2}$')
