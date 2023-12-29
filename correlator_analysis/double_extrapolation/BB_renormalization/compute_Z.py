@@ -63,9 +63,6 @@ class ZIndividualPlotter:
         instance = cls(*args)
         instance._plot()
 
-global ylims
-ylims = (0.85, 1.11)
-
 
 class ZTotalPlotter:
     def __init__(self, args, Z_containers, fontsize, scale_choices, output_suffix=""):
@@ -74,35 +71,41 @@ class ZTotalPlotter:
         self.fontsize = fontsize
         self.scale_choices = scale_choices
         self.output_suffix = output_suffix
+        self.xlims_flow_extr_band = [6.666, 16]
+        self.ylims = (0.86, 1.07)
+        self.line_styles = ['-', '--']
+        self.legend_loc = "lower right"
+        self.legend_bbox_to_anchor = (1, 0.15)
+        self.xlims = (4, 25)
 
-    def _setup_plot(self):
-        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$', ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend)
-        global ylims
-        self.ax.set_ylim(ylims)
-        lpd.update_ytwinticks(self.ax, self.ax_twiny)
-        self.ax.set_xlim((5, 17))
+    def _create_legend_title(self):
+        # Aligned legend title (dummy entry)
         self.ax.errorbar(0, 0, markersize=0, lw=0, alpha=0, label=r'$\bar{\mu}_T/T, \ \ \bar{\mu}_{\tau_\mathrm{F}}/\mu_\mathrm{F}$')
         self.ax.set_prop_cycle(None)
 
+    def _setup_plot(self):
+        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$', ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend, ylims=self.ylims, xlims=self.xlims)
+        self.ax.set_xticks([5, 10, 15, 20])
+
     def _plot_grey_flow_extr_band(self):
-        self.ax.axvline(x=6.66, ymax=0.75, color='k', linestyle='--', lw=0.5, alpha=0.5, zorder=-1000)
-        self.ax.axvline(x=16, ymax=0.75, color='k', linestyle='--', lw=0.5, alpha=0.5, zorder=-1000)
+        self.ax.axvline(x=self.xlims_flow_extr_band[0], ymax=1, color='k', linestyle=':', lw=0.5, alpha=1, zorder=-1000)
+        self.ax.axvline(x=self.xlims_flow_extr_band[1], ymax=1, color='k', linestyle=':', lw=0.5, alpha=1, zorder=-1000)
         # self.ax.axhline(y=1, color='k', linestyle=':', lw=0.5, alpha=1, zorder=-1000)
         # self.ax.fill_between([6.66, 16], [-1, -1], [100, 100], facecolor='k', alpha=0.1, zorder=-1000)
 
     def _plot_Z(self):
-        line_styles = ['-', '--']
-        for Z_container, scale_choice, line_style in zip(self.Z_containers, self.scale_choices, cycle(line_styles)):
+        for Z_container, scale_choice, line_style in zip(self.Z_containers, self.scale_choices, cycle(self.line_styles)):
             self.ax.errorbar(Z_container.mu_By_T, Z_container.Z_total, label=scale_choice.choice_label_for_plot, linestyle=line_style)
 
     def _plot(self):
         self._setup_plot()
+        self._create_legend_title()
         self._plot_grey_flow_extr_band()
         self._plot_Z()
         self._finalize_plot()
 
     def _finalize_plot(self):
-        self.ax.legend(fontsize=self.fontsize, title_fontsize=self.fontsize, framealpha=0, handlelength=1.5, loc="upper right", bbox_to_anchor=(1,1))
+        self.ax.legend(handlelength=1.5, framealpha=1, loc=self.legend_loc, bbox_to_anchor=self.legend_bbox_to_anchor).set_zorder(-1)
         file = self.outputpath_plot + "/Z_total" + self.output_suffix + ".pdf"
         self.fig.savefig(file, backend=backend)
         print("saved", file)
@@ -116,22 +119,20 @@ class ZTotalPlotter:
 
 
 class ZTotalPlotterFlowtime(ZTotalPlotter):
-    def _setup_plot(self):
-        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\sqrt{8 \tau_\text{F}}T$',
-                                                 ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend)
-        global ylims
-        self.ax.set_ylim(ylims)
-        lpd.update_ytwinticks(self.ax, self.ax_twiny)
-        self.ax.set_xlim((0, 0.2))
 
-    def _plot_grey_flow_extr_band(self):
-        self.ax.fill_between([1/16, 1/6.66],
-                             [-1, -1], [100, 100], facecolor='k', alpha=0.15, zorder=-1000)
+    def _setup_plot(self):
+        self.xlims = (1/self.xlims[1], 1/self.xlims[0])
+        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\sqrt{8 \tau_\mathrm{F}}T$', ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend, ylims=self.ylims, xlims=self.xlims)
+
+        # Overwrite some options
+        self.xlims_flow_extr_band = [1/16, 1/6.666]
+        self.legend_loc = "upper right"
+        self.legend_bbox_to_anchor = None
+        self.ax.set_xticks([0.05, 0.1, 0.15, 0.2])
 
     def _plot_Z(self):
-        for Z_container, scale_choice in zip(self.Z_containers, self.scale_choices):
-            self.ax.errorbar(np.flip(1/Z_container.mu_By_T), np.flip(Z_container.Z_total),
-                             label=scale_choice.choice_label_for_plot)
+        for Z_container, scale_choice, line_style in zip(self.Z_containers, self.scale_choices, cycle(self.line_styles)):
+            self.ax.errorbar(np.flip(1/Z_container.mu_By_T), np.flip(Z_container.Z_total), label=scale_choice.choice_label_for_plot, linestyle=line_style)
 
 
 class IntegrandPlotter:
@@ -144,8 +145,6 @@ class IntegrandPlotter:
     def __setup_plot(self):
         self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$',
                                                  ylabel=r'$ \frac{T}{\mu_\mathrm{F}} \displaystyle\gamma_0 g^2$', use_pgf_backend=use_pgf_backend)
-        # self.ax.set_ylim((-0.06, 0.005))
-        # self.ax.set_xlim((0, 21))
 
     def __plot_integrand(self):
         counter = 0
