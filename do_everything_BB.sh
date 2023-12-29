@@ -50,34 +50,20 @@ tar -xzf AnalysisToolbox.tar.gz
 # Add the AnalysisToolbox folder to the PYTHONPATH.
 export PYTHONPATH=$PYTHONPATH:$(pwd)/AnalysisToolbox
 
-
-# Create new directory for input data and change into it
-mkdir input && cd input
-
-# Unzip raw data (gradientFlow output from SIMULATeQCD). This will create a new folder "hisq_ms5_zeuthenFlow".
-tar -xzf ../input_data.tar.gz
-
-# Add the *parent* directory of the new folder (i.e., the "input" directory where you called the "tar" command) to the
-# environment. This should usually be $(pwd).
-# For example, if you called tar in the folder /home/data/input, then a new folder
-# /home/data/input/hisq_ms5_zeuthenFlow has been created. The parent of that directory is then /home/data/input.
-export BASEPATH_RAW_DATA=$(pwd)
-
-# We also need to add another subdirectory to the environment
-export G_PERT_LO_DIR=$BASEPATH_RAW_DATA/quenched_1.50Tc_zeuthenFlow/pert_LO
-
-# Now, create two directories where you want to store the data of the intermediate steps
-# (resampling, interpolation, extrapolations, ...) as well as final output data and figures.
-
-cd ..
+# Create new directories for input data, figures and output data, and add them to the environment.
+mkdir input
 mkdir output_data
 mkdir figures
-
+export BASEPATH_RAW_DATA=$(pwd)/input
 export BASEPATH_WORK_DATA=$(pwd)/output_data
 export BASEPATH_PLOT=$(pwd)/figures
+export G_PERT_LO_DIR=$BASEPATH_RAW_DATA/quenched_1.50Tc_zeuthenFlow/pert_LO
+export NPROC=1  # Specify how many processes can be created for parallelization.
 
-# Specify how many processes can be created for parallelization.
-export NPROC=1
+# Go to input folder, unzip raw data (gradientFlow output from SIMULATeQCD). This will create a new folder "hisq_ms5_zeuthenFlow". Then exit the folder.
+cd input
+tar -xzf ../input_data.tar.gz
+cd ..
 
 # Note that the finished figures are also contained in "figures.tar.gz" and can just be extracted for convenience,
 # skipping the whole data processing steps.
