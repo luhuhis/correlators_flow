@@ -2,7 +2,7 @@
 
 basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}"
 basepath_plot="${2:-"/work/home/altenkort/work/correlators_flow/plots/"}"
-
+selector="${3:-"all"}"
 
 plot_hisq_thesis(){
 
@@ -125,7 +125,7 @@ plot_quenched_BB(){
         0.482 \
         --Tc_in_GeV 0.315 \
         --xlims 1 3.1 \
-        --ylims 0 4.5 \
+        --ylims 0 3.4 \
         --plot_BB_quenched_lit --corr BB
 
 }
@@ -133,10 +133,21 @@ plot_quenched_BB(){
 (
     cd "$(dirname $0)" || exit
 
-    plot_hisq
-    #plot_hisq_thesis &
-    #plot_quenched_EE &
-    #plot_quenched_BB &
-
+    if [ "$selector" == "all" ]; then
+        plot_hisq &
+        plot_hisq_thesis &
+        plot_quenched_EE &
+        plot_quenched_BB &
+    elif [ "$selector" == "hisq" ]; then
+        plot_hisq &
+    elif [ "$selector" == "hisq_thesis" ]; then
+        plot_hisq_thesis &
+    elif [ "$selector" == "EE" ]; then
+        plot_quenched_EE &
+    elif [ "$selector" == "BB" ]; then
+        plot_quenched_BB &
+    else
+        echo "Error: unknown selector"
+    fi
     wait
 )
