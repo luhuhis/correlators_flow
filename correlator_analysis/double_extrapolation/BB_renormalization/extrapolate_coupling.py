@@ -92,7 +92,6 @@ def get_ylabel():
     return r'$ \displaystyle g^{2}$'
 
 
-# TODO refactor this into a class?
 def plot_g2_vs_1overNt2(args, general_params, cont_data_container):
     # plot continuum extrapolation at different flow times
     xlabel = r'$N_\tau^{-' + str(general_params.Ntexp) + r'}$'
