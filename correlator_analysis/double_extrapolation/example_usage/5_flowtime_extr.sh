@@ -36,7 +36,7 @@ fi
 
         if [ "$corr" == "BB" ]; then
 
-            ylims="2.5 3.6"
+            ylims="2.55 3.8"
 
             # first just plot without extrapolation
             noextr="--no_extr"
