@@ -242,22 +242,6 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # spffit.npy             | Median spectral function with left/right 34th percentiles as function of omega/T
 
 
-# 2.3 Create correlator plots at fixed normalized flow time
-# TODO what aboutt his part? remove?
-./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
-
-# Afterwards, the following files have been created in
-# $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
-
-# BB_relflow_hisq_final.pdf | Fig. 2 in the paper
-# BB_relflow_hisq_0.25.pdf  | Top panel of Fig. 1 in the paper
-# BB_relflow_hisq_0.30.pdf  | Bottom panel of Fig. 1 in the paper
-
-# and in
-# $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/<conftype>/relflow/
-
-# BB_relflow_0.25.dat       | BB correlator at normalized flow time 0.25 (see Fig. 1)
-# BB_relflow_0.30.dat       | BB correlator at normalized flow time 0.30 (see Fig. 1)
 
 
 # 2.4.1 Plot spectral reconstruction fit results #1
@@ -294,7 +278,7 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 
 
 # 2.4.3 Plot spectral reconstruction fit results #3
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT BB
 
 # Afterwards, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
