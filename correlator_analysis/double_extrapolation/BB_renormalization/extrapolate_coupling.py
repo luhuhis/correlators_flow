@@ -88,14 +88,10 @@ class PertRunMSBarDataContainer:
     nloop: int
 
 
-def get_ylabel():
-    return r'$ \displaystyle g^{2}$'
-
-
 def plot_g2_vs_1overNt2(args, general_params, cont_data_container):
     # plot continuum extrapolation at different flow times
     xlabel = r'$N_\tau^{-' + str(general_params.Ntexp) + r'}$'
-    fig3, ax3, _ = lpd.create_figure(xlabel=xlabel, ylabel=get_ylabel(), ylims=(0.95, 3.65))
+    fig3, ax3, _ = lpd.create_figure(xlabel=xlabel, ylabel=r'$ \displaystyle g^{2}_\text{flow}$', ylims=(0.95, 3.65))
 
     xpoints = np.linspace(0, 1 / args.Nts[-1] ** general_params.Ntexp, 10)
 
@@ -143,7 +139,7 @@ class Plotter_g2_vs_mu:
         self.file_suffix: str = file_suffix
 
     def __setup_plot(self):
-        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=get_ylabel(), ylims=(0, 4.5), xlims=(1, 200))
+        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=r'$ \displaystyle g^{2}$', ylims=(0, 4.5), xlims=(1, 200))
         self.ax.set_xscale('log')
 
     def __finalize_plot(self):
