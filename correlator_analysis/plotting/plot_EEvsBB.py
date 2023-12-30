@@ -16,7 +16,7 @@ class Plotter:
     def _setup_plot(self):
         self.fig, self.ax, self.plots = lpd.create_figure(xlims=(0.235, 0.51), ylims=(2.5, 3.75), xlabel=r'$\tau T$',
                                                           ylabel=r'$\displaystyle \frac{G_X}{G^\mathrm{norm}}$')
-        self.ax.errorbar(0, 0, label=r'$X,\, \frac{\bar{\mu}_\text{UV}}{\mu_\text{F}},\ \ \frac{\bar{\mu}_\text{IR}}{T}$',
+        self.ax.errorbar(0, 0, label=r'$X,\, \frac{\bar{\mu}_{\tau_\mathrm{F}}}{\mu_\text{F}},\ \ \frac{\bar{\mu}_T}{T}$',
                          markersize=0, alpha=0, lw=0)
         self.ax.set_prop_cycle(None)
 
@@ -38,7 +38,7 @@ class Plotter:
         self._finalize_plot()
 
     def _finalize_plot(self):
-        self.ax.legend(**lpd.leg_err_size(), fontsize=8, title_fontsize=8, loc="lower right",
+        self.ax.legend(**lpd.leg_err_size(), fontsize=10, title_fontsize=10, loc="lower right",
                        bbox_to_anchor=(1, 0.05), framealpha=0)
 
         self.fig.savefig(self.filename)
