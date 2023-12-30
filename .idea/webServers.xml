@@ -3,7 +3,7 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="8722a06c-395a-4651-b5b8-08c062dc3137" name="influx (project level)">
-        <fileTransfer accessType="SFTP" host="influx2.physik.uni-bielefeld.de" port="22" sshConfigId="7ca84997-d291-435b-8857-579b394aec39" sshConfig="altenkort@influx2.physik.uni-bielefeld.de:22 agent" authAgent="true">
+        <fileTransfer accessType="SFTP" host="pycharm-influx" port="22" sshConfigId="7ca84997-d291-435b-8857-579b394aec39" sshConfig="altenkort@pycharm-influx:22 agent" authAgent="true">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" connections="1" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>
