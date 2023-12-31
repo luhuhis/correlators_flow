@@ -77,6 +77,7 @@ class ZTotalPlotter:
         self.legend_loc = "lower right"
         self.legend_bbox_to_anchor = (1, 0.15)
         self.xlims = (5, 22.5)
+        self.ylabel = r'$ Z_\mathrm{match}$'
 
     def _create_legend_title(self):
         # Aligned legend title (dummy entry)
@@ -84,7 +85,7 @@ class ZTotalPlotter:
         self.ax.set_prop_cycle(None)
 
     def _setup_plot(self):
-        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$', ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend, ylims=self.ylims, xlims=self.xlims)
+        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$', ylabel=self.ylabel, use_pgf_backend=use_pgf_backend, ylims=self.ylims, xlims=self.xlims)
         self.ax.set_xticks([5, 10, 15, 20])
 
     def _plot_grey_flow_extr_band(self):
@@ -122,7 +123,7 @@ class ZTotalPlotterFlowtime(ZTotalPlotter):
 
     def _setup_plot(self):
         self.xlims = (1/self.xlims[1], 1/self.xlims[0])
-        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\sqrt{8 \tau_\mathrm{F}}T$', ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend, ylims=self.ylims, xlims=self.xlims)
+        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\sqrt{8 \tau_\mathrm{F}}T$', ylabel=self.ylabel, use_pgf_backend=use_pgf_backend, ylims=self.ylims, xlims=self.xlims)
 
         # Overwrite some options
         self.xlims_flow_extr_band = [1/self.xlims_flow_extr_band[1], 1/self.xlims_flow_extr_band[0]]
@@ -136,11 +137,11 @@ class ZTotalPlotterFlowtime(ZTotalPlotter):
 
 
 class IntegrandPlotter:
-    def __init__(self, args, data, fontsize, fmts):
+    def __init__(self, args, data, fontsize):
         self.data: CouplingContainer = data
         self.outputpath_plot = args.outputpath_plot
         self.fontsize = fontsize
-        self.fmts = fmts
+        self.fmts = ['-', '-', '--', ':']
 
     def __setup_plot(self):
         self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$',
@@ -270,7 +271,7 @@ def get_scale_choices():
     muBarIR_by_T_choices = [4 * np.pi * np.exp(1 - np.euler_gamma), 2 * np.pi]
     muBarUV_by_muF_choices = [1., np.sqrt(4 * np.exp(-np.euler_gamma))]
     order_string = ["LO", "NLO"]
-    muRef_by_T_choices = [4.,]
+    muRef_by_T_choices = [6.28, ]  #3.14,
 
     for IR in range(len(muBarIR_by_T_choices)):
         for UV in range(len(muBarUV_by_muF_choices)):
@@ -305,9 +306,8 @@ def main():
     scale_choices = get_scale_choices()
 
     fontsize = 8
-    fmts = ['-', '-', '--', ':']
 
-    IntegrandPlotter.plot(args, coupling_container, fontsize, fmts)
+    IntegrandPlotter.plot(args, coupling_container, fontsize)
 
     Z_containers = [ZFactorComputer.compute(coupling_container, scale_choice) for scale_choice in scale_choices]
     for Z_container, scale_choice in zip(Z_containers, scale_choices):
