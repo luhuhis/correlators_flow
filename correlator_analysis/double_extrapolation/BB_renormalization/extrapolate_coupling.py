@@ -90,7 +90,7 @@ class PertRunMSBarDataContainer:
 def plot_g2_vs_1overNt2(args, general_params, cont_data_container):
     # plot continuum extrapolation at different flow times
     xlabel = r'$N_\tau^{-' + str(general_params.Ntexp) + r'}$'
-    fig3, ax3, _ = lpd.create_figure(xlabel=xlabel, ylabel=r'$ \displaystyle \alpha_\text{flow}$', ylims=(0.95/(np.pi*4), 3.65/(np.pi*4)))
+    fig3, ax3, _ = lpd.create_figure(xlabel=xlabel, ylabel=r'$ \displaystyle \alpha_\text{flow}$', ylims=(0.95/(np.pi*4), 3.55/(np.pi*4)))
 
     xpoints = np.linspace(0, 1 / args.Nts[-1] ** general_params.Ntexp, 10)
 
@@ -138,15 +138,8 @@ class Plotter_g2_vs_mu:
         self.file_suffix: str = file_suffix
 
     def __setup_plot(self):
-        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=r'$ \displaystyle \alpha_X$', ylims=(0, 4.5/(np.pi*4)), xlims=(1, 200))
+        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=None, ylims=(0, 4.5/(np.pi*4)), xlims=(1, 200))
         self.ax.set_xscale('log')
-
-    def __finalize_plot(self):
-        self.ax.legend(**lpd.leg_err_size(), title=r'$X=$', loc="upper right", bbox_to_anchor=(1.01, 1.01), handlelength=1, title_fontsize=9, fontsize=9, framealpha=0)
-        file = self.args.outputpath_plot + "g2" + self.file_suffix + ".pdf"
-        print("saving", file)
-        lpd.create_folder(os.path.dirname(file))
-        self.fig.savefig(file)
 
     def __plot_pert_g2(self, mus, suffix="pert"):
         g2s = np.asarray([lpd.get_g2_pert(mu * self.general_params.T_in_GeV, Nf=0, Nloop=3) for mu in mus])
@@ -157,7 +150,7 @@ class Plotter_g2_vs_mu:
     def __plot_lattice_data(self):
         for i, Nt in enumerate(self.args.Nts):
             self.ax.errorbar(self.raw_data_container.muF_by_T_arr[i], self.raw_data_container.g2_arr[i]/(np.pi*4), fmt=':',
-                             lw=self.linewidth*0.75, markersize=0, label=r'flow ($N_\tau = ' + str(Nt) + r'$)', zorder=-i - 10)
+                             lw=self.linewidth*0.75, markersize=0, label=r'$\alpha_\text{flow}$ ($N_\tau = ' + str(Nt) + r'$)', zorder=-i - 10)
 
     def __plot_grey_flow_extr_band(self):
         self.ax.axvline(self.general_params.muUV_by_T_NLO, alpha=0.5, dashes=(2, 2), zorder=-10000, lw=self.linewidth/2, color='k')
@@ -168,20 +161,29 @@ class Plotter_g2_vs_mu:
     def __plot_cont(self):
         cont_data = self.cont_data_container.g2_cont[:, 0]
         self.ax.errorbar(self.cont_data_container.muF_by_T_cont, cont_data/(np.pi*4), fmt='-', markersize=0, lw=self.linewidth,
-                         label=r'flow (cont.)', zorder=-1)
+                         label=r'$\alpha_\text{flow}$ (cont.\ extr.)', zorder=-1)
 
     def __plot_pert_run_from_converted_g2MSbar(self):
         for data in self.list_of_pertRun_MSBar_data_container:
             self.ax.errorbar(data.mubar_by_T, data.g2_MSBAR_pert_run(data.mubar_by_T)/(np.pi*4), fmt='-', markersize=0,
                              lw=self.linewidth, zorder=(int(data.mubar_by_T[0])) + 20,
-                             label=r'\begin{flushleft}$\overline{\text{MS}}$ via Eq.\,19 at \newline  ' + r' ${\mu_\text{F}}/{T}=' + lpd.format_float(
-                             data.reference_muF_by_T, 2) + r'$, then \newline run via ' + str(
+                             label=r'\begin{flushleft}$\alpha_s$ via Eq.\,20 at \newline  ' + r' ${\mu_\text{F}}=\bar{\mu}_\mathrm{ref}'
+                                   # + lpd.format_float(data.reference_muF_by_T, 2) + 
+                                   r'$, then \newline run via ' + str(
                              data.nloop) + r'-loop $\beta$-fct. \end{flushleft}')
+            self.ax.axvline(x=data.reference_muF_by_T, alpha=1, dashes=(1, 1), zorder=-10000, lw=self.linewidth/2, color='k')
 
     def __plot_MSBAR(self):
         self.ax.errorbar(self.msbar_data_container.mubar_by_T,
                     self.msbar_data_container.g2_MSBAR_spline(self.msbar_data_container.mubar_by_T)/(np.pi*4),
-                    fmt='-', markersize=0, lw=self.linewidth, label=r'$\overline{\text{MS}}$ via Eq.\,19')
+                    fmt='-', markersize=0, lw=self.linewidth, label=r'$\alpha_s$ via Eq.\,20')
+
+    def __finalize_plot(self):
+        self.ax.legend(**lpd.leg_err_size(), loc="upper right", bbox_to_anchor=(1.01, 1.01), handlelength=1, title_fontsize=9, fontsize=10, framealpha=0)
+        file = self.args.outputpath_plot + "g2" + self.file_suffix + ".pdf"
+        print("saving", file)
+        lpd.create_folder(os.path.dirname(file))
+        self.fig.savefig(file)
 
     def _plot(self):
         self.__setup_plot()
@@ -190,7 +192,8 @@ class Plotter_g2_vs_mu:
         self.__plot_pert_run_from_converted_g2MSbar()
         self.__plot_MSBAR()
         self.__plot_cont()
-        self.__plot_lattice_data()
+        if False:
+            self.__plot_lattice_data()
 
         # self.__plot_pert_g2(ax, np.geomspace(2, muB_by_T, 200))
         self.__finalize_plot()
