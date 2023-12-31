@@ -45,7 +45,7 @@ fi
 
             # now plot for each Z file
             noextr=""
-            Zfilesuffixes=("ref4.0_UVNLO_IRLO" "ref4.0_UVNLO_IRNLO" "ref4.0_UVLO_IRLO" "ref4.0_UVLO_IRNLO")
+            Zfilesuffixes=("ref6.28_UVNLO_IRLO" "ref6.28_UVNLO_IRNLO" "ref6.28_UVLO_IRLO" "ref6.28_UVLO_IRNLO")
             for Zfilesuffix in "${Zfilesuffixes[@]}"; do
                 Zfile="--Z_file $basepath_work_data/$qcdtype/coupling/Z_match_${Zfilesuffix}.dat"
                 output_suffix="--output_suffix _relflow_${Zfilesuffix}"

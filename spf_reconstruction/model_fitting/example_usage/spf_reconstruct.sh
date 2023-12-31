@@ -67,10 +67,10 @@ submit_quenched_BB() {
 
     #    OmegaByT_UV=3.1416
     input_corr_suffixes=(
-        "ref4.0_UVLO_IRLO"
-        "ref4.0_UVLO_IRNLO"
-        "ref4.0_UVNLO_IRLO"
-        "ref4.0_UVNLO_IRNLO"
+        "ref6.28_UVLO_IRLO"
+        "ref6.28_UVLO_IRNLO"
+        "ref6.28_UVNLO_IRLO"
+        "ref6.28_UVNLO_IRNLO"
     )
 
     nsamples=1000
