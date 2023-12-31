@@ -49,7 +49,6 @@ class GeneralParameters:
     min_muF_by_T_in_flow_extr: float  # The minimum flow scale inside the flow extrapolation at which we measure the correlator on the lattice.
     max_muF_by_T_in_flow_extr: float  # The maximum "
     max_muBar_by_T: float  # Largest scale we ever want to run to.
-    ref_muF_by_T: float  # The scale where we convert the flow coupling to MSBar, from where we then run to some target scale.
     muF_by_T_where_we_measure: NDArray[Shape["*"], Float64]
 
 
@@ -84,29 +83,29 @@ class MSBarDataContainer:
 class PertRunMSBarDataContainer:
     mubar_by_T: NDArray[Shape["*"], Float64]
     g2_MSBAR_pert_run: scipy.interpolate._fitpack2.InterpolatedUnivariateSpline
-    mu_Ref: float
+    reference_muF_by_T: float
     nloop: int
 
 
 def plot_g2_vs_1overNt2(args, general_params, cont_data_container):
     # plot continuum extrapolation at different flow times
     xlabel = r'$N_\tau^{-' + str(general_params.Ntexp) + r'}$'
-    fig3, ax3, _ = lpd.create_figure(xlabel=xlabel, ylabel=r'$ \displaystyle g^{2}_\text{flow}$', ylims=(0.95, 3.65))
+    fig3, ax3, _ = lpd.create_figure(xlabel=xlabel, ylabel=r'$ \displaystyle \alpha_\text{flow}$', ylims=(0.95/(np.pi*4), 3.65/(np.pi*4)))
 
     xpoints = np.linspace(0, 1 / args.Nts[-1] ** general_params.Ntexp, 10)
 
-    plot_muF_by_T = np.geomspace(general_params.ref_muF_by_T, general_params.max_muF_by_T_in_flow_extr, 10)
+    plot_muF_by_T = np.geomspace(4, general_params.max_muF_by_T_in_flow_extr, 10)
 
     for j, muF_by_T in enumerate(plot_muF_by_T):
         i = (np.fabs(cont_data_container.muF_by_T_cont - muF_by_T)).argmin()
         color = lpd.get_color(plot_muF_by_T, j)
         ax3.errorbar(np.insert(1 / np.asarray(args.Nts) ** general_params.Ntexp, 0, 0),
-                     np.insert(cont_data_container.g2_latt_from_int[i], 0, cont_data_container.g2_cont[i, 0]),
-                     np.insert(cont_data_container.g2_latt_from_int_err[i], 0, cont_data_container.g2_cont[i, 1]),
+                     np.insert(cont_data_container.g2_latt_from_int[i]/(np.pi*4), 0, cont_data_container.g2_cont[i, 0]/(np.pi*4)),
+                     np.insert(cont_data_container.g2_latt_from_int_err[i]/(np.pi*4), 0, cont_data_container.g2_cont[i, 1]/(np.pi*4)),
                      color=color,
                      fmt='|', label=lpd.format_float(cont_data_container.muF_by_T_cont[i], 2), zorder=-i)
-        ax3.errorbar(xpoints, extrapolation_ansatz(xpoints, cont_data_container.g2_extr_slope[i, 0] * general_params.factor,
-                                                   cont_data_container.g2_cont[i, 0]),
+        ax3.errorbar(xpoints, extrapolation_ansatz(xpoints, cont_data_container.g2_extr_slope[i, 0] * general_params.factor/(np.pi*4),
+                                                   cont_data_container.g2_cont[i, 0]/(np.pi*4)),
                      **lpd.fitlinestyle, color=color)
         # counter += 1
     ax3.legend(title=r'$\displaystyle \mu_\mathrm{F}/ T$', loc="center left", bbox_to_anchor=(1, 0.5),
@@ -122,8 +121,8 @@ def plot_g2_vs_1overNt2(args, general_params, cont_data_container):
 
     file = args.outputpath_plot + "g2" + "_cont_extr.pdf"
     lpd.create_folder(os.path.dirname(file))
-    print("saving", file)
     fig3.savefig(file)
+    print("saved", file)
 
 
 class Plotter_g2_vs_mu:
@@ -139,11 +138,11 @@ class Plotter_g2_vs_mu:
         self.file_suffix: str = file_suffix
 
     def __setup_plot(self):
-        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=r'$ \displaystyle g^{2}$', ylims=(0, 4.5), xlims=(1, 200))
+        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\displaystyle \mu_{\mathrm{F}} / T$', ylabel=r'$ \displaystyle \alpha_X$', ylims=(0, 4.5/(np.pi*4)), xlims=(1, 200))
         self.ax.set_xscale('log')
 
     def __finalize_plot(self):
-        self.ax.legend(**lpd.leg_err_size(), loc="upper right", bbox_to_anchor=(1, 1), handlelength=1, fontsize=8, framealpha=0)
+        self.ax.legend(**lpd.leg_err_size(), title=r'$X=$', loc="upper right", bbox_to_anchor=(1.01, 1.01), handlelength=1, title_fontsize=9, fontsize=9, framealpha=0)
         file = self.args.outputpath_plot + "g2" + self.file_suffix + ".pdf"
         print("saving", file)
         lpd.create_folder(os.path.dirname(file))
@@ -151,14 +150,14 @@ class Plotter_g2_vs_mu:
 
     def __plot_pert_g2(self, mus, suffix="pert"):
         g2s = np.asarray([lpd.get_g2_pert(mu * self.general_params.T_in_GeV, Nf=0, Nloop=3) for mu in mus])
-        self.ax.errorbar(mus, g2s, fmt='-.', lw=self.linewidth, markersize=0,
+        self.ax.errorbar(mus, g2s/(np.pi*4), fmt='-.', lw=self.linewidth, markersize=0,
                          label=r'pert. ($\mu = \mu_\mathrm{F} \equiv 1/\sqrt{8\tau_F} $)', zorder=-1)
         lpd.save_columns_to_file(self.args.outputpath_data + "g2_muF_" + suffix + ".txt", (mus, g2s), ["mu_F/T", "g2s"])
 
     def __plot_lattice_data(self):
         for i, Nt in enumerate(self.args.Nts):
-            self.ax.errorbar(self.raw_data_container.muF_by_T_arr[i], self.raw_data_container.g2_arr[i], fmt=':',
-                             lw=self.linewidth*0.75, markersize=0, label=r'$N_\tau = ' + str(Nt) + r'$ (flow)', zorder=-i - 10)
+            self.ax.errorbar(self.raw_data_container.muF_by_T_arr[i], self.raw_data_container.g2_arr[i]/(np.pi*4), fmt=':',
+                             lw=self.linewidth*0.75, markersize=0, label=r'flow ($N_\tau = ' + str(Nt) + r'$)', zorder=-i - 10)
 
     def __plot_grey_flow_extr_band(self):
         self.ax.axvline(self.general_params.muUV_by_T_NLO, alpha=0.5, dashes=(2, 2), zorder=-10000, lw=self.linewidth/2, color='k')
@@ -168,25 +167,26 @@ class Plotter_g2_vs_mu:
 
     def __plot_cont(self):
         cont_data = self.cont_data_container.g2_cont[:, 0]
-        self.ax.errorbar(self.cont_data_container.muF_by_T_cont, cont_data, fmt='-', markersize=0, lw=self.linewidth,
-                         label=r'cont. (flow)', zorder=-1)
+        self.ax.errorbar(self.cont_data_container.muF_by_T_cont, cont_data/(np.pi*4), fmt='-', markersize=0, lw=self.linewidth,
+                         label=r'flow (cont.)', zorder=-1)
 
     def __plot_pert_run_from_converted_g2MSbar(self):
         for data in self.list_of_pertRun_MSBar_data_container:
-            self.ax.errorbar(data.mubar_by_T, data.g2_MSBAR_pert_run(data.mubar_by_T), fmt='-', markersize=0,
+            self.ax.errorbar(data.mubar_by_T, data.g2_MSBAR_pert_run(data.mubar_by_T)/(np.pi*4), fmt='-', markersize=0,
                              lw=self.linewidth, zorder=(int(data.mubar_by_T[0])) + 20,
-                             label=r'\begin{flushleft}$\text{cont. (flow)}\rightarrow\overline{\text{MS}}$ \newline at ' + r' ${\mu_\text{F}}/{T}=' + lpd.format_float(
-                             data.mubar_by_T[0], 1) + r'$, \newline then ' + str(
-                             data.nloop) + r'-loop run \end{flushleft}')
+                             label=r'\begin{flushleft}$\overline{\text{MS}}$ via Eq.\,19 at \newline  ' + r' ${\mu_\text{F}}/{T}=' + lpd.format_float(
+                             data.reference_muF_by_T, 2) + r'$, then \newline run via ' + str(
+                             data.nloop) + r'-loop $\beta$-fct. \end{flushleft}')
 
     def __plot_MSBAR(self):
         self.ax.errorbar(self.msbar_data_container.mubar_by_T,
-                    self.msbar_data_container.g2_MSBAR_spline(self.msbar_data_container.mubar_by_T),
-                    fmt='-', markersize=0, lw=self.linewidth, label=r'$\text{cont. (flow)}\rightarrow\overline{\text{MS}}$')
+                    self.msbar_data_container.g2_MSBAR_spline(self.msbar_data_container.mubar_by_T)/(np.pi*4),
+                    fmt='-', markersize=0, lw=self.linewidth, label=r'$\overline{\text{MS}}$ via Eq.\,19')
 
     def _plot(self):
         self.__setup_plot()
-        # self.__plot_grey_flow_extr_band()
+        if False:
+            self.__plot_grey_flow_extr_band()
         self.__plot_pert_run_from_converted_g2MSbar()
         self.__plot_MSBAR()
         self.__plot_cont()
@@ -203,7 +203,7 @@ class Plotter_g2_vs_mu:
 
 
 def extrapolation_ansatz(x, m, b):
-    return m * x + + b
+    return m * x + b
 
 
 class ContinuumExtrapolator:
@@ -272,7 +272,7 @@ class ContinuumExtrapolator:
                 data_std_dev=self.g2_latt_from_int_err[i],
                 numb_samples=100, sample_size=1, return_sample=False,
                 args=[1 / np.asarray(self.Nts) ** self.general_parameters.Ntexp * self.general_parameters.factor, self.g2_latt_from_int_err[i]], parallelize=True,
-                nproc=20)
+                nproc=20)  # TODO make nproc an input parameter
             self.chisqdof[i, 0] = fitparams[2]
             self.chisqdof[i, 1] = fitparams_err[2]
             self.cont[i, 0] = fitparams[1]
@@ -369,11 +369,8 @@ def load_data_and_interpolate(args: argparse.Namespace, general_params: GeneralP
         muF_by_T = muF_by_T_arr[i]
         thisg2 = g2_arr[i]
         thisg2_err = g2_err_arr[i]
-        # _, max_idx = ScaleFunctions.get_min_and_max_indices(muF_by_T, general_params.ref_muF_by_T*0.9, general_params.max_muF_by_T_in_flow_extr)
-        g2_ints.append(
-            scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T, thisg2, k=order, ext=2))
-        g2_err_ints.append(
-            scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T, thisg2_err, k=order, ext=2))
+        g2_ints.append(scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T, thisg2, k=order, ext=2))
+        g2_err_ints.append(scipy.interpolate.InterpolatedUnivariateSpline(muF_by_T, thisg2_err, k=order, ext=2))
 
     target_muF_by_T_for_cont_extr = np.sort(np.unique(np.concatenate((
         np.geomspace(largest_min_muF_by_T, general_params.muUV_by_T_NLO, 500),
@@ -427,22 +424,21 @@ def convert_g2_flow_to_MSBAR(g2_flow: float, nf: int = 0) -> float:
 
 
 def calc_g2_MSBAR(cont_data_container: ContDataContainer, target_muF_by_T_for_cont_extr) -> MSBarDataContainer:
-    g2_MSBAR = np.asarray([convert_g2_flow_to_MSBAR(cont_data_container.g2_cont_int(mu_by_T))
-                           for mu_by_T in target_muF_by_T_for_cont_extr])
-    g2_MSBAR_spline = scipy.interpolate.InterpolatedUnivariateSpline(
-        target_muF_by_T_for_cont_extr,
-        g2_MSBAR, k=3, ext=2)
+    g2_MSBAR = np.asarray([convert_g2_flow_to_MSBAR(cont_data_container.g2_cont_int(mu_by_T)) for mu_by_T in target_muF_by_T_for_cont_extr])
+    g2_MSBAR_spline = scipy.interpolate.InterpolatedUnivariateSpline(target_muF_by_T_for_cont_extr, g2_MSBAR, k=3, ext=2)
     return MSBarDataContainer(cont_data_container.muF_by_T_cont, g2_MSBAR_spline)
 
 
 class BetaFunction:
-    def __init__(self, args, MSBar_data_container):
+    def __init__(self, args, MSBar_data_container, general_params):
         self.MSBar_data_container = MSBar_data_container
         self.crd = rundec.CRunDec()
         self.nf: int = 0
         self.nloop: int = 5
         self.outputpath_data = args.outputpath_data
         self.list_of_data_containers = []
+        self.min_muF_by_T_where_we_measure = np.min(general_params.muF_by_T_where_we_measure)
+
         self.calc_pert_run_of_g2_MSBAR()
 
     def calc_mu_and_g2(self, mu, g2_0, mu_0):
@@ -458,12 +454,12 @@ class BetaFunction:
                 np.unique(
                     np.concatenate((self.MSBar_data_container.mubar_by_T, muF_by_T_targets_extra)))))
 
-        ref_mu_by_T_choices = [4.0, ]
+        ref_mu_by_T_choices = [2*np.pi, ]  # TODO make this an input, read from somewhere else not hard code
         for reference_muF_by_T in ref_mu_by_T_choices:
             mu_0 = reference_muF_by_T
             g2_0 = self.MSBar_data_container.g2_MSBAR_spline(mu_0)
 
-            these_target_mus = np.asarray([mu for mu in target_muF_by_T if mu >= mu_0])
+            these_target_mus = np.asarray([mu for mu in target_muF_by_T if mu >= self.min_muF_by_T_where_we_measure])
 
             g2s = np.asarray([self.calc_mu_and_g2(mu, g2_0, mu_0) for mu in these_target_mus])
             g2_spline = scipy.interpolate.InterpolatedUnivariateSpline(these_target_mus, g2s, k=3, ext=2)
@@ -471,7 +467,7 @@ class BetaFunction:
                 PertRunMSBarDataContainer(these_target_mus, g2_spline, reference_muF_by_T, self.nloop))
 
             lpd.save_columns_to_file(
-                self.outputpath_data + "g2_MSBAR_runFromMu_" + lpd.format_float(reference_muF_by_T, 1) + ".txt",
+                self.outputpath_data + "g2_MSBAR_runFromMu_" + lpd.format_float(reference_muF_by_T, 2) + ".txt",
                 (these_target_mus, g2s), ["mu/T", "g^2"])
 
     @classmethod
@@ -484,8 +480,8 @@ class BetaFunction:
 def get_general_parameters():
     NTEXP = 2
     max_muF_by_T_in_flow_extr = ScaleFunctions.convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.25, tauT=0.25)
-    muUV_by_T_NLO = 19.179
-    muBar_by_muF_NLO = np.sqrt(4*np.exp(np.euler_gamma+8/3))
+    muUV_by_T_NLO = 4*np.pi*np.exp(1-np.euler_gamma)
+    muBar_by_muF_NLO = np.sqrt(4*np.exp(-np.euler_gamma))
     general_params = GeneralParameters(
         Ntexp=NTEXP,
         factor=96 ** NTEXP,
@@ -495,11 +491,7 @@ def get_general_parameters():
         min_muF_by_T_in_flow_extr=ScaleFunctions.convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.3, tauT=0.5),
         max_muF_by_T_in_flow_extr=max_muF_by_T_in_flow_extr,
         max_muBar_by_T=np.fmax(muBar_by_muF_NLO*max_muF_by_T_in_flow_extr, muUV_by_T_NLO),
-        ref_muF_by_T=4.0,
         muF_by_T_where_we_measure=ScaleFunctions.get_muF_by_T_where_we_measure())
-
-    # max_muF_by_T_for_running = np.max([*necessary_muF_by_T, muB_by_T])
-    # min_muF_by_T_for_running = np.min([*necessary_muF_by_T, muB_by_T])
 
     return general_params
 
@@ -513,7 +505,7 @@ def main():
     raw_data = load_data_and_interpolate(args, general_params)
     cont_data = ContinuumExtrapolator.extrapolate(args, general_params, raw_data)
     MSBar_data = calc_g2_MSBAR(cont_data, raw_data.target_muF_by_T_for_cont_extr)
-    list_of_pertRun_MSBar_data = BetaFunction.run(args, MSBar_data)
+    list_of_pertRun_MSBar_data = BetaFunction.run(args, MSBar_data, general_params)
 
     Plotter_g2_vs_mu.plot(args, general_params, raw_data, cont_data, MSBar_data,
                           list_of_pertRun_MSBar_data)
