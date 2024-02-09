@@ -94,10 +94,10 @@ def get_g2_and_alphas_and_lospf(crd, Lambda_MSbar, mu, Nf, Nloop, C_F, OmegaByT)
     return g2, Alphas, lo_spf
 
 
-def get_g2_and_alphas_and_lospf_from_reference_point(crd, mu, Nf, Nloop, C_F, OmegaByT):
+def get_g2_and_alphas_and_lospf_from_reference_point(crd, mu, Nf, Nloop, C_F, OmegaByT, T_in_GeV):
     # Here we use the reference point obtained from nonperturbative gradient-flow measurements, converted to MSBAR, and then run it
-    mu0 = 4.000425807761551766e+00 * 0.472  # TODO remove hard coding of these values and instead read them from the corresponding file
-    alphas_0 = 2.742374650650232670e+00 / (4 * np.pi)
+    mu0 = 6.283185307179586232e+00 * T_in_GeV  # TODO remove hard coding of these values and instead read them from the corresponding file
+    alphas_0 = 2.266106510132175345e+00 / (4 * np.pi)
     Alphas = crd.AlphasExact(alphas_0, mu0, mu, Nf, Nloop)
     g2 = 4. * np.pi * Alphas
     lo_spf = g2 * C_F * OmegaByT ** 3 / 6. / np.pi
@@ -144,8 +144,8 @@ def get_cBsq(params: SpfParams):
 
     def g2(mu_in_GeV):
         # run g^2 from the MSBAR coupling we found by measuring the flow coupling and converting it at mu_flow/T=mu_MSBAR/T=4
-        mu0 = 4.000425807761551766e+00 * params.T_in_GeV  # TODO remove hard coding of these values and instead read them from the corresponding file
-        alphas_0 = 2.742374650650232670e+00 / (4 * np.pi)
+        mu0 = 6.283185307179586232e+00 * params.T_in_GeV  # TODO remove hard coding of these values and instead read them from the corresponding file
+        alphas_0 = 2.266106510132175345e+00 / (4 * np.pi)
         return 4. * np.pi * crd.AlphasExact(alphas_0, mu0, mu_in_GeV, params.Nf, params.Nloop)
     g2_vec = np.vectorize(g2)
 
@@ -160,12 +160,12 @@ def get_cBsq(params: SpfParams):
     return cBsq
 
 
-def calc_cBsq(target_scale, integrand_spline, ir_scale):
+def calc_cBsq(target_scale_in_GeV, integrand_spline, ir_scale_in_GeV):
     # Both start_scale and ir_scale are expected to be in GeV
     try:
-        integral = integrate.quad(integrand_spline, ir_scale, target_scale)[0]
+        integral = integrate.quad(integrand_spline, ir_scale_in_GeV, target_scale_in_GeV)[0]
     except ValueError:
-        print("error at", target_scale, ir_scale)
+        print("error at", target_scale_in_GeV, ir_scale_in_GeV)
         exit(1)
     return np.exp(integral)
 
@@ -180,7 +180,7 @@ def inner_loop(index, params: SpfParams, cBsq):
 
     if params.corr == "BB":
         # Note that "omega_prefactor" is actually not used here.
-        g2, Alphas, PhiUVByT3 = get_g2_and_alphas_and_lospf_from_reference_point(crd, mu, params.Nf, params.Nloop, params.C_F, OmegaByT)
+        g2, Alphas, PhiUVByT3 = get_g2_and_alphas_and_lospf_from_reference_point(crd, mu, params.Nf, params.Nloop, params.C_F, OmegaByT, params.T_in_GeV)
 
         if params.order == "NLO":
             # === NLO ===
