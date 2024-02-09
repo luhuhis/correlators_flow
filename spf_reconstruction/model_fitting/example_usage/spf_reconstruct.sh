@@ -85,16 +85,21 @@ submit_quenched_BB() {
 
         minscale="eff"
 
-        LO="--order LO   --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type hard"
-        NLO="--order NLO --omega_prefactor 2 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type hard"
+#
+#        LO="--order LO   --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type hard"
+        NLO="--order NLO --omega_prefactor 2 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type smooth"
+        NLOfull="--order NLO --omega_prefactor BB_NLO_full --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type smooth"
 
         models=(
-            "--model max $LO"
+#            "--model max $LO"
             "--model max $NLO"
-            "--model smax $LO"
+            "--model max $NLOfull"
+#            "--model smax $LO"
             "--model smax $NLO"
-            "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
+            "--model smax $NLOfull"
+#            "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
             "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
+            "--model plaw $NLOfull --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
             #        "--model trig $LO --mu alpha --nmax 1 "
             #        "--model trig $LO --mu beta --nmax 1 "
             #        "--model trig $NLO --mu alpha --nmax 1 "
@@ -110,7 +115,7 @@ submit_quenched_BB() {
             echo "${models[i]}"
             spfbatch ../spf_reconstruct.py \
                 --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
-                --add_suffix 23-12-16-${input_corr_suffix} \
+                --add_suffix 24-02-08-${input_corr_suffix} \
                 --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow_${input_corr_suffix}.npy \
                 --min_tauT 0.24 \
                 --nproc $nproc \
