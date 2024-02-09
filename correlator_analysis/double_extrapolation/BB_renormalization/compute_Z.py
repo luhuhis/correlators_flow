@@ -268,7 +268,7 @@ def parse_args():
 def get_scale_choices():
     scale_choices = []
 
-    muBarIR_by_T_choices = [4 * np.pi * np.exp(1 - np.euler_gamma), 2 * np.pi]
+    muBarIR_by_T_choices = [2 * np.pi, 4 * np.pi * np.exp(1 - np.euler_gamma)]
     muBarUV_by_muF_choices = [1., np.sqrt(4 * np.exp(-np.euler_gamma))]
     order_string = ["LO", "NLO"]
     muRef_by_T_choices = [6.28, ]  #3.14,
