@@ -52,14 +52,14 @@ elif [ "${corr}" == "BB" ] ; then
     minscale=eff
     ylims="0.1 5000"
     add_suffix=""
-    xlims="--xlims -0.15 2    --xticks 0 0.5 1 1.5 2"
+    xlims="--xlims -0.15 4    --xticks 0 0.5 1 1.5 2"
     figsize="7 5"
 
     input_corr_suffixes=(
-    "ref4.0_UVLO_IRNLO"
-    "ref4.0_UVLO_IRLO"
-    "ref4.0_UVNLO_IRNLO"
-    "ref4.0_UVNLO_IRLO"
+    "ref6.28_UVLO_IRNLO"
+    "ref6.28_UVLO_IRLO"
+    "ref6.28_UVNLO_IRNLO"
+    "ref6.28_UVNLO_IRLO"
     )
 
 
@@ -68,7 +68,7 @@ elif [ "${corr}" == "BB" ] ; then
         # 08-27
         # 10-01
         # 10-23
-        input_suffix="23-12-16-${input_corr_suffix}"
+        input_suffix="24-02-08-${input_corr_suffix}"
 
         # smax_NLO_Nf0_T0.472_minmu_IR_NLO_w2_100smpls_tauTgtr0.24_23-10-23-ref4.0_UVLO_IRNLO
 
@@ -77,18 +77,20 @@ elif [ "${corr}" == "BB" ] ; then
     #        minscale="2piT" # replace with the desired value
     #    elif [[ $input_corr_suffix == *"_IRNLO" ]]; then
     #        minscale="mu_IR_NLO" # replace with the desired value
-    #    fi
+    #    fi                                                                                       mineff_wBB_NLO_full
 
         minscale="eff"
 
+        # TODO MU UV IR labels
+
         labels_and_models=(                              #max_LO_Nf0_T0.472_mineff_w1_250smpls_tauTgtr0.24_23-07-03
-            '$\text{max}_\text{NLO}$'                   "max_NLO_Nf0_T0.472_min${minscale}_w2_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
-            '$\text{max}_\text{LO}$'                    "max_LO_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
-            '$\text{smax}_\text{NLO}$'                  "smax_NLO_Nf0_T0.472_min${minscale}_w2_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+            '$\text{max}$'                   "max_NLO_Nf0_T0.472_min${minscale}_wBB_NLO_full_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+#            '$\text{max}_\text{LO}$'                    "max_LO_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+            '$\text{smax}$'                  "smax_NLO_Nf0_T0.472_min${minscale}_wBB_NLO_full_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
                                                        # smax_NLO_Nf0_T0.472_minmu_IR_NLO_w2_100smpls_tauTgtr0.24_23-10-23-ref4.0_UVLO_IRNLO
-            '$\text{smax}_\text{LO}$'                   "smax_LO_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
-            '$\text{plaw}_\text{NLO}$'                  "plaw_wIR1.0_wUV6.2832_NLO_Nf0_T0.472_min${minscale}_w2_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
-            '$\text{plaw}_\text{LO}$'                   "plaw_wIR1.0_wUV6.2832_LO_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+#            '$\text{smax}_\text{LO}$'                   "smax_LO_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+            '$\text{plaw}$'                  "plaw_wIR1.0_wUV6.2832_NLO_Nf0_T0.472_min${minscale}_wBB_NLO_full_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
+#            '$\text{plaw}_\text{LO}$'                   "plaw_wIR1.0_wUV6.2832_LO_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
     #            '$\text{trig1}_\text{NLO}$'                 "trig_NLO__beta_1_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
     #            '$\text{trig1}_\text{LO}$'                  "trig_LO__alpha_1_Nf0_T0.472_min${minscale}_w1_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
     #            '$\text{trig2}_\text{NLO}$'                 "trig_NLO__beta_2_Nf0_T0.472_min${minscale}_woptBB_${nsamples}smpls_tauTgtr0.24_${input_suffix}"
