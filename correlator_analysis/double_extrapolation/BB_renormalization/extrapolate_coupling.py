@@ -483,7 +483,7 @@ class BetaFunction:
 def get_general_parameters():
     NTEXP = 2
     max_muF_by_T_in_flow_extr = ScaleFunctions.convert_sqrt8taufTByTau_to_muFByT(sqrt8taufTByTau=0.25, tauT=0.25)
-    muUV_by_T_NLO = 4*np.pi*np.exp(1-np.euler_gamma)
+    muUV_by_T_NLO = 4*np.pi*np.exp(1-np.euler_gamma)       # TODO rename these according to the paper
     muBar_by_muF_NLO = np.sqrt(4*np.exp(-np.euler_gamma))
     general_params = GeneralParameters(
         Ntexp=NTEXP,
