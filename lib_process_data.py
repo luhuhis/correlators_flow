@@ -393,7 +393,7 @@ def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98,
     set_rc_params(use_pgf_backend)
     if UseTex:
         matplotlib.pyplot.rc('text', usetex=True)
-        matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath,mathtools,color}')
+        matplotlib.pyplot.rc('text.latex', preamble=r'\usepackage{amsmath,mathtools,color,graphicx}')
 
     if figsize == "fullwidth":
         figsize = (15, 7)
