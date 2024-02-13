@@ -68,13 +68,27 @@ def main():
 
     fig, ax, axtwiny = lpd.create_figure(xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G^\text{model}}{G'+lpd.get_corr_subscript(args.corr)+r'}$', xlims=args.xlims, ylims=args.ylims)
 
-    if args.colors is None:
-        args.colors = [lpd.get_discrete_color(int(i/2)) for i in range(nfiles)]
+    if args.colors is None and args.corr == "BB":
+        args.colors = [lpd.get_discrete_color(int(i)) for i in range(nfiles)]
+    elif args.colors is None:
+        args.colors = [lpd.get_discrete_color(int(i / 2)) for i in range(nfiles)]
+
+    spacing = 0.002
+    if args.corr == "BB":
+        spacing = 0.004
 
     for i in range(nfiles):
         if not numpy.isnan(xdata[i]).any():
-            ax.errorbar(xdata[i] + i * 0.002, ydata[i], yerr=[errorsleft[i], errorsright[i]],
-                        fmt='|', markersize=0, color=args.colors[i] if i % 2 == 0 else lpd.lighten_color(args.colors[i], 0.5), label=args.labels[i])
+
+            if args.corr != "BB":
+                if i % 2 == 0:
+                    color = args.colors[i]
+                else:
+                    color = lpd.lighten_color(args.colors[i], 0.5)
+            else:
+                color = args.colors[i]
+            ax.errorbar(xdata[i] + i * spacing, ydata[i], yerr=[errorsleft[i], errorsright[i]],
+                        fmt='|', markersize=0, color=color, label=args.labels[i])
             # ax.errorbar(xdata[i] + i * 0.002, ydata[i],
             #             fmt='-', markersize=0, color=args.colors[i] if i % 2 == 0 else lpd.lighten_color(args.colors[i], 0.5), zorder=-100)
     ax.axhline(y=1, **lpd.horizontallinestyle)
@@ -85,7 +99,14 @@ def main():
     if args.xticks != "auto":
         ax.set_xticks([float(i) for i in args.xticks])
 
-    ax.legend(title="model", handlelength=1, loc="lower left", bbox_to_anchor=(0, 0), ncols=2, **lpd.leg_err_size(1, 0.3))
+    ncols = 2
+    if args.corr == "BB":
+        ncols = 1
+
+    if args.corr == "BB":
+        ax.text(0.98, 0.99, r'\begin{align*} \displaystyle \frac{\bar{\mu}_T}{T}&=19.18 \\[-0.5ex] \displaystyle \frac{\bar{\mu}_{\tau_\mathrm{F}}}{\mu_\mathrm{F}}&=1.50 \end{align*}', transform=ax.transAxes, verticalalignment='top', horizontalalignment='right', fontsize=8)
+
+    ax.legend(title="model", handlelength=1, loc="lower left", bbox_to_anchor=(0, 0), ncols=ncols, **lpd.leg_err_size(1, 0.3))
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/"+args.corr+"_corrfit" + args.suffix + ".pdf"

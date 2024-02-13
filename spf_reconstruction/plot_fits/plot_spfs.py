@@ -75,8 +75,10 @@ def main():
     axtwiny.set_yscale('log')
     ax.set_xscale('log')
 
-    if args.colors is None:
-        args.colors = [lpd.get_discrete_color(int(i/2)) for i in range(nfiles)]
+    if args.colors is None and args.corr == "BB":
+        args.colors = [lpd.get_discrete_color(int(i)) for i in range(nfiles)]
+    elif args.colors is None:
+        args.colors = [lpd.get_discrete_color(int(i / 2)) for i in range(nfiles)]
 
     for i in range(nfiles):
         if not numpy.isnan(xdata[i]).any():
@@ -86,7 +88,9 @@ def main():
                 yerr = [errorsleft[i]*factor, errorsright[i]*factor]
                 ax.fill_between(xdata[i][::10], y[::10]-yerr[0][::10], y[::10]+yerr[1][::10], facecolor=args.colors[i], alpha=0.1, zorder=-100-i)
 
-            fmt = '--' if i % 2 == 0 else '-'
+            fmt = '-'
+            if i % 2 == 0 and args.corr != "BB":
+                fmt = '--'
             zorder = -i
 
             # custom fix for the quenched EE results
@@ -99,6 +103,11 @@ def main():
             # ax.axvline(x=omegaUV, **lpd.verticallinestyle)
 
     ax.legend(loc=args.leg_loc, bbox_to_anchor=args.leg_pos, title="model", handlelength=1.15, fontsize=10, ncol=args.leg_ncol, columnspacing=1, framealpha=0)
+
+    if args.corr == "BB":
+        ax.text(0.05, 0.5, r'\begin{align*} \displaystyle \frac{\bar{\mu}_T}{T}&=19.18 \\[-0.5ex] \displaystyle \frac{\bar{\mu}_{\tau_\mathrm{F}}}{\mu_\mathrm{F}}&=1.50 \end{align*}',
+                transform=ax.transAxes, verticalalignment='center', horizontalalignment='left', fontsize=8)
+
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/"+args.corr+"_spf" + args.suffix + ".pdf"
