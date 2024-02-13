@@ -162,7 +162,7 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # BB correlator for the corresponding normalized flow times
 
 # 2.1.5 Coupling calculations
-# Continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices, TODO is this already reflected in the paper?
+# Continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices,
 # and conversion from flow scheme to the MSBAR coupling at one scale, then perturbative 5-loop running to other relevant scales.
 
 ./correlators_flow/correlator_analysis/double_extrapolation/BB_renormalization/example_usage/extrapolate_coupling.sh $BASEPATH_RAW_DATA $BASEPATH_WORK_DATA $BASEPATH_PLOT
