@@ -178,6 +178,9 @@ def inner_loop(index, params: SpfParams, cBsq):
     scale = params.omega_prefactor * (OmegaByT * params.T_in_GeV) ** params.omega_exponent
     mu = maxfunc(params.min_scale, scale)
 
+    # first = True
+    # first = print_min_scale(scale, params.min_scale, first, OmegaByT)
+
     if params.corr == "BB":
         # Note that "omega_prefactor" is actually not used here.
         g2, Alphas, PhiUVByT3 = get_g2_and_alphas_and_lospf_from_reference_point(crd, mu, params.Nf, params.Nloop, params.C_F, OmegaByT, params.T_in_GeV)
