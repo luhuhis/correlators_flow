@@ -245,13 +245,21 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 
 
 # 2.4.1 Plot spectral reconstruction fit results #1
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh BB $BASEPATH_WORK_DATA $BASEPATH_PLOT
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh BB $BASEPATH_WORK_DATA $BASEPATH_PLOT yes
+
+/home/altenkort/BB_datapub_test/figures/quenched_1.50Tc_zeuthenFlow/BB//BB_kappa_quenched_1.5Tc.pdf
+
+# 2.4.3 Plot spectral reconstruction fit results #3
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT BB
+
+
+# 2.4.2 Plot spectral reconstruction fit results #2
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh BB $BASEPATH_WORK_DATA $BASEPATH_PLOT no
 
 # Afterwards, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/T<T-in-MeV>/
 
 /home/altenkort/BB_datapub_test/figures/quenched_1.50Tc_zeuthenFlow/BB//BB_spf_quenched_1.5Tc.pdf
-/home/altenkort/BB_datapub_test/figures/quenched_1.50Tc_zeuthenFlow/BB//BB_kappa_quenched_1.5Tc.pdf
 /home/altenkort/BB_datapub_test/figures/quenched_1.50Tc_zeuthenFlow/BB//BB_corrfit_quenched_1.5Tc.pdf
 
 # BB_spf_T<T-in-MeV>_paper.pdf      | Fig. 6 in the paper
@@ -277,8 +285,7 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # BB_kfactor.pdf | Fig. 8 in the paper
 
 
-# 2.4.3 Plot spectral reconstruction fit results #3
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT BB
+
 
 # Afterwards, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
