@@ -268,15 +268,16 @@ def parse_args():
 def get_scale_choices():
     scale_choices = []
 
-    muBarIR_by_T_choices = [2 * np.pi, 4 * np.pi * np.exp(1 - np.euler_gamma)]
+    muBarIR_by_T_choices = [4 * np.pi * np.exp(1 - np.euler_gamma), 2 * np.pi]
     muBarUV_by_muF_choices = [1., np.sqrt(4 * np.exp(-np.euler_gamma))]
-    order_string = ["LO", "NLO"]
-    muRef_by_T_choices = [6.28, ]  #3.14,
+    order_string_UV = ["LO", "NLO"]
+    order_string_IR = ["NLO", "LO"]
+    muRef_by_T_choices = [6.28, ]
 
     for IR in range(len(muBarIR_by_T_choices)):
         for UV in range(len(muBarUV_by_muF_choices)):
             for ref in range(1):
-                choice_label = "ref" + str(muRef_by_T_choices[ref])+"_UV"+order_string[UV] + "_IR" + order_string[IR]
+                choice_label = "ref" + str(muRef_by_T_choices[ref])+"_UV"+order_string_UV[UV] + "_IR" + order_string_IR[IR]
                 muBarUV_by_muF_choice = muBarUV_by_muF_choices[UV]
                 muBarIR_by_T_choice = muBarIR_by_T_choices[IR]
                 muRef_by_T = muRef_by_T_choices[ref]
@@ -286,7 +287,7 @@ def get_scale_choices():
                                          + lpd.format_float_latex(muBarUV_by_muF_choice, 2, 4)
                                          + r'$')
                 # r'$\mu_\text{ref}/T='+lpd.format_float(muRef_by_T,1)
-                choice_label_for_plot_short = lpd.format_float_latex(muBarUV_by_muF_choice, 2, 5) + r',\ ' + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)
+                choice_label_for_plot_short = lpd.format_float_latex(muBarIR_by_T_choice, 2, 6) + r',\ ' + lpd.format_float_latex(muBarUV_by_muF_choice, 2, 4)
                 scale_choices.append(ScaleChoice(muRef_by_T, muBarUV_by_muF_choice, muBarIR_by_T_choice, choice_label, choice_label_for_plot, choice_label_for_plot_short))
     return scale_choices
 

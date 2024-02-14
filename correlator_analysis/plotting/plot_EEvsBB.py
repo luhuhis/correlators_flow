@@ -16,7 +16,7 @@ class Plotter:
     def _setup_plot(self):
         self.fig, self.ax, self.plots = lpd.create_figure(xlims=(0.235, 0.51), ylims=(2.5, 3.75), xlabel=r'$\tau T$',
                                                           ylabel=r'$\displaystyle \frac{G_X}{G^\mathrm{norm}}$')
-        self.ax.errorbar(0, 0, label=r'$X,\, \frac{\bar{\mu}_{\tau_\mathrm{F}}}{\mu_\text{F}},\ \ \frac{\bar{\mu}_T}{T}$',
+        self.ax.errorbar(0, 0, label=r'$X,\, \ \  \ \ \frac{\bar{\mu}_T}{T},\ \ \frac{\bar{\mu}_{\tau_\mathrm{F}}}{\mu_\text{F}}$',
                          markersize=0, alpha=0, lw=0)
         self.ax.set_prop_cycle(None)
 
