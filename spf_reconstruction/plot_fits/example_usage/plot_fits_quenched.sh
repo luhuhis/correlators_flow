@@ -3,9 +3,9 @@
 corr=$1
 basepath_work_data=$2
 basepath_plot=$3
+plot_all_renorm_points=$4
 
-
-if [ -z "$corr" ] || [ -z "$basepath_work_data" ] || [ -z "$basepath_plot" ]; then
+if [ -z "$corr" ] || [ -z "$basepath_work_data" ] || [ -z "$basepath_plot" ] || [ -z "$plot_all_renorm_points" ] ; then
     echo "Usage: $0 corr basepath_work_data basepath_plot"
     echo "Example usage: $0 BB ~/work/correlators_flow/data/merged/ ~/work/correlators_flow/plots/"
     exit
@@ -55,32 +55,24 @@ elif [ "${corr}" == "BB" ] ; then
     xlims="--xlims -0.15 2.5    --xticks 0 0.5 1 1.5 2 2.5 --hide_chisq"
     figsize="7 5"
 
-    input_corr_suffixes=(
-    "ref6.28_UVLO_IRLO"
-    "ref6.28_UVNLO_IRLO"
-    "ref6.28_UVLO_IRNLO"
-    "ref6.28_UVNLO_IRNLO"
-    )
+    if [ "${plot_all_renorm_points}" == "yes" ] ; then
+        input_corr_suffixes=(
+        "ref6.28_UVLO_IRLO"
+        "ref6.28_UVNLO_IRLO"
+        "ref6.28_UVLO_IRNLO"
+        "ref6.28_UVNLO_IRNLO"
+        )
+    else
+        input_corr_suffixes=(
+        "ref6.28_UVNLO_IRNLO"
+        )
+    fi
 
 
     for input_corr_suffix in "${input_corr_suffixes[@]}" ; do
 
-        # 08-27
-        # 10-01
-        # 10-23
         input_suffix="24-02-08-${input_corr_suffix}"
-
-        # smax_NLO_Nf0_T0.472_minmu_IR_NLO_w2_100smpls_tauTgtr0.24_23-10-23-ref4.0_UVLO_IRNLO
-
-        # Adjusting the minscale based on the suffix
-    #    if [[ $input_corr_suffix == *"_IRLO" ]]; then
-    #        minscale="2piT" # replace with the desired value
-    #    elif [[ $input_corr_suffix == *"_IRNLO" ]]; then
-    #        minscale="mu_IR_NLO" # replace with the desired value
-    #    fi                                                                                       mineff_wBB_NLO_full
-
         minscale="eff"
-
         prefactor="1"
 
         labels_and_models=(                              #max_LO_Nf0_T0.472_mineff_w1_250smpls_tauTgtr0.24_23-07-03
@@ -150,9 +142,17 @@ plot_spfs(){
 
 (
     cd "$(dirname $0)" || exit
-    plot_spfs
-    plot_kappa
-    plot_fitcorr
+
+    if [ "${corr}" == "BB" ] && [ "${plot_all_renorm_points}" == "yes" ] ; then
+        plot_kappa
+    elif [ "${corr}" == "BB" ] && [ "${plot_all_renorm_points}" != "yes" ] ; then
+        plot_spfs
+        plot_fitcorr
+    else
+        plot_spfs
+        plot_kappa
+        plot_fitcorr
+    fi
 )
 
 
