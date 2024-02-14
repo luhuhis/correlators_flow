@@ -187,11 +187,13 @@ def main():
     ax.fill_between([leftmost, rightmost], [-100, -100], [100, 100], facecolor='grey', alpha=0.2, zorder=-1000)
     centralvalue = (leftmost+rightmost)/2
     error = rightmost-centralvalue
-    with open(args.outputpath_data + "/" + args.corr + "_kappa" + args.suffix + ".txt", 'w') as file:
+    filename = args.outputpath_data + "/" + args.corr + "_kappa" + args.suffix + ".txt"
+    with open(filename, 'w') as file:
         file.write('# kappa +- error \n')
         file.write("# $"+lpd.format_float(centralvalue, 1)+r' \pm '+str(lpd.float_ceil(error, 1))+"$\n")
         file.write("# $[" + lpd.format_float(leftmost, 3) + r', ' + lpd.format_float(rightmost, 3) + "]$\n")
         np.savetxt(file, np.c_[centralvalue, error])
+    print("saved", filename)
 
     if args.temperature_on_xaxis:
         ax.set_xlabel(r'T\mathrm{[MeV]}')
