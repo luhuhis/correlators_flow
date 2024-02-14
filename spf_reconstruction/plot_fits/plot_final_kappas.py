@@ -107,7 +107,7 @@ def plot_BB_quenched_literature(args, ax, i):
     i += 1
 
     # 2022, Nora Brambilla, Viljami Leino, Julian Mayer-Steudte, Peter Petreczky, 	arXiv:2206.02861
-    ax.errorbar(1.5, *mean_and_err(1.23,2.74), color=thiscolor(i), fmt=myfmt, markersize=ms, label=r'TUMQCD \textquotesingle 22 (flow*)')
+    ax.errorbar(1.5, *mean_and_err(1.03,2.61), color=thiscolor(i), fmt=myfmt, markersize=ms, label=r'TUMQCD \textquotesingle 22 (flow*)')
     i += 1
 
     return i
