@@ -87,9 +87,9 @@ submit_quenched_BB() {
 
 #
 #        LO="--order LO   --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type hard"
-        NLO_naive="--order NLO --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type smooth"
-        NLO="--order NLO --omega_prefactor 2 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type smooth"
-        NLOfull="--order NLO --omega_prefactor BB_NLO_full --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type smooth"
+        NLO_naive="--order NLO --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type hard"
+#        NLO="--order NLO --omega_prefactor 2 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type smooth"
+#        NLOfull="--order NLO --omega_prefactor BB_NLO_full --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type smooth"
 
         models=(
 #            "--model max $LO"
