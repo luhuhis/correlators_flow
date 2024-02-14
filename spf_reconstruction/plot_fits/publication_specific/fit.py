@@ -1,18 +1,11 @@
-import concurrent.futures
-from functools import partial
-from numpy.random import randint
 from numpy.random import normal
-from scipy.interpolate import CubicSpline
-from scipy import integrate
 import numpy as np
 from lmfit import minimize, Parameters, fit_report
-from scipy.optimize import minimize as fastfit
 import sys
-import matplotlib.pyplot as plt
-from matplotlib import rc
-from matplotlib import cm
-from numpy import linspace
 import matplotlib.ticker as mticker
+import lib_process_data as lpd
+from matplotlib.ticker import LogLocator
+from matplotlib.ticker import FormatStrFormatter
 
 def bootstr_from_gauss(x, data, data_err, Seed):
     data = np.asarray(data)
@@ -44,7 +37,7 @@ def fit(g2, sample, yerr, flag):
     #print(fit_report(out))
     fits=[]
     for name, param in out.params.items():
-        fits.append(param.value) 
+        fits.append(param.value)
     fits.append(out.redchi)
     return fits
 
@@ -102,34 +95,50 @@ print("[mean, error] from direct fit: ", value,error)
 
 value2, error2 = fit_direct(g2, y, yerr, 2)
 
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':14})
-plt.rc('text', usetex=True)
-
-plt.figure(figsize=(4,4))
-plt.xscale("log")
-plt.yscale("log")
-
-axes = plt.gca()
-axes.set_xlim([1,6])
-axes.set_ylim([2e-1,2e1])
-axes.xaxis.set_minor_formatter(mticker.ScalarFormatter())
+# rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':14})
+# plt.rc('text', usetex=True)
 
 
-axes.errorbar(quenched_kappa_E[:,1], (quenched_kappa_E[:,2]+quenched_kappa_E[:,3])/2., (quenched_kappa_E[:,3]-quenched_kappa_E[:,2])/2., color='red', fmt='o', fillstyle='none',capsize=2.0,linewidth=1.5, markersize=5, label=r'$\kappa_E/T^3,\ N_f=0$')
-axes.errorbar(quenched_kappa_B[:,1], (quenched_kappa_B[:,2]+quenched_kappa_B[:,3])/2., (quenched_kappa_B[:,3]-quenched_kappa_B[:,2])/2., color='blue', fmt='o', fillstyle='none',capsize=2.0,linewidth=1.5, markersize=5, label=r'$\kappa_B/T^3,\ N_f=0$')
+fig, ax, ax_twiny = lpd.create_figure(xlims=[0.5,6], ylims=[4e-2,2e1], xlabel=r'$g^2(\mu=2\pi T)$')
 
-axes.errorbar(g2_qcd[:,1], kappa_qcd_E[:,1], kappa_qcd_E[:,2], color='red', fmt='o', capsize=2.0,linewidth=1.5, markersize=6, ecolor="red",label=r'$\kappa_E/T^3,\ N_f=2+1$')
-axes.errorbar(np.array(g2_qcd[:,1])+0.06, kappa_qcd_B[:,1], (kappa_qcd_B[:,2]+kappa_qcd_B[:,3])/2., color='blue', fmt='o', capsize=2.0,linewidth=1.5, markersize=6, ecolor="blue", label=r'$\kappa_B/T^3,\ N_f=2+1$')
 
-x = np.linspace(1,6,1000)
-plt.plot(x,value*x**2, linewidth=1, linestyle='solid', color='magenta', label='')
-plt.fill_between(x, (value-error)*x**2, (value+error)*x**2,  facecolor = 'magenta', edgecolor="none", alpha = 0.4, label=r'')
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax_twiny.set_yscale("log")
 
-plt.plot(x,value2*x, linewidth=1, linestyle='solid', color='green', label='')
-plt.fill_between(x, (value2-error2)*x, (value2+error2)*x,  facecolor = 'green', edgecolor="none", alpha = 0.4, label=r'')
+ax.xaxis.set_minor_formatter(mticker.ScalarFormatter())
+ax.xaxis.set_minor_locator(LogLocator(base=2))
+ax.xaxis.set_major_formatter(mticker.StrMethodFormatter("${x:.2f}$"))
+# ax.set_xticks = [0.5, 1, 2, 4, 6]
 
-plt.xlabel(r'$g^2(\mu=2\pi T)$', fontsize=12)
+redcolor = 'tab:red'
+bluecolor = 'tab:blue'
+magentacolor = 'tab:pink'
+greencolor = 'tab:green'
 
-handles, labels = axes.get_legend_handles_labels()
-lgd=plt.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.25, 1.0), prop={'size': 9}, frameon=True, handletextpad=0.1)
-plt.savefig("compare_kappa_g2.pdf",  bbox_extra_artists=(lgd,), bbox_inches='tight')
+redcolor = 'C0'
+bluecolor = 'C2'
+magentacolor = 'C1'
+greencolor = 'C3'
+
+ms = 3.5
+lw = 1
+cs = 1.5
+mew = 0.75
+
+ax.errorbar(quenched_kappa_E[:,1], (quenched_kappa_E[:,2]+quenched_kappa_E[:,3])/2., (quenched_kappa_E[:,3]-quenched_kappa_E[:,2])/2., color=redcolor, fmt='o', fillstyle='none',capsize=cs,linewidth=lw, markersize=ms, label=r'$\kappa_E/T^3,\ N_f=0$', zorder=2, mew=mew)
+ax.errorbar(quenched_kappa_B[:,1], (quenched_kappa_B[:,2]+quenched_kappa_B[:,3])/2., (quenched_kappa_B[:,3]-quenched_kappa_B[:,2])/2., color=bluecolor, fmt='o', fillstyle='none',capsize=cs,linewidth=lw, markersize=ms, label=r'$\kappa_B/T^3,\ N_f=0$', zorder=3, mew=mew)
+
+ax.errorbar(g2_qcd[:,1], kappa_qcd_E[:,1], kappa_qcd_E[:,2], color=redcolor, fmt='o', capsize=cs,linewidth=lw, markersize=ms, ecolor=redcolor,label=r'$\kappa_E/T^3,\ N_f=2+1$', zorder=4, mew=mew)
+ax.errorbar(np.array(g2_qcd[:,1]), kappa_qcd_B[:,1], (kappa_qcd_B[:,2]+kappa_qcd_B[:,3])/2., color=bluecolor, fmt='o', capsize=cs,linewidth=lw, markersize=ms, ecolor=bluecolor, label=r'$\kappa_B/T^3,\ N_f=2+1$', zorder=5, mew=mew)
+
+x = np.linspace(0.5,6,1000)
+ax.errorbar(x,value*x**2, linewidth=lw, linestyle='solid', color=magentacolor, label='', zorder=-10)
+ax.fill_between(x, (value-error)*x**2, (value+error)*x**2,  facecolor = magentacolor, edgecolor="none", alpha = 0.4, label=r'', zorder=-11)
+
+ax.errorbar(x,value2*x, linewidth=lw, linestyle='solid', color=greencolor, label='', zorder=-12)
+ax.fill_between(x, (value2-error2)*x, (value2+error2)*x,  facecolor = greencolor, edgecolor="none", alpha = 0.4, label=r'', zorder=-13)
+
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(handles, labels, loc='upper left', bbox_to_anchor=(0, 1.0), fontsize=9)
+fig.savefig("compare_kappa_g2.pdf")
