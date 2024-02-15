@@ -34,7 +34,7 @@ def fit(g2, sample, yerr, flag):
     fit_params_0 = Parameters()
     fit_params_0.add('a', min=0, max=10,value=0.2)
     out = minimize(residual, fit_params_0, method="leastsq", kws={"g2": g2, "y": sample, "yerr": yerr, "flag": flag}, scale_covar=False)
-    #print(fit_report(out))
+    # print(fit_report(out))
     fits=[]
     for name, param in out.params.items():
         fits.append(param.value)
@@ -45,7 +45,7 @@ def fit_direct(g2, y, yerr, flag):
     fit_params_0 = Parameters()
     fit_params_0.add('a', min=0, max=10,value=0.2)
     out = minimize(residual, fit_params_0, method="leastsq", kws={"g2": g2, "y": y, "yerr": yerr, "flag": flag}, scale_covar=False)
-    #print(fit_report(out))
+    print(fit_report(out))
     for name, param in out.params.items():
         value=param.value
         error=param.stderr
