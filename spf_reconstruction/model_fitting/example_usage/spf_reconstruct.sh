@@ -85,35 +85,14 @@ submit_quenched_BB() {
 
         minscale="eff"
 
-#
-#        LO="--order LO   --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type hard"
-        NLO_naive="--order NLO --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type hard"
-#        NLO="--order NLO --omega_prefactor 2 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type smooth"
-#        NLOfull="--order NLO --omega_prefactor BB_NLO_full --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type smooth"
+        NLO_naive_soft="--order NLO --omega_prefactor 1 --min_scale $minscale --mu_IR_by_T $mu_IR_by_T --max_type smooth"
 
         models=(
-#            "--model max $LO"
-            "--model max $NLO_naive"
-#            "--model max $NLO"
-#            "--model max $NLOfull"
+            "--model max $NLO_naive_soft"
 
-#            "--model smax $LO"
-            "--model smax $NLO_naive"
-#            "--model smax $NLO"
-#            "--model smax $NLOfull"
+            "--model smax $NLO_naive_soft"
 
-#            "--model plaw $LO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
-            "--model plaw $NLO_naive --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
-#            "--model plaw $NLO --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
-#            "--model plaw $NLOfull --OmegaByT_IR 1 --OmegaByT_UV 6.2832"
-            #        "--model trig $LO --mu alpha --nmax 1 "
-            #        "--model trig $LO --mu beta --nmax 1 "
-            #        "--model trig $NLO --mu alpha --nmax 1 "
-            #        "--model trig $NLO --mu beta --nmax 1 "
-            #        "--model trig $LO --mu alpha --nmax 2 "
-            #        "--model trig $LO --mu beta --nmax 2 "
-            #        "--model trig $NLO --mu alpha --nmax 2 "
-            #        "--model trig $NLO --mu beta --nmax 2 "
+            "--model plaw $NLO_naive_soft --OmegaByT_IR 1 --OmegaByT_UV 6.2832 "
         )
 
         for i in "${!models[@]}"; do
