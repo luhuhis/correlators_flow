@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from numpy.random import normal
 import numpy as np
 from lmfit import minimize, Parameters, fit_report
@@ -5,7 +7,15 @@ import sys
 import matplotlib.ticker as mticker
 import lib_process_data as lpd
 from matplotlib.ticker import LogLocator
-from matplotlib.ticker import FormatStrFormatter
+import argparse
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('inputpath', default="/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/")
+parser.add_argument('outputpath', default="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/")
+
+args = parser.parse_args()
+
 
 def bootstr_from_gauss(x, data, data_err, Seed):
     data = np.asarray(data)
@@ -52,21 +62,31 @@ def fit_direct(g2, y, yerr, flag):
     return value, error
 
 Data=[]
-quenched_kappa_B=np.loadtxt("quenched_kappa_B.dat")
+file = args.inputpath+"/quenched_kappa_B.dat"
+print("load", file)
+quenched_kappa_B=np.loadtxt(file)
 for ii in range(len(quenched_kappa_B)):
     Data.append([quenched_kappa_B[ii,1], (quenched_kappa_B[ii,2]+quenched_kappa_B[ii,3])/2, (quenched_kappa_B[ii,3]-quenched_kappa_B[ii,2])/2.])
 
-quenched_kappa_E=np.loadtxt("quenched_kappa_E.dat")
+file = args.inputpath+"/quenched_kappa_E.dat"
+print("load", file)
+quenched_kappa_E=np.loadtxt(file)
 for ii in range(len(quenched_kappa_E)):
     Data.append([quenched_kappa_E[ii,1], (quenched_kappa_E[ii,2]+quenched_kappa_E[ii,3])/2, (quenched_kappa_E[ii,3]-quenched_kappa_E[ii,2])/2.])
 
+file = args.inputpath+"/g2_qcd.dat"
+print("load", file)
+g2_qcd = np.loadtxt(file)
 
-g2_qcd = np.loadtxt("g2_qcd.dat")
-kappa_qcd_E=np.loadtxt("kappa_qcd_E.dat")
+file = args.inputpath+"/kappa_qcd_E.dat"
+print("load", file)
+kappa_qcd_E=np.loadtxt(file)
 for ii in range(len(g2_qcd)):
     Data.append([g2_qcd[ii, 1], kappa_qcd_E[ii,1], kappa_qcd_E[ii,2]])
 
-kappa_qcd_B=np.loadtxt("kappa_qcd_B.dat")
+file = args.inputpath+"/kappa_qcd_B.dat"
+print("load", file)
+kappa_qcd_B=np.loadtxt(file)
 for ii in range(len(g2_qcd)):
     Data.append([g2_qcd[ii, 1], kappa_qcd_B[ii,1], (kappa_qcd_B[ii,2]+kappa_qcd_B[ii,3])/2.])
 Data=np.array(Data)
@@ -141,4 +161,7 @@ ax.fill_between(x, (value2-error2)*x, (value2+error2)*x,  facecolor = greencolor
 
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(handles, labels, loc='upper left', bbox_to_anchor=(0, 1.0), fontsize=9)
-fig.savefig("compare_kappa_g2.pdf")
+
+file = args.outputpath+"/compare_kappa_g2.pdf"
+print("save", file)
+fig.savefig(file)
