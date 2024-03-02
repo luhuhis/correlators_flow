@@ -242,66 +242,31 @@ export tmppath="./correlators_flow/correlator_analysis/double_extrapolation/exam
 # spffit.npy             | Median spectral function with left/right 34th percentiles as function of omega/T
 
 
-
-
 # 2.4.1 Plot spectral reconstruction fit results #1
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh BB $BASEPATH_WORK_DATA $BASEPATH_PLOT yes
 
-/home/altenkort/BB_datapub_test/figures/quenched_1.50Tc_zeuthenFlow/BB//BB_kappa_quenched_1.5Tc.pdf
+# Afterward, the following files have been created in
+# $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
 
-# 2.4.3 Plot spectral reconstruction fit results #3
+# BB_kappa_quenched_1.5Tc.pdf    | Fig. 9 in the paper
+
+
+# 2.4.3 Plot spectral reconstruction fit results #2
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT BB
-
-
-# 2.4.2 Plot spectral reconstruction fit results #2
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh BB $BASEPATH_WORK_DATA $BASEPATH_PLOT no
 
-# Afterwards, the following files have been created in
-# $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/T<T-in-MeV>/
-
-/home/altenkort/BB_datapub_test/figures/quenched_1.50Tc_zeuthenFlow/BB//BB_spf_quenched_1.5Tc.pdf
-/home/altenkort/BB_datapub_test/figures/quenched_1.50Tc_zeuthenFlow/BB//BB_corrfit_quenched_1.5Tc.pdf
-
-# BB_spf_T<T-in-MeV>_paper.pdf      | Fig. 6 in the paper
-# BB_corrfit_T<T-in-MeV>_paper.pdf  | Fig. 7 in the paper
-# BB_kappa_T<T-in-MeV>_paper.pdf    | Fig. 9 in the paper
-
-# and in
-# $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/T<Temp-in-MeV>/
-
-# BB_kappa_T<T-in_MeV>_paper.txt | Final results for kappa, see Table III in the paper
-
-# and in
-# $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/<conftype>/
-
-# BB_kappa_T<T-in-MeV>_finiteflow_paper.txt | Final results for kappa from finite a and tau_F data, see Table III in the paper
-
-# 2.4.2 Plot spectral reconstruction fit results #2
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh $BASEPATH_WORK_DATA $BASEPATH_PLOT
-
-# Afterwards, the following files have been created in
+# Afterward, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
 
-# BB_kfactor.pdf | Fig. 8 in the paper
+# BB_spf_quenched_1.5Tc.pdf      | Fig. 6 in the paper
+# BB_corrfit_quenched_1.5Tc.pdf  | Fig. 7 in the paper
 
 
-
-
-# Afterwards, the following files have been created in
-# $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
-
-# kappa_hisq_paper.pdf | Fig. 10 in the paper
-
-
-# 2.4.4 Plot Figure 3 (2piTD)
-tar -xzf figure_3_2piTD.tar.gz
-# Please refer to the README file: ./figure_3_2piTD/README
-cd ./figure_3_2piTD/
-sh 2piTDs.sh
-# Now, ./figure_3_2piTD/2piTDs.pdf exists.
-
+# 2.5 Plot comparison and g^4 fit
+./correlators_flow/spf_reconstruction/plot_fits/publication_specific/fit.py $BASEPATH_RAW_DATA/quenched_1.50Tc_zeuthenFlow/literature/ $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/
 
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+# TODO what about this
 ./1_merge_data.sh quenched_1.50Tc_zeuthenFlow BB /work/data/altenkort/gradientFlow ../../../../data/merged/
 
