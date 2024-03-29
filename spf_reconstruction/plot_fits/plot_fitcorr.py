@@ -66,7 +66,9 @@ def main():
 
     nfiles, xdata, ydata, errorsleft, errorsright = load_data(args)
 
-    fig, ax, axtwiny = lpd.create_figure(xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G^\text{model}}{G'+lpd.get_corr_subscript(args.corr)+r'}$', xlims=args.xlims, ylims=args.ylims)
+    corr_subscript = lpd.get_corr_subscript(args.corr) if args.corr == "EE" else r'_B^\text{phys.}'
+
+    fig, ax, axtwiny = lpd.create_figure(xlabel=r'$\tau T$', ylabel=r'$\displaystyle \frac{G^\text{model}}{G'+corr_subscript+r'}$', xlims=args.xlims, ylims=args.ylims)
 
     if args.colors is None and args.corr == "BB":
         args.colors = [lpd.get_discrete_color(int(i)) for i in range(nfiles)]
