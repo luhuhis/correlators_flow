@@ -25,13 +25,13 @@ def plot_single_flowtime(index, flowradii, args, tauT, XX, XX_err, labels, ylims
         displaystyle = r'\displaystyle'
     else:
         displaystyle = r''
-    ylabel = r'$ ' + displaystyle + r'\frac{G}{G^\mathrm{norm}}$'
+    ylabel = r'$ ' + displaystyle + r'\frac{G_E }{G^\mathrm{norm}}$'
 
     fig, ax, _ = lpd.create_figure(xlims=xlims, ylims=ylims, xlabel=r'$\tau T$', ylabel=ylabel, UseTex=args.use_tex)
     plots = []
     ax.set_xticks((0.0, 0.1, 0.2, 0.3, 0.4, 0.5))
 
-    ax.text(0.99, 0.99, r'$\sqrt{8\tau_\mathrm{F}} T=$ ' + '{0:.3f}'.format(flowradii[index]), ha='right', va='top', transform=ax.transAxes, bbox=lpd.labelboxstyle)
+    ax.text(0.97, 0.99, r'$\sqrt{8\tau_\mathrm{F}} T=$ ' + '{0:.3f}'.format(flowradii[index]), ha='right', va='top', transform=ax.transAxes, bbox=lpd.labelboxstyle)
 
     # loop over all the different data sets and plot settings
     for tauTs, thisXX, thisXX_err, label, color, zorder in zip(tauT, XX, XX_err, labels, colors, zorders):

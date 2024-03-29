@@ -44,17 +44,19 @@ for idx in "${!arr_conftypes[@]}" ; do
         ylims=${ylims_arr[idx]}
     fi
 
-../_2_plot_lateffects.py \
---corr ${corr} --qcdtype $qcdtype \
---conftypes ${arr_conftypes[idx]} \
---continuum ${continuum} \
---continuum_err ${continuum_err} \
---flowtimesT2 ${flowtimesT2} \
---nproc $ncpu \
---ylims $ylims \
-$outputfolder $add_args
+(
+    cd "$(dirname "$0")" || exit
+    ../_2_plot_lateffects.py \
+    --corr ${corr} --qcdtype $qcdtype \
+    --conftypes ${arr_conftypes[idx]} \
+    --continuum ${continuum} \
+    --continuum_err ${continuum_err} \
+    --flowtimesT2 ${flowtimesT2} \
+    --nproc $ncpu \
+    --ylims $ylims \
+    $outputfolder $add_args
+)
 
 done
-
 
 wait
