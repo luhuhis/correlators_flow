@@ -3,6 +3,7 @@ import lib_process_data as lpd
 import numpy
 import argparse
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
 
@@ -21,7 +22,6 @@ def parse_args():
 
 
 def main():
-
     args = parse_args()
 
     fig, ax, plots = lpd.create_figure(xlabel=r'$\mu/T$', ylabel=r'$g^2$', xlims=args.xlims, ylims=args.ylims)
@@ -31,12 +31,14 @@ def main():
 
     colors = [lpd.get_discrete_color(int(i / 1)) for i in range(len(args.PhiUV_files))]
 
-    Nc=3
-    Cf=(Nc ** 2 - 1) / 2 / Nc
+    Nc = 3
+    Cf = (Nc ** 2 - 1) / 2 / Nc
 
-    fmts=['.', ':', '-.', '--', '.', '.', ':', '-.']
+    fmts = ['-', ':', '--', '-', ':', '--']
 
-    dummycounter=0
+    n_first_legend = 3
+
+    dummycounter = 0
 
     handlers = []
 
@@ -45,25 +47,20 @@ def main():
             data = numpy.load(file)
             xdata = data[:, 0]
             ydata = data[:, 1]
-            factor = 1/xdata**3 / Cf *6 * numpy.pi
-            # factor = 2 / xdata
+            factor = 1 / xdata ** 3 / Cf * 6 * numpy.pi
             ydata *= factor
-            tmp = ax.errorbar(xdata, ydata, fmt=fmts[i], label=args.labels[i], color=colors[i-dummycounter], alpha=1, zorder=-i)
+            tmp = ax.errorbar(xdata, ydata, fmt=fmts[i], label=args.labels[i], color=colors[i - dummycounter], alpha=1, zorder=-i)
             handlers.append(tmp)
         else:
             tmp = ax.errorbar(1, 1, fmt='.', markersize=0, label=args.labels[i])
             handlers.append(tmp)
-            dummycounter+=1
+            dummycounter += 1
 
-    leg1 = ax.legend(handles=handlers[:4], loc=args.leg_loc, bbox_to_anchor=args.leg_pos, handlelength=1.4, fontsize=8)#, title=r'$N_f, T/T_c, \mu$')  #
-
-    leg2 = ax.legend(handles=handlers[5:], loc="upper right", bbox_to_anchor=(1,1), handlelength=1.4, fontsize=8)#, title=r'$N_f, T/T_c, \mu$')  #
+    leg1 = ax.legend(handles=handlers[:n_first_legend], loc=args.leg_loc, bbox_to_anchor=args.leg_pos, handlelength=1.4,
+                     fontsize=8)
+    leg2 = ax.legend(handles=handlers[n_first_legend:], loc="upper right", bbox_to_anchor=(1, 1), handlelength=1.4, fontsize=8)
 
     ax.add_artist(leg1)
-
-    # ax.axvline(x=numpy.pi)
-    # ax.axvline(x=2*numpy.pi)
-
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/UV_spf" + args.suffix + ".pdf"
