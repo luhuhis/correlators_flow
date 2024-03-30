@@ -3,6 +3,7 @@
 basepath_raw_data=$1
 basepath_work_data=$2
 basepath_plot=$3
+equation_number=$4
 
 # this path contains "reference" flow times which are useful if there are
 # multiple lattice spacings for each temperature that have different flow times
@@ -14,6 +15,9 @@ if [ -z "$basepath_raw_data" ] || [ -z "$basepath_work_data" ] || [ -z "$basepat
     exit
 fi
 
+if [ -n "$equation_number" ]; then
+    equation_number="--eq_no $equation_number"
+fi
 
 extrapolate_coupling(){
     ../extrapolate_coupling.py \
@@ -26,7 +30,8 @@ extrapolate_coupling(){
         --outputpath_plot "$basepath_plot/quenched_1.50Tc_zeuthenFlow/coupling/" \
         --outputpath_data "$basepath_work_data/quenched_1.50Tc_zeuthenFlow/coupling/" \
         --Nts 144 120 96 \
-        --betas 7.544 7.394 7.192
+        --betas 7.544 7.394 7.192 \
+        $equation_number
 
 #flow_t2E_s080t80_b0703500.dat \
 # 80

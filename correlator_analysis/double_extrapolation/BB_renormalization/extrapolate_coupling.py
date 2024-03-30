@@ -167,8 +167,7 @@ class Plotter_g2_vs_mu:
         for data in self.list_of_pertRun_MSBar_data_container:
             self.ax.errorbar(data.mubar_by_T, data.g2_MSBAR_pert_run(data.mubar_by_T)/(np.pi*4), fmt='-', markersize=0,
                              lw=self.linewidth, zorder=(int(data.mubar_by_T[0])) + 20,
-                             label=r'\begin{flushleft}$\alpha_s$ via Eq.\,20 at \newline  ' + r' ${\mu_\text{F}}=\bar{\mu}_\mathrm{ref}'
-                                   # + lpd.format_float(data.reference_muF_by_T, 2) + 
+                             label=r'\begin{flushleft}$\alpha_s$ via Eq.\,'+self.args.eq_no+r' at \newline  ' + r' ${\mu_\text{F}}=\bar{\mu}_\mathrm{ref}'
                                    r'$, then \newline run via ' + str(
                              data.nloop) + r'-loop $\beta$-fct. \end{flushleft}')
             self.ax.axvline(x=data.reference_muF_by_T, alpha=1, dashes=(1, 1), zorder=-10000, lw=self.linewidth/2, color='k')
@@ -176,7 +175,7 @@ class Plotter_g2_vs_mu:
     def __plot_MSBAR(self):
         self.ax.errorbar(self.msbar_data_container.mubar_by_T,
                     self.msbar_data_container.g2_MSBAR_spline(self.msbar_data_container.mubar_by_T)/(np.pi*4),
-                    fmt='-', markersize=0, lw=self.linewidth, label=r'$\alpha_s$ via Eq.\,20')
+                    fmt='-', markersize=0, lw=self.linewidth, label=r'$\alpha_s$ via Eq.\,'+self.args.eq_no)
 
     def __finalize_plot(self):
         self.ax.legend(**lpd.leg_err_size(), loc="upper right", bbox_to_anchor=(1.01, 1.01), handlelength=1, title_fontsize=9, fontsize=10, framealpha=0)
@@ -398,6 +397,7 @@ def parse_args() -> argparse.Namespace:
                         default="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/")
     parser.add_argument('--Nts', nargs='*', type=int)
     parser.add_argument('--betas', nargs='*', type=float)
+    parser.add_argument('--eq_no', type=str, default="20", help="Equation number for matching in alphas vs mu plot.")
     args = parser.parse_args()
 
     if len(args.betas) != len(args.input_files) or len(args.Nts) != len(args.input_files):

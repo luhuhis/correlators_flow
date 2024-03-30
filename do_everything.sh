@@ -55,3 +55,10 @@ done
 #./spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh
 #./spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh
 #./spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh
+
+
+
+
+# BB
+
+./correlators_flow/correlator_analysis/double_extrapolation/BB_renormalization/example_usage/extrapolate_coupling.sh $BASEPATH_RAW_DATA $BASEPATH_WORK_DATA $BASEPATH_PLOT 6.40
