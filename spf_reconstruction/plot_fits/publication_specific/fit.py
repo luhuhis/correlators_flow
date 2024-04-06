@@ -136,40 +136,55 @@ ax.xaxis.set_minor_locator(LogLocator(base=2))
 ax.xaxis.set_major_formatter(mticker.StrMethodFormatter("${x:.2f}$"))
 # ax.set_xticks = [0.5, 1, 2, 4, 6]
 
-redcolor = 'tab:red'
-bluecolor = 'tab:blue'
-magentacolor = 'tab:pink'
-greencolor = 'tab:green'
 
-redcolor = 'C0'
-bluecolor = 'C2'
-magentacolor = 'C1'
-greencolor = 'C3'
+color_kappaE = 'C0'
+color_kappaB = 'C2'
+color_fit_g4 = 'C1'
+color_fit_g2 = 'C3'
 
 ms = 3.5
 lw = 1
 cs = 1.5
 mew = 0.75
 
-ax.errorbar(quenched_kappa_E[:, 1], (quenched_kappa_E[:, 2] + quenched_kappa_E[:, 3]) / 2., (quenched_kappa_E[:, 3] - quenched_kappa_E[:, 2]) / 2.,
-            color=redcolor, fmt='o', fillstyle='none', capsize=cs, linewidth=lw, markersize=ms, label=r'$\kappa_E/T^3,\ N_f=0$', zorder=2, mew=mew)
-ax.errorbar(quenched_kappa_B[:, 1], (quenched_kappa_B[:, 2] + quenched_kappa_B[:, 3]) / 2., (quenched_kappa_B[:, 3] - quenched_kappa_B[:, 2]) / 2.,
-            color=bluecolor, fmt='o', fillstyle='none', capsize=cs, linewidth=lw, markersize=ms, label=r'$\kappa_B/T^3,\ N_f=0$', zorder=3, mew=mew)
-
-ax.errorbar(g2_qcd[:, 1], kappa_qcd_E[:, 1], kappa_qcd_E[:, 2], color=redcolor, fmt='o', capsize=cs, linewidth=lw, markersize=ms, ecolor=redcolor,
-            label=r'$\kappa_E/T^3,\ N_f=2+1$', zorder=4, mew=mew)
-ax.errorbar(np.array(g2_qcd[:, 1]), kappa_qcd_B[:, 1], (kappa_qcd_B[:, 2] + kappa_qcd_B[:, 3]) / 2., color=bluecolor, fmt='o', capsize=cs,
-            linewidth=lw, markersize=ms, ecolor=bluecolor, label=r'$\kappa_B/T^3,\ N_f=2+1$', zorder=5, mew=mew)
-
-x = np.linspace(0.5, 6, 1000)
-ax.errorbar(x, value * x ** 2, linewidth=lw, linestyle='solid', color=magentacolor, label='', zorder=-10)
-ax.fill_between(x, (value - error) * x ** 2, (value + error) * x ** 2, facecolor=magentacolor, edgecolor="none", alpha=0.4, label=r'', zorder=-11)
-
-ax.errorbar(x, value2 * x, linewidth=lw, linestyle='solid', color=greencolor, label='', zorder=-12)
-ax.fill_between(x, (value2 - error2) * x, (value2 + error2) * x, facecolor=greencolor, edgecolor="none", alpha=0.4, label=r'', zorder=-13)
+# handles = [
+ax.errorbar(quenched_kappa_E[:, 1], (quenched_kappa_E[:, 2] + quenched_kappa_E[:, 3]) / 2.,
+            (quenched_kappa_E[:, 3] - quenched_kappa_E[:, 2]) / 2.,
+            color=color_kappaE, fmt='o', fillstyle='none', capsize=cs, linewidth=lw, markersize=ms, label=r'$\kappa_E/T^3,\ N_f=0$', zorder=2,
+            mew=mew),
+ax.errorbar(quenched_kappa_B[:, 1], (quenched_kappa_B[:, 2] + quenched_kappa_B[:, 3]) / 2.,
+            (quenched_kappa_B[:, 3] - quenched_kappa_B[:, 2]) / 2.,
+            color=color_kappaB, fmt='o', fillstyle='none', capsize=cs, linewidth=lw, markersize=ms, label=r'$\kappa_B/T^3,\ N_f=0$', zorder=3,
+            mew=mew),
+ax.errorbar(g2_qcd[:, 1], kappa_qcd_E[:, 1], kappa_qcd_E[:, 2], color=color_kappaE, fmt='o', capsize=cs, linewidth=lw, markersize=ms,
+            ecolor=color_kappaE,
+            label=r'$\kappa_E/T^3,\ N_f=2+1$', zorder=4, mew=mew),
+ax.errorbar(np.array(g2_qcd[:, 1]), kappa_qcd_B[:, 1], (kappa_qcd_B[:, 2] + kappa_qcd_B[:, 3]) / 2., color=color_kappaB, fmt='o', capsize=cs,
+            linewidth=lw, markersize=ms, ecolor=color_kappaB, label=r'$\kappa_B/T^3,\ N_f=2+1$', zorder=5, mew=mew)
+# ]
 
 handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles, labels, loc='upper left', bbox_to_anchor=(0, 1.0), fontsize=9)
+
+x = np.linspace(0.5, 6, 1000)
+handle_g4_line = ax.errorbar(x, value * x ** 2, linewidth=lw, linestyle='solid', color=color_fit_g4, label='', zorder=-10)
+handle_g4_fill = ax.fill_between(x, (value - error) * x ** 2, (value + error) * x ** 2, facecolor=color_fit_g4, edgecolor="none", alpha=0.4, label=r'', zorder=-11)
+combined_handle_g4 = (handle_g4_line, handle_g4_fill)
+label_g4 = r"Fit to $\kappa/T^3\propto g^4$"
+handles.append(combined_handle_g4)
+labels.append(label_g4)
+
+
+handle_g2_line = ax.errorbar(x, value2 * x, linewidth=lw, linestyle='dashed', color=color_fit_g2, label='', zorder=-12)
+handle_g2_fill = ax.fill_between(x, (value2 - error2) * x, (value2 + error2) * x, facecolor=color_fit_g2, edgecolor="none", alpha=0.4, label=r'', zorder=-13)
+combined_handle_g2 = (handle_g2_line, handle_g2_fill)
+label_g2 = r"Fit to $\kappa/T^3 \propto g^2$"
+handles.append(combined_handle_g2)
+labels.append(label_g2)
+
+leg1 = ax.legend(handles[:-2], labels[:-2], loc='upper left', bbox_to_anchor=(0, 1.0), fontsize=9)
+ax.add_artist(leg1)
+
+leg2 = ax.legend(handles[-2:], labels[-2:], loc='lower right', bbox_to_anchor=(1, 0.2), fontsize=9, handlelength=1)
 
 file = args.outputpath + "/compare_kappa_g2.pdf"
 print("save", file)
