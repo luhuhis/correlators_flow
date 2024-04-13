@@ -332,7 +332,7 @@ def load_data_and_interpolate(args: argparse.Namespace, general_params: GeneralP
 
         # 1/(a T). a is lattice spacing. this is a "pseudo" Nt
         # (= the Nt, that we should have chosen to get T=1.5Tc while keeping beta fixed.)
-        one_over_aT = rS.r0_div_a(beta) / r0_T
+        one_over_aT = rS.r0_div_a(beta, 2017) / r0_T
         return one_over_aT
 
     # declare a few arrays
