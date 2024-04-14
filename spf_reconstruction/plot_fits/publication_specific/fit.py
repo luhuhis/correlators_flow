@@ -8,10 +8,11 @@ import matplotlib.ticker as mticker
 import lib_process_data as lpd
 from matplotlib.ticker import LogLocator
 import argparse
+from pathlib import Path
 
 parser = argparse.ArgumentParser()
-parser.add_argument('inputpath', default="/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/")
-parser.add_argument('outputpath', default="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/")
+parser.add_argument('inputpath', default=Path(__file__))
+parser.add_argument('outputpath')
 
 args = parser.parse_args()
 
