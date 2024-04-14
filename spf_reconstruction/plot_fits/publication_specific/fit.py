@@ -11,8 +11,8 @@ import argparse
 from pathlib import Path
 
 parser = argparse.ArgumentParser()
-parser.add_argument('inputpath', default=Path(__file__))
-parser.add_argument('outputpath')
+parser.add_argument('--inputpath', default=Path(__file__))
+parser.add_argument('--outputpath', required=True)
 
 args = parser.parse_args()
 
