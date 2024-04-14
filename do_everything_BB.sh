@@ -245,7 +245,7 @@ export G_PERT_LO_DIR=${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO
 
 
 ## 4. Plot fit to g^2 and g^4
-./correlators_flow/spf_reconstruction/plot_fits/publication_specific/fit.py ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/literature/ ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
+./correlators_flow/spf_reconstruction/plot_fits/publication_specific/2024-BB-paper/fit_kappa_to_g2_g4.py --outputpath ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
 # Afterward, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
 # compare_kappa_g2.pdf                  | FIG 9 in the paper
