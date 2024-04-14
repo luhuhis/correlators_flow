@@ -11,8 +11,8 @@ import argparse
 from pathlib import Path
 
 parser = argparse.ArgumentParser()
-parser.add_argument('inputpath', default=Path(__file__))
-parser.add_argument('outputpath')
+parser.add_argument('--inputpath', default=Path(__file__))
+parser.add_argument('--outputpath', required=True)
 
 args = parser.parse_args()
 
@@ -67,31 +67,31 @@ def fit_direct(g2, y, yerr, flag):
 
 
 Data = []
-file = args.inputpath + "/quenched_kappa_B.dat"
+file = f"{args.inputpath}/quenched_kappa_B.dat"
 print("load", file)
 quenched_kappa_B = np.loadtxt(file)
 for ii in range(len(quenched_kappa_B)):
     Data.append(
         [quenched_kappa_B[ii, 1], (quenched_kappa_B[ii, 2] + quenched_kappa_B[ii, 3]) / 2, (quenched_kappa_B[ii, 3] - quenched_kappa_B[ii, 2]) / 2.])
 
-file = args.inputpath + "/quenched_kappa_E.dat"
+file = f"{args.inputpath}/quenched_kappa_E.dat"
 print("load", file)
 quenched_kappa_E = np.loadtxt(file)
 for ii in range(len(quenched_kappa_E)):
     Data.append(
         [quenched_kappa_E[ii, 1], (quenched_kappa_E[ii, 2] + quenched_kappa_E[ii, 3]) / 2, (quenched_kappa_E[ii, 3] - quenched_kappa_E[ii, 2]) / 2.])
 
-file = args.inputpath + "/g2_qcd.dat"
+file = f"{args.inputpath}/g2_qcd.dat"
 print("load", file)
 g2_qcd = np.loadtxt(file)
 
-file = args.inputpath + "/kappa_qcd_E.dat"
+file = f"{args.inputpath}/kappa_qcd_E.dat"
 print("load", file)
 kappa_qcd_E = np.loadtxt(file)
 for ii in range(len(g2_qcd)):
     Data.append([g2_qcd[ii, 1], kappa_qcd_E[ii, 1], kappa_qcd_E[ii, 2]])
 
-file = args.inputpath + "/kappa_qcd_B.dat"
+file = f"{args.inputpath}/kappa_qcd_B.dat"
 print("load", file)
 kappa_qcd_B = np.loadtxt(file)
 for ii in range(len(g2_qcd)):
