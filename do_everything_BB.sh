@@ -2,17 +2,17 @@
 
 ## Data publication for "Lattice B-field correlators for heavy quarks", 2023, arXiv:2402.09337
 ## Authors:
-##   Luis Altenkort, altenkort@physik.uni-bielefeld.de, Universität Bielefeld
+##   Luis Altenkort, Bielefeld University, altenkort@physik.uni-bielefeld.de
 ##   David de la Cruz, TU Darmstadt
-##   Olaf Kaczmarek, Universität Bielefeld
+##   Olaf Kaczmarek, Bielefeld University
 ##   Guy D. Moore, TU Darmstadt
 ##   Hai-Tao Shu, Brookhaven National Laboratory
 
 ## Requirements
 ## - bash 5.0 (Linux shell)
 ## - python 3.11
-##   - packages: matplotlib numpy scipy rundec natsort colorama
-## - working latex installation with packages amsmath and mathtools for matplotlib tex rendering
+##   - packages: matplotlib, numpy, scipy, rundec, natsort, colorama
+## - working latex installation with packages `amsmath` and `mathtools` for matplotlib tex rendering
 ## - gnuplot 5
 
 ## INSTRUCTIONS
@@ -23,14 +23,14 @@ export NPROC=20  # Change this accordingly to number of processors for paralleli
 
 tar -xzf correlators_flow.tar.gz  # Unzip the analysis scripts. This will create a new folder "correlators_flow" in the current directory.
 ## OR
-git clone https://github.com/luhuhis/correlators_flow.git  # TODO update git  --branch v0.1.0
+# git clone --branch v0.2.0 https://github.com/luhuhis/correlators_flow.git
 
 chmod -R +x ./correlators_flow  # Make all scripts executable
 
 tar -xzf AnalysisToolbox.tar.gz # Unzip the AnalysisToolbox (python package), which is a dependency of "correlators_flow". This will create a folder "AnalysisToobox"
 ## OR
-git clone https://github.com/LatticeQCD/AnalysisToolbox.git
-( cd AnalysisToolbox && git checkout f9eee73d45d7b981153db75cfaf2efa2b4cefa9c )
+# git clone https://github.com/LatticeQCD/AnalysisToolbox.git
+# ( cd AnalysisToolbox && git checkout f9eee73d45d7b981153db75cfaf2efa2b4cefa9c )
 
 tar -xzf data.tar.gz # Unzip data (gradientFlow output from SIMULATeQCD) and create various folders.
 
@@ -40,11 +40,11 @@ export G_PERT_LO_DIR=${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO
 
 ## Note that the finished figures are also contained in "figures.tar.gz" and can just be extracted for convenience,
 ## skipping the whole data processing steps.
-tar -xzf figures.tar.gz # TODO create separate zip file for all figures
+tar -xzf figures.tar.gz
 
 ## Note that the finished output data is also contained in "output_data.tar.gz" and can just be extracted for
 ## convenience, skipping the whole processing steps.
-tar -xzf output_data.tar.gz # TODO create separate zip file for all output files
+tar -xzf output_data.tar.gz
 
 
 ## 2. RUN SCRIPTS
