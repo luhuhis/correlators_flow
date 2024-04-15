@@ -170,7 +170,7 @@ x = np.linspace(0.5, 6, 1000)
 handle_g4_line = ax.errorbar(x, value * x ** 2, linewidth=lw, linestyle='solid', color=color_fit_g4, label='', zorder=-10)
 handle_g4_fill = ax.fill_between(x, (value - error) * x ** 2, (value + error) * x ** 2, facecolor=color_fit_g4, edgecolor="none", alpha=0.4, label=r'', zorder=-11)
 combined_handle_g4 = (handle_g4_line, handle_g4_fill)
-label_g4 = r"Fit to $\kappa_{E,B}/T^3\propto g^4$"
+label_g4 = r"$\kappa_{E,B}/T^3\propto g^4$"
 handles.append(combined_handle_g4)
 labels.append(label_g4)
 
@@ -178,14 +178,14 @@ labels.append(label_g4)
 handle_g2_line = ax.errorbar(x, value2 * x, linewidth=lw, linestyle='dashed', color=color_fit_g2, label='', zorder=-12)
 handle_g2_fill = ax.fill_between(x, (value2 - error2) * x, (value2 + error2) * x, facecolor=color_fit_g2, edgecolor="none", alpha=0.4, label=r'', zorder=-13)
 combined_handle_g2 = (handle_g2_line, handle_g2_fill)
-label_g2 = r"Fit to $\kappa_{E,B}/T^3 \propto g^2$"
+label_g2 = r"$\kappa_{E,B}/T^3 \propto g^2$"
 handles.append(combined_handle_g2)
 labels.append(label_g2)
 
 leg1 = ax.legend(handles[:-2], labels[:-2], loc='upper left', bbox_to_anchor=(0, 1.0), fontsize=9)
 ax.add_artist(leg1)
 
-leg2 = ax.legend(handles[-2:], labels[-2:], loc='lower right', bbox_to_anchor=(1, 0.2), fontsize=9, handlelength=1)
+leg2 = ax.legend(handles[-2:], labels[-2:], loc='lower right', bbox_to_anchor=(1, 0.15), fontsize=9, handlelength=1, title="Fit to")
 
 file = args.outputpath + "/compare_kappa_g2.pdf"
 print("save", file)
