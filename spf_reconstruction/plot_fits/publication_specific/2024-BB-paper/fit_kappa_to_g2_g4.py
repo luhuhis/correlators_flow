@@ -182,10 +182,10 @@ label_g2 = r"$\kappa_{E,B}/T^3 \propto g^2$"
 handles.append(combined_handle_g2)
 labels.append(label_g2)
 
-leg1 = ax.legend(handles[:-2], labels[:-2], loc='upper left', bbox_to_anchor=(0, 1.0), fontsize=9)
+leg1 = ax.legend(handles[:-2], labels[:-2], loc='upper left', bbox_to_anchor=(0, 1.0))
 ax.add_artist(leg1)
 
-leg2 = ax.legend(handles[-2:], labels[-2:], loc='lower right', bbox_to_anchor=(1, 0.15), fontsize=9, handlelength=1, title="Fit to")
+leg2 = ax.legend(handles[-2:], labels[-2:], loc='lower right', bbox_to_anchor=(1, 0.15), handlelength=1, title="Fit to")
 
 file = args.outputpath + "/compare_kappa_g2.pdf"
 print("save", file)
