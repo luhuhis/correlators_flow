@@ -170,7 +170,7 @@ x = np.linspace(0.5, 6, 1000)
 handle_g4_line = ax.errorbar(x, value * x ** 2, linewidth=lw, linestyle='solid', color=color_fit_g4, label='', zorder=-10)
 handle_g4_fill = ax.fill_between(x, (value - error) * x ** 2, (value + error) * x ** 2, facecolor=color_fit_g4, edgecolor="none", alpha=0.4, label=r'', zorder=-11)
 combined_handle_g4 = (handle_g4_line, handle_g4_fill)
-label_g4 = r"Fit to $\kappa{E,B}/T^3\propto g^4$"
+label_g4 = r"Fit to $\kappa_{E,B}/T^3\propto g^4$"
 handles.append(combined_handle_g4)
 labels.append(label_g4)
 
