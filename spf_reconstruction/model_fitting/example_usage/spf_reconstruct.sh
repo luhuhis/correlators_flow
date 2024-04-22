@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO add flag to choose between EE BB, hisq quenched etc
+
 basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}"
 use_cluster="${2:-"yes"}"
 nproc="${3:-"1"}"
