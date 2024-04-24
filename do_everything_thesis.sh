@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO add beartype and nptyping to dependencies
+
 ## Data publication for "The diffusion of heavy quarks from lattice QCD", PhD thesis by Luis Altenkort, 2024, Bielefeld University
 
 ## Requirements

@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "correlators-flow"
+version = "0.1.0"
+description = ""
+authors = ["Luis Altenkort <altenkort@physik.uni-bielefeld.de>"]
+packages = [{include = '../correlators_flow'}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+matplotlib = "^3.8.4"
+numpy = "^1.26.4"
+scipy = "^1.13.0"
+colorama = "^0.4.6"
+rundec = "^0.6"
+natsort = "^8.4.0"
+nptyping = "^2.5.0"
+beartype = "^0.18.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
