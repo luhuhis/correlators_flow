@@ -267,7 +267,7 @@ def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta
 
     xlabel = r'$n_\mathrm{'+args.update_str+r'}/ ' + str(args.MC_stepsize) + r'$'
     ylabel = r'$\mathrm{Re}\mathrm{Tr}[U_{(\beta,0)}]$'
-    fig, ax, _ = lpd.create_figure(xlabel=xlabel, ylabel=ylabel, figsize="fullwidth_slim")
+    fig, ax, axtwiny = lpd.create_figure(xlabel=xlabel, ylabel=ylabel, figsize="fullwidth_slim")
 
     for k in range(n_streams):
 
@@ -298,7 +298,7 @@ def plot_MC_time(x, y, flowidx, dataindex, results, args, flowtime, nt, ns, beta
     thisylims = ax.get_ylim()
     diff = thisylims[1] - thisylims[0]
     ax.set_ylim(numpy.fmax(0, thisylims[0] - diff / 4), numpy.fmin(0.5, thisylims[1] + diff / 4))
-
+    axtwiny.set_ylim(ax.get_ylim())
     outputfolder = lpd.get_plot_path(args.qcdtype, args.corr, args.conftype, args.basepath_plot) if not args.outputpath else args.outputpath
     lpd.create_folder(outputfolder)
     fig.savefig(outputfolder + "/" + "polyakovloop_MCtime" + args.suffix + ".pdf")
