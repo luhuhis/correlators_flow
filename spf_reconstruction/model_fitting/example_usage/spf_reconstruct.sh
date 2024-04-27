@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# TODO add flag to choose between EE BB, hisq quenched etc
-
-basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}"
-use_cluster="${2:-"yes"}"
-nproc="${3:-"1"}"
+qcdtype=$1
+corr=$2
+basepath_work_data=$3
+use_cluster="${4:-"no"}"  # `yes` or `no`
+nproc="${5:-"1"}"
 
 if [ "$use_cluster" == "yes" ]; then
     nproc=128
@@ -13,7 +13,7 @@ if [ "$use_cluster" == "yes" ]; then
     }
 else
     spfbatch() {
-        export LD_LIBRARY_PATH=$HOME/libffi/lib64:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$HOME/libffi/lib64:$LD_LIBRARY_PATH  # TODO remove this
         "$@"
     }
 fi
@@ -205,9 +205,24 @@ submit_hisq_finite_a_and_tf() {
 (
     cd "$(dirname $0)" || exit
 
-    #    submit_quenched_EE
-    submit_quenched_BB
-    #    submit_hisq
-    #    submit_hisq_finite_a_and_tf
-
+    if [ "$qcdtype" == "quenched_1.50Tc_zeuthenFlow" ]; then
+        if [ "$corr" == "EE" ] ; then
+            submit_quenched_EE
+        elif [ "$corr" == "BB" ] ; then
+            submit_quenched_BB
+        else
+            echo "Error: unknown corr '$corr', should be either EE or BB"
+        fi
+    elif [ "$qcdtype" == "hisq_ms5_zeuthenFlow" ]; then
+        if [ "$corr" == "EE" ] ; then
+            submit_hisq
+            submit_hisq_finite_a_and_tf
+        elif [ "$corr" == "BB" ] ; then
+            echo "Error: not implemented"
+        else
+            echo "Error: unknown corr '$corr', should be either EE or BB"
+        fi
+    else
+        echo "Error: unknown qcdtype '$qcdtype', should be either quenched_1.50Tc_zeuthenFlow or hisq_ms5_zeuthenFlow"
+    fi
 )
