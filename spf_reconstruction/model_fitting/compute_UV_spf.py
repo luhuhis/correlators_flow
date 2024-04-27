@@ -242,7 +242,9 @@ def get_spf(Nf: int, max_type: str, min_scale_str: str, T_in_GeV: float, omega_p
     params = get_parameters(Nf, max_type, min_scale_str, T_in_GeV, omega_prefactor_input, Npoints, Nloop, order, corr,
                             mu_IR_by_T)
 
-    cBsq = get_cBsq(params)
+    cBsq = None
+    if corr == "BB":
+        cBsq = get_cBsq(params)
 
     OmegaByT_arr, PhiUVByT3, g2_arr = lpd.parallel_function_eval(inner_loop,
                                                                  range(len(params.OmegaByT_values)),
