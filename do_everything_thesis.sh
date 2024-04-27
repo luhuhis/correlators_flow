@@ -186,7 +186,8 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 
 ## 2.2 Spectral reconstruction [OPTIONAL, this takes a lot of computing time, so the output files are already included]
 # TODO add EE quenched/hisq versions for spf_reconstruct
-./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh ${BASEPATH_WORK_DATA} NO ${NPROC}
+./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh quenched_1.50Tc_zeuthenFlow EE  ${BASEPATH_WORK_DATA} NO ${NPROC}
+./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh quenched_1.50Tc_zeuthenFlow BB  ${BASEPATH_WORK_DATA} NO ${NPROC}
 # Afterward, the following files have been created in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/spf/<model>_<rho-UV-order>_Nf0_T0.472_<min_scale>_<running-scale-coefficient>_tauTgtr0.24_<suffix>
 # corrfit.dat            | Median input BB correlator and fitted model correlator
