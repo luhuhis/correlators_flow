@@ -80,9 +80,9 @@ submit_quenched_BB() {
 
         #Adjusting the minscale based on the suffix
         if [[ $input_corr_suffix == *"_IRLO" ]]; then
-            mu_IR_by_T="LO" # replace with the desired value
+            mu_IR_by_T="LO"
         elif [[ $input_corr_suffix == *"_IRNLO" ]]; then
-            mu_IR_by_T="NLO" # replace with the desired value
+            mu_IR_by_T="NLO"
         fi
 
         minscale="eff"
@@ -136,11 +136,9 @@ submit_hisq() {
     nsamples=1000
 
     for j in "${!temps[@]}"; do
-        #        if [ $j -eq 0 ] ; then
         temp=${temps[j]}
         int_nt=${int_nts[j]}
         for i in "${!models[@]}"; do
-            #            if [ $i -eq 0 ] ; then
             spfbatch ../spf_reconstruct.py \
                 --output_path $basepath_work_data/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/ \
                 --add_suffix 23-02-16_relflow \
@@ -152,9 +150,7 @@ submit_hisq() {
                 --Nf 3 \
                 --nsamples $nsamples \
                 ${models[i]}
-            #            fi
         done
-        #        fi
     done
 }
 
