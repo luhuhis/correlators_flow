@@ -9,12 +9,15 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--inputfolder', default="../../data/merged/quenched_pertLO_wilsonFlow/EE/", type=str)
+    parser.add_argument('--outputfolder', type=str)
     parser.add_argument('--Ntau', required=True, type=int)
     args = parser.parse_args()
 
-    fig, ax, _ = lpd.create_figure(ylabelpos=(0.15, 0.98), ylims=[0.5, 50000], xlims=[0, 0.52], ylabel=r'$\displaystyle \frac{G^\mathrm{LO}}{(g^2 C_F)T^4}$', xlabel=r'$\tau T$')
+    fig, ax, axtwiny = lpd.create_figure(ylabelpos=(0.15, 0.98), ylims=[0.5, 50000], xlims=[0, 0.52], ylabel=r'$\displaystyle \frac{G^\mathrm{LO}}{(g^2 C_F)T^4}$', xlabel=r'$\tau T$')
     ax.set_yscale('log')
     ax.minorticks_off()
+    axtwiny.set_yscale('log')
+    axtwiny.minorticks_off()
 
     # copy these from the corresponding mathematica notebook!
     contCorrResolution = 10
@@ -51,9 +54,8 @@ def main():
             ax.errorbar(EE_cont[j0 + xval][0], EE_cont[j0 + xval][2], fmt='|', mew=1, markersize=25, color=color, alpha=1, zorder=-1)
     ax.legend(handles=plots, title=r'$\sqrt{8\tau_\mathrm{F}} T$', loc="upper right", frameon=True, framealpha=0.8, edgecolor='none', fancybox=False, facecolor="w", labelspacing=0.1, borderpad=0.1,
                        handletextpad=0.4, handlelength=1.25)
-    outputfolder = "/work/home/altenkort/work/correlators_flow/plots/pertLO/"
-    lpd.create_folder(outputfolder)
-    file = outputfolder + "/EE_pert_contvslatt_flow.pdf"
+    lpd.create_folder(args.outputfolder)
+    file = args.outputfolder + "/EE_pert_contvslatt_flow.pdf"
     fig.savefig(file)
     print("saved pert corr plot", file)
 
