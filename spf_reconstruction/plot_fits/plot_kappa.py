@@ -4,10 +4,6 @@ import numpy as np
 import argparse
 from matplotlib.ticker import AutoMinorLocator
 
-
-use_pgf_backend = True
-backend = 'pgf'
-
 def load_data(args):
 
     files = []
@@ -85,10 +81,12 @@ def parse_args():
         exit(1)
 
     if args.ylims is None and args.pos is None:
-        args.ylims = (-1, len(args.model_ids)+3)
+        offset = 3 if args.corr == "BB" else 2.5
+        args.ylims = (-1, len(args.model_ids)+offset)
 
     if args.pos is None:
-        args.pos = np.flip(np.linspace(0, len(args.model_ids)+1, len(args.model_ids)))
+        offset_pos = 0 if args.corr == "BB" else 0.5
+        args.pos = np.flip(np.linspace(offset_pos, len(args.model_ids)+1, len(args.model_ids)))
 
     return args
 
@@ -129,7 +127,8 @@ def main():
 
     nfiles, xdata, ydata, errorsleft, errorsright, chisqdof_arr, chisqdof_arr_err, kappa_bounds = load_data(args)
     labelboxstyle = dict(boxstyle="Round", fc="None", ec="None", alpha=0, pad=0.1, zorder=99)
-    fig, ax, plots = lpd.create_figure(figsize=args.figsize, xlims=args.xlims, ylims=args.ylims, ylabelbox=labelboxstyle, xlabelbox=labelboxstyle, ytwinticks=False, minorticks=False, use_pgf_backend=use_pgf_backend)
+    use_pgf_backend=True if args.corr == "BB" else False
+    fig, ax, _ = lpd.create_figure(figsize=args.figsize, xlims=args.xlims, ylims=args.ylims, ylabelbox=labelboxstyle, xlabelbox=labelboxstyle, ytwinticks=False, minorticks=False, use_pgf_backend=use_pgf_backend)
 
     if args.colors is None and args.corr == "BB":
         args.colors = []
@@ -201,13 +200,14 @@ def main():
     else:
         ax.yaxis.set_label_coords(1.04, 1.00)
         chisqstr = ""
+        ax.yaxis.label.set_size(10)
+        ax.tick_params(axis='y', which='major', labelsize=10)
         if not args.hide_chisq:
-            chisqstr = r'$\chi^2/\mathrm{d.o.f.}$'
-            ax.set_ylabel(r'\parbox{5.25cm}{$\mathrm{model}$ \hfill ' + chisqstr + r'\null}', horizontalalignment='left', verticalalignment='top',
-                          fontsize=5)
+            chisqstr = R'$\chi^2/\mathrm{d.o.f.}$'
+            ax.yaxis.set_label_coords(1.05, 0.99)
+            ax.set_ylabel(r'\parbox{3cm}{model \hfill '+chisqstr+r'\null}', horizontalalignment='left', verticalalignment='top')
         elif args.hide_chisq and corr == "BB":
-            ax.set_ylabel(r'\raisebox{0pt}[0pt][0pt]{$\mathrm{model,}$\ \ \, $\scalebox{0.7}{$\frac{\bar{\mu}_T}{T}$},$}\ \scalebox{0.7}{$\frac{\bar{\mu}_{\tau_\mathrm{F}}}{\mu_\mathrm{F}}$}', horizontalalignment='left', verticalalignment='top')
-        # ax.set_ylabel(r'\parbox{3cm}{$\mathrm{model}$ \hfill '+chisqstr+r'\null}', horizontalalignment='left', verticalalignment='top', fontsize=5)
+            ax.set_ylabel(R'\raisebox{0pt}[0pt][0pt]{$\mathrm{model,}$\ \ \, $\scalebox{0.7}{$\frac{\bar{\mu}_T}{T}$},$}\ \scalebox{0.7}{$\frac{\bar{\mu}_{\tau_\mathrm{F}}}{\mu_\mathrm{F}}$}', horizontalalignment='left', verticalalignment='top')
         ax.set_yticks(args.pos)
         ax.yaxis.tick_right()
         ax.set_yticklabels(args.labels)
@@ -220,15 +220,15 @@ def main():
             axtwinx.set_xticks([float(i) for i in args.xticks])
         ax.xaxis.set_minor_locator(AutoMinorLocator(2))
         axtwinx.xaxis.set_minor_locator(AutoMinorLocator(2))
-        ax.yaxis.label.set_size(10)
-        ax.tick_params(axis='y', which='major', labelsize=10)
 
+    backend = {}
     if corr == "BB":
         add_group_labels(ax)
+        backend = dict(backend='pgf')
 
     lpd.create_folder(args.outputpath)
     outfile = args.outputpath + "/"+args.corr+"_kappa" + args.suffix + ".pdf"
-    fig.savefig(outfile, backend=backend)
+    fig.savefig(outfile, **backend)
     print("saved ", outfile)
 
 
