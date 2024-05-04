@@ -256,13 +256,6 @@ done
 
 ./spf_reconstruction/plotting/plot_integrand.py --outputpath ../plots/ --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor 1 --PathPhiUV ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/max_LO_T0.472_min2piT_w1_500_0.0_exp0_quenched_cont_f0/phiUV.dat
 
-./process_data/covariance.py --qcdtype quenched_1.50Tc_zeuthenFlow --conftype s144t36_b0754400 --corr EE --basepath ../data/merged/ --outputfolder ../plots/quenched_1.50Tc_zeuthenFlow/EE/
-./plotting/plot_kappaB.py --outputfolder ../plots/quenched_1.50Tc_zeuthenFlow/BB/
-
-
-
-
-
 ./spf_reconstruction/plot_fits/example_usage/plot_g2.sh
 
 #./correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath "../data/merged/" --outputfolder "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/EE/"
@@ -280,5 +273,6 @@ done
 #./spf_reconstruction/plot_fits/example_usage/plot_UV_spfs.sh
 #./spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh
 #./spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh
+# plot k_factors
 
 

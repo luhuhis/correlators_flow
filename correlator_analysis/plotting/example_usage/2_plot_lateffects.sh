@@ -9,6 +9,8 @@ if [ -z "$qcdtype" ] || [ -z "$corr" ] ; then
     exit
 fi
 
+# TODO abstract input paths
+
 ncpu=20
 
 if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
