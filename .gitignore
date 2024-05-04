@@ -4,3 +4,6 @@ correlator_analysis/__pycache__/
 __pycache__/
 *log*
 *.pdf
+.idea/
+acor.d
+*code-workspace
