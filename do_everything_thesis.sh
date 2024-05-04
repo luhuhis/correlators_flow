@@ -57,6 +57,11 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 
 # TODO try quenched EE commands
 
+
+## 2.0.1 Perturbative plots
+./correlators_flow/perturbative_corr/plot_QED_LPT.py --inputfolder ${BASEPATH_RAW_DATA} --outputfolder ${BASEPATH_PLOT}
+
+
 ## 2.1 Double extrapolation
 ## 2.1.1 Merge individual small text files into large binary (npy) files
 # Merge individual BB correlator measurement text files (output from SIMULATeQCD) into a small number of larger numpy files (binary format).
@@ -126,7 +131,7 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 ## 2.1.5 Coupling calculations
 # Continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices,
 # and conversion from flow scheme to the MSBAR scheme coupling at one scale, then perturbative 5-loop running to other relevant scales.
-./correlators_flow/correlator_analysis/double_extrapolation/BB_renormalization/example_usage/extrapolate_coupling.sh ${BASEPATH_RAW_DATA} ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
+./correlators_flow/correlator_analysis/double_extrapolation/BB_renormalization/example_usage/extrapolate_coupling.sh ${BASEPATH_RAW_DATA} ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} 6.40
 # Afterward, the following files have been created in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/coupling/
 # g2_muF_cont_extr.txt         | Continuum-extrapolated flow scheme coupling (g^2) as function of flow scale mu_F=1/sqrt(8 tau_F) in units of temperature T
@@ -208,6 +213,7 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # <corr>_kappa_quenched_1.5Tc.txt  |  Final kappa value
 
 ## 2.2.2 Plot comparison to literature (this depends on the previous call to `plot_fits_quenched.sh`!)
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} EE
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} BB
 # Afterward, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
@@ -242,7 +248,6 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # TODO update all the paths here!
 
 # plot perturbative corrs
-#./perturbative_corr/plot_QED_LPT.py --inputfolder ../data/merged/ --outputfolder ../plots/
 #./plotting/0_plot_pert_correlators.py --Ntau 24 --inputfolder "../data/merged/quenched_pertLO_wilsonFlow/EE/"
 
 for tau in 1 2 3 4 5 6 7 8 9 10 ; do
@@ -274,13 +279,7 @@ done
 #
 #
 #./spf_reconstruction/plot_fits/example_usage/plot_UV_spfs.sh
-#./spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh
 #./spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh
 #./spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh
 
 
-
-
-# BB
-
-./correlators_flow/correlator_analysis/double_extrapolation/BB_renormalization/example_usage/extrapolate_coupling.sh $BASEPATH_RAW_DATA $BASEPATH_WORK_DATA $BASEPATH_PLOT 6.40

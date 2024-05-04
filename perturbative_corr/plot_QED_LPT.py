@@ -12,14 +12,14 @@ def main():
     args = parser.parse_args()
 
     lpd.create_folder(args.outputfolder)
-    xdata, I2, I3 = numpy.loadtxt(args.inputfolder+"EE_QED_LPT.dat", unpack=True)
-    fig, ax, plots = lpd.create_figure(xlabel=r'$\sqrt{8\tau_\mathrm{F}}/a$', ylabel=r'', xlabelpos=(0.99, 0.07))
-    ax.errorbar(numpy.sqrt(xdata*8), I2/I2[0]*100, label=r'operator mixing')  # $-a^4\frac{3}{2}\mathcal{I}_2(\tau_\mathrm{F})$
-    ax.errorbar(numpy.sqrt(xdata*8), I3/I3[-1]*100, fmt=':', label=r'flow time renorm.')  # $a^4\frac{1}{4}\mathcal{I}_3(\tau_\mathrm{F})$
-    ax.axhline(y=100, **lpd.horizontallinestyle)
-    ax.axhline(y=0, **lpd.horizontallinestyle)
+    xdata, I2, I3 = numpy.loadtxt(args.inputfolder+"/EE_QED_LPT.dat", unpack=True)
+    fig, ax, axtwiny = lpd.create_figure(xlabel=r'$\sqrt{8\tau_\mathrm{F}}/a$', ylabel="", xlabelpos=(0.99, 0.01), ylims=(0,100), xlims=(0,2.84))
+    ax.errorbar(numpy.sqrt(xdata*8), I2/I2[0]*100, label=r'Operator mixing')  # $-a^4\frac{3}{2}\mathcal{I}_2(\tau_\mathrm{F})$
+    ax.errorbar(numpy.sqrt(xdata*8), I3/I3[-1]*100, fmt=':', label=r'Flow time self-renorm.')  # $a^4\frac{1}{4}\mathcal{I}_3(\tau_\mathrm{F})$
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
-    ax.legend(loc="center right", bbox_to_anchor=(1, 0.46), framealpha=0, handlelength=1)  #, title="QED: lattice artifacts \n at NLO")
+    axtwiny.yaxis.set_major_formatter(mtick.PercentFormatter())
+    ax.set_title(r'Term magnitude relative to $\tau_\mathrm{F}=0$')
+    ax.legend(loc="center right", bbox_to_anchor=(1, 0.46), framealpha=0, handlelength=1, fontsize=9, title_fontsize=9, title="Lattice artifact terms")  #, title="QED: lattice artifacts \n at NLO")
     fig.savefig(args.outputfolder+"/EE_QED_LPT.pdf")
     print("saved QED LPT plot", args.outputfolder+"/EE_QED_LPT.pdf")
 
