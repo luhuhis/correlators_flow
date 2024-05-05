@@ -145,7 +145,7 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 
 # TODO add plot lat effects
 ./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
-
+./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}  # TODO check whether this works once hisq data has been copied!!!
 
 ## 2.1.5 Coupling calculations
 # Continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices,
@@ -200,6 +200,12 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
 # BB_flow_extr_quality_no_extr.pdf | Left panel of FIG 4 in the paper. Bare continuum BB correlator as a function of flow time.
 # BB_flow_extr_quality_relflow.pdf | Right panel of FIG 4 in the paper. Renormalized continuum BB correlator as a function of flow time with flow time extrapolation.
+
+
+# TODO add compare EE vs Multilevel
+# TODO add how to get the ML correlator file??
+./correlators_flow/correlator_analysis/plotting/6_plot_finalcorr.py --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --input_flow ${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.txt --input_multilvl ${BASEPATH_RAW_DATA}/multi-level_2015/EE_2015_new.txt
+
 
 
 ## 2.1.8 Comparison plot: EE vs BB correlator after continuum and flow-time-to-zero extrapolations
@@ -265,6 +271,12 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 
 
 
+
+
+
+
+
+
 for tau in 1 2 3 4 5 6 7 8 9 10 ; do
     ./perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ../data/merged/pert_LO/flowtimes.dat --outputpath ../plots/pertLO/ --inputpath ../data/merged/pert_LO/ --tau $tau
 done
@@ -273,17 +285,13 @@ done
 
 ./spf_reconstruction/plot_fits/example_usage/plot_g2.sh
 
-#./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow BB
-#./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE
-#
-#./correlator_analysis/plotting/6_plot_finalcorr.py --outputfolder ../plots/quenched_1.50Tc_zeuthenFlow/EE/ --input_flow ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.txt --input_multilvl ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/multi-level_2015/EE_2015_new.txt
-#
-#./correlator_analysis/plotting/example_usage/plot_flow_dep.sh
-#
-#
-#./spf_reconstruction/plot_fits/example_usage/plot_UV_spfs.sh
-#./spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh
-#./spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh
-# plot k_factors
+
+./correlator_analysis/plotting/example_usage/plot_flow_dep.sh
+
+
+./spf_reconstruction/plot_fits/example_usage/plot_UV_spfs.sh
+./spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh
+./spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh
+ plot k_factors
 
 

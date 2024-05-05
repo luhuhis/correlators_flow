@@ -23,7 +23,7 @@ def main():
     except OSError:
         print("skip multilvl2")
 
-    fig, ax, plots = lpd.create_figure(xlims=[0.05, 0.52], ylims=[1.5, 3.8],
+    fig, ax, _ = lpd.create_figure(xlims=[0.05, 0.52], ylims=[1.5, 3.8],
                                        xlabel=r'$\tau T$',
                                        ylabel=r'$\displaystyle \frac{G_E}{G^{\mathrm{norm}}}$')
 
@@ -45,7 +45,7 @@ def main():
     fig.savefig(file)
     print("saved final corr plot", file)
 
-    fig, ax, plots = lpd.create_figure(xlims=[0.05, 0.52], ylims=[0.9, 1.1],
+    fig, ax, _ = lpd.create_figure(xlims=[0.05, 0.52], ylims=[0.9, 1.1],
                                        xlabel=r'$\tau T$',
                                        ylabel=r'$\displaystyle \frac{G^{flow}}{G^{\mathrm{M-LVL}}}$')
 
