@@ -29,15 +29,8 @@ def integrand(args):
     fig, ax, _ = lpd.create_figure(ylims=[0, 7.9], xlims=[0, 45],
                                    xlabel="$\\omega/T$", ylabel=r'$ \frac{1}{\pi} \displaystyle \frac{\rho_{\mathrm{smax}_\mathrm{LO}}}{T^3}  K(\omega,\tau) $')
 
-    # ylims=[0.001, 100], xlims=[0.1, 100]
-    # if not args.PathPhiUV:
-    #     thisPhiUVByT3 = PHIUVLOByT3
-    # else:
-    OmegaByT_arr, g2_arr, LO_SPF = get_spf(0, args.max_type, "eff", 0.472, 1, args.Npoints, args.Nloop, order="LO", corr="EE")
+    OmegaByT_arr, _, LO_SPF = get_spf(0, args.max_type, "eff", 0.472, "1", args.Npoints, args.Nloop, order="LO", corr="EE", mu_IR_by_T=1)
     thisPhiUVByT3 = scipy.interpolate.InterpolatedUnivariateSpline(OmegaByT_arr, LO_SPF, k=3, ext=2)
-        # PhiUV = numpy.loadtxt(args.PathPhiUV)
-        # PhiUV = PhiUV[:, 0:2]
-        # thisPhiUVByT3 = scipy.interpolate.InterpolatedUnivariateSpline(PhiUV[:, 0], PhiUV[:, 1], k=3, ext=2)
 
     OmegaByT = numpy.logspace(-2, 3, 10000)
 
@@ -48,26 +41,9 @@ def integrand(args):
         y_UV = thisPhiUVByT3(OmegaByT) * Kernel(OmegaByT, tauT) / numpy.pi  # / OmegaByT
         ax.errorbar(OmegaByT, y, fmt='-', label=str(tauT), lw=1, color=lpd.get_discrete_color(i), zorder=-10)
         ax.errorbar(OmegaByT, y_UV, fmt='--', lw=0.5, zorder=-100, color=lpd.get_discrete_color(i))
-    # for maxomega in (0.1, 1, 10, 100):
-    #     corr = []
-    #     for tauT in tauTs:
-    #         y = Kernel(OmegaByT, tauT)
-    #
-    #         spline = scipy.interpolate.InterpolatedUnivariateSpline(OmegaByT, y*OmegaByT, k=3, ext=2, check_finite=True)
-    #         corr.append(scipy.integrate.quad(spline, OmegaByT[0], maxomega)[0]/Gnorm(tauT))  #
-    #         # ax.errorbar(OmegaByT, OmegaByT * y, fmt='-', label=str(tauT), lw=0.5)
-    #
-    #     ax.errorbar(tauTs, corr, fmt='-', label=str(maxomega), lw=0.5)
-    #     # ax.errorbar(tauTs, Gnorm(tauTs), fmt='-', label="corr2", lw=0.5)
 
-    # \\frac{\\tau/a}{N_\\tau}=
 
     ax.legend(title="$\\tau T$", loc='upper right', bbox_to_anchor=(1, 1), handlelength=0.9)
-
-    # ax.axvline(x=numpy.pi, **lpd.verticallinestyle)
-
-    # ax.set_yscale('log')
-    # ax.set_xscale('log')
 
     # save figure
     file = args.outputpath + "/integrand.pdf"
@@ -84,7 +60,7 @@ def model_corrs(args):
     Gmodel_smax_LO_UV_kappa1 = []
     Gmodel_smax_LO_UV_kappa2 = []
     Gmodel_smax_LO_UV_kappa3 = []
-    OmegaByT_arr, g2_arr, LO_SPF = get_spf(0, args.max_type, "eff", 0.472, 1, args.Npoints, args.Nloop, order="LO", corr="EE")
+    OmegaByT_arr, _, LO_SPF = get_spf(0, args.max_type, "eff", 0.472, "1", args.Npoints, args.Nloop, order="LO", corr="EE", mu_IR_by_T=1)
 
     for tauT in tauTs:
         tmp = scipy.integrate.quad(lambda OmegaByT: PHIUVLOByT3(OmegaByT) * Kernel(OmegaByT, tauT)/numpy.pi, 0, 1000)[0]
@@ -139,7 +115,6 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--outputpath', type=str, help='where to save the plot', required=True)
-    parser.add_argument('--PathPhiUV', type=str)
     add_args(parser)
     args = parser.parse_args()
 

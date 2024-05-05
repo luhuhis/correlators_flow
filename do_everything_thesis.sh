@@ -229,6 +229,8 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # TODO
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_g2.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 
+# Plot integrand and model corrs
+./correlators_flow/spf_reconstruction/plotting/plot_integrand.py --outputpath ${BASEPATH_PLOT} --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor "1" --order LO --corr EE --mu_IR_by_T 1
 
 ## 2.2 Spectral reconstruction [OPTIONAL, this takes a lot of computing time, so the output files are already included]
 # TODO add EE quenched/hisq versions for spf_reconstruct
@@ -286,15 +288,10 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # =================================================================================================================================================================
 
 
-
-./spf_reconstruction/plotting/plot_integrand.py --outputpath ../plots/ --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor 1 --PathPhiUV ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/max_LO_T0.472_min2piT_w1_500_0.0_exp0_quenched_cont_f0/phiUV.dat
-
-./spf_reconstruction/plot_fits/example_usage/plot_g2.sh
-
-
 ./spf_reconstruction/plot_fits/example_usage/plot_UV_spfs.sh
 ./spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh
 ./spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh
  plot k_factors
 
 
+# TODO for some reaosn the EE quenched spf fits have "2piT" as an additional suffix... that can be removed

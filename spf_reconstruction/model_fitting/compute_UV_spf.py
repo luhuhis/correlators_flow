@@ -3,7 +3,7 @@ import rundec
 import numpy as np
 import argparse
 import lib_process_data as lpd
-import BB_NLO_SPF_term as BB
+import spf_reconstruction.model_fitting.BB_NLO_SPF_term as BB
 from nptyping import NDArray, Float64
 from typing import Literal as Shape
 from scipy import interpolate, integrate
