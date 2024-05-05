@@ -203,7 +203,8 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 
 
 # TODO add compare EE vs Multilevel
-# TODO add how to get the ML correlator file??
+# Create multi-level continuum extrapolation
+./correlators_flow/multi-level/cont_extr_new.py --basepath ${BASEPATH_RAW_DATA}
 ./correlators_flow/correlator_analysis/plotting/6_plot_finalcorr.py --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --input_flow ${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.txt --input_multilvl ${BASEPATH_RAW_DATA}/multi-level_2015/EE_2015_new.txt
 
 
@@ -275,6 +276,7 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 
 
 
+./correlators_flow/perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ../data/merged/pert_LO/flowtimes.dat --outputpath ../plots/pertLO/ --inputpath ../data/merged/pert_LO/ --tau $tau
 
 
 for tau in 1 2 3 4 5 6 7 8 9 10 ; do
@@ -284,9 +286,6 @@ done
 ./spf_reconstruction/plotting/plot_integrand.py --outputpath ../plots/ --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor 1 --PathPhiUV ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/max_LO_T0.472_min2piT_w1_500_0.0_exp0_quenched_cont_f0/phiUV.dat
 
 ./spf_reconstruction/plot_fits/example_usage/plot_g2.sh
-
-
-./correlator_analysis/plotting/example_usage/plot_flow_dep.sh
 
 
 ./spf_reconstruction/plot_fits/example_usage/plot_UV_spfs.sh
