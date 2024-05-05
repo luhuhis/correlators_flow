@@ -31,10 +31,13 @@ def plot_correlation_matrix(index, data, flow_radii, nt):
     data = numpy.corrcoef(data)
 
     xydata = flow_radii/tauT
-    for i in range(len(xydata)):
-        for j in range(len(xydata)):
-            r2 = (xydata[i]/xydata[j])**2
-            data[i,j] = (4 * r2 / (1+r2)**2)
+    
+    overwrite_with_perturbative_formula = False
+    if overwrite_with_perturbative_formula:
+        for i in range(len(xydata)):
+            for j in range(len(xydata)):
+                r2 = (xydata[i]/xydata[j])**2
+                data[i,j] = (4 * r2 / (1+r2)**2)
 
     fig, ax, _ = lpd.create_figure(xlims=[0, 0.35], ylims=[0, 0.35], constrained_layout=True,
                                    ytwinticks=False, xlabelbox=None, ylabelbox=None)
@@ -114,6 +117,7 @@ def main():
     # plot_correlation_matrix(polyakov_real, flow_radii, r'$\mathrm{corr}[X(\tau_\mathrm{F}), X(\tau_\mathrm{F}\prime)], X= U(\beta, 0) $', "poly")
 
     figs = lpd.parallel_function_eval(plot_correlation_matrix, range(nt_half), args.nproc, XX_samples, flow_radii, nt)
+    # figs = lpd.serial_function_eval(plot_correlation_matrix, range(nt_half), XX_samples, flow_radii, nt)
     # data = numpy.copy(EE_numerator[:, :, i])
     # data = numpy.swapaxes(data, 0, 1)
     # plot_correlation_matrix(data, flow_radii/tauT, r'$\mathrm{corr}[X(\tau_\mathrm{F}), X(\tau_\mathrm{F}\prime)], \newline X= U(\beta, \tau) E(\tau) U(\tau, 0) E(0), \tau T ='+label+r'$', args.outputfolder+"EE_tauT"+label)

@@ -100,6 +100,11 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/<corr>/<conftype>/
 # polyakovloop_MCtime.pdf     | shows the MCMC time series of the polyakovloop at a large flow time
 
+
+# TODO add correlation plot
+./correlators_flow/correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath ${BASEPATH_WORK_DATA} --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --nproc ${NPROC}
+
+
 ## 2.1.3 Interpolation
 # Interpolate the correlator in Euclidean time and in flow time, such that a common set of normalized flow times
 # is available across all lattices and temperatures.
@@ -252,7 +257,6 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # =================================================================================================================================================================
 
 
-# TODO update all the paths here!
 
 for tau in 1 2 3 4 5 6 7 8 9 10 ; do
     ./perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ../data/merged/pert_LO/flowtimes.dat --outputpath ../plots/pertLO/ --inputpath ../data/merged/pert_LO/ --tau $tau
@@ -261,10 +265,6 @@ done
 ./spf_reconstruction/plotting/plot_integrand.py --outputpath ../plots/ --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor 1 --PathPhiUV ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/max_LO_T0.472_min2piT_w1_500_0.0_exp0_quenched_cont_f0/phiUV.dat
 
 ./spf_reconstruction/plot_fits/example_usage/plot_g2.sh
-
-#./correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath "../data/merged/" --outputfolder "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/EE/"
-
-
 
 #./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow BB
 #./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE
