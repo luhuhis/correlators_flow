@@ -131,6 +131,10 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # $BASEPATH_PLOT/<qcdtype>/<corr>/
 # <corr>_cont_quality_relflow.pdf | Contains FIG 3 in the paper. This is a multipage PDF containing plots of continuum extrapolation of correlator for the corresponding normalized flow times.
 
+# TODO add plot lat effects
+./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
+
+
 ## 2.1.5 Coupling calculations
 # Continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices,
 # and conversion from flow scheme to the MSBAR scheme coupling at one scale, then perturbative 5-loop running to other relevant scales.
@@ -261,7 +265,7 @@ done
 #./correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath "../data/merged/" --outputfolder "/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/EE/"
 
 
-./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow EE
+
 #./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow BB
 #./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE
 #

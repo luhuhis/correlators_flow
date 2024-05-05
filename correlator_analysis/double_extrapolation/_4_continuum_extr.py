@@ -27,6 +27,9 @@ def main():
         traditional_extr(args, samples, edatas, nt_finest, Nts)
     else:
         new_extr(args, samples, edatas, nt_finest, Nts)
+        
+        # workaround to generate flow time file for lateffects plots
+        save_flowtimes(args, nt_finest)
 
 
 def parse_args():
@@ -139,17 +142,18 @@ def fit_sample(ydata, xdata, edata):
         return [numpy.nan] * (len(start_params) + 1)
 
 
-def traditional_extr(args, samples, edatas, nt_finest, Nts):
-    def load_flowtimes(args):
-        # load flow times from finest lattice
-        flowtimes = numpy.loadtxt(
-            lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1], args.basepath) + "/flowtimes_" + args.conftypes[-1] + ".dat")
-        if args.flow_index_range == (0, -1):
-            indices = range(0, len(flowtimes))
-        else:
-            indices = range(*args.flow_index_range)
+def load_flowtimes(args):
+    # load flow times from finest lattice
+    flowtimes = numpy.loadtxt(
+        lpd.get_merged_data_path(args.qcdtype, args.corr, args.conftypes[-1], args.basepath) + "/flowtimes_" + args.conftypes[-1] + ".dat")
+    if args.flow_index_range == (0, -1):
+        indices = range(0, len(flowtimes))
+    else:
+        indices = range(*args.flow_index_range)
 
-        return flowtimes, indices
+    return flowtimes, indices
+
+def traditional_extr(args, samples, edatas, nt_finest, Nts):
 
     print("calculate extrapolation and create figures...")
     print("      ", lpd.get_tauTs(nt_finest))
@@ -158,7 +162,7 @@ def traditional_extr(args, samples, edatas, nt_finest, Nts):
 
     save_figs(args, figs_corr, "_cont")
     save_figs(args, figs_extr, "_cont_quality")
-    save_data(args, fitparams, flowtimes, nt_finest)
+    save_data(args, fitparams, nt_finest)
 
     return
 
@@ -305,8 +309,14 @@ def save_figs(args, figs, suffix):
                 pdf.savefig(fig)
                 matplotlib.pyplot.close(fig)
 
+def save_flowtimes(args, nt_finest):
+    folder = lpd.get_merged_data_path(args.qcdtype, args.corr, args.output_suffix, args.basepath) + "/cont_extr/"
+    lpd.create_folder(folder)
+    flowtimes, _ = load_flowtimes(args)
+    numpy.savetxt(folder + args.corr + "_cont_flowtimesT2.dat", flowtimes / nt_finest ** 2, header='# tau_F T^2')
 
-def save_data(args, fitparams, flowtimes, nt_finest):
+
+def save_data(args, fitparams, nt_finest):
     # save fitparams to npy file
     print("save extrapolation data...")
     fitparams = numpy.asarray(fitparams)
@@ -327,7 +337,7 @@ def save_data(args, fitparams, flowtimes, nt_finest):
         outfile.write('# rows correspond to flow times, columns to dt = {1, ... , Ntau/2} of the finest lattice that entered the extrapolation\n')
         cont_std = numpy.std(fitparams, axis=0)[:, :, 0]
         numpy.savetxt(outfile, cont_std)
-    numpy.savetxt(folder + args.corr + "_cont_flowtimesT2.dat", flowtimes / nt_finest ** 2, header='# tau_F T^2')
+    save_flowtimes(args, nt_finest)
 
 
 # ==============================================================================================================================================================
