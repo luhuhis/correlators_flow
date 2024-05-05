@@ -60,10 +60,17 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 
 ## 2.0.1 Perturbative plots
 ./correlators_flow/perturbative_corr/plot_QED_LPT.py --inputfolder ${BASEPATH_RAW_DATA} --outputfolder ${BASEPATH_PLOT}
-# saved QED LPT plot /home/altenkort/thesis_data/figures/EE_QED_LPT.pdf
+# TODO saved QED LPT plot /home/altenkort/thesis_data/figures/EE_QED_LPT.pdf
 
 ./correlators_flow/perturbative_corr/plot_pert_correlators.py --Ntau 24 --inputfolder ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --outputfolder ${BASEPATH_PLOT}/pertLO
-# saved pert corr plot /home/altenkort/thesis_data/figures/pertLO/EE_pert_contvslatt_flow.pdf
+# TODO saved pert corr plot /home/altenkort/thesis_data/figures/pertLO/EE_pert_contvslatt_flow.pdf
+
+
+# TODO tree-level imp showcase plots
+./correlators_flow/perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/flowtimes.dat --outputpath ${BASEPATH_PLOT}/pertLO/ --inputpath ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --tau 5
+./correlators_flow/perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/flowtimes.dat --outputpath ${BASEPATH_PLOT}/pertLO/ --inputpath ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --tau 10
+
+
 
 ## 2.1 Double extrapolation
 ## 2.1.1 Merge individual small text files into large binary (npy) files
@@ -215,6 +222,14 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow
 # EEvsBB.pdf | FIG 5 in the paper. Continuum- and flow-time-extrapolated color-magnetic and -electric correlators
 
+
+
+
+# Plot coupling for EE corr
+# TODO
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_g2.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
+
+
 ## 2.2 Spectral reconstruction [OPTIONAL, this takes a lot of computing time, so the output files are already included]
 # TODO add EE quenched/hisq versions for spf_reconstruct
 ./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh quenched_1.50Tc_zeuthenFlow EE  ${BASEPATH_WORK_DATA} NO ${NPROC}
@@ -271,17 +286,6 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # =================================================================================================================================================================
 
 
-
-
-
-
-
-./correlators_flow/perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ../data/merged/pert_LO/flowtimes.dat --outputpath ../plots/pertLO/ --inputpath ../data/merged/pert_LO/ --tau $tau
-
-
-for tau in 1 2 3 4 5 6 7 8 9 10 ; do
-    ./perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ../data/merged/pert_LO/flowtimes.dat --outputpath ../plots/pertLO/ --inputpath ../data/merged/pert_LO/ --tau $tau
-done
 
 ./spf_reconstruction/plotting/plot_integrand.py --outputpath ../plots/ --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor 1 --PathPhiUV ../data/merged/quenched_1.50Tc_zeuthenFlow/EE/spf/max_LO_T0.472_min2piT_w1_500_0.0_exp0_quenched_cont_f0/phiUV.dat
 
