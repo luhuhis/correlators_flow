@@ -105,6 +105,13 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 ./correlators_flow/correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath ${BASEPATH_WORK_DATA} --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --nproc ${NPROC}
 
 
+# TODO add flow dep plot
+./correlators_flow/correlator_analysis/plotting/example_usage/plot_flow_dep.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
+./correlators_flow/correlator_analysis/plotting/example_usage/plot_flow_dep.sh quenched_1.50Tc_zeuthenFlow BB ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
+./correlators_flow/correlator_analysis/plotting/example_usage/plot_flow_dep.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}   # TODO verify that this works once hisq data was addded to folder!!
+
+
+
 ## 2.1.3 Interpolation
 # Interpolate the correlator in Euclidean time and in flow time, such that a common set of normalized flow times
 # is available across all lattices and temperatures.

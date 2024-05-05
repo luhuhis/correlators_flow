@@ -86,6 +86,7 @@ def plot(args, tauT, flowtimesT2, XX, XX_err):
     leg.get_frame().set_linewidth(args.leg_lw)
 
     file = args.outputfolder+"/"+args.corr+"_"+args.conftype+"_flow_dep"+args.suffix+".pdf"
+    lpd.create_folder(args.outputfolder)
     print("saving", file)
     fig.savefig(file)
 
