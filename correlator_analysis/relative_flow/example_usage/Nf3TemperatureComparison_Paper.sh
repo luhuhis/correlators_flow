@@ -32,7 +32,7 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators_thesi
         ../plot_rec_corr_fixFlowBytauT.py \
             --output_path ${basepath_plot} --basepath ${basepath}\
             ${x_units} \
-            --ylims 3 9.5 \
+            --ylims 4 9.5 \
             --usetex \
             ${fit_args[@]} \
             --no_connection \
@@ -43,7 +43,7 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators_thesi
             $basepath_work_data/T293${suffix}/EE_flow_extr_relflow.txt \
             --qcdtype $qcdtype --corr EE \
             --figsize 7 7 \
-            --leg_title '$T [\mathrm{MeV}]$' --leg_pos 1 0 --leg_loc "lower right" --leg_n_dummies 3 --leg_n_col 2 --leg_framealpha 0 \
+            --leg_title '$T [\mathrm{MeV}]$' --leg_pos 0.925 0 --leg_loc "lower right" --leg_n_dummies 3 --leg_n_col 2 --leg_framealpha 0 \
             --leg_labels \
             "195" "220" "251" "293" "195" "220" "251" "293" \
             --markers o s D H o s D H \
