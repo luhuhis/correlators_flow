@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-outputfolder = "/home/altenkort/work/correlators_flow/plots/"
-
 import lib_process_data as lpd
 import numpy as np
 import argparse
 import rundec
 
+
+my_work_ms = 3
 
 def D2piT(mu):
     crd = rundec.CRunDec()
@@ -45,43 +45,43 @@ def plot_EE_quenched_literature(plots, ax, i):
     plot = ax.errorbar(0, 0, fmt='.', markersize=0, label=r'Quenched QCD')  # via $\kappa_E$
     plots.append(plot)
 
-    ms=0
-    myfmt='.'
+    ms=4
 
     #  2015, A. Francis, O. Kaczmarek, M. Laine, T. Neuhaus, and H. Ohno, Phys. Rev. D 92, 116003
     plot = ax.errorbar(1.46, *mean_and_err_kappaByT3_to_2piTD(2.6-0.8,2.6+0.8),
-                color=thiscolor(3-i), fmt=myfmt, markersize=ms, label=r'Francis \textquotesingle 15 (ML)', zorder=5)
+                color=thiscolor(3-i), fmt='H',markerfacecolor='none', markersize=ms, label=r'Francis \textquotesingle 15 (ML)', zorder=5)
     i += 1
     plots.append(plot)
 
     #  2020, Nora Brambilla, Viljami Leino, Peter Petreczky, and Antonio Vairo, Phys. Rev. D 102, 074503
     color = thiscolor(3-i)
-    plot = ax.errorbar(1.1, *mean_and_err_kappaByT3_to_2piTD(1.91,5.40), markersize=ms, fmt=myfmt, color=color, label=r'TUMQCD \textquotesingle 20 (ML)')
-    ax.errorbar(1.48, *mean_and_err_kappaByT3_to_2piTD(1.31,3.64), markersize=ms, fmt=myfmt, color=color)
-    ax.errorbar(3,   *mean_and_err_kappaByT3_to_2piTD(0.63,2.20), markersize=ms, fmt=myfmt, color=color, zorder=-10)
+    plot = ax.errorbar(1.1, *mean_and_err_kappaByT3_to_2piTD(1.91,5.40),markerfacecolor='none', markersize=ms, fmt='s', color=color, label=r'TUMQCD \textquotesingle 20 (ML)')
+    ax.errorbar(1.48, *mean_and_err_kappaByT3_to_2piTD(1.31,3.64),markerfacecolor='none',  markersize=ms, fmt='s', color=color)
+    ax.errorbar(3,   *mean_and_err_kappaByT3_to_2piTD(0.63,2.20), markerfacecolor='none',  markersize=ms, fmt='s', color=color, zorder=-10)
     i += 1
     plots.append(plot)
 
     # 2021 Altenkort
     plot = ax.errorbar(1.5, *mean_and_err_kappaByT3_to_2piTD(1.5, 3.2),
-                markersize=ms, fmt=myfmt, color='k', label=r'\textbf{this work}* (flow)', zorder=10)
+                ms=my_work_ms, fmt='x', color='k', label=r'\textbf{this work}* (flow)', zorder=10)
     plots.append(plot)
 
     #  2022, Nora Brambilla, Viljami Leino, Julian Mayer-Steudte, Peter Petreczky, 	arXiv:2206.02861
     color = thiscolor(3-i)
-    plot = ax.errorbar(1.52, *mean_and_err_kappaByT3_to_2piTD(1.70,3.12), zorder=5,  markersize=ms, fmt=myfmt, color=color, label=r'TUMQCD \textquotesingle 22 (flow)')
+    plot = ax.errorbar(1.52, *mean_and_err_kappaByT3_to_2piTD(1.70,3.12), zorder=5,  markersize=4, markerfacecolor='none', fmt='D', color=color, label=r'TUMQCD \textquotesingle 22 (flow)')
     i += 1
     plots.append(plot)
 
     # 2022, Debasish Banerjee, Rajiv Gavai, Saumen Datta, Pushan Majumdar, arXiv:2206.15471v1
     color = thiscolor(3-i)
-    plot = ax.errorbar(1.2, *mean_and_err_kappaByT3_to_2piTD(2.1,3.5), markersize=ms, fmt=myfmt, color=color,
+    banerjeefmt = 'o'
+    plot = ax.errorbar(1.2, *mean_and_err_kappaByT3_to_2piTD(2.1,3.5), markersize=ms, markerfacecolor='none',fmt=banerjeefmt, color=color,
                 label=r'Banerjee \textquotesingle 22 (ML)')
-    ax.errorbar(1.54, *mean_and_err_kappaByT3_to_2piTD(1.5,2.8), markersize=ms, fmt=myfmt, color=color)
-    ax.errorbar(2.0, *mean_and_err_kappaByT3_to_2piTD(1.0,2.3), markersize=ms, fmt=myfmt, color=color)
-    ax.errorbar(2.5, *mean_and_err_kappaByT3_to_2piTD(0.9,2.1), markersize=ms, fmt=myfmt, color=color)
-    ax.errorbar(3.0, *mean_and_err_kappaByT3_to_2piTD(0.8,1.8), markersize=ms, fmt=myfmt, color=color)
-    ax.errorbar(3.5, *mean_and_err_kappaByT3_to_2piTD(0.75, 1.5), markersize=ms, fmt=myfmt, color=color)
+    ax.errorbar(1.54, *mean_and_err_kappaByT3_to_2piTD(1.5,2.8), markersize=ms, markerfacecolor='none', fmt=banerjeefmt, color=color)
+    ax.errorbar(2.0, *mean_and_err_kappaByT3_to_2piTD(1.0,2.3), markersize=ms, markerfacecolor='none', fc=None,fmt=banerjeefmt, color=color)
+    ax.errorbar(2.5, *mean_and_err_kappaByT3_to_2piTD(0.9,2.1), markersize=ms, markerfacecolor='none',fmt=banerjeefmt, color=color)
+    ax.errorbar(3.0, *mean_and_err_kappaByT3_to_2piTD(0.8,1.8), markersize=ms,markerfacecolor='none', fmt=banerjeefmt, color=color)
+    ax.errorbar(3.5, *mean_and_err_kappaByT3_to_2piTD(0.75, 1.5), markersize=ms, markerfacecolor='none',fmt=banerjeefmt, color=color)
     i += 1
     plots.append(plot)
 
@@ -102,8 +102,11 @@ def plot_PT_and_AdsCFT(plots, ax):
         pqcd_2piT.append(D2piT(2 * np.pi * x * Tc))
         pqcd_4piT.append(D2piT(4 * np.pi * x * Tc))
 
-    plot = ax.fill_between(xpoints, pqcd_2piT, pqcd_4piT, zorder=-10000, color='palegreen', ec=None,
-                    label=r'\begin{flushleft}pQCD NLO, \newline $\mu \in [2\pi T, 4\pi T]$\end{flushleft}')  # via $\kappa_E$
+    # plot = ax.fill_between(xpoints, pqcd_2piT, pqcd_4piT, zorder=-10000, color='palegreen', ec=None,
+                    # label=r'\begin{flushleft}pQCD NLO, \newline $\mu \in [2\pi T, 4\pi T]$\end{flushleft}')  # via $\kappa_E$
+    plot = ax.errorbar(xpoints, pqcd_2piT, zorder=0, color='palegreen', fmt=':',
+                    label=r'\begin{flushleft}pQCD NLO, \newline \null\:\: $\mu \in [2\pi T, 4\pi T]$\end{flushleft}')  # via $\kappa_E$
+    ax.errorbar(xpoints, pqcd_4piT, zorder=0, color='palegreen', fmt=':')
     plots.append(plot)
 
     # ax.errorbar(xpoints, pqcd_4piT, zorder=-100, lw=0.5, fmt='-',  color='palegreen')
@@ -115,7 +118,8 @@ def plot_PT_and_AdsCFT(plots, ax):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--add_leg_titles', action="store_true")
+    parser.add_argument('--outputfolder', type=str, required=True)
+    # parser.add_argument('--inputpath', type=str, required=True)
     args = parser.parse_args()
     return args
 
@@ -161,7 +165,7 @@ def plot_hisq(plots, ax):
         else:
             label = None
 
-        plot = ax.errorbar(T/Tc, *mean_and_err_kappaByT3_to_2piTD(kappa_low, kappa_high), markersize=0, fmt='.', color='m', label=label)
+        plot = ax.errorbar(T/Tc, *mean_and_err_kappaByT3_to_2piTD(kappa_low, kappa_high), ms=my_work_ms, fmt='x', color='m', label=label)
 
         if i == 0:
             plots.append(plot)
@@ -173,7 +177,7 @@ def add_empty_line(plots, ax):
 
 
 def plot_ALICE(plots, ax):
-    plot = ax.errorbar(1, *mean_and_err(1.5, 4.5), fmt='.', ms=0, color='mediumaquamarine', label='ALICE')
+    plot = ax.errorbar(1, *mean_and_err(1.5, 4.5), fmt='s', ms=2, color='mediumaquamarine', label='ALICE')
     plots.append(plot)
 
 
@@ -218,11 +222,13 @@ def plot_fig(args):
     #             fmt='.', markersize=0, color='tab:pink', label=r'charm, Lorenz et al. \textquotesingle 21' )
     # ax.errorbar(0, 0, label=' ', markersize=0, alpha=0, lw=0)
 
-    handles, labels = [], []
+    labels = []
     for plot in plots:
         labels.append(plot.get_label())
 
-    ax.legend(plots, labels, loc="center left", bbox_to_anchor=(1, 0.5), framealpha=0, **lpd.leg_err_size(x=1, y=0.3), fontsize=9, handlelength=1)
+    ax.legend(plots, labels, loc="center left", bbox_to_anchor=(1, 0.5), 
+              framealpha=0, **lpd.leg_err_size(x=1, y=0.45), fontsize=9, handlelength=1,
+              )
 
     return fig
 
@@ -231,11 +237,11 @@ def main():
 
     args = parse_args()
 
-    lpd.create_folder(outputfolder)
+    lpd.create_folder(args.outputfolder)
 
     fig = plot_fig(args)
 
-    filename = outputfolder + "/2piTD.pdf"
+    filename = args.outputfolder + "/2piTD.pdf"
     fig.savefig(filename)
     print("saved correlator plot", filename)
 

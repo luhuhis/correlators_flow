@@ -289,6 +289,9 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 ## 2.3 Create correlator plots at fixed normalized flow time
 ./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 
+
+
+
 # Afterwards, the following files have been created inside
 # $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/
 
@@ -303,20 +306,18 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # EE_relflow_0.30.dat       | EE correlator at normalized flow time 0.30 (see Fig. 1)
 
 
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 
-# =================================================================================================================================================================
-# =================================================================================================================================================================
-# =================================================================================================================================================================
-# =================================================================================================================================================================
-
-# TODO: add hisq data to the folder. use datapub data for that.
-# TODO: do hisq plots next. COMPARE TO PAPER, NOT PREVIOUS THESIS PLOTS BECAUSE THEY ARE LIKELY OUTDATED!!
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} hisq
 
 
-./spf_reconstruction/plot_fits/example_usage/plot_UV_spfs.sh
-./spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh
-./spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh
- plot k_factors
+./correlators_flow/spf_reconstruction/plotting/plot_2piTD.py --outputfolder ${BASEPATH_PLOT}
+
+
+# =================================================================================================================================================================
+
+
 
 
 # TODO for some reaosn the EE quenched spf fits have "2piT" as an additional suffix... that can be removed
