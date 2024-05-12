@@ -69,7 +69,7 @@ class SpfPlotter:
     def _plot_BB(self):
         scale_choices = get_scale_choices()
         for scale_choice in scale_choices:
-            if scale_choice.choice_label == "ref4.0_UVNLO_IRLO":
+            if scale_choice.choice_label == "ref6.28_UVNLO_IRLO":
                 self.BB = np.loadtxt(self.inputfolder + "/BB/BB_flow_extr_relflow_" + scale_choice.choice_label + ".txt",
                                      unpack=True)
                 self.norm_value = self.BB[1][8]
@@ -163,7 +163,7 @@ def compute_correlator(OmegaByT_arr, SpfByT3_arr):
 def get_spf_and_corr(Nf, T_in_GeV, Npoints, Nloop, input_params):
     OmegaByT_arr, g2_arr, SpfByT3_arr = compute_UV_spf.get_spf(Nf, input_params.max_type, input_params.min_scale,
                                                                T_in_GeV, input_params.omega_prefactor, Npoints, Nloop,
-                                                               input_params.order, input_params.corr)
+                                                               input_params.order, input_params.corr, 1)
 
     mask = OmegaByT_arr > 1
     corr = compute_correlator(OmegaByT_arr, SpfByT3_arr)
