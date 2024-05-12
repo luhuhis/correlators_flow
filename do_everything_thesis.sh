@@ -236,6 +236,7 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # TODO add EE quenched/hisq versions for spf_reconstruct
 ./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh quenched_1.50Tc_zeuthenFlow EE  ${BASEPATH_WORK_DATA} NO ${NPROC}
 ./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh quenched_1.50Tc_zeuthenFlow BB  ${BASEPATH_WORK_DATA} NO ${NPROC}
+    ./correlators_flow/spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh hisq_ms5_zeuthenFlow EE  ${BASEPATH_WORK_DATA} NO ${NPROC}
 # Afterward, the following files have been created in
 # $BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/spf/<model>_<rho-UV-order>_Nf0_T0.472_<min_scale>_<running-scale-coefficient>_tauTgtr0.24_<suffix>
 # corrfit.dat            | Median input BB correlator and fitted model correlator
@@ -244,6 +245,9 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 # phIUV.npy              | UV part of fitted model spectral function as function of omega/T (binary numpy format)
 # samples.npy            | Copy of the input correlator bootstrap samples but multiplied by Gnorm (= actual fit input)
 # spffit.npy             | Median spectral function with left/right 34th percentiles as function of omega/T
+
+
+
 
 ## 2.2.1 Plot spectral reconstruction fit results for kappa_B
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} yes
@@ -280,12 +284,33 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 
 
 
+# HISQ only
+
+## 2.3 Create correlator plots at fixed normalized flow time
+./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
+
+# Afterwards, the following files have been created inside
+# $BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/
+
+# EE_relflow_hisq_final.pdf | Fig. 2 in the paper
+# EE_relflow_hisq_0.25.pdf  | Top panel of Fig. 1 in the paper
+# EE_relflow_hisq_0.30.pdf  | Bottom panel of Fig. 1 in the paper
+
+# and inside
+# $BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/relflow/
+
+# EE_relflow_0.25.dat       | EE correlator at normalized flow time 0.25 (see Fig. 1)
+# EE_relflow_0.30.dat       | EE correlator at normalized flow time 0.30 (see Fig. 1)
 
 
+
 # =================================================================================================================================================================
 # =================================================================================================================================================================
 # =================================================================================================================================================================
 # =================================================================================================================================================================
+
+# TODO: add hisq data to the folder. use datapub data for that.
+# TODO: do hisq plots next. COMPARE TO PAPER, NOT PREVIOUS THESIS PLOTS BECAUSE THEY ARE LIKELY OUTDATED!!
 
 
 ./spf_reconstruction/plot_fits/example_usage/plot_UV_spfs.sh
