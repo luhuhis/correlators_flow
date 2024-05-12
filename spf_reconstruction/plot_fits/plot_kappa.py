@@ -208,6 +208,8 @@ def main():
             ax.set_ylabel(r'\parbox{3cm}{model \hfill '+chisqstr+r'\null}', horizontalalignment='left', verticalalignment='top')
         elif args.hide_chisq and corr == "BB":
             ax.set_ylabel(R'\raisebox{0pt}[0pt][0pt]{$\mathrm{model,}$\ \ \, $\scalebox{0.7}{$\frac{\bar{\mu}_T}{T}$},$}\ \scalebox{0.7}{$\frac{\bar{\mu}_{\tau_\mathrm{F}}}{\mu_\mathrm{F}}$}', horizontalalignment='left', verticalalignment='top')
+        else:
+            ax.set_ylabel(r'model', horizontalalignment='left', verticalalignment='top')
         ax.set_yticks(args.pos)
         ax.yaxis.tick_right()
         ax.set_yticklabels(args.labels)
