@@ -24,12 +24,12 @@ The following instructions have to be copied in order into a bash 5.0 shell. For
 This will create a new folder `correlators_flow` in the current directory:
 
 ``` shell
-tar -xzf correlators_flow.tar.gz   
+# tar -xzf correlators_flow.tar.gz   
 # OR
-git clone --branch v0.2.0 https://github.com/luhuhis/correlators_flow.git  
+git clone --branch thesis https://github.com/luhuhis/correlators_flow.git  
 ```
 
-Make all scripts executable:
+Make all scripts executable:s
 
 ``` shell
 chmod -R +x ./correlators_flow 
@@ -38,7 +38,7 @@ chmod -R +x ./correlators_flow
 Unzip or clone the AnalysisToolbox (custom python package), which is a dependency of "correlators_flow". This will create a folder "AnalysisToobox":
 
 ``` shell
-tar -xzf AnalysisToolbox.tar.gz 
+# tar -xzf AnalysisToolbox.tar.gz 
 # OR
 git clone https://github.com/LatticeQCD/AnalysisToolbox.git
 ( cd AnalysisToolbox && git checkout f9eee73d45d7b981153db75cfaf2efa2b4cefa9c )
