@@ -60,10 +60,10 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 
 ## 2.0.1 Perturbative plots
 ./correlators_flow/perturbative_corr/plot_QED_LPT.py --inputfolder ${BASEPATH_RAW_DATA} --outputfolder ${BASEPATH_PLOT}
-# TODO saved QED LPT plot /home/altenkort/thesis_data/figures/EE_QED_LPT.pdf
+# TODO saved QED LPT plot ${BASEPATH_PLOT}/EE_QED_LPT.pdf
 
 ./correlators_flow/perturbative_corr/plot_pert_correlators.py --Ntau 24 --inputfolder ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --outputfolder ${BASEPATH_PLOT}/pertLO
-# TODO saved pert corr plot /home/altenkort/thesis_data/figures/pertLO/EE_pert_contvslatt_flow.pdf
+# TODO saved pert corr plot ${BASEPATH_PLOT}/pertLO/EE_pert_contvslatt_flow.pdf
 
 
 # TODO tree-level imp showcase plots
@@ -262,6 +262,7 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 ## 2.2.2 Plot comparison to literature (this depends on the previous call to `plot_fits_quenched.sh`!)
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} EE
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} BB
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} hisq_thesis
 # Afterward, the following files have been created in
 # $BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/
 # kappa_BB_quenched_literature.pdf      | FIG 8 in the paper
@@ -309,15 +310,9 @@ tar -xzf output_data.tar.gz  # TODO complete output data zip file
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} hisq
 
 
 ./correlators_flow/spf_reconstruction/plotting/plot_2piTD.py --outputfolder ${BASEPATH_PLOT}
 
 
 # =================================================================================================================================================================
-
-
-
-
-# TODO for some reaosn the EE quenched spf fits have "2piT" as an additional suffix... that can be removed

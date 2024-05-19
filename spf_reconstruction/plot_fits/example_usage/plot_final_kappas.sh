@@ -8,6 +8,9 @@ plot_hisq_thesis(){
 
         basepath="$basepath_work_data/hisq_ms5_zeuthenFlow/EE/"
 
+        suffix="_paper"
+        # addargs="--plot_analytical_results"
+
         ../plot_final_kappas.py \
             --input_kappa_files \
             $basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/EE_kappa_quenched_1.5Tc.txt \
@@ -27,7 +30,7 @@ plot_hisq_thesis(){
             k m m m m \
             --markersize 0 \
             --outputpath $basepath_plot/hisq_ms5_zeuthenFlow/EE/ \
-            --suffix "hisq${suffix}_thesis" \
+            --suffix "hisq_thesis" \
             --temps_in_GeV \
             0.270 0.195 0.220 0.251 0.293 \
             --Tc_in_GeV 0.180 \
@@ -36,20 +39,15 @@ plot_hisq_thesis(){
             --ylims 0 16.5 \
             --corr EE \
             --plot_EE_quenched_lit --add_leg_titles --xlabelpos 0.93 0.01 \
-            --leg_fontsize 9 \
-            $addargs
+            --leg_fontsize 9 
 
 }
 
 plot_hisq(){
 
-    for suffix in  "_paper" ; do   # #TODO add "" back in
 
-        if [ "${suffix}" == "_paper" ] ; then
-            addargs="--no_subscript"
-        else
-            addargs="--plot_analytical_results"
-        fi
+        addargs="--no_subscript"
+
 
         basepath="$basepath_work_data/hisq_ms5_zeuthenFlow/EE/"
 
@@ -85,8 +83,6 @@ plot_hisq(){
             --ylims 0 16.5 \
             --corr EE \
             $addargs
-
-    done
 
 }
 
