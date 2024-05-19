@@ -69,8 +69,6 @@ def cont_extr(Ntaus, tauT_data, corr_data, corr_err_data, output_tauTs, nsamples
 
 def main():
 
-    # basepath = "/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/EE/multi-level_2015/"
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--basepath', type=str)
     parser.add_argument('--plotpath', type=str, default=None)

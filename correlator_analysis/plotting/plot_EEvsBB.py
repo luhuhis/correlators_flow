@@ -55,8 +55,8 @@ class Plotter:
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--inputfolder', default="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/")
-    parser.add_argument('--outputfolder', default="/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/")
+    parser.add_argument('--inputfolder')
+    parser.add_argument('--outputfolder')
     args = parser.parse_args()
 
     Plotter.plot(args)

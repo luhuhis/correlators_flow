@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}"
-basepath_plot="${2:-"/work/home/altenkort/work/correlators_flow/plots/"}"
+basepath_work_data="${1}"
+basepath_plot="${2}"
 selector="${3:-"all"}"
 
 plot_hisq_thesis(){

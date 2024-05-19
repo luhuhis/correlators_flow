@@ -13,8 +13,6 @@ if [ -z "$qcdtype" ] || [ -z "$corr" ] || [ -z "$basepath_raw_data" ] || [ -z "$
     echo "Usage: $0 qcdtype corr input_basepath output_basepath [flowradiusbasepath]"
     echo "choices for qcdtype: quenched_1.50Tc_zeuthenFlow hisq_ms5_zeuthenFlow"
     echo "choices for corr: EE BB EE_clover BB_clover"
-    echo "Usage example: $0 hisq_ms5_zeuthenFlow EE /work/data/altenkort/gradientFlow ../../../../data/merged/ /home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/"
-    echo "Usage example: $0 quenched_1.50Tc_zeuthenFlow BB ../../../../data/raw/ ../../../../data/merged/"
     exit
 fi
 

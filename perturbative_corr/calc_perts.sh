@@ -25,6 +25,8 @@ for flow_action in "${flow_actions[@]}"  ; do
     done
 done
 
+# TODO remove hard coded paths
+
 srun -n1 -u /home/altenkort/work/correlators_flow/scripts/perturbative_corr/calc_pert_latt_corr_flow.py ${param_list[$((SLURM_ARRAY_TASK_ID))]} \
     --nproc 128 --printprogress \
     --flowtimes_file ~/work/correlators_flow/data/merged/pert_LO/flowtimes.dat \

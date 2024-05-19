@@ -62,7 +62,6 @@ fi
         temps=(195 220 251 293)
         ylims=("3.9 10.5" "4 9" "4 8" "3.5 7.2")
         output_suffix="--output_suffix _relflow"
-        # --flowtimes_finest /work/home/altenkort/work/correlators_flow/data/merged/hisq_ms5_zeuthenFlow/EE/s096t${fine_Nts[idx]}_b0824900_m002022_m01011/flowtimes_s096t${fine_Nts[idx]}_b0824900_m002022_m01011.dat \
         for idx in "${!temps[@]}"; do
 
             ../_5_flowtime_extr.py \

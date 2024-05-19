@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-basepath_work_data="${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}/hisq_ms5_zeuthenFlow/EE/"
-basepath_plot="${2:-"/work/home/altenkort/work/correlators_flow/plots"}/hisq_ms5_zeuthenFlow/EE/"
+basepath_work_data="${1}"
+basepath_plot="${2}"
 
 # TODO check whether this is even correct
 input_suffix="23-02-16_relflow" # "23-01-19"

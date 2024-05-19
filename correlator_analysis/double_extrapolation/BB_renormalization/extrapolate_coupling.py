@@ -388,13 +388,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--calc_cont',
                         help='calc continuum extrapolation and save to file instead of reading it from the file',
                         action="store_true")
-    parser.add_argument('--input_basepath',
-                        default="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/")
+    parser.add_argument('--input_basepath')
     parser.add_argument('--input_files', nargs='*', type=str, required=True)
-    parser.add_argument('--outputpath_plot',
-                        default="/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/")
-    parser.add_argument('--outputpath_data',
-                        default="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/")
+    parser.add_argument('--outputpath_plot')
+    parser.add_argument('--outputpath_data')
     parser.add_argument('--Nts', nargs='*', type=int)
     parser.add_argument('--betas', nargs='*', type=float)
     parser.add_argument('--eq_no', type=str, default="20", help="Equation number for matching in alphas vs mu plot.")

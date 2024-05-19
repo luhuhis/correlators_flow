@@ -322,7 +322,7 @@ def main():
 
     parser.add_argument("--suffix", type=str, help="string to append to end of output file name", default="")
     parser.add_argument("--prefix", type=str, help="string to prepend to end of output file name", default="")
-    parser.add_argument("--outputpath", default="/work/home/altenkort/work/correlators_flow/data/merged/spf_coupling/")
+    parser.add_argument("--outputpath")
     # parser.add_argument("--nproc", default=1, type=int, help="number of processes")
 
     args = parser.parse_args()

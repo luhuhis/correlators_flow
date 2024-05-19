@@ -2,9 +2,9 @@
 
 qcdtype="hisq_ms5_zeuthenFlow"
 
-basepath=${1:-"/work/home/altenkort/work/correlators_flow/data/merged/"}
+basepath="${1}"
 basepath_work_data="$basepath/$qcdtype/EE/"
-basepath_plot="${2:-"/work/home/altenkort/work/correlators_flow/plots/"}/${qcdtype}/EE/"
+basepath_plot="${2}/${qcdtype}/EE/"
 
 suffix="" #_paper"
 

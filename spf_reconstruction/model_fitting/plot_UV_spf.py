@@ -17,7 +17,7 @@ from correlator_analysis.double_extrapolation.BB_renormalization.compute_Z impor
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--outputpath_plot', type=str, default=".")
-    parser.add_argument('--inputfolder', type=str, default="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/")
+    parser.add_argument('--inputfolder', type=str)
     # compute_UV_spf.add_args(parser)
     args = parser.parse_args()
     return args

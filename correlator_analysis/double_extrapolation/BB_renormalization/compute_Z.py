@@ -257,8 +257,8 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--g2_file', type=str, required=True, help="path to file containing g^2 in flow scheme")
-    parser.add_argument('--outputpath_plot', default="/work/home/altenkort/work/correlators_flow/plots/quenched_1.50Tc_zeuthenFlow/coupling/")
-    parser.add_argument('--outputpath_data', default="/work/home/altenkort/work/correlators_flow/data/merged/quenched_1.50Tc_zeuthenFlow/coupling/")
+    parser.add_argument('--outputpath_plot')
+    parser.add_argument('--outputpath_data')
 
     args = parser.parse_args()
 
