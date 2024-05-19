@@ -228,18 +228,12 @@ def G_latt_LO_flow(tau_index: int, flowtime, corr: str, Nt: int, flowaction: str
 
     identifier = str(Nt)+flowaction+gaugeaction
 
-    default_G_PERT_LO_DIR = "/work/home/altenkort/work/correlators_flow/data/merged/pert_LO/"
-    G_PERT_LO_DIR = default_G_PERT_LO_DIR
-
     try:
         G_PERT_LO_DIR = os.environ['G_PERT_LO_DIR']
     except KeyError:
-        pass
-
-    if not G_PERT_LO_DIR:
-        # print("Warn: environment variable G_PERT_LO_DIR is not set, using default path")
-        G_PERT_LO_DIR = "/work/home/altenkort/work/correlators_flow/data/merged/pert_LO/"
-
+        print("Error: environment variable G_PERT_LO_DIR is not set")
+        exit(1)
+    
     # store for future access
     global G_latt_LO_flow_storage
     if identifier not in G_latt_LO_flow_storage.keys():
