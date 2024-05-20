@@ -414,23 +414,21 @@ Create **Figure 6.17** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EEvsBB.pdf
 ./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ```
 
-Afterwards, the following files have been created inside
-`$BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/`
+Afterward, the following files have been created in
+`$BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/`:
 
 | File | Comment |
 | --- | --- |
-| EE_relflow_hisq_final.pdf | Fig. 2 in the paper
-| EE_relflow_hisq_0.25.pdf  | Top panel of Fig. 1 in the paper
-|  EE_relflow_hisq_0.30.pdf  | Bottom panel of Fig. 1 in the paper
+| EE_relflow_hisq_0.25.pdf  | **Figure 7.2** |
+| EE_relflow_hisq_0.30.pdf  | **Figure 7.2** |
+| EE_relflow_hisq_final.pdf | **Figure 7.6** |
 
-and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/relflow/`
+and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/relflow/`:
 
 | File | Comment |
 | --- | --- |
-| EE_relflow_0.25.dat       | EE correlator at normalized flow time 0.25 (see Fig. 1) |
-| EE_relflow_0.30.dat       | EE correlator at normalized flow time 0.30 (see Fig. 1) |
-
-
+| EE_relflow_0.25.dat       | EE correlator at normalized flow time 0.25 |
+| EE_relflow_0.30.dat       | EE correlator at normalized flow time 0.30 |
 
 # Spectral function analysis 
 
@@ -470,7 +468,7 @@ Afterward, the following files have been created in
 | `samples.npy`            | Copy of the input correlator bootstrap samples but multiplied by $G_\text{norm}$ (= actual fit input) |
 | `spffit.npy`             | Median spectral function with left/right 34th percentiles as function of $\omega/T$ |
 
-## Plot spectral reconstruction fit results
+## Plot spectral reconstruction results
 
 ### Quenched case
 
@@ -508,9 +506,9 @@ Afterward, the following files have been created in:
 
 | File | Comment |
 | --- | --- |
-| `EE_corrfit_T<T-in-MeV>.pdf`  | **Figure 6.12a**, **Figure 6.18b** |
-| `EE_spf_T<T-in-MeV>.pdf`      | **Figure 6.12b**, **Figure 6.18a** |
-| `EE_kappa_T<T-in-MeV>.pdf`    | **Figure 6.12c**, **Figure 6.19a** |
+| `EE_corrfit_T<T-in-MeV>.pdf`  | **Figure 7.7** |
+| `EE_spf_T<T-in-MeV>.pdf`      | **Figure 7.8** |
+| `EE_kappa_T<T-in-MeV>.pdf`    | **Figure 7.9** |
 
 and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<T-in-MeV>/`:
 
@@ -520,7 +518,7 @@ and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<T-in-MeV>/`:
 
 ## Plot comparison to literature
 
-**Note: this explicitly depends on the previous call to `plot_fits_quenched.sh`** since it reads from the file `BB_kappa_quenched_1.5Tc.txt`.
+**Note: this explicitly depends on the previous call to `plot_fits_quenched.sh` and `plot_fits_hisq.sh`** since it reads from their output text files.
 
 ```shell
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} EE
@@ -528,50 +526,24 @@ and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<T-in-MeV>/`:
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} hisq_thesis
 ```
 
-Afterward, the following files have been created in
-`$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/<corr>/`
+Afterward, the following files have been created:
 
-| File | Comment |
-| --- | --- |
-| `kappa_<corr>_quenched_literature.pdf`      | **Figure 6.12d**, **Figure 6.19b** |
-
-and, in `${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/`:
-
-| File | Comment |
-| --- | --- |
-| `kappa_hisq_thesis.pdf`      | **Figure 7.10** |
-
-
-## Plot spectral reconstruction fit results for spectral function model shapes and model correlators
-
-Note that this script (`plot_fits_quenched.sh`) needs to be run again now with last argument being "no" instead of "yes":
-
-```shell
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh BB ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} no
-```
-
-Afterward, the following files have been created in
-`$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/`
-
-| File | Comment |
-| --- | --- |
-| BB_spf_quenched_1.5Tc.pdf      | Left panel of FIG 6 in the paper |
-| BB_corrfit_quenched_1.5Tc.pdf  | Right panel of FIG 6 in the paper |
+| Folder | File | Comment |
+| --- | --- | --- |
+| `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/` | `kappa_<corr>_quenched_literature.pdf`      | **Figure 6.12d**, **Figure 6.19b** |
+| `${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/` | `kappa_hisq_thesis.pdf`      | **Figure 7.10** |
 
 ## Plot fit to $g^2$ and $g^4$
+
+Create **Figure 8.1** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/compare_kappa_g2.pdf`
 
 ```shell
 ./correlators_flow/spf_reconstruction/plot_fits/publication_specific/2024-BB-paper/fit_kappa_to_g2_g4.py --outputpath ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
 ```
 
-Afterward, the following files have been created in
-`$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/`
+## Plot comparison with literature for $2\pi TD$
 
-| File | Comment |
-| --- | --- |
-| `compare_kappa_g2.pdf`           | FIG 9 in the paper |
-
-## Plot comparison with $2\pi TD$ literature
+Create **Figure 8.2** at `${BASEPATH_PLOT}/2piTD.pdf`
 
 ```shell
 ./correlators_flow/spf_reconstruction/plotting/plot_2piTD.py --outputfolder ${BASEPATH_PLOT}
@@ -582,5 +554,3 @@ Afterward, the following files have been created in
 ```shell
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ```
-
-
