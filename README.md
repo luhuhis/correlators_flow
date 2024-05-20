@@ -370,12 +370,12 @@ and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/`:
 ```
 
 Afterward, the following files have been created in
-`$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/`
+`$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/`:
 
-| File | Comment | Scale |
-| --- | --- | --- |
-| ` BB_flow_extr_relflow_ref6.28_<scale-choices>.npy` | Flow-time-to-zero extrapolated continuum BB correlator for each bootstrap sample |  |
-| `BB_flow_extr_relflow_ref6.28_<scale-choices>.txt` | Median and std dev of flow-time-to-zero extrapolated continuum BB correlator | |
+| File | Comment |
+| --- | --- | 
+| ` BB_flow_extr_relflow_ref6.28_<scale-choices>.npy` | Flow-time-to-zero extrapolated continuum BB correlator for each bootstrap sample |
+| `BB_flow_extr_relflow_ref6.28_<scale-choices>.txt` | Median and std dev of flow-time-to-zero extrapolated continuum BB correlator |
 
 using the following scales choices:
 
@@ -393,35 +393,32 @@ using the following scales choices:
 | `BB_flow_extr_relflow_ref6.28_UVNLO_IRNLO.npy`  | 19.18 |          1.50 |
 | `BB_flow_extr_relflow_ref6.28_UVNLO_IRNLO.txt`  | 19.18 |          1.50 |
 
-and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/`
+and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/`:
 
 | File | Comment |
 | --- | --- |
-| `BB_flow_extr_quality_no_extr.pdf` | Left panel of FIG 4 in the paper. Bare continuum BB correlator as a function of flow time. |
-| `BB_flow_extr_quality_relflow.pdf` | Right panel of FIG 4 in the paper. Renormalized continuum BB correlator as a function of flow time with flow time extrapolation. |
-
-
+| `BB_flow_extr_quality_no_extr.pdf` | **Figure 6.16a**. Bare continuum BB correlator as a function of flow time. |
+| `BB_flow_extr_quality_relflow.pdf` | **Figure 6.16b**. Renormalized continuum BB correlator as a function of flow time with flow time extrapolation. |
 
 ## Compare final $G_E$ and $G_B$
+
+Create **Figure 6.17** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EEvsBB.pdf`
 
 ```shell
 ./correlators_flow/correlator_analysis/plotting/plot_EEvsBB.py --inputfolder ${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/ --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
 ```
 
-Afterward, the following file has been created in
-`$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow`
-
-| File | Comment |
-| --- | --- |
-| `EEvsBB.pdf` | FIG 5 in the paper. Continuum- and flow-time-extrapolated color-magnetic and -electric correlators |
-
 # Spectral function analysis 
 
 ## Create figures that illustrate spectral function models and reconstruction process
 
+Create **Figure 6.10** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling//UV_spf_EE_quenched_1.5Tc.pdf`.
+
 ```shell
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_g2.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ```
+
+Create **Figure 6.11a** and **Figure 6.11b** at `$BASEPATH_PLOT/model_corrs.pdf` and `$BASEPATH_PLOT/integrand.pdf`, respectively:
 
 ```shell
 ./correlators_flow/spf_reconstruction/plotting/plot_integrand.py --outputpath ${BASEPATH_PLOT} --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor "1" --order LO --corr EE --mu_IR_by_T 1
