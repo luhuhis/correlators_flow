@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# TODO add this script to readme file
+# add abstract paths
+
 qcdtype="quenched_1.50Tc_zeuthenFlow"
 
 for corr in "EE" "BB" ; do

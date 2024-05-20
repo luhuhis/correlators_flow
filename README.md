@@ -235,7 +235,7 @@ and, in `$BASEPATH_PLOT/<qcdtype>/<corr>/<conftype>/`:
 
 | File | Comment |
 | --- | --- |
-| `<corr>_interpolation_relflow.pdf`                       | **Figure 6.4**. Multi-page PDF containing plots of interpolation in Eucl. time at different normalized flow times. |
+| `<corr>_interpolation_relflow.pdf`                       | Multi-page PDF containing plots of interpolation in Eucl. time at different normalized flow times. |
 | `<corr>_interpolation_relflow_combined.pdf`              | **Figure 6.5**. Plot of interpolation in Eucl. time for two normalized flow times. |
 
 ## Continuum extrapolation
