@@ -3,7 +3,7 @@
 ## TODO
 
 - complete all zip files
-- correct the figure numbers
+- correct the figure numbers, add appendix numbers
 - add descriptions for EE files
 - add poetry install instructions
 - create new release once everything else is done
@@ -11,13 +11,14 @@
 ## Requirements
 
 - Bash 5.0 (Linux shell)
-- Python: see `pyproject.toml`
+- Python poetry, or manually install packages according to `pyproject.toml`
 - LaTeX installation with packages `amsmath` and `mathtools`
 - gnuplot 5
 
 ## Instructions
 
-The following instructions have to be copied in order into a bash 5.0 shell. For convenience, all commands in this document are consolidated in `do_everything_thesis.sh`, which can be run to do everything with one script call.
+Download all files from the data publication, move them to a new folder and navigate into that folder.
+The following instructions can then copied into a bash 5.0 shell **in the same order as they appear below**. For convenience, all commands in this document are consolidated in `do_everything_thesis.sh`, which can be run to do everything with one script call.
 
 ## Unzip or clone analysis scripts
 
@@ -66,7 +67,9 @@ convenience, skipping the whole processing steps:
 tar -xzf output_data.tar.gz
 ```
 
-## Create required environment variables
+## Setup python and shell environment
+
+Set environment variables:
 
 ``` shell
 export PYTHONPATH=$(pwd)/correlators_flow:$(pwd)/AnalysisToolbox:${PYTHONPATH} BASEPATH_RAW_DATA=$(pwd)/input BASEPATH_WORK_DATA=$(pwd)/output_data BASEPATH_PLOT=$(pwd)/figures
@@ -77,6 +80,11 @@ Change this accordingly to number of processors for parallelization:
 
 ``` shell
 export NPROC=20  
+```
+
+Install the python environment:
+``` shell
+poetry install
 ```
 
 ## Note on output files
@@ -93,19 +101,19 @@ In the following, these variables are often used in file names:
 
 ## Create figures of perturbative correlators
 
-Create Figure 4.1 at `${BASEPATH_PLOT}/EE_QED_LPT.pdf`:
+Create **Figure 4.1** at `${BASEPATH_PLOT}/EE_QED_LPT.pdf`:
 
 ```shell
 ./correlators_flow/perturbative_corr/plot_QED_LPT.py --inputfolder ${BASEPATH_RAW_DATA} --outputfolder ${BASEPATH_PLOT}
 ```
 
-Create Figure 5.2 at `${BASEPATH_PLOT}/pertLO/EE_pert_contvslatt_flow.pdf`:
+Create **Figure 5.2** at `${BASEPATH_PLOT}/pertLO/EE_pert_contvslatt_flow.pdf`:
 
 ```shell
 ./correlators_flow/perturbative_corr/plot_pert_correlators.py --Ntau 24 --inputfolder ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --outputfolder ${BASEPATH_PLOT}/pertLO
 ```
 
-Create Figure 5.3 at `${BASEPATH_PLOT}/pertLO//pert_latt_comparison_EE_Nt30_<tau>.pdf` with `tau=5` and `tau=10`:
+Create **Figure 5.3** at `${BASEPATH_PLOT}/pertLO//pert_latt_comparison_EE_Nt30_<tau>.pdf` with `tau=5` and `tau=10`:
 
 ```shell
 ./correlators_flow/perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/flowtimes.dat --outputpath ${BASEPATH_PLOT}/pertLO/ --inputpath ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --tau 5
@@ -164,37 +172,41 @@ and, in `$BASEPATH_PLOT/<qcdtype>/<corr>/<conftype>/`
 
 | File | Comment |
 | --- | --- |
-| `polyakovloop_MCtime.pdf`     | Figure 6.1 and 7.1. Shows the MCMC time series of the polyakovloop at a large flow time. |
+| `polyakovloop_MCtime.pdf`     | **Figure 6.1 and 7.1.** Shows the MCMC time series of the polyakovloop at a large flow time. |
 
 ## Plot lattice spacing effects
 
+Create **Figure 6.2** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/EE_latt_effects.pdf`:
+
 ```shell
 ./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
-./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
 ```
 
-
-| File | Comment |
-| --- | --- |
-| `polyakovloop_MCtime.pdf`     | Figure 6.1 and 7.1. Shows the MCMC time series of the polyakovloop at a large flow time. |
-
-
-## Plot flow time correlations
-
-TODO add correlation plot
+Optional: create the same figures for the 2+1-flavor cases at `${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/T<T-in-MeV>/EE_latt_effects.pdf`:
 
 ```shell
-./correlators_flow/correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath ${BASEPATH_WORK_DATA} --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --nproc ${NPROC}
+./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
 ```
 
 ## Plot flow time dependency
 
-TODO add flow dep plot
+Create **Figure 6.3**, **Figure 6.13**, and **Figure 7.3**:
 
 ```shell
 ./correlators_flow/correlator_analysis/plotting/example_usage/plot_flow_dep.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ./correlators_flow/correlator_analysis/plotting/example_usage/plot_flow_dep.sh quenched_1.50Tc_zeuthenFlow BB ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ./correlators_flow/correlator_analysis/plotting/example_usage/plot_flow_dep.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
+```
+
+The figures can be found at:
+
+```shell
+${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s080t20_b0703500/EE_s080t20_b0703500_flow_dep.pdf
+${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s080t20_b0703500/EE_s080t20_b0703500_flow_depzoom.pdf
+${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/BB/s080t20_b0703500/BB_s080t20_b0703500_flow_dep.pdf
+${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/BB/s080t20_b0703500/BB_s080t20_b0703500_flow_depzoom.pdf
+${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/s096t24_b0824900_m002022_m01011/EE_s096t24_b0824900_m002022_m01011_flow_dep.pdf
+${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/s096t24_b0824900_m002022_m01011/EE_s096t24_b0824900_m002022_m01011_flow_depzoom.pdf
 ```
 
 ## Interpolation
@@ -209,7 +221,7 @@ is available across all lattices and temperatures.
 ```
 
 Afterward, the following files have been created in
-`$BASEPATH_WORK_DATA/<qcdtype>/<corr>/<conftype>/`
+`$BASEPATH_WORK_DATA/<qcdtype>/<corr>/<conftype>/`:
 
 | File | Comment |
 | --- | --- |
@@ -217,17 +229,16 @@ Afterward, the following files have been created in
 | `<corr>_<conftype>_interpolation_relflow_mean.npy`       | Median of the interpolated correlator for the corresponding normalized flow times (binary format, npy) |
 | `<corr>_<conftype>_interpolation_relflow_samples.npy`    | Interpolations of each individual bootstrap sample of the correlator for the corresponding normalized flow times (binary format, npy) |
 
-and, in `$BASEPATH_PLOT/<qcdtype>/<corr>/<conftype>/`
+and, in `$BASEPATH_PLOT/<qcdtype>/<corr>/<conftype>/`:
 
 | File | Comment |
 | --- | --- |
-| `<corr>_interpolation_relflow.pdf`                       | Multi-page PDF containing plots of interpolation in Eucl. time at different normalized flow times |
-| `<corr>_interpolation_relflow_combined.pdf`              | Plot of interpolation in Eucl. time for two normalized flow times |
-
+| `<corr>_interpolation_relflow.pdf`                       | **Figure 6.4**. Multi-page PDF containing plots of interpolation in Eucl. time at different normalized flow times. |
+| `<corr>_interpolation_relflow_combined.pdf`              | **Figure 6.5**. Plot of interpolation in Eucl. time for two normalized flow times. |
 
 ## Continuum extrapolation
 
-Take the continuum limit of the correlator using a fit on each sample
+Take the continuum limit of the correlators using a fit on each sample
 
 ```shell
 ./correlators_flow/correlator_analysis/double_extrapolation/example_usage/4_continuum_extr.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
@@ -236,7 +247,7 @@ Take the continuum limit of the correlator using a fit on each sample
 ```
 
 Afterward, the following files have been created in
-`$BASEPATH_WORK_DATA/<qcdtype>/<corr>/cont_extr/`
+`$BASEPATH_WORK_DATA/<qcdtype>/<corr>/cont_extr/`:
 
 | File | Comment |
 | --- | --- |
@@ -245,12 +256,19 @@ Afterward, the following files have been created in
 | `<corr>_cont_relflow_err.dat`     | Std dev of continuum-extrapolated correlator at corresponding normalized flow times |
 | `<corr>_cont_relflow_samples.npy` | Continuum extrapolations of the correlator on each individual bootstrap sample |
 
-and in `$BASEPATH_PLOT/<qcdtype>/<corr>/`
+and in `$BASEPATH_PLOT/<qcdtype>/<corr>/`:
 
 | File | Comment |
 | --- | --- |
-| `<corr>_cont_quality_relflow.pdf` | Contains FIG 3 in the paper. This is a multipage PDF containing plots of continuum extrapolation of correlator for the corresponding normalized flow times. |
+| `<corr>_cont_quality_relflow.pdf` | **Figure 6.6**, **Figure 7.4**. This is a multipage PDF containing plots of continuum extrapolation of correlator for the corresponding normalized flow times. |
 
+## Plot flow time correlations
+
+Create **Figure 6.7** at 
+
+```shell
+./correlators_flow/correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath ${BASEPATH_WORK_DATA} --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --nproc ${NPROC}
+```
 
 ## Coupling calculations
 
