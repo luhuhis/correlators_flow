@@ -96,8 +96,9 @@ actual underlying bootstrap samples in numpy format.
 In the following, these variables are often used in file names:
 
 - `<qcdtype>` is either `quenched_1.50Tc_zeuthenFlow` or `hisq_ms5_zeuthenFlow`
-- `<conftype>` may be, for example, `s144t36_b0754400` (meaning Ns=144, Nt=36, beta=7.544)
+- `<conftype>` may be, for example: `s144t36_b0754400` (meaning $N_s=144$, $N_\tau=36$, $\beta=7.544$), or `s096t28_b0824900_m002022_m01011` (meaning $N_s=96$, $N_\tau=28$, $\beta=8.249$, $m_s/a=0.002022$, $m_l/a=0.01011$), ...
 - `<corr>` is either `EE` or `BB`
+- `<T-in-MeV>` is either `195`, `220`, `251`, or `293`
 
 # Correlator analysis
 
@@ -276,26 +277,40 @@ Create **Figure 6.7** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s144t3
 
 ```shell
 ./correlators_flow/correlator_analysis/double_extrapolation/example_usage/5_flowtime_extr.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
-```
-
-- TODO add output files
-
-Take the flow-time-to-zero limit of the EE correlator using a combined fit on each sample:
-
-```shell
 ./correlators_flow/correlator_analysis/double_extrapolation/example_usage/5_flowtime_extr.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
 ```
 
-- TODO add output files
+Afterward, the following files have been created inside
+`$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/EE/` and
+`$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/T<Temp-in-MeV>/`:
+
+| File | Comment |
+| --- | --- |
+| `EE_flow_extr_relflow.npy` | Flow-time-to-zero extrapolated continuum EE correlator for each bootstrap sample |
+| `EE_flow_extr_relflow.txt` | Median and std dev of flow-time-to-zero extrapolated continuum EE correlator |
+
+and inside
+`$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EE/` and
+`$BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/T<Temp-in-MeV>/`
+
+| File | Comment |
+| --- | --- |
+| `EE_flow_extr_quality_relflow.pdf` | **Figure 6.9a**, **Figure 7.5** |
 
 ## Compare final quenched $G_E$ with multi-level results
+
+This will create **Figure 6.9b**.
 
 ```shell
 ./correlators_flow/multi-level/cont_extr_new.py --basepath ${BASEPATH_RAW_DATA}
 ./correlators_flow/correlator_analysis/plotting/6_plot_finalcorr.py --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --input_flow ${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.txt --input_multilvl ${BASEPATH_RAW_DATA}/multi-level_2015/EE_2015_new.txt
 ```
 
-- TODO add output files
+Afterward, the files
+`$BASEPATH_RAW_DATA/multi-level_2015/EE_2015_new_2022.txt` and
+`$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EE/EE_flowVSmultilvl_relflow.pdf` (**Figure 6.9b**)
+have been created.
+
 
 ## Renormalization of $G_B$
 

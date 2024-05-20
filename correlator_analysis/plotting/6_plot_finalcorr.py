@@ -43,7 +43,7 @@ def main():
 
     file = args.outputfolder + "/EE_flowVSmultilvl_relflow.pdf"
     fig.savefig(file)
-    print("saved final corr plot", file)
+    print("save ", file)
 
     fig, ax, _ = lpd.create_figure(xlims=[0.05, 0.52], ylims=[0.9, 1.1],
                                        xlabel=r'$\tau T$',
@@ -62,12 +62,9 @@ def main():
 
     ax.axhline(y=1, **lpd.verticallinestyle)
 
-
-    # ax.legend(loc='lower right', bbox_to_anchor=(1, 0.1), **lpd.leg_err_size())
-    # TODO add suffix arg
     file = args.outputfolder + "/EE_flowVSmultilvl_relflow_ratio.pdf"
     fig.savefig(file)
-    print("saved final corr plot", file)
+    print("save ", file)
 
 
 if __name__ == '__main__':

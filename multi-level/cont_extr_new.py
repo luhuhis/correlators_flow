@@ -96,11 +96,15 @@ def main():
     cont_corr, cont_corr_err = cont_extr(Ntaus, tauT_data, corr_data, corr_err_data, output_tauTs, nsamples)
 
     # save corr estimate in file and plot it
-    numpy.savetxt(args.basepath+"/EE_2015_new_2022.txt", numpy.stack((output_tauTs, cont_corr, cont_corr_err), axis=-1), header="#tauT    corr    corr_err")
+    filename = args.basepath+"/EE_2015_new_2022.txt"
+    print(f"save {filename}")
+    numpy.savetxt(filename, numpy.stack((output_tauTs, cont_corr, cont_corr_err), axis=-1), header="#tauT    corr    corr_err")
     if args.plotpath:
-        fig, ax, plots = lpd.create_figure(xlims=[0, 0.51], ylims=[0, 4], xlabel=r'$\tau T$', ylabel=r'$ \frac{G (\tau)}{G^\mathrm{ norm } (\tau)}$')
+        fig, ax, _ = lpd.create_figure(xlims=[0, 0.51], ylims=[0, 4], xlabel=r'$\tau T$', ylabel=r'$ \frac{G (\tau)}{G^\mathrm{ norm } (\tau)}$')
         ax.errorbar(output_tauTs, cont_corr, cont_corr_err, color='black')
-        fig.savefig(args.plotpath+"./EE_2015_new_cont_2022.pdf")
+        filename = args.plotpath+"./EE_2015_new_cont_2022.pdf"
+        print(f"save {filename}")
+        fig.savefig(filename)
 
 
 if __name__ == '__main__':
