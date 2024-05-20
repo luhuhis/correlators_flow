@@ -3,8 +3,7 @@
 ## TODO
 
 - complete all zip files
-- correct the figure numbers, add appendix numbers
-- add descriptions for EE files
+- add appendix figure numbers?
 - add poetry install instructions
 - create new release once everything else is done
 
@@ -516,6 +515,12 @@ and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<T-in-MeV>/`:
 | --- | --- |
 | `EE_kappa_T<T-in-MeV>.txt`  |  Final $\kappa$ result |
 
+#### Optional: plot K-factors
+
+```shell
+./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
+```
+
 ## Plot comparison to literature
 
 **Note: this explicitly depends on the previous call to `plot_fits_quenched.sh` and `plot_fits_hisq.sh`** since it reads from their output text files.
@@ -549,8 +554,4 @@ Create **Figure 8.2** at `${BASEPATH_PLOT}/2piTD.pdf`
 ./correlators_flow/spf_reconstruction/plotting/plot_2piTD.py --outputfolder ${BASEPATH_PLOT}
 ```
 
-## Optional: plot K-factors
 
-```shell
-./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
-```
