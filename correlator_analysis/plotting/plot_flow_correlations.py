@@ -123,9 +123,10 @@ def main():
     # plot_correlation_matrix(data, flow_radii/tauT, r'$\mathrm{corr}[X(\tau_\mathrm{F}), X(\tau_\mathrm{F}\prime)], \newline X= U(\beta, \tau) E(\tau) U(\tau, 0) E(0), \tau T ='+label+r'$', args.outputfolder+"EE_tauT"+label)
 
     # save figures to pdf
-    print("save figures...")
+    filename = args.outputfolder+"/"+args.conftype+"/EE_"+args.conftype+"_correlation.pdf"
+    print(f"saving {filename}")
     lpd.set_rc_params()  # for some reason we need to repeat this here...
-    with PdfPages(args.outputfolder+"/"+args.conftype+"/EE_"+args.conftype+"_correlation.pdf") as pdf:
+    with PdfPages(filename) as pdf:
         for fig in figs:
             pdf.savefig(fig)
             matplotlib.pyplot.close(fig)

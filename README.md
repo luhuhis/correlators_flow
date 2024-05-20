@@ -99,6 +99,8 @@ In the following, these variables are often used in file names:
 - `<conftype>` may be, for example, `s144t36_b0754400` (meaning Ns=144, Nt=36, beta=7.544)
 - `<corr>` is either `EE` or `BB`
 
+# Correlator analysis
+
 ## Create figures of perturbative correlators
 
 Create **Figure 4.1** at `${BASEPATH_PLOT}/EE_QED_LPT.pdf`:
@@ -264,38 +266,65 @@ and in `$BASEPATH_PLOT/<qcdtype>/<corr>/`:
 
 ## Plot flow time correlations
 
-Create **Figure 6.7** at 
+Create **Figure 6.7** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s144t36_b0754400/EE_s144t36_b0754400_correlation.pdf`:
 
 ```shell
 ./correlators_flow/correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath ${BASEPATH_WORK_DATA} --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --nproc ${NPROC}
 ```
 
-## Coupling calculations
+## Flow-time-to-zero extrapolation of $G_E$
 
-Continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices,
-and conversion from flow scheme to the MSBAR scheme coupling at one scale, then perturbative 5-loop running to other relevant scales.
+```shell
+./correlators_flow/correlator_analysis/double_extrapolation/example_usage/5_flowtime_extr.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
+```
+
+- TODO add output files
+
+Take the flow-time-to-zero limit of the EE correlator using a combined fit on each sample:
+
+```shell
+./correlators_flow/correlator_analysis/double_extrapolation/example_usage/5_flowtime_extr.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
+```
+
+- TODO add output files
+
+## Compare final quenched $G_E$ with multi-level results
+
+```shell
+./correlators_flow/multi-level/cont_extr_new.py --basepath ${BASEPATH_RAW_DATA}
+./correlators_flow/correlator_analysis/plotting/6_plot_finalcorr.py --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --input_flow ${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.txt --input_multilvl ${BASEPATH_RAW_DATA}/multi-level_2015/EE_2015_new.txt
+```
+
+- TODO add output files
+
+## Renormalization of $G_B$
+
+### Coupling calculations
+
+Peform the continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices,
+and convert it from flow scheme to the MSBAR scheme coupling at one scale, then use perturbative 5-loop running to move to other relevant scales.
 
 ```shell
 ./correlators_flow/correlator_analysis/double_extrapolation/BB_renormalization/example_usage/extrapolate_coupling.sh ${BASEPATH_RAW_DATA} ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} 6.40
 ```
 
 Afterward, the following files have been created in
-`$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/coupling/`
+`$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/coupling/`:
 
 | File | Comment |
 | --- | --- |
-| `g2_muF_cont_extr.txt`         | Continuum-extrapolated flow scheme coupling (g^2) as function of flow scale mu_F=1/sqrt(8 tau_F) in units of temperature T |
-| `g2_MSBAR_runFromMu_6.28.txt`  | Continuum MS-BAR coupling (g^2) as a function of MS-BAR scale mu in units of temperature T (matched at mu_F/T=2pi and then perturbatively run) |
+| `g2_muF_cont_extr.txt`         | Continuum-extrapolated flow scheme coupling $g^2$ as function of flow scale $\mu_F=1/\sqrt{8 \tau_F}$ in units of temperature T |
+| `g2_MSBAR_runFromMu_6.28.txt`  | Continuum MS-BAR coupling $g^2$ as a function of MS-BAR scale $\mu$ in units of temperature T (matched at $\mu_F/T=2\pi$ and then perturbatively run) |
 
-and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/`
+and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/`:
 
 | File | Comment |
 | --- | --- |
-| `g2.pdf`                      | Right panel of FIG 1 in the paper. Flow- and MSBAR-scheme couplings (g^2) as a function of scale in temperature units. |
-| `g2_cont_extr.pdf`            | Left panel of FIG 1 in the paper. Flow-scheme coupling (g^2) as a function of squared lattice spacing (= inverse Nt^2 at fixed temperature) |
+| `g2.pdf`                      | **Figure 6.14b**. Flow- and MSBAR-scheme couplings $g^2$ as a function of scale in temperature units. |
+| `g2_cont_extr.pdf`            | **Figure 6.14a**. Flow-scheme coupling $g^2$ as a function of squared lattice spacing (= inverse $N_\tau^2$ at fixed temperature). |
 
 
-## Carry out renormalization of $G_B$ by computing $Z$
+### Carry out renormalization of $G_B$ by computing $Z_\text{match}$
 
 ```shell
 ./correlators_flow/correlator_analysis/double_extrapolation/BB_renormalization/example_usage/compute_Z.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
@@ -306,29 +335,18 @@ Afterward, the following files have been created in
 
 | File | Comment |
 | --- | --- |
-| `Z_match_ref6.28_UVLO_IRNLO.dat`    | Z_match as a function of scale, with \bar{\mu}_T/T=19.18, \bar{\mu}_{\tau_F}/mu_F=1 |
-| `Z_match_ref6.28_UVNLO_IRNLO.dat`   | Z_match as a function of scale, with \bar{\mu}_T/T=19.18, \bar{\mu}_{\tau_F}/mu_F=1.50 |
-| `Z_match_ref6.28_UVLO_IRLO.dat`     | Z_match as a function of scale, with \bar{\mu}_T/T=2piT, \bar{\mu}_{\tau_F}/mu_F=1 |
-| `Z_match_ref6.28_UVNLO_IRLO.dat`    | Z_match as a function of scale, with \bar{\mu}_T/T=2piT, \bar{\mu}_{\tau_F}/mu_F=1.50 |
+| `Z_match_ref6.28_UVLO_IRNLO.dat`    | $Z_\text{match}$ as a function of scale, with $\bar{\mu}_T/T=19.18, \bar{\mu}_{\tau_F}/\mu_F=1$ |
+| `Z_match_ref6.28_UVNLO_IRNLO.dat`   | $Z_\text{match}$ as a function of scale, with $\bar{\mu}_T/T=19.18, \bar{\mu}_{\tau_F}/\mu_F=1.50$ |
+| `Z_match_ref6.28_UVLO_IRLO.dat`     | $Z_\text{match}$ as a function of scale, with $\bar{\mu}_T/T=2\pi T, \bar{\mu}_{\tau_F}/\mu_F=1$ |
+| `Z_match_ref6.28_UVNLO_IRLO.dat`    | $Z_\text{match}$ as a function of scale, with $\bar{\mu}_T/T=2\pi T, \bar{\mu}_{\tau_F}/\mu_F=1.50$ |
 
-and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/`
+and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/`:
 
 | File | Comment |
 | --- | --- |
-| `Z_total.pdf`            | Left panel of FIG 2 in the paper. All considered versions of Z_match as a function of flow scale |
-| `Z_total_flowtime.pdf`   | Right panel of FIG 2 in the paper. All considered versions of Z_match as a function of flow radius 1/(8 tau_F) T |
+| `Z_total.pdf`            | **Figure 6.15**. All considered versions of $Z_\text{match}$ as a function of flow scale. |
+| `Z_total_flowtime.pdf`   | **Figure 6.15** All considered versions of $Z_\text{match}$ as a function of flow radius $1/(8 \tau_F) T$ |
 
-## Flow-time-to-zero extrapolation of $G_E$
-
-```shell
-./correlators_flow/correlator_analysis/double_extrapolation/example_usage/5_flowtime_extr.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
-```
-
-Take the flow-time-to-zero limit of the EE correlator using a combined fit on each sample:
-
-```shell
-./correlators_flow/correlator_analysis/double_extrapolation/example_usage/5_flowtime_extr.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
-```
 
 ## Flow-time-to-zero extrapolation of renormalized $G_B$
 
@@ -367,14 +385,7 @@ and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/`
 | `BB_flow_extr_quality_no_extr.pdf` | Left panel of FIG 4 in the paper. Bare continuum BB correlator as a function of flow time. |
 | `BB_flow_extr_quality_relflow.pdf` | Right panel of FIG 4 in the paper. Renormalized continuum BB correlator as a function of flow time with flow time extrapolation. |
 
-## Comparison with multi-level results
 
-```shell
-./correlators_flow/multi-level/cont_extr_new.py --basepath ${BASEPATH_RAW_DATA}
-./correlators_flow/correlator_analysis/plotting/6_plot_finalcorr.py --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --input_flow ${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.txt --input_multilvl ${BASEPATH_RAW_DATA}/multi-level_2015/EE_2015_new.txt
-```
-
-TODO add compare EE vs Multilevel
 
 ## Compare final $G_E$ and $G_B$
 
@@ -389,6 +400,8 @@ Afterward, the following file has been created in
 | --- | --- |
 | `EEvsBB.pdf` | FIG 5 in the paper. Continuum- and flow-time-extrapolated color-magnetic and -electric correlators |
 
+# Spectral function analysis 
+
 ## Create figures that illustrate spectral function models and reconstruction process
 
 ```shell
@@ -399,7 +412,7 @@ Afterward, the following file has been created in
 ./correlators_flow/spf_reconstruction/plotting/plot_integrand.py --outputpath ${BASEPATH_PLOT} --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor "1" --order LO --corr EE --mu_IR_by_T 1
 ```
 
-## Spectral reconstruction 
+## Perform spectral function reconstruction
 
 Note: this takes a lot of computing time, so the output files are already included.
 
