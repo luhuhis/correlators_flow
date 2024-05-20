@@ -44,7 +44,7 @@ git clone https://github.com/LatticeQCD/AnalysisToolbox.git
 ( cd AnalysisToolbox && git checkout f9eee73d45d7b981153db75cfaf2efa2b4cefa9c )
 ```
 
-### Unzip data
+## Unzip data
 
 This extracts the gradientFlow output from SIMULATeQCD and creates various folders.
 
@@ -66,7 +66,7 @@ convenience, skipping the whole processing steps:
 tar -xzf output_data.tar.gz
 ```
 
-### Create required environment variables
+## Create required environment variables
 
 ``` shell
 export PYTHONPATH=$(pwd)/correlators_flow:$(pwd)/AnalysisToolbox:${PYTHONPATH} BASEPATH_RAW_DATA=$(pwd)/input BASEPATH_WORK_DATA=$(pwd)/output_data BASEPATH_PLOT=$(pwd)/figures
@@ -93,31 +93,31 @@ In the following, these variables are often used in file names:
 
 ## Create figures of perturbative correlators
 
+Create Figure 4.1 at `${BASEPATH_PLOT}/EE_QED_LPT.pdf`:
+
 ```shell
 ./correlators_flow/perturbative_corr/plot_QED_LPT.py --inputfolder ${BASEPATH_RAW_DATA} --outputfolder ${BASEPATH_PLOT}
 ```
 
-TODO saved QED LPT plot ${BASEPATH_PLOT}/EE_QED_LPT.pdf
+Create Figure 5.2 at `${BASEPATH_PLOT}/pertLO/EE_pert_contvslatt_flow.pdf`:
 
 ```shell
 ./correlators_flow/perturbative_corr/plot_pert_correlators.py --Ntau 24 --inputfolder ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --outputfolder ${BASEPATH_PLOT}/pertLO
 ```
 
-TODO saved pert corr plot ${BASEPATH_PLOT}/pertLO/EE_pert_contvslatt_flow.pdf
-
-TODO tree-level imp showcase plots
+Create Figure 5.3 at `${BASEPATH_PLOT}/pertLO//pert_latt_comparison_EE_Nt30_<tau>.pdf` with `tau=5` and `tau=10`:
 
 ```shell
 ./correlators_flow/perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/flowtimes.dat --outputpath ${BASEPATH_PLOT}/pertLO/ --inputpath ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --tau 5
 ./correlators_flow/perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/flowtimes.dat --outputpath ${BASEPATH_PLOT}/pertLO/ --inputpath ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --tau 10
 ```
 
-## Merge data files
+## Merge correlator measurement files
 
-Merge individual small text files into large binary (npy) files
+Merge individual small text files into larger binary numpy files.
 
-Merge individual BB correlator measurement text files (output from SIMULATeQCD) into a small number of larger numpy files (binary format).
-Metadata is saved to text files. This can take some time, mostly depending on file system speed (with conventional HDDs it may take hours).
+Merge individual correlator measurement text files (output from SIMULATeQCD) into a small number of larger numpy files (binary format).
+Metadata is saved to text files. This can take some time, mostly depending on file system speed (with slow HDDs it may take hours).
 
 ```shell
 ./correlators_flow/correlator_analysis/double_extrapolation/example_usage/1_merge_data.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_RAW_DATA} ${BASEPATH_WORK_DATA}
@@ -126,7 +126,7 @@ Metadata is saved to text files. This can take some time, mostly depending on fi
 ```
 
 Afterward, the following files have been created in
-`$BASEPATH_WORK_DATA/<qcdtype>/<corr>/<conftype>/`
+`$BASEPATH_WORK_DATA/<qcdtype>/<corr>/<conftype>/`:
 
 | File | Comment |
 | --- | --- |
@@ -151,20 +151,33 @@ Then bin configurations according to the integrated autocorrelation time, then p
 ```
 
 Afterward, the following files have been created in
-`$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/<qcdtype>/<conftype>/`
+`$BASEPATH_WORK_DATA/<qcdtype>/<corr>/<conftype>/`
 
 | File | Comment |
 | --- | --- |
-| `<corr>_<conftype>_samples.npy`   | bootstrap samples of correlator |
-| `<corr>_flow_cov_<conftype>.npy`  | flow time correlation matrix (based on bootstrap samples) |
-| `<corr>_<conftype>.dat`           | median correlator (useful for checking the data / plotting) |
-| `<corr>_err_<conftype>.dat`       | std_dev of correlator (useful for checking the data / plotting) |
+| `<corr>_<conftype>_samples.npy`   | Bootstrap samples of correlator |
+| `<corr>_flow_cov_<conftype>.npy`  | Flow time correlation matrix (based on bootstrap samples) |
+| `<corr>_<conftype>.dat`           | Median correlator (useful for checking the data / plotting) |
+| `<corr>_err_<conftype>.dat`       | Std dev of correlator (useful for checking the data / plotting) |
 
-and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/<corr>/<conftype>/`
+and, in `$BASEPATH_PLOT/<qcdtype>/<corr>/<conftype>/`
 
 | File | Comment |
 | --- | --- |
-| `polyakovloop_MCtime.pdf`     | shows the MCMC time series of the polyakovloop at a large flow time |
+| `polyakovloop_MCtime.pdf`     | Figure 6.1 and 7.1. Shows the MCMC time series of the polyakovloop at a large flow time. |
+
+## Plot lattice spacing effects
+
+```shell
+./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
+./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
+```
+
+
+| File | Comment |
+| --- | --- |
+| `polyakovloop_MCtime.pdf`     | Figure 6.1 and 7.1. Shows the MCMC time series of the polyakovloop at a large flow time. |
+
 
 ## Plot flow time correlations
 
@@ -238,12 +251,6 @@ and in `$BASEPATH_PLOT/<qcdtype>/<corr>/`
 | --- | --- |
 | `<corr>_cont_quality_relflow.pdf` | Contains FIG 3 in the paper. This is a multipage PDF containing plots of continuum extrapolation of correlator for the corresponding normalized flow times. |
 
-## Plot lattice spacing effects
-
-```shell
-./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
-./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}  # TODO check whether this works once hisq data has been copied!!!
-```
 
 ## Coupling calculations
 

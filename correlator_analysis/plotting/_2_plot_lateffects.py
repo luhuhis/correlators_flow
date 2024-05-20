@@ -130,12 +130,13 @@ def main():
     figs = lpd.parallel_function_eval(plot_single_flowtime, indices, args.nproc, numpy.sqrt(8*flowtimesT2), args, tauT, XX, XX_err, labels, args.ylims, args.xlims)
 
     # save figures to pdf
-    print("save figures...")
     lpd.set_rc_params()  # for some reason we need to repeat this here...
     if args.outputfolder is None:
         args.outputfolder = lpd.get_plot_path(args.qcdtype, args.corr, "")
     lpd.create_folder(args.outputfolder)
-    with PdfPages(args.outputfolder + "/" + args.corr + "_latt_effects.pdf") as pdf:
+    filename = args.outputfolder + "/" + args.corr + "_latt_effects.pdf"
+    print(f"saving {filename}")
+    with PdfPages(filename) as pdf:
         for fig in figs:
             pdf.savefig(fig)
             matplotlib.pyplot.close(fig)

@@ -111,7 +111,9 @@ def plot_extr(args):
 
     ax.text(0.99, 0.99, r'$\sqrt{8\tau_\mathrm{F}}T=' + lpd.format_float(flowradius_T) + r'$', ha='right', va='top', transform=ax.transAxes)
     ax.legend(title=r'$\tau T$', handlelength=1, loc="upper right", bbox_to_anchor=(1, 0.95), alignment="left")
-    fig.savefig(args.outputpath + "/pert_latt_comparison_" + args.corr + "_latt_effects.pdf")
+    filename = args.outputpath + "/pert_latt_comparison_" + args.corr + "_latt_effects.pdf"
+    print(f"save {filename}")
+    fig.savefig(filename)
     matplotlib.pyplot.close(fig)
 
     # relative flow time!
@@ -134,7 +136,9 @@ def plot_extr(args):
         ax.errorbar(tauTs, relflowcorrs[i], fmt='x')
     ax.text(0.99, 0.99, r'$\sqrt{8\tau_\mathrm{F}}/\tau=' + lpd.format_float(flowradiusbytauT) + r'$', ha='right', va='top', transform=ax.transAxes)
     ax.legend(title=r'$\tau T$', handlelength=1, loc="upper right", bbox_to_anchor=(1, 0.95), alignment="left")
-    fig.savefig(args.outputpath + "/pert_latt_comparison_" + args.corr + "_latt_effects_relflow.pdf")
+    filename = args.outputpath + "/pert_latt_comparison_" + args.corr + "_latt_effects_relflow.pdf"
+    print(f"save {filename}")
+    fig.savefig(filename)
     matplotlib.pyplot.close(fig)
 
     colors = ["C"+str(i) for i in range(10)]
@@ -157,7 +161,9 @@ def plot_extr(args):
 
     ax.text(0.99, 0.99, r'$\sqrt{8\tau_\mathrm{F}}/\tau=' + lpd.format_float(flowradiusbytauT) + r'$', ha='right', va='top', transform=ax.transAxes)
     ax.legend(title=r'$\tau T$', handlelength=1, loc="center left", bbox_to_anchor=(0, 0.5), alignment="left")
-    fig.savefig(args.outputpath + "/pert_latt_comparison_" + args.corr + "_extr.pdf")
+    filename = args.outputpath + "/pert_latt_comparison_" + args.corr + "_extr.pdf"
+    print(f"save {filename}")
+    fig.savefig(filename)
     matplotlib.pyplot.close(fig)
 
 
@@ -218,7 +224,9 @@ def plot_tau(args):
     # ax.axvline(x=0.33, **lpd.verticallinestyle)
     ax.errorbar(0, 0, label="$S_\\mathrm{gauge}, S_\\mathrm{flow}$", markersize=0, alpha=0, lw=0)
     ax.legend(handlelength=1, loc="upper right", bbox_to_anchor=(1, 0.95), alignment="left")
-    fig.savefig(args.outputpath + "/pert_latt_comparison_" + args.corr + "_" + "Nt" + str(args.Nt) + ".pdf")
+    filename = args.outputpath + "/pert_latt_comparison_" + args.corr + "_" + "Nt" + str(args.Nt) + ".pdf"
+    print(f"save {filename}")
+    fig.savefig(filename)
     matplotlib.pyplot.close(fig)
 
 
@@ -267,7 +275,9 @@ def plot_flow(args):
     # ax.axvline(x=0.33, **lpd.verticallinestyle)
     ax.legend(handlelength=1, loc="upper right", bbox_to_anchor=(1, 0.95), alignment="left")
     add_suffix = ""
-    fig.savefig(args.outputpath + "/pert_latt_comparison_" + args.corr + "_" + "Nt" + str(args.Nt) + "_" + str(args.tau) + add_suffix + ".pdf")
+    filename = args.outputpath + "/pert_latt_comparison_" + args.corr + "_" + "Nt" + str(args.Nt) + "_" + str(args.tau) + add_suffix + ".pdf"
+    print(f"save {filename}")
+    fig.savefig(filename)
 
 
 def main():
