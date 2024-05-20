@@ -8,8 +8,7 @@ plot_hisq_thesis(){
 
         basepath="$basepath_work_data/hisq_ms5_zeuthenFlow/EE/"
 
-        suffix="_paper"
-        # addargs="--plot_analytical_results"
+        suffix=""
 
         ../plot_final_kappas.py \
             --input_kappa_files \
@@ -43,7 +42,7 @@ plot_hisq_thesis(){
 
 }
 
-plot_hisq(){
+plot_hisq_paper(){
 
 
         addargs="--no_subscript"
@@ -130,12 +129,12 @@ plot_quenched_BB(){
     cd "$(dirname $0)" || exit
 
     if [ "$selector" == "all" ]; then
-        plot_hisq &
+        plot_hisq_paper &
         plot_hisq_thesis &
         plot_quenched_EE &
         plot_quenched_BB &
     elif [ "$selector" == "hisq" ]; then
-        plot_hisq &
+        plot_hisq_paper &
     elif [ "$selector" == "hisq_thesis" ]; then
         plot_hisq_thesis &
     elif [ "$selector" == "EE" ]; then

@@ -3,6 +3,8 @@
 
 basepath_work_data="${1}"
 basepath_plot="${2}"
+selector_two="${3-"thesis"}"  # "paper" "thesis"
+selector="${4:-"zeroflow"}"  # "zeroflow" "finiteflow"
 
 minscale="eff"
 
@@ -55,103 +57,89 @@ plot_spfs(){
 
 
 set_labels_and_models(){
-
-if [ "${selector}" == "paper" ] ; then
-    nosubscript="--no_subscript"
-    hidechisq="--hide_chisq"
-    figheight=5
-labels_and_models=(
-    '$\text{max}_\text{NLO}$'                     "max_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{max}_\text{LO\hphantom{N}}$'          "max_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{smax}_\text{NLO}$'                    "smax_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{smax}_\text{LO\hphantom{N}}$'         "smax_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{plaw}_\text{NLO}$'                    "plaw_wIR1.0_wUV6.2832_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{plaw}_\text{LO\hphantom{N}}$'         "plaw_wIR1.0_wUV6.2832_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-)
-
-else
-    figheight=5
-    nosubscript=""
-    hidechisq=""
     labels_and_models=(
-    '$\text{max}_\text{NLO}$'                     "max_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{max}_\text{LO\hphantom{N}}$'          "max_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{smax}_\text{NLO}$'                    "smax_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{smax}_\text{LO\hphantom{N}}$'         "smax_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{plaw}_\text{NLO}$'                    "plaw_wIR1.0_wUV6.2832_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
-    '$\text{plaw}_\text{LO\hphantom{N}}$'         "plaw_wIR1.0_wUV6.2832_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
+        '$\text{max}_\text{NLO}$'                     "max_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
+        '$\text{max}_\text{LO\hphantom{N}}$'          "max_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
+        '$\text{smax}_\text{NLO}$'                    "smax_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
+        '$\text{smax}_\text{LO\hphantom{N}}$'         "smax_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
+        '$\text{plaw}_\text{NLO}$'                    "plaw_wIR1.0_wUV6.2832_NLO_Nf3_T0.${temp}_min${minscale}_wopt_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
+        '$\text{plaw}_\text{LO\hphantom{N}}$'         "plaw_wIR1.0_wUV6.2832_LO_Nf3_T0.${temp}_min${minscale}_w1_${nsamples}smpls_tauTgtr${mintauT}_${input_suffix}"
     )
 
-fi
+    figheight=5
+    hidechisq="--hide_chisq"
+
+    if [ "${selector}" == "paper" ] ; then
+        nosubscript="--no_subscript"
+    else
+        nosubscript=""
+    fi
 }
 
 conftypes=(s096t36_b0824900_m002022_m01011 s096t32_b0824900_m002022_m01011 s096t28_b0824900_m002022_m01011 s096t24_b0824900_m002022_m01011 s096t20_b0824900_m002022_m01011)
 temps=(195 220 251 293 352)
-for selector_two in "zeroflow" "finiteflow" ; do #
-    for selector in "paper" ; do  # "thesis"
-        for j in "${!temps[@]}" ; do
 
-            if [ "${selector}" == "paper" ] ; then
-                add_suffix="_paper"
-            else
-                add_suffix=""
-            fi
+for j in "${!temps[@]}" ; do
 
-            temp=${temps[j]}
-            nsamples=1000
-            mintauT=0.24
+    if [ "${selector}" == "paper" ] ; then
+        add_suffix="_paper"
+    else
+        add_suffix=""
+    fi
 
-            if [ "${temp}" == "195" ] || [ "${temp}" == "220" ] ; then
-                leg_ncol="" #--leg_ncol 2"
-                leg_pos=""  #--leg_pos 0.4 0.34"
-            else
-                leg_pos=""
-                leg_ncol=""
-            fi
+    temp=${temps[j]}
+    nsamples=1000
+    mintauT=0.24
 
-            if [ "${selector_two}" == "finiteflow" ] ; then
-                input_suffix="23-02-16_0.30"
-                if [ "${temp}" == "352" ]; then
-                    input_suffix="23-02-16_0.30"
-                    mintauT=0.26
-                fi
-                conftype=${conftypes[j]}
-                suffix="_T${temp}_finiteflow${add_suffix}"
-                basepath=$basepath_work_data/hisq_ms5_zeuthenFlow/EE//${conftype}/spf/
-                outputpath=$basepath_plot/hisq_ms5_zeuthenFlow/EE//${conftype}/
-                outputpath_data=$basepath_work_data/hisq_ms5_zeuthenFlow/EE/${conftype}/
-            else
-                if [ "${temp}" == "352" ]; then
-                    continue
-                fi
-                input_suffix="23-02-16_relflow"
-                suffix="_T${temp}${add_suffix}"
-                basepath=$basepath_work_data/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/
-                outputpath=$basepath_plot/hisq_ms5_zeuthenFlow/EE//T${temp}/
-                outputpath_data=$basepath_work_data/hisq_ms5_zeuthenFlow/EE/T${temp}
-            fi
+    if [ "${temp}" == "195" ] || [ "${temp}" == "220" ] ; then
+        leg_ncol="" #--leg_ncol 2"
+        leg_pos=""  #--leg_pos 0.4 0.34"
+    else
+        leg_pos=""
+        leg_ncol=""
+    fi
 
-            set_labels_and_models
+    if [ "${selector_two}" == "finiteflow" ] ; then
+        input_suffix="23-02-16_0.30"
+        if [ "${temp}" == "352" ]; then
+            input_suffix="23-02-16_0.30"
+            mintauT=0.26
+        fi
+        conftype=${conftypes[j]}
+        suffix="_T${temp}_finiteflow${add_suffix}"
+        basepath=$basepath_work_data/hisq_ms5_zeuthenFlow/EE//${conftype}/spf/
+        outputpath=$basepath_plot/hisq_ms5_zeuthenFlow/EE//${conftype}/
+        outputpath_data=$basepath_work_data/hisq_ms5_zeuthenFlow/EE/${conftype}/
+    else
+        if [ "${temp}" == "352" ]; then
+            continue
+        fi
+        input_suffix="23-02-16_relflow"
+        suffix="_T${temp}${add_suffix}"
+        basepath=$basepath_work_data/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/
+        outputpath=$basepath_plot/hisq_ms5_zeuthenFlow/EE//T${temp}/
+        outputpath_data=$basepath_work_data/hisq_ms5_zeuthenFlow/EE/T${temp}
+    fi
 
-            models=()
-            labels=()
-            for i in "${!labels_and_models[@]}" ; do
-                if [ $((i % 2)) -eq 0 ] ; then
-                    labels+=("${labels_and_models[i]}")
-                else
-                    models+=("${labels_and_models[i]}")
-                fi
-            done
+    set_labels_and_models
 
-            (
-                cd "$(dirname $0)" || exit
-                plot_spfs &
-                plot_kappa &
-                plot_fitcorr &
-                wait
-            )
-
-        done
+    models=()
+    labels=()
+    for i in "${!labels_and_models[@]}" ; do
+        if [ $((i % 2)) -eq 0 ] ; then
+            labels+=("${labels_and_models[i]}")
+        else
+            models+=("${labels_and_models[i]}")
+        fi
     done
+
+    (
+        cd "$(dirname $0)" || exit
+        plot_spfs &
+        plot_kappa &
+        plot_fitcorr &
+        wait
+    )
+
 done
 
