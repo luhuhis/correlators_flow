@@ -407,7 +407,30 @@ Create **Figure 6.17** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EEvsBB.pdf
 ./correlators_flow/correlator_analysis/plotting/plot_EEvsBB.py --inputfolder ${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/ --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
 ```
 
-## For the 2+1-flavor case: compare $G_E$ at different temperatures at fixed normalized flow time
+## Compare correlator at fixed normalized flow times
+
+### Quenched
+
+```shell
+ ./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf0.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
+```
+
+Afterward, the following files have been created in
+`${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/`:
+
+| File | Comment |
+| --- | --- |
+| `<corr>_relflow_quenched_0.25.pdf`  | **Figure 6.4a** |
+| `<corr>_relflow_quenched_0.30.pdf`  | **Figure 6.4b** |
+
+and, in `${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/EE/<conftype>/relflow/`:
+
+| File | Comment |
+| --- | --- |
+| `<corr>_relflow_0.25.dat`       | Correlator at normalized flow time 0.25 |
+| `<corr>_relflow_0.30.dat`       | Correlator at normalized flow time 0.30 |
+
+### 2+1-flavor
 
 ```shell
 ./correlators_flow/correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
@@ -418,16 +441,16 @@ Afterward, the following files have been created in
 
 | File | Comment |
 | --- | --- |
-| EE_relflow_hisq_0.25.pdf  | **Figure 7.2** |
-| EE_relflow_hisq_0.30.pdf  | **Figure 7.2** |
-| EE_relflow_hisq_final.pdf | **Figure 7.6** |
+| `EE_relflow_hisq_0.25.pdf`  | **Figure 7.2** |
+| `EE_relflow_hisq_0.30.pdf`  | **Figure 7.2** |
+| `EE_relflow_hisq_final.pdf` | **Figure 7.6** |
 
 and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/relflow/`:
 
 | File | Comment |
 | --- | --- |
-| EE_relflow_0.25.dat       | EE correlator at normalized flow time 0.25 |
-| EE_relflow_0.30.dat       | EE correlator at normalized flow time 0.30 |
+| `EE_relflow_0.25.dat`       | EE correlator at normalized flow time 0.25 |
+| `EE_relflow_0.30.dat`       | EE correlator at normalized flow time 0.30 |
 
 # Spectral function analysis 
 

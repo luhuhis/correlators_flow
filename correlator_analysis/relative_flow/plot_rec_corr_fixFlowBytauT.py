@@ -323,7 +323,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--basepath', default="../../../../data/merged/")
+    parser.add_argument('--basepath', required=True)
     parser.add_argument('--plot_flow_extr', help='paths to files containing flow-extr data.', default=None, type=str, nargs='*')
     parser.add_argument('--flow_extr_custom_units', nargs='*', type=float)
     parser.add_argument('--plot_cont_extr', help='paths to files containing continuum-extr data.', default=None, type=str, nargs='*')
