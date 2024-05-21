@@ -43,9 +43,8 @@ def plot_extrapolation(args, xdata, ydata, edata, ydata_extr, edata_extr, indice
     ylabel_prefix = ""
     if args.Z_file is not None:
         ylabel_prefix = r'Z_\text{match}'
-    fig, ax, _ = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{'+ylabel_prefix+r'G^\text{flow}'+lpd.get_corr_subscript(args.corr)+r'}{G^\text{norm}}$',
+    fig, ax, _ = lpd.create_figure(ylims=ylims, ylabel=r'$' + displaystyle + r'\frac{'+ylabel_prefix+r'G'+lpd.get_corr_subscript(args.corr)+r'}{G^\text{norm}}$',
                                        xlabel=r'$'+displaystyle+r'{8\tau_\mathrm{F}}/{\tau^2}$')
-                                       # r'\frac{Z_f^2 G_B}{G^\text{norm}}$', UseTex=args.use_tex)
     ax.set_xlim([-0.005, args.max_FlowradiusBytauT**2 * 1.15])
     plots = []
 

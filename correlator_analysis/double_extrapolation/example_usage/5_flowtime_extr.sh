@@ -31,7 +31,7 @@ fi
         }
 
         Zfile=""
-        ylims="2.2 4"
+        ylims="2.5 4"
 
         if [ "$corr" == "BB" ]; then
 
