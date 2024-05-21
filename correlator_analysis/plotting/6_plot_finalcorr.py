@@ -11,7 +11,7 @@ def main():
     parser.add_argument('--input_flow', type=str, required=True)
     parser.add_argument('--input_multilvl', type=str, required=True)
     parser.add_argument('--input_multilvl2', type=str, default="")
-    parser.add_argument('--outputfolder', type=str, default="../../plots/")
+    parser.add_argument('--outputfolder', type=str)
     args = parser.parse_args()
 
     EE_final = numpy.loadtxt(args.input_flow, unpack=True)  #

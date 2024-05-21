@@ -7,8 +7,8 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--inputfolder', type=str, default="../../data/merged/")
-    parser.add_argument('--outputfolder', type=str, default="../../plots/")
+    parser.add_argument('--inputfolder', type=str)
+    parser.add_argument('--outputfolder', type=str)
     args = parser.parse_args()
 
     lpd.create_folder(args.outputfolder)

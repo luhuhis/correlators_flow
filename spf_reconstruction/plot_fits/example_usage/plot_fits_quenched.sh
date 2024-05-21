@@ -7,7 +7,6 @@ plot_all_renorm_points=$4
 
 if [ -z "$corr" ] || [ -z "$basepath_work_data" ] || [ -z "$basepath_plot" ] || [ -z "$plot_all_renorm_points" ] ; then
     echo "Usage: $0 corr basepath_work_data basepath_plot"
-    echo "Example usage: $0 BB ~/work/correlators_flow/data/merged/ ~/work/correlators_flow/plots/"
     exit
 fi
 

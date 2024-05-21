@@ -100,7 +100,7 @@ def main():
     parser.add_argument('--use_tex', default=True, action="store_false")
     parser.add_argument('--nproc', default=20, type=int, help="number of processes for parallelization over flow times.")
     parser.add_argument('--corr', choices=["EE", "BB"], required=True)
-    parser.add_argument('--basepath', type=str, default="../../../../data/merged/")  # TODO add help
+    parser.add_argument('--basepath', type=str)
     parser.add_argument('--ylims', type=float, nargs=2, default=None)
     parser.add_argument('--xlims', type=float, nargs=2, default=[0.15, 0.52])
     parser.add_argument('--outputfolder', type=str, default=None)

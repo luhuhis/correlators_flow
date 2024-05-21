@@ -79,7 +79,7 @@ def main():
     # parse cmd line arguments
     parser, requiredNamed = lpd.get_parser()
     requiredNamed.add_argument('--conftype', help="format: s096t20_b0824900 for quenched or s096t20_b0824900_m002022_m01011 for hisq", required=True)
-    parser.add_argument('--basepath', type=str, default="../../../data/merged/")
+    parser.add_argument('--basepath', type=str)
     parser.add_argument('--outputfolder', default="./")
     parser.add_argument('--nproc', type=int, default=20)
     args = parser.parse_args()

@@ -27,7 +27,7 @@ def get_data_corrmatrix(indices, tau_index):
     parser.add_argument('--qcdtype', default="quenched_1.50Tc_zeuthenFlow")
     parser.add_argument('--corr', default="EE")
     parser.add_argument('--conftype', default="s144t36_b0754400")
-    parser.add_argument('--basepath', type=str, default="../../../data/merged/")
+    parser.add_argument('--basepath', type=str)
     parser.add_argument('--outputfolder', default="./")
     args = parser.parse_args()
 

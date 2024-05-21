@@ -8,7 +8,7 @@ import argparse
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--inputfolder', default="../../data/merged/quenched_pertLO_wilsonFlow/EE/", type=str)
+    parser.add_argument('--inputfolder', type=str)
     parser.add_argument('--outputfolder', type=str)
     parser.add_argument('--Ntau', required=True, type=int)
     args = parser.parse_args()

@@ -146,15 +146,15 @@ def get_parser():
     return parser, requiredNamed
 
 
-def get_merged_data_path(qcdtype, corr, conftype, basepath="../../data/merged/"):
+def get_merged_data_path(qcdtype, corr, conftype, basepath):
     return basepath + "/" + qcdtype + "/" + corr + "/" + conftype + "/"
 
 
-def get_raw_data_path(qcdtype, conftype, basepath="../../data/raw/"):
+def get_raw_data_path(qcdtype, conftype, basepath):
     return basepath + "/" + qcdtype + "/" + conftype + "/"
 
 
-def get_plot_path(qcdtype, corr, conftype, basepath="../../plots/"):#
+def get_plot_path(qcdtype, corr, conftype, basepath):#
     return basepath + "/" + qcdtype + "/" + corr + "/" + conftype + "/"
 
 
