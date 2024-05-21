@@ -249,7 +249,8 @@ Take the continuum limit of the correlators using a fit on each sample
 ```
 
 Afterward, the following files have been created in
-`$BASEPATH_WORK_DATA/<qcdtype>/<corr>/cont_extr/`:
+`$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/<corr>/cont_extr/` and
+`$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/<corr>/<T-in-MeV>/cont_extr/`:
 
 | File | Comment |
 | --- | --- |
@@ -258,7 +259,8 @@ Afterward, the following files have been created in
 | `<corr>_cont_relflow_err.dat`     | Std dev of continuum-extrapolated correlator at corresponding normalized flow times |
 | `<corr>_cont_relflow_samples.npy` | Continuum extrapolations of the correlator on each individual bootstrap sample |
 
-and in `$BASEPATH_PLOT/<qcdtype>/<corr>/`:
+and, in `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/` and
+`${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/<corr>/<T-in-MeV>`:
 
 | File | Comment |
 | --- | --- |
