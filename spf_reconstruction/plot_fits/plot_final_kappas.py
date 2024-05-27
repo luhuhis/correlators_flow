@@ -64,33 +64,41 @@ def plot_EE_quenched_literature(args, ax, i):
     if args.add_leg_titles:
         ax.errorbar(0, 0, fmt='.', markersize=0, label=r'Quenched QCD')
 
-    ms=0
-    myfmt='.'
+    plotargs = dict(color=None, markersize=4, markerfacecolor='none', zorder=-7, fmt='o') 
 
     #  2015, A. Francis, O. Kaczmarek, M. Laine, T. Neuhaus, and H. Ohno, Phys. Rev. D 92, 116003
-    ax.errorbar(1.46, 2.6, 0.8, color=thiscolor(3-i), fmt=myfmt, markersize=ms, label=r'Francis \textquotesingle 15 (ML)')
+    plotargs['color'] = thiscolor(3-i)
+    plotargs['fmt'] = 'H'
+    plotargs['zorder'] = -10
+    ax.errorbar(1.46, 2.6, 0.8, **plotargs, label=r'Francis \textquotesingle 15 (ML)')
     i += 1
 
     #  2020, Nora Brambilla, Viljami Leino, Peter Petreczky, and Antonio Vairo, Phys. Rev. D 102, 074503
-    color = thiscolor(3-i)
-    ax.errorbar(1.1, *mean_and_err(1.91,5.40), markersize=ms, fmt=myfmt, color=color, label=r'TUMQCD \textquotesingle 20 (ML)')
-    ax.errorbar(1.48, *mean_and_err(1.31,3.64), markersize=ms, fmt=myfmt, color=color)
-    ax.errorbar(3,   *mean_and_err(0.63,2.20), markersize=ms, fmt=myfmt, color=color, zorder=-10)
+    plotargs['color'] = thiscolor(3-i)
+    plotargs['fmt'] = 's'
+    plotargs['zorder'] = -9
+    ax.errorbar(1.1, *mean_and_err(1.91,5.40), **plotargs, label=r'TUMQCD \textquotesingle 20 (ML)')
+    ax.errorbar(1.48, *mean_and_err(1.31,3.64), **plotargs)
+    ax.errorbar(3,   *mean_and_err(0.63,2.20), **plotargs)
     i += 1
 
     #  2022, Nora Brambilla, Viljami Leino, Julian Mayer-Steudte, Peter Petreczky, 	arXiv:2206.02861
-    color = thiscolor(3-i)
-    ax.errorbar(1.52, *mean_and_err(1.70,3.12), markersize=ms, fmt=myfmt, color=color, label=r'TUMQCD \textquotesingle 22 (flow)')
+    plotargs['color'] = thiscolor(3-i)
+    plotargs['fmt'] = 'D'
+    plotargs['zorder'] = -8
+    ax.errorbar(1.52, *mean_and_err(1.70,3.12), **plotargs, label=r'TUMQCD \textquotesingle 22 (flow)')
     i += 1
 
     # 2022, Debasish Banerjee, Rajiv Gavai, Saumen Datta, Pushan Majumdar, arXiv:2206.15471v1
-    color = thiscolor(3-i)
-    ax.errorbar(1.2, *mean_and_err(2.1,3.5), markersize=ms, fmt=myfmt, color=color, label=r'Banerjee \textquotesingle 22 (ML)')
-    ax.errorbar(1.54, *mean_and_err(1.5,2.8), markersize=ms, fmt=myfmt, color=color)
-    ax.errorbar(2.0, *mean_and_err(1.0,2.3), markersize=ms, fmt=myfmt, color=color)
-    ax.errorbar(2.5, *mean_and_err(0.9,2.1), markersize=ms, fmt=myfmt, color=color)
-    ax.errorbar(3.0, *mean_and_err(0.8,1.8), markersize=ms, fmt=myfmt, color=color)
-    ax.errorbar(3.5, *mean_and_err(0.75, 1.5), markersize=ms, fmt=myfmt, color=color)
+    plotargs['color'] = thiscolor(3-i)
+    plotargs['fmt'] = 'o'
+    plotargs['zorder'] = -7
+    ax.errorbar(1.2, *mean_and_err(2.1,3.5), **plotargs, label=r'Banerjee \textquotesingle 22 (ML)')
+    ax.errorbar(1.54, *mean_and_err(1.5,2.8), **plotargs,)
+    ax.errorbar(2.0, *mean_and_err(1.0,2.3), **plotargs,)
+    ax.errorbar(2.5, *mean_and_err(0.9,2.1), **plotargs,)
+    ax.errorbar(3.0, *mean_and_err(0.8,1.8), **plotargs,)
+    ax.errorbar(3.5, *mean_and_err(0.75, 1.5), **plotargs,)
     i += 1
 
     return i
@@ -134,9 +142,9 @@ def plot_data(args, ax, data, offset, temps):
             color = lpd.get_discrete_color(offset)
             offset += 1
         ax.errorbar(temps[i]/args.Tc_in_GeV, kappa, kappa_err,
-                    fmt='.' if args.fmts is None else args.fmts[i],
+                    fmt='x' if args.fmts is None else args.fmts[i],
                     fillstyle=None if args.fillstyles is None else args.fillstyles[i],
-                    markersize=0 if args.markersize is None else args.markersize,
+                    markersize=4 if args.markersize is None else args.markersize,
                     color=color if args.colors is None else args.colors[i],
                     zorder=None if args.zorders is None else args.zorders[i],
                     label=args.labels[i])

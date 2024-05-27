@@ -19,15 +19,8 @@ plot_hisq_thesis(){
             ${basepath}/T293/EE_kappa_T293${suffix}.txt \
             --labels \
             "\textbf{this work}* (flow)" '\textbf{this work} (flow)' "" "" "" "" \
-            --fillstyles \
-            none none none none none \
-            --fmts \
-            "|" "|" "|" "|" "|" \
-            --zorders \
-            10 1 1 1 1 \
             --colors \
             k m m m m \
-            --markersize 0 \
             --outputpath $basepath_plot/hisq_ms5_zeuthenFlow/EE/ \
             --suffix "hisq_thesis" \
             --temps_in_GeV \
