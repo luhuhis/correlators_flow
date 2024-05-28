@@ -105,17 +105,18 @@ def plot_EE_quenched_literature(args, ax, i):
 
 
 def plot_BB_quenched_literature(args, ax, i):
-    ms = 0
-    myfmt = '.'
 
     #  2022, D. Banerjee, S. Datta & M. Laine, JHEP08(2022)128
-    ax.errorbar(1.2, *mean_and_err(1,2.6), color=thiscolor(i), fmt=myfmt, markersize=ms, label=r'Banerjee \textquotesingle 22 (ML)')
-    ax.errorbar(1.47, *mean_and_err(1,2.1), color=thiscolor(i), fmt=myfmt, markersize=ms)
-    ax.errorbar(2.0, *mean_and_err(0.6,1.8), color=thiscolor(i), fmt=myfmt, markersize=ms)
+    plotargs = dict(color=thiscolor(i), markersize=4, markerfacecolor='none', zorder=-7, fmt='o') 
+    ax.errorbar(1.2, *mean_and_err(1,2.6), **plotargs, label=r'Banerjee \textquotesingle 22 (ML)')
+    ax.errorbar(1.47, *mean_and_err(1,2.1), **plotargs)
+    ax.errorbar(2.0, *mean_and_err(0.6,1.8), **plotargs)
     i += 1
 
+    plotargs['color'] = thiscolor(i)
+    plotargs['fmt'] = 'D'
     # 2022, Nora Brambilla, Viljami Leino, Julian Mayer-Steudte, Peter Petreczky, 	arXiv:2206.02861
-    ax.errorbar(1.5, *mean_and_err(1.03,2.61), color=thiscolor(i), fmt=myfmt, markersize=ms, label=r'TUMQCD \textquotesingle 22 (flow*)')
+    ax.errorbar(1.5, *mean_and_err(1.03,2.61), **plotargs, label=r'TUMQCD \textquotesingle 22 (flow*)')
     i += 1
 
     return i

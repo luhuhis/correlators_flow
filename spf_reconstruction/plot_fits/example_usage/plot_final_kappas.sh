@@ -18,7 +18,7 @@ plot_hisq_thesis(){
             ${basepath}/T251/EE_kappa_T251${suffix}.txt \
             ${basepath}/T293/EE_kappa_T293${suffix}.txt \
             --labels \
-            "\textbf{this work}* (flow)" '\textbf{this work} (flow)' "" "" "" "" \
+            "\textbf{this work} (flow)" '\textbf{this work} (flow)' "" "" "" "" \
             --colors \
             k m m m m \
             --outputpath $basepath_plot/hisq_ms5_zeuthenFlow/EE/ \
@@ -86,7 +86,7 @@ plot_quenched_EE(){
         --input_kappa_files \
         ${basepath}/EE_kappa_quenched_1.5Tc.txt \
         --labels \
-        '\textbf{this work}* (flow)' \
+        '\textbf{this work} (flow)' \
         --outputpath "$basepath_plot/quenched_1.50Tc_zeuthenFlow/EE/" \
         --suffix "EE_quenched_literature" \
         --temps_in_GeV \
