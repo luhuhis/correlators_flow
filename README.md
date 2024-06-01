@@ -202,7 +202,7 @@ Create **Figure 6.3**, **Figure 6.13**, and **Figure 7.3**:
 
 The figures can be found at:
 
-```shell
+```raw
 ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s080t20_b0703500/EE_s080t20_b0703500_flow_dep.pdf
 ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s080t20_b0703500/EE_s080t20_b0703500_flow_depzoom.pdf
 ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/BB/s080t20_b0703500/BB_s080t20_b0703500_flow_dep.pdf
