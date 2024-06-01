@@ -101,10 +101,9 @@ def main():
     parser.add_argument('--inputfolder', type=str)
     parser.add_argument('--outputfolder', type=str)
     parser.add_argument('--Ntau', required=True, type=int)
-    # parser.add_argument('--swap_xaxis_and_leg', action="store_true", type=bool, help="Put flow time on the x-axis and tauT in the legend.")
     args = parser.parse_args()
 
-    # plot_fig_tauT_on_xaxis(args)
+    plot_fig_tauT_on_xaxis(args)
     plot_fig_flow_on_xaxis(args)
 
 
