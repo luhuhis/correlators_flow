@@ -380,7 +380,7 @@ def apply_ax_settings(ax, xlims, ylims, xlabel, ylabel, xlabelpos=(0.96, 0.01), 
     return ax
 
 
-def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=(0.98, 0.01), ylabelpos=(0.01, 0.98), tickpad=1,
+def create_figure(xlims=None, ylims=None, xlabel="", ylabel="", xlabelpos=None, ylabelpos=None, tickpad=1,
                   figsize=None, UseTex=True, fig=None, subplot=111, no_ax=False,
                   constrained_layout=True, xlabelbox=labelboxstyle, ylabelbox=labelboxstyle, ytwinticks=True, minorticks=True, use_pgf_backend=False):
 
