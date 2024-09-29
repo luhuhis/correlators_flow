@@ -63,7 +63,7 @@ def plot_EE_quenched_literature(plots, ax, i):
 
     # 2021 Altenkort
     plot = ax.errorbar(1.5, *mean_and_err_kappaByT3_to_2piTD(1.5, 3.2),
-                ms=my_work_ms, fmt='x', color='k', label=r'\textbf{this work}* (flow)', zorder=10)
+                ms=my_work_ms, fmt='x', color='k', label=r'\textbf{this work} (flow)', zorder=10)
     plots.append(plot)
 
     #  2022, Nora Brambilla, Viljami Leino, Julian Mayer-Steudte, Peter Petreczky, 	arXiv:2206.02861

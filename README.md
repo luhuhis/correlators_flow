@@ -563,20 +563,18 @@ Afterward, the following files have been created:
 | `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/` | `kappa_<corr>_quenched_literature.pdf`      | **Figure 6.12d**, **Figure 6.19b** |
 | `${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/` | `kappa_hisq_thesis.pdf`      | **Figure 7.10** |
 
-## Plot fit to $g^2$ and $g^4$
-
-Create **Figure 8.1** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/compare_kappa_g2.pdf`
-
-```shell
-./correlators_flow/spf_reconstruction/plot_fits/publication_specific/2024-BB-paper/fit_kappa_to_g2_g4.py --outputpath ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
-```
-
 ## Plot comparison with literature for $2\pi TD$
 
-Create **Figure 8.2** at `${BASEPATH_PLOT}/2piTD.pdf`
+Create **Figure 8.1** at `${BASEPATH_PLOT}/2piTD.pdf`
 
 ```shell
 ./correlators_flow/spf_reconstruction/plotting/plot_2piTD.py --outputfolder ${BASEPATH_PLOT}
 ```
 
+## Plot fit to $g^2$ and $g^4$
 
+Create **Figure 8.2** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/compare_kappa_g2.pdf`
+
+```shell
+./correlators_flow/spf_reconstruction/plot_fits/publication_specific/2024-BB-paper/fit_kappa_to_g2_g4.py --outputpath ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
+```
