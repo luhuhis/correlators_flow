@@ -40,8 +40,6 @@ For convenience, the final results and figures can also be extracted from `outpu
 
 ### **Make scripts executable**
 
-TODO maybe this is unnecessary if they are zipped with +x already?
-
 ```bash
 chmod -R +x ./correlators_flow
 ```
