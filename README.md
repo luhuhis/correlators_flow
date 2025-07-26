@@ -109,7 +109,7 @@ uv run ./perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_f
 ### **Merge correlator measurement files**
 
 Merge individual correlator measurement text files (output from SIMULATeQCD) into a small number of larger numpy files (binary format).
-Metadata is saved to text files. This can take some time, mostly depending on file system speed (with slow HDDs it may take hours).
+Metadata is saved to text files. **This may take some time (up to multiple hours)**, mostly depending on file system speed (with slow HDDs it may take hours).
 
 ```shell
 ./correlator_analysis/double_extrapolation/example_usage/1_merge_data.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_RAW_DATA} ${BASEPATH_WORK_DATA}
@@ -135,6 +135,8 @@ Reminder: The double-extrapolation of the correlator data as well as the spectra
 
 Load the merged data files, extract an equally spaced MCMC time series, then plot the time history of the Polyakov loop at a large flow time.
 Then bin configurations according to the integrated autocorrelation time, then perform bootstrap resampling of the uncorrelated blocks and save the samples to numpy files (binary format).
+
+**Note: this may take multiple hours.**
 
 ```shell
 ./correlator_analysis/double_extrapolation/example_usage/2_reduce_data.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
