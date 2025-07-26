@@ -8,7 +8,7 @@ This publication contains the raw measurement data and a set of python and bash 
 
 - Bash shell **>=5**
 - [uv](https://docs.astral.sh/uv/) (Python package and project manager)
-- LaTeX with packages `amsmath`, `mathtools`, `type1cm`
+- LaTeX with packages `amsmath`, `mathtools`, `type1cm` for matplotlib tex rendering
 - gnuplot >=5
 
 ```shell
