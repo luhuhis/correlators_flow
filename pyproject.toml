@@ -15,7 +15,8 @@ dependencies = [
     "natsort==8.4.0",
     "nptyping==2.5.0",
     "beartype==0.18.5",
-    "pandas==2.2.2"
+    "pandas==2.2.2",
+    "latqcdtools"
 ]
 
 [build-system]
@@ -24,3 +25,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
+
+[tool.uv.sources]
+latqcdtools = { path = "../AnalysisToolbox/", package = true}
