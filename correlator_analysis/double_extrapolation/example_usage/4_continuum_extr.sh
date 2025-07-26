@@ -49,12 +49,12 @@ fi
             files="$files $conftype/flowradii_$conftype.dat"
         done
 
-        #        ../find_common_flowtimes.py --basepath ${BASEPATH_WORK_DATA}/$qcdtype/$corr/ --files $files --output ${BASEPATH_WORK_DATA}/$qcdtype/$corr/${arr_output_suffix[idx]}/flowradii_${arr_output_suffix[idx]}.dat
+        #      uv run  ../find_common_flowtimes.py --basepath ${BASEPATH_WORK_DATA}/$qcdtype/$corr/ --files $files --output ${BASEPATH_WORK_DATA}/$qcdtype/$corr/${arr_output_suffix[idx]}/flowradii_${arr_output_suffix[idx]}.dat
         args="$add_args --use_tex --nproc $nproc --min_flowradius $min_flowradius --basepath $basepath_work_data
         --basepath_plot $basepath_plot --max_FlowradiusBytauT 0.31  --min_FlowradiusBytauT 0.2  $sufargs ${arr_output_suffix[idx]}
         --qcdtype $qcdtype --conftypes ${arr_conftypes[idx]} --corr $corr --custom_ylims $ylims"
 
-        ../_4_continuum_extr.py $args
+        uv run ../_4_continuum_extr.py $args
 
     done
     wait

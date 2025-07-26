@@ -43,7 +43,7 @@ plot_hisq_paper(){
 
         basepath="$basepath_work_data/hisq_ms5_zeuthenFlow/EE/"
 
-        ../plot_final_kappas.py \
+        uv run ../plot_final_kappas.py \
             --input_kappa_files \
             ${basepath}/T195/EE_kappa_T195${suffix}.txt \
             ${basepath}/T220/EE_kappa_T220${suffix}.txt \
@@ -82,7 +82,7 @@ plot_quenched_EE(){
 
     basepath="$basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/"
 
-    ../plot_final_kappas.py \
+    uv run ../plot_final_kappas.py \
         --input_kappa_files \
         ${basepath}/EE_kappa_quenched_1.5Tc.txt \
         --labels \
@@ -102,7 +102,7 @@ plot_quenched_BB(){
 
     basepath="$basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/"
 
-    ../plot_final_kappas.py \
+    uv run ../plot_final_kappas.py \
         --input_kappa_files \
         ${basepath}/BB_kappa_quenched_1.5Tc.txt \
         --labels \

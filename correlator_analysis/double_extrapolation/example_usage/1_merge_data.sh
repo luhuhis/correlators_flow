@@ -93,7 +93,7 @@ for idx in "${!arr_conftypes[@]}" ; do
         cd "$(dirname "$0")" || exit
 
         mycmd="
-        ../_1_merge_data.py \
+        uv run ../_1_merge_data.py \
             $flowradiiref \
             --output_basepath $basepath_work_data \
             $even_more_args $add_args \

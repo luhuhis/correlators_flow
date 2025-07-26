@@ -27,7 +27,7 @@ done
 
 # TODO remove hard coded paths
 
-srun -n1 -u calc_pert_latt_corr_flow.py ${param_list[$((SLURM_ARRAY_TASK_ID))]} \
+srun -n1 -u uv run calc_pert_latt_corr_flow.py ${param_list[$((SLURM_ARRAY_TASK_ID))]} \
     --nproc 128 --printprogress \
     --flowtimes_file ${BASEPATH_WORK_DATA}/pert_LO/flowtimes.dat \
     --outputpath ${BASEPATH_WORK_DATA}/pert_LO/

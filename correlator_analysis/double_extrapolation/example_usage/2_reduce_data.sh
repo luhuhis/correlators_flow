@@ -51,7 +51,7 @@ fi
         min_conf="--min_conf ${min_trajs[idx]}"
 
         mycmd="
-    ../_2_reduce_data.py $add_args --MC_stepsize $MC_stepsize $min_conf --qcdtype $qcdtype --conftype $conftype --corr $corr
+    uv run ../_2_reduce_data.py $add_args --MC_stepsize $MC_stepsize $min_conf --qcdtype $qcdtype --conftype $conftype --corr $corr
     --basepath $basepath_work_data  --basepath_plot $basepath_plot --n_proc $nproc
     "
         # uncomment these lines to confirm each script call

@@ -46,7 +46,7 @@ fi
         args="--nproc $nproc --basepath $basepath_work_data --basepath_plot $basepath_plot $add_args --ylims $ylims
         --qcdtype $qcdtype --conftype $conftype --corr $corr --int_Nt ${arr_int_Nt[idx]} --nsamples $nsamples"
 
-        ../_3_spline_interpolate.py $args
+        uv run ../_3_spline_interpolate.py $args
 
     done
     wait

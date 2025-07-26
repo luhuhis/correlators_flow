@@ -14,7 +14,7 @@ suffix=""
 
 plot_kfactors() {
 
-    ../plot_kfactor.py \
+    uv run ../plot_kfactor.py \
     --temperature_on_xaxis \
     --xlims 1 2.1 --ylims 0 2.9 \
     --xticks 1 1.5 2.0 \

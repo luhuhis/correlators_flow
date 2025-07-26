@@ -26,7 +26,7 @@ if [ "$qcdtype" == "quenched_1.50Tc_zeuthenFlow" ] ; then
         (
             cd "$(dirname "$0")" || exit
 
-            ../plot_flow_dependency.py \
+         uv run ../plot_flow_dependency.py \
          --qcdtype quenched_1.50Tc_zeuthenFlow \
          --corr $corr \
          --conftype $conftype \
@@ -38,7 +38,7 @@ if [ "$qcdtype" == "quenched_1.50Tc_zeuthenFlow" ] ; then
          --leg_pos 1 0.5 --leg_ncol 1 --leg_lw 0 --leg_pad 0.5 \
          --leg_loc "center left"
 
-         ../plot_flow_dependency.py \
+         uv run ../plot_flow_dependency.py \
          --qcdtype quenched_1.50Tc_zeuthenFlow \
          --corr $corr \
          --conftype $conftype \
@@ -67,7 +67,7 @@ if [ "$qcdtype" == "hisq_ms5_zeuthenFlow" ] ; then
         (
             cd "$(dirname "$0")" || exit
 
-            ../plot_flow_dependency.py \
+            uv run ../plot_flow_dependency.py \
                 --qcdtype $qcdtype \
                 --corr $corr \
                 --conftype $conftype \
@@ -79,7 +79,7 @@ if [ "$qcdtype" == "hisq_ms5_zeuthenFlow" ] ; then
                 --leg_pos 1 0.5 --leg_ncol 1 --leg_lw 0 --leg_pad 0.5 \
                 --leg_loc "center left"
 
-            ../plot_flow_dependency.py \
+            uv run ../plot_flow_dependency.py \
                 --qcdtype $qcdtype \
                 --corr $corr \
                 --conftype $conftype \

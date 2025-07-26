@@ -93,7 +93,7 @@ fi
 
 plot_kappa() {
 
-    ../plot_kappa.py \
+    uv run ../plot_kappa.py \
 $xlims \
 --model_ids "${models[@]}" \
 --labels "${labels[@]}" \
@@ -106,7 +106,7 @@ $xlims \
 }
 
 plot_fitcorr() {
-    ../plot_fitcorr.py \
+    uv run ../plot_fitcorr.py \
 --model_ids "${models[@]}" \
 --labels "${labels[@]}" \
 --basepath $basepath_work_data/quenched_1.50Tc_zeuthenFlow/${corr}/spf/ \
@@ -119,7 +119,7 @@ plot_fitcorr() {
 }
 
 plot_spfs(){
-    ../plot_spfs.py \
+    uv run ../plot_spfs.py \
 --model_ids "${models[@]}" \
 --labels "${labels[@]}" \
 --basepath $basepath_work_data/quenched_1.50Tc_zeuthenFlow/${corr}/spf/ \

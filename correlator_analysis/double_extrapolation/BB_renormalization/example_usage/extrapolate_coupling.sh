@@ -19,7 +19,7 @@ if [ -n "$equation_number" ]; then
 fi
 
 extrapolate_coupling(){
-    ../extrapolate_coupling.py \
+    uv run ../extrapolate_coupling.py \
         --calc_cont \
         --input_basepath "$basepath_raw_data/quenched_1.50Tc_zeuthenFlow/coupling/" \
         --input_files \

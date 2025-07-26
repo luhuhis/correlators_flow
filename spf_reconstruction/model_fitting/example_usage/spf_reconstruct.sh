@@ -51,7 +51,7 @@ submit_quenched_EE() {
 
     nsamples=1000
     for i in "${!models[@]}"; do
-        spfbatch ../spf_reconstruct.py \
+        spfbatch uv run ../spf_reconstruct.py \
             --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/spf/ \
             --add_suffix 23-02-26_2piT \
             --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.npy \
@@ -100,7 +100,7 @@ submit_quenched_BB() {
         for i in "${!models[@]}"; do
             echo "============================================================================================"
             echo "${models[i]}"
-            spfbatch ../spf_reconstruct.py \
+            spfbatch uv run ../spf_reconstruct.py \
                 --output_path $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/spf/ \
                 --add_suffix 24-02-08-${input_corr_suffix} \
                 --input_corr $basepath_work_data/quenched_1.50Tc_zeuthenFlow/BB/BB_flow_extr_relflow_${input_corr_suffix}.npy \
@@ -139,7 +139,7 @@ submit_hisq() {
         temp=${temps[j]}
         int_nt=${int_nts[j]}
         for i in "${!models[@]}"; do
-            spfbatch ../spf_reconstruct.py \
+            spfbatch uv run ../spf_reconstruct.py \
                 --output_path $basepath_work_data/hisq_ms5_zeuthenFlow/EE//T${temp}/spf/ \
                 --add_suffix 23-02-16_relflow \
                 --input_corr $basepath_work_data/hisq_ms5_zeuthenFlow/EE//T${temp}/EE_flow_extr${relflowsuffix}.npy \
@@ -182,7 +182,7 @@ submit_hisq_finite_a_and_tf() {
             mintauT=0.24
         fi
         for i in "${!models[@]}"; do
-            spfbatch ../spf_reconstruct.py \
+            spfbatch uv run ../spf_reconstruct.py \
                 --output_path $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/spf/ \
                 --add_suffix 23-02-16_0.30 --relflow 0.30 \
                 --input_corr $basepath_work_data/hisq_ms5_zeuthenFlow/EE//s096t${Nt}_b0824900_m002022_m01011/EE_s096t${Nt}_b0824900_m002022_m01011_interpolation_relflow_samples.npy \

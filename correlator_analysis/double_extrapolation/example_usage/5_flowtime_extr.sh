@@ -17,7 +17,7 @@ fi
 
     if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ]; then
         quenched_extr() {
-            ../_5_flowtime_extr.py \
+            uv run ../_5_flowtime_extr.py \
                 --corr $corr \
                 --qcdtype quenched_1.50Tc_zeuthenFlow \
                 --custom_ylims $ylims \
@@ -63,7 +63,7 @@ fi
         output_suffix="--output_suffix _relflow"
         for idx in "${!temps[@]}"; do
 
-            ../_5_flowtime_extr.py \
+            uv run ../_5_flowtime_extr.py \
                 --min_tauT_plot 0.249 --n_samples 1000 \
                 --corr $corr --qcdtype $qcdtype \
                 --custom_ylims ${ylims[idx]} \

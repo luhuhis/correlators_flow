@@ -10,7 +10,7 @@ qcdtype="quenched_1.50Tc_zeuthenFlow"
     for corr in "EE" "BB" ; do
 
         for flowradiusBytauT in "0.2" "0.25" "0.30" ; do
-        ../plot_rec_corr_fixFlowBytauT.py \
+        uv run ../plot_rec_corr_fixFlowBytauT.py \
             --output_suffix _quenched_$flowradiusBytauT --xlims 0.15 0.52 --xticks 0.2 0.3 0.4 0.5 \
             --min_flowradius 0.05 \
             --output_path ${basepath_plot}/$qcdtype/$corr/ \

@@ -29,7 +29,7 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators_thesi
     for x_units in "${params[@]}" ; do
 
         # TODO revert ylims 4 9.5, leg_pos to 0 0.6 and leg_loc to "center left"
-        ../plot_rec_corr_fixFlowBytauT.py \
+        uv run ../plot_rec_corr_fixFlowBytauT.py \
             --output_path ${basepath_plot} --basepath ${basepath}\
             ${x_units} \
             --ylims 4 9.5 \
@@ -76,7 +76,7 @@ plot_comparison_of_different_temperatures_of_doublextrapolated_correlators_paper
     for x_units in "${params[@]}" ; do
 
         # TODO revert ylims 4 9.5, leg_pos to 0 0.6 and leg_loc to "center left"
-        ../plot_rec_corr_fixFlowBytauT.py \
+        uv run ../plot_rec_corr_fixFlowBytauT.py \
             --output_path $basepath_plot --basepath $basepath\
             ${x_units} \
             --ylims 3 9.5 \
@@ -111,7 +111,7 @@ plot_comparison_of_lattice_spacing_and_temperature_effects() {
         )
         for xparam in "${xparams[@]}" ; do
 
-        ../plot_rec_corr_fixFlowBytauT.py \
+        uv run ../plot_rec_corr_fixFlowBytauT.py \
             ${xparam} \
             --min_flowradius 0.05 \
             --output_path $basepath_plot --basepath $basepath\
@@ -157,7 +157,7 @@ plot_comparison_of_temperature_effects_phys() {
         )
         for xparam in "${xparams[@]}" ; do
 
-        ../plot_rec_corr_fixFlowBytauT.py \
+        uv run ../plot_rec_corr_fixFlowBytauT.py \
             ${xparam} \
             --min_flowradius 0.05 \
             --output_path $basepath_plot --basepath $basepath\

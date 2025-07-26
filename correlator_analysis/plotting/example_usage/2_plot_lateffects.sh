@@ -48,7 +48,7 @@ for idx in "${!arr_conftypes[@]}" ; do
 
 (
     cd "$(dirname "$0")" || exit
-    ../_2_plot_lateffects.py \
+    uv run ../_2_plot_lateffects.py \
     --corr ${corr} --qcdtype ${qcdtype} \
     --conftypes ${arr_conftypes[idx]} \
     --continuum ${continuum} \

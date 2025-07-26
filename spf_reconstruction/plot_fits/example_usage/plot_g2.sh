@@ -52,7 +52,7 @@ plot_quenched(){
 
     (
         cd "$(dirname "$0")" || exit
-        ../plot_g2.py \
+        uv run ../plot_g2.py \
             --xlims 0.3 900 \
             --ylims 0 4.5 \
             --PhiUV_files "${models[@]}" \
