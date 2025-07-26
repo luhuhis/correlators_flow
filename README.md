@@ -568,14 +568,3 @@ Create **Figure 8.2** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/compare_kap
 uv run ./spf_reconstruction/plot_fits/publication_specific/2024-BB-paper/fit_kappa_to_g2_g4.py --outputpath ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
 ```
 
-
-## TODO
-
-- complete all zip files
-- add appendix figure numbers?
-- remove do_everything_thesis.sh
-- create new release once everything else is done
-- is adding PYTHONPATH necessary using uv? probably not, this could be done via uv somehow I think
-```shell
-export PYTHONPATH=$(pwd)/correlators_flow:$(pwd)/AnalysisToolbox:${PYTHONPATH} 
-```
