@@ -7,3 +7,4 @@ __pycache__/
 .idea/
 acor.d
 *code-workspace
+.lock

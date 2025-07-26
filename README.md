@@ -1,98 +1,75 @@
-# Data publication for "The diffusion of heavy quarks from lattice QCD", PhD thesis by Luis Altenkort, 2024, Bielefeld University
+# Data publication for "The diffusion of heavy quarks from lattice QCD"
 
-## TODO
+This publication contains the raw measurement data and a set of python and bash scripts to reproduce all results and figures presented in "The diffusion of heavy quarks from lattice QCD" (PhD thesis by Luis Altenkort, 2025, Bielefeld University).
 
-- complete all zip files
-- add appendix figure numbers?
-- add poetry install instructions
-- create new release once everything else is done
+## Installation 
 
-## Requirements
+### **Install system dependencies (Ubuntu)**
 
-- Bash 5.0 (Linux shell)
-- Python poetry, or manually install packages according to `pyproject.toml`
-- LaTeX installation with packages `amsmath` and `mathtools`
-- gnuplot 5
+- Bash shell **>=5**
+- [uv](https://docs.astral.sh/uv/) (Python package and project manager)
+- LaTeX with packages `amsmath`, `mathtools`, `type1cm`
+- gnuplot >=5
 
-## Instructions
+```shell
+sudo apt update
 
-Download all files from the data publication, move them to a new folder and navigate into that folder.
-The following instructions can then copied into a bash 5.0 shell **in the same order as they appear below**. For convenience, all commands in this document are consolidated in `do_everything_thesis.sh`, which can be run to do everything with one script call. Note that the order of execution will not produce the figures in the same order as they appear in the manuscript.
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-## Unzip or clone analysis scripts
+# Install additional LaTeX packages (skip if already installed via texlive-full etc.)
+sudo apt install texlive-base texlive-latex-extra cm-super
 
-This will create a new folder `correlators_flow` in the current directory:
-
-``` shell
-# tar -xzf correlators_flow.tar.gz   
-# OR
-git clone --branch thesis https://github.com/luhuhis/correlators_flow.git  
+# Install gnuplot
+sudo apt install gnuplot 
 ```
 
-Make all scripts executable:s
+### **Extract data and code archives**
 
-``` shell
-chmod -R +x ./correlators_flow 
+Download the files contained in the data publication and extract them:
+
+```shell
+mkdir 2025_altenkort
+cd 2025_altenkort  # Download the corresponding files into this folder
+tar -xzf correlators_flow.tar.gz
+tar -xzf AnalysisToolbox.tar.gz
+tar -xzf data.tar.gz
 ```
 
-Unzip or clone the AnalysisToolbox (custom python package), which is a dependency of "correlators_flow". This will create a folder "AnalysisToobox":
+For convenience, the final results and figures can also be extracted from `output_data.tar.gz` and `figures.tar.gz`, respectively.
 
-``` shell
-# tar -xzf AnalysisToolbox.tar.gz 
-# OR
-git clone https://github.com/LatticeQCD/AnalysisToolbox.git
-( cd AnalysisToolbox && git checkout f9eee73d45d7b981153db75cfaf2efa2b4cefa9c )
+### **Make scripts executable**
+
+TODO maybe this is unnecessary if they are zipped with +x already?
+
+```bash
+chmod -R +x ./correlators_flow
 ```
 
-## Unzip data
+### **Setup environment**
 
-This extracts the gradientFlow output from SIMULATeQCD and creates various folders.
-
-``` shell
-tar -xzf data.tar.gz 
-```
-
-Note that the finished figures are also contained in "figures.tar.gz" and can just be extracted for convenience,
-skipping the whole data processing steps:
+Define certain subdirectories as environment variables:
 
 ``` shell
-tar -xzf figures.tar.gz
-```
-
-Note that the finished output data is also contained in "output_data.tar.gz" and can just be extracted for
-convenience, skipping the whole processing steps:
-
-``` shell
-tar -xzf output_data.tar.gz
-```
-
-## Setup python and shell environment
-
-Set environment variables:
-
-``` shell
-export PYTHONPATH=$(pwd)/correlators_flow:$(pwd)/AnalysisToolbox:${PYTHONPATH} BASEPATH_RAW_DATA=$(pwd)/input BASEPATH_WORK_DATA=$(pwd)/output_data BASEPATH_PLOT=$(pwd)/figures
+export BASEPATH_RAW_DATA=$(pwd)/input
+export BASEPATH_WORK_DATA=$(pwd)/output_data
+export BASEPATH_PLOT=$(pwd)/figures
 export G_PERT_LO_DIR=${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO
 ```
 
-Change this accordingly to number of processors for parallelization:
+Set the number of available CPU processors for parallelization (adjust accordingly):
 
 ``` shell
 export NPROC=20  
 ```
 
-Install the python environment:
-``` shell
-poetry install
-```
 
-## Note on output files
+## Note on output file formats
 
 Files are either saved in plain text (.txt, .dat) or in numpy binary format (.npy).
-Some steps output median and standard deviation over all bootstrap samples as plain text files, and then the
-actual underlying bootstrap samples in numpy format.
+In many cases, the mean/median/std_deviation/etc. over all bootstrap samples is exported to plain text files, while the results for the underlying bootstrap samples are stored in numpy format.
 
-In the following, these variables are often used in file names:
+The output file names often contain these identifiers:
 
 - `<qcdtype>` is either `quenched_1.50Tc_zeuthenFlow` or `hisq_ms5_zeuthenFlow`
 - `<conftype>` may be, for example: `s144t36_b0754400` (meaning $N_s=144$, $N_\tau=36$, $\beta=7.544$), or `s096t28_b0824900_m002022_m01011` (meaning $N_s=96$, $N_\tau=28$, $\beta=8.249$, $m_s/a=0.002022$, $m_l/a=0.01011$), ...
@@ -101,30 +78,35 @@ In the following, these variables are often used in file names:
 
 # Correlator analysis
 
-## Create figures of perturbative correlators
+Switch to the top-level folder of the code repository:
+```shell
+cd correlators_flow
+```
+
+## Resampling, interpolation, continuum extrapolation
+
+### **Create figures of perturbative correlators**
 
 Create **Figure 4.1** at `${BASEPATH_PLOT}/EE_QED_LPT.pdf`:
 
 ```shell
-./correlators_flow/perturbative_corr/plot_QED_LPT.py --inputfolder ${BASEPATH_RAW_DATA} --outputfolder ${BASEPATH_PLOT}
+uv run ./perturbative_corr/plot_QED_LPT.py --inputfolder ${BASEPATH_RAW_DATA} --outputfolder ${BASEPATH_PLOT}
 ```
 
 Create **Figure 5.2** at `${BASEPATH_PLOT}/pertLO/EE_pert_contvslatt_flow.pdf`:
 
 ```shell
-./correlators_flow/perturbative_corr/plot_pert_correlators.py --Ntau 24 --inputfolder ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --outputfolder ${BASEPATH_PLOT}/pertLO
+uv run ./perturbative_corr/plot_pert_correlators.py --Ntau 24 --inputfolder ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --outputfolder ${BASEPATH_PLOT}/pertLO
 ```
 
 Create **Figure 5.3** at `${BASEPATH_PLOT}/pertLO//pert_latt_comparison_EE_Nt30_<tau>.pdf` with `tau=5` and `tau=10`:
 
 ```shell
-./correlators_flow/perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/flowtimes.dat --outputpath ${BASEPATH_PLOT}/pertLO/ --inputpath ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --tau 5
-./correlators_flow/perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/flowtimes.dat --outputpath ${BASEPATH_PLOT}/pertLO/ --inputpath ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --tau 10
+uv run ./perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/flowtimes.dat --outputpath ${BASEPATH_PLOT}/pertLO/ --inputpath ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --tau 5
+uv run ./perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/flowtimes.dat --outputpath ${BASEPATH_PLOT}/pertLO/ --inputpath ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --tau 10
 ```
 
-## Merge correlator measurement files
-
-Merge individual small text files into larger binary numpy files.
+### **Merge correlator measurement files**
 
 Merge individual correlator measurement text files (output from SIMULATeQCD) into a small number of larger numpy files (binary format).
 Metadata is saved to text files. This can take some time, mostly depending on file system speed (with slow HDDs it may take hours).
@@ -147,7 +129,7 @@ Afterward, the following files have been created in
 | `polyakov_imag_<conftype>_merged.npy`  | merged raw data, imaginary part of polyakovloop |
 | `polyakov_real_<conftype>_merged.npy`   | merged raw data, real part of polyakovloop |
 
-## Bootstrap resampling of uncorrelated blocks
+### **Bootstrap resampling of uncorrelated blocks**
 
 Reminder: The double-extrapolation of the correlator data as well as the spectral reconstruction fits are later performed on each individual bootstrap sample.
 
@@ -176,7 +158,7 @@ and, in `$BASEPATH_PLOT/<qcdtype>/<corr>/<conftype>/`
 | --- | --- |
 | `polyakovloop_MCtime.pdf`     | **Figure 6.1 and 7.1.** Shows the MCMC time series of the polyakovloop at a large flow time. |
 
-## Plot lattice spacing effects
+### **Plot lattice spacing effects**
 
 Create **Figure 6.2** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/EE_latt_effects.pdf`:
 
@@ -190,7 +172,7 @@ Optional: create the same figures for the 2+1-flavor cases at `${BASEPATH_PLOT}/
 ./correlators_flow/correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
 ```
 
-## Plot flow time dependency
+### **Plot flow time dependency**
 
 Create **Figure 6.3**, **Figure 6.13**, and **Figure 7.3**:
 
@@ -211,7 +193,7 @@ ${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/s096t24_b0824900_m002022_m01011/EE_s096
 ${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/s096t24_b0824900_m002022_m01011/EE_s096t24_b0824900_m002022_m01011_flow_depzoom.pdf
 ```
 
-## Interpolation
+### **Interpolation**
 
 Interpolate the correlator in Euclidean time and in flow time, such that a common set of normalized flow times
 is available across all lattices and temperatures.
@@ -238,7 +220,7 @@ and, in `$BASEPATH_PLOT/<qcdtype>/<corr>/<conftype>/`:
 | `<corr>_interpolation_relflow.pdf`                       | Multi-page PDF containing plots of interpolation in Eucl. time at different normalized flow times. |
 | `<corr>_interpolation_relflow_combined.pdf`              | **Figure 6.5**. Plot of interpolation in Eucl. time for two normalized flow times. |
 
-## Continuum extrapolation
+### **Continuum extrapolation**
 
 Take the continuum limit of the correlators using a fit on each sample
 
@@ -266,7 +248,7 @@ and, in `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/` and
 | --- | --- |
 | `<corr>_cont_quality_relflow.pdf` | **Figure 6.6**, **Figure 7.4**. This is a multipage PDF containing plots of continuum extrapolation of correlator for the corresponding normalized flow times. |
 
-## Plot flow time correlations
+### **Plot flow time correlations**
 
 Create **Figure 6.7** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s144t36_b0754400/EE_s144t36_b0754400_correlation.pdf`:
 
@@ -274,7 +256,7 @@ Create **Figure 6.7** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s144t3
 ./correlators_flow/correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath ${BASEPATH_WORK_DATA} --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --nproc ${NPROC}
 ```
 
-## Flow-time-to-zero extrapolation of $G_E$
+## **Flow-time-to-zero extrapolation of $G_E$**
 
 ```shell
 ./correlators_flow/correlator_analysis/double_extrapolation/example_usage/5_flowtime_extr.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
@@ -298,7 +280,7 @@ and inside
 | --- | --- |
 | `EE_flow_extr_quality_relflow.pdf` | **Figure 6.9a**, **Figure 7.5** |
 
-## Compare final quenched $G_E$ with multi-level results
+### **Compare final quenched $G_E$ with multi-level results**
 
 This will create **Figure 6.9b**.
 
@@ -315,7 +297,7 @@ have been created.
 
 ## Renormalization of $G_B$
 
-### Coupling calculations
+### **Coupling calculations**
 
 Peform the continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices,
 and convert it from flow scheme to the MSBAR scheme coupling at one scale, then use perturbative 5-loop running to move to other relevant scales.
@@ -340,7 +322,7 @@ and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/`:
 | `g2_cont_extr.pdf`            | **Figure 6.14a**. Flow-scheme coupling $g^2$ as a function of squared lattice spacing (= inverse $N_\tau^2$ at fixed temperature). |
 
 
-### Carry out renormalization of $G_B$ by computing $Z_\text{match}$
+### **Carry out renormalization of $G_B$ by computing $Z_\text{match}$**
 
 ```shell
 ./correlators_flow/correlator_analysis/double_extrapolation/BB_renormalization/example_usage/compute_Z.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
@@ -409,7 +391,7 @@ Create **Figure 6.17** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EEvsBB.pdf
 ./correlators_flow/correlator_analysis/plotting/plot_EEvsBB.py --inputfolder ${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/ --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
 ```
 
-## Compare correlator at fixed normalized flow times
+### **Compare correlator at fixed normalized flow times**
 
 ### Quenched
 
@@ -456,7 +438,9 @@ and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/relflow/`:
 
 # Spectral function analysis 
 
-## Create figures that illustrate spectral function models and reconstruction process
+Make sure you are still in the top-level folder of the code repository `correlators_flow`.
+
+## **Sketch spectral function models and reconstruction process**
 
 Create **Figure 6.10** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling//UV_spf_EE_quenched_1.5Tc.pdf`.
 
@@ -470,7 +454,7 @@ Create **Figure 6.11a** and **Figure 6.11b** at `$BASEPATH_PLOT/model_corrs.pdf`
 ./correlators_flow/spf_reconstruction/plotting/plot_integrand.py --outputpath ${BASEPATH_PLOT} --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor "1" --order LO --corr EE --mu_IR_by_T 1
 ```
 
-## Perform spectral function reconstruction
+## **Perform spectral function reconstruction**
 
 Note: this takes a lot of computing time, so the output files are already included.
 
@@ -546,8 +530,11 @@ and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<T-in-MeV>/`:
 ./correlators_flow/spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ```
 
-## Plot comparison to literature
+# Comparison to literature
 
+Make sure you are still in the top-level folder of the code repository `correlators_flow`.
+
+Create plots that compare the results with existing literature.
 **Note: this explicitly depends on the previous call to `plot_fits_quenched.sh` and `plot_fits_hisq.sh`** since it reads from their output text files.
 
 ```shell
@@ -563,7 +550,7 @@ Afterward, the following files have been created:
 | `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/` | `kappa_<corr>_quenched_literature.pdf`      | **Figure 6.12d**, **Figure 6.19b** |
 | `${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/` | `kappa_hisq_thesis.pdf`      | **Figure 7.10** |
 
-## Plot comparison with literature for $2\pi TD$
+## **Plot comparison with literature for $2\pi TD$**
 
 Create **Figure 8.1** at `${BASEPATH_PLOT}/2piTD.pdf`
 
@@ -577,4 +564,17 @@ Create **Figure 8.2** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/compare_kap
 
 ```shell
 ./correlators_flow/spf_reconstruction/plot_fits/publication_specific/2024-BB-paper/fit_kappa_to_g2_g4.py --outputpath ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
+```
+
+
+## TODO
+
+- complete all zip files
+- add appendix figure numbers?
+- add uv install instructions
+- remove do_everything_thesis.sh
+- create new release once everything else is done
+- is adding PYTHONPATH necessary using uv? probably not, this could be done via uv somehow I think
+```shell
+export PYTHONPATH=$(pwd)/correlators_flow:$(pwd)/AnalysisToolbox:${PYTHONPATH} 
 ```
