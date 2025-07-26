@@ -38,6 +38,8 @@ tar -xzf data.tar.gz
 
 For convenience, the final results and figures can also be extracted from `output_data.tar.gz` and `figures.tar.gz`, respectively.
 
+Note that the bundled [AnalysisToolbox](https://github.com/LatticeQCD/AnalysisToolbox/commit/f9eee73d45d7b981153db75cfaf2efa2b4cefa9c) is based on commit f9eee73d, with the only change being the addition of `latqcdtools/pyproject.toml`.
+
 ### **Make scripts executable**
 
 ```bash
@@ -569,7 +571,6 @@ uv run ./spf_reconstruction/plot_fits/publication_specific/2024-BB-paper/fit_kap
 
 - complete all zip files
 - add appendix figure numbers?
-- add uv install instructions
 - remove do_everything_thesis.sh
 - create new release once everything else is done
 - is adding PYTHONPATH necessary using uv? probably not, this could be done via uv somehow I think
