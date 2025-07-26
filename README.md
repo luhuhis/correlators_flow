@@ -12,13 +12,11 @@ This publication contains the raw measurement data and a set of python and bash 
 - gnuplot >=5
 
 ```shell
-sudo apt update
-
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install additional LaTeX packages (skip if already installed via texlive-full etc.)
-sudo apt install texlive-base texlive-latex-extra cm-super
+# Install additional LaTeX packages (skip if already installed via texlive-full etc. or manually install the packages listed above)
+sudo apt install texlive-latex-extra cm-super
 
 # Install gnuplot
 sudo apt install gnuplot 
