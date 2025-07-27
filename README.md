@@ -16,7 +16,7 @@ This publication contains the raw measurement data and a set of python and bash 
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install additional LaTeX packages (skip if already installed via texlive-full etc. or manually install the packages listed above)
-sudo apt install texlive-latex-extra cm-super
+sudo apt install texlive-latex-extra cm-super dvipng
 
 # Install gnuplot
 sudo apt install gnuplot 
@@ -158,20 +158,6 @@ and, in `$BASEPATH_PLOT/<qcdtype>/<corr>/<conftype>/`
 | --- | --- |
 | `polyakovloop_MCtime.pdf`     | **Figure 6.1 and 7.1.** Shows the MCMC time series of the polyakovloop at a large flow time. |
 
-### **Plot lattice spacing effects**
-
-Create **Figure 6.2** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/EE_latt_effects.pdf`:
-
-```shell
-./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
-```
-
-Optional: create the same figures for the 2+1-flavor cases at `${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/T<T-in-MeV>/EE_latt_effects.pdf`:
-
-```shell
-./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
-```
-
 ### **Plot flow time dependency**
 
 Create **Figure 6.3**, **Figure 6.13**, and **Figure 7.3**:
@@ -246,7 +232,7 @@ and, in `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/` and
 
 | File | Comment |
 | --- | --- |
-| `<corr>_cont_quality_relflow.pdf` | **Figure 6.6**, **Figure 7.4**. This is a multipage PDF containing plots of continuum extrapolation of correlator for the corresponding normalized flow times. |
+| `<corr>_cont_quality_relflow.pdf` | **Figure 6.6**, **Figure 7.4**, **Figure A.1**. This is a multipage PDF containing plots of continuum extrapolation of correlator for the corresponding normalized flow times. |
 
 ### **Plot flow time correlations**
 
@@ -254,6 +240,20 @@ Create **Figure 6.7** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s144t3
 
 ```shell
 uv run ./correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath ${BASEPATH_WORK_DATA} --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --nproc ${NPROC}
+```
+
+### **Plot lattice spacing effects**
+
+Create **Figure 6.2** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/EE_latt_effects.pdf`:
+
+```shell
+./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
+```
+
+Optional: create the same figures for the 2+1-flavor cases at `${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/T<T-in-MeV>/EE_latt_effects.pdf`:
+
+```shell
+./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
 ```
 
 ## **Flow-time-to-zero extrapolation of $G_E$**
@@ -289,10 +289,9 @@ uv run ./multi-level/cont_extr_new.py --basepath ${BASEPATH_RAW_DATA}
 uv run ./correlator_analysis/plotting/6_plot_finalcorr.py --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --input_flow ${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/EE/EE_flow_extr_relflow.txt --input_multilvl ${BASEPATH_RAW_DATA}/multi-level_2015/EE_2015_new.txt
 ```
 
-Afterward, the files
+This creates the files
 `$BASEPATH_RAW_DATA/multi-level_2015/EE_2015_new_2022.txt` and
-`$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EE/EE_flowVSmultilvl_relflow.pdf` (**Figure 6.9b**)
-have been created.
+`$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EE/EE_flowVSmultilvl_relflow.pdf` (**Figure 6.9b**).
 
 
 ## Renormalization of $G_B$
@@ -306,7 +305,7 @@ and convert it from flow scheme to the MSBAR scheme coupling at one scale, then 
 ./correlator_analysis/double_extrapolation/BB_renormalization/example_usage/extrapolate_coupling.sh ${BASEPATH_RAW_DATA} ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} 6.40
 ```
 
-Afterward, the following files have been created in
+This creates the following files in 
 `$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/coupling/`:
 
 | File | Comment |
@@ -380,7 +379,7 @@ and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/`:
 
 | File | Comment |
 | --- | --- |
-| `BB_flow_extr_quality_no_extr.pdf` | **Figure 6.16a**. Bare continuum BB correlator as a function of flow time. |
+| `BB_flow_extr_quality_no_extr.pdf` | **Figures 6.16a, A.2**. Bare continuum BB correlator as a function of flow time. |
 | `BB_flow_extr_quality_relflow.pdf` | **Figure 6.16b**. Renormalized continuum BB correlator as a function of flow time with flow time extrapolation. |
 
 ## Compare final $G_E$ and $G_B$
