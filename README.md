@@ -91,13 +91,13 @@ Create **Figure 4.1** at `${BASEPATH_PLOT}/EE_QED_LPT.pdf`:
 uv run ./perturbative_corr/plot_QED_LPT.py --inputfolder ${BASEPATH_RAW_DATA} --outputfolder ${BASEPATH_PLOT}
 ```
 
-Create **Figure 5.2** at `${BASEPATH_PLOT}/pertLO/EE_pert_contvslatt_flow.pdf`:
+Create **Figure 4.3** at `${BASEPATH_PLOT}/pertLO/EE_pert_contvslatt_flow.pdf`:
 
 ```shell
 uv run ./perturbative_corr/plot_pert_correlators.py --Ntau 24 --inputfolder ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --outputfolder ${BASEPATH_PLOT}/pertLO
 ```
 
-Create **Figure 5.3** at `${BASEPATH_PLOT}/pertLO//pert_latt_comparison_EE_Nt30_<tau>.pdf` with `tau=5` and `tau=10`:
+Create **Figure 4.4** at `${BASEPATH_PLOT}/pertLO//pert_latt_comparison_EE_Nt30_<tau>.pdf` with `tau=5` and `tau=10`:
 
 ```shell
 uv run ./perturbative_corr/plot_tree_level_imp.py --Nt 30 --corr EE --flowtime_file ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/flowtimes.dat --outputpath ${BASEPATH_PLOT}/pertLO/ --inputpath ${BASEPATH_RAW_DATA}/quenched_1.50Tc_zeuthenFlow/pert_LO/ --tau 5
@@ -156,11 +156,11 @@ and, in `$BASEPATH_PLOT/<qcdtype>/<corr>/<conftype>/`
 
 | File | Comment |
 | --- | --- |
-| `polyakovloop_MCtime.pdf`     | **Figure 6.1 and 7.1.** Shows the MCMC time series of the polyakovloop at a large flow time. |
+| `polyakovloop_MCtime.pdf`     | **Figure 5.1 and 6.1.** Shows the MCMC time series of the polyakovloop at a large flow time. |
 
 ### **Plot flow time dependency**
 
-Create **Figure 6.3**, **Figure 6.13**, and **Figure 7.3**:
+Create **Figure 5.3**, **Figure 5.13**, and **Figure 6.3**:
 
 ```shell
 ./correlator_analysis/plotting/example_usage/plot_flow_dep.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
@@ -204,7 +204,7 @@ and, in `$BASEPATH_PLOT/<qcdtype>/<corr>/<conftype>/`:
 | File | Comment |
 | --- | --- |
 | `<corr>_interpolation_relflow.pdf`                       | Multi-page PDF containing plots of interpolation in Eucl. time at different normalized flow times. |
-| `<corr>_interpolation_relflow_combined.pdf`              | **Figure 6.5**. Plot of interpolation in Eucl. time for two normalized flow times. |
+| `<corr>_interpolation_relflow_combined.pdf`              | **Figure 5.5**. Plot of interpolation in Eucl. time for two normalized flow times. |
 
 ### **Continuum extrapolation**
 
@@ -232,11 +232,11 @@ This also creates the following files in `${BASEPATH_PLOT}/quenched_1.50Tc_zeuth
 
 | File | Comment |
 | --- | --- |
-| `<corr>_cont_quality_relflow.pdf` | **Figure 6.6**, **Figure 7.4**, **Figure A.1**. This is a multipage PDF containing plots of continuum extrapolation of correlator for the corresponding normalized flow times. |
+| `<corr>_cont_quality_relflow.pdf` | **Figure 5.6**, **Figure 6.4**, **Figure A.1**. This is a multipage PDF containing plots of continuum extrapolation of correlator for the corresponding normalized flow times. |
 
 ### **Plot flow time correlations**
 
-Create **Figure 6.7** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s144t36_b0754400/EE_s144t36_b0754400_correlation.pdf`:
+Create **Figure 5.7** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/s144t36_b0754400/EE_s144t36_b0754400_correlation.pdf`:
 
 ```shell
 uv run ./correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quenched_1.50Tc_zeuthenFlow --corr EE --conftype s144t36_b0754400 --basepath ${BASEPATH_WORK_DATA} --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/ --nproc ${NPROC}
@@ -244,7 +244,7 @@ uv run ./correlator_analysis/plotting/plot_flow_correlations.py --qcdtype quench
 
 ### **Plot lattice spacing effects**
 
-Create **Figure 6.2** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/EE_latt_effects.pdf`:
+Create **Figure 5.2** at `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/EE/EE_latt_effects.pdf`:
 
 ```shell
 ./correlator_analysis/plotting/example_usage/2_plot_lateffects.sh quenched_1.50Tc_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
@@ -278,11 +278,11 @@ and in
 
 | File | Comment |
 | --- | --- |
-| `EE_flow_extr_quality_relflow.pdf` | **Figure 6.9a**, **Figure 7.5** |
+| `EE_flow_extr_quality_relflow.pdf` | **Figure 5.9a**, **Figure 6.5** |
 
 ### **Compare final quenched $G_E$ with multi-level results**
 
-This will create **Figure 6.9b**.
+This will create **Figure 5.9b**.
 
 ```shell
 uv run ./multi-level/cont_extr_new.py --basepath ${BASEPATH_RAW_DATA}
@@ -291,7 +291,7 @@ uv run ./correlator_analysis/plotting/6_plot_finalcorr.py --outputfolder ${BASEP
 
 This creates the files
 `$BASEPATH_RAW_DATA/multi-level_2015/EE_2015_new_2022.txt` and
-`$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EE/EE_flowVSmultilvl_relflow.pdf` (**Figure 6.9b**).
+`$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EE/EE_flowVSmultilvl_relflow.pdf` (**Figure 5.9b**).
 
 
 ## Renormalization of $G_B$
@@ -317,8 +317,8 @@ and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/`:
 
 | File | Comment |
 | --- | --- |
-| `g2.pdf`                      | **Figure 6.14b**. Flow- and MSBAR-scheme couplings $g^2$ as a function of scale in temperature units. |
-| `g2_cont_extr.pdf`            | **Figure 6.14a**. Flow-scheme coupling $g^2$ as a function of squared lattice spacing (= inverse $N_\tau^2$ at fixed temperature). |
+| `g2.pdf`                      | **Figure 5.14b**. Flow- and MSBAR-scheme couplings $g^2$ as a function of scale in temperature units. |
+| `g2_cont_extr.pdf`            | **Figure 5.14a**. Flow-scheme coupling $g^2$ as a function of squared lattice spacing (= inverse $N_\tau^2$ at fixed temperature). |
 
 
 ### **Carry out renormalization of $G_B$ by computing $Z_\text{match}$**
@@ -341,8 +341,8 @@ and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/`:
 
 | File | Comment |
 | --- | --- |
-| `Z_total.pdf`            | **Figure 6.15**. All considered versions of $Z_\text{match}$ as a function of flow scale. |
-| `Z_total_flowtime.pdf`   | **Figure 6.15** All considered versions of $Z_\text{match}$ as a function of flow radius $1/(8 \tau_F) T$ |
+| `Z_total.pdf`            | **Figure 5.15** (right). All considered versions of $Z_\text{match}$ as a function of flow scale. |
+| `Z_total_flowtime.pdf`   | **Figure 5.15** (left) All considered versions of $Z_\text{match}$ as a function of flow radius $1/(8 \tau_F) T$ |
 
 
 ## Flow-time-to-zero extrapolation of renormalized $G_B$
@@ -379,12 +379,12 @@ and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/BB/`:
 
 | File | Comment |
 | --- | --- |
-| `BB_flow_extr_quality_no_extr.pdf` | **Figures 6.16a, A.2**. Bare continuum BB correlator as a function of flow time. |
-| `BB_flow_extr_quality_relflow.pdf` | **Figure 6.16b**. Renormalized continuum BB correlator as a function of flow time with flow time extrapolation. |
+| `BB_flow_extr_quality_no_extr.pdf` | **Figures 5.16a, A.2**. Bare continuum BB correlator as a function of flow time. |
+| `BB_flow_extr_quality_relflow.pdf` | **Figure 5.16b**. Renormalized continuum BB correlator as a function of flow time with flow time extrapolation. |
 
 ## Compare final $G_E$ and $G_B$
 
-Create **Figure 6.17** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EEvsBB.pdf`
+Create **Figure 5.17** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EEvsBB.pdf`
 
 ```shell
 uv run ./correlator_analysis/plotting/plot_EEvsBB.py --inputfolder ${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/ --outputfolder ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
@@ -405,8 +405,8 @@ This creates the following files in
 
 | File | Comment |
 | --- | --- |
-| `<corr>_relflow_quenched_0.25.pdf`  | **Figure 6.4a** |
-| `<corr>_relflow_quenched_0.30.pdf`  | **Figure 6.4b** |
+| `<corr>_relflow_quenched_0.25.pdf`  | **Figure 5.4** (left) |
+| `<corr>_relflow_quenched_0.30.pdf`  | **Figure 5.4** (right) |
 
 and, in `${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/EE/<conftype>/relflow/`:
 
@@ -445,14 +445,14 @@ This creates the following files in
 
 ## **Sketch spectral function models and reconstruction process**
 
-Create **Figure 6.10** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/UV_spf_EE_quenched_1.5Tc.pdf`.
+Create **Figure 5.10** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/UV_spf_EE_quenched_1.5Tc.pdf`.
 
 ```shell
 ./spf_reconstruction/model_fitting/example_usage/EE_UV.sh ${BASEPATH_WORK_DATA}
 ./spf_reconstruction/plot_fits/example_usage/plot_g2.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ```
 
-Create **Figure 6.11a** and **Figure 6.11b** at `$BASEPATH_PLOT/model_corrs.pdf` and `$BASEPATH_PLOT/integrand.pdf`, respectively:
+Create **Figure 5.11a** and **Figure 5.11b** at `$BASEPATH_PLOT/model_corrs.pdf` and `$BASEPATH_PLOT/integrand.pdf`, respectively:
 
 ```shell
 uv run ./spf_reconstruction/plotting/plot_integrand.py --outputpath ${BASEPATH_PLOT} --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor "1" --order LO --corr EE --mu_IR_by_T 1
@@ -475,9 +475,9 @@ This creates the following files in
 
 | File | Comment |
 | --- | --- |
-| `<corr>_corrfit_quenched_1.5Tc.pdf`  | **Figure 6.12a**, **Figure 6.18b** |
-| `<corr>_spf_quenched_1.5Tc.pdf`      | **Figure 6.12b**, **Figure 6.18a** |
-| `<corr>_kappa_quenched_1.5Tc.pdf`    | **Figure 6.12c**, **Figure 6.19a** |
+| `<corr>_corrfit_quenched_1.5Tc.pdf`  | **Figure 5.12a**, **Figure 5.18b** |
+| `<corr>_spf_quenched_1.5Tc.pdf`      | **Figure 5.12b**, **Figure 5.18a** |
+| `<corr>_kappa_quenched_1.5Tc.pdf`    | **Figure 5.12c**, **Figure 5.19a** |
 
 and, in `$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/<corr>`:
 
@@ -496,9 +496,9 @@ This creates the following files in
 
 | File | Comment |
 | --- | --- |
-| `EE_corrfit_T<T-in-MeV>.pdf`  | **Figure 7.7** |
-| `EE_spf_T<T-in-MeV>.pdf`      | **Figure 7.8** |
-| `EE_kappa_T<T-in-MeV>.pdf`    | **Figure 7.9** |
+| `EE_corrfit_T<T-in-MeV>.pdf`  | **Figure 6.7** |
+| `EE_spf_T<T-in-MeV>.pdf`      | **Figure 6.8** |
+| `EE_kappa_T<T-in-MeV>.pdf`    | **Figure 6.9** |
 
 and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<T-in-MeV>/`:
 
@@ -521,9 +521,9 @@ This creates the following files in
 
 | File | Comment |
 | --- | --- |
-| `EE_relflow_hisq_0.25.pdf`  | **Figure 7.2** |
-| `EE_relflow_hisq_0.30.pdf`  | **Figure 7.2** |
-| `EE_relflow_hisq_final.pdf` | **Figure 7.6** |
+| `EE_relflow_hisq_0.25.pdf`  | **Figure 6.2** |
+| `EE_relflow_hisq_0.30.pdf`  | **Figure 6.2** |
+| `EE_relflow_hisq_final.pdf` | **Figure 6.6** |
 
 and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/relflow/`:
 
@@ -549,12 +549,12 @@ This creates the following files:
 
 | Folder | File | Comment |
 | --- | --- | --- |
-| `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/` | `kappa_<corr>_quenched_literature.pdf`      | **Figure 6.12d**, **Figure 6.19b** |
-| `${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/` | `kappa_hisq_thesis.pdf`      | **Figure 7.10** |
+| `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/` | `kappa_<corr>_quenched_literature.pdf`      | **Figure 5.12d**, **Figure 5.19b** |
+| `${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/EE/` | `kappa_hisq_thesis.pdf`      | **Figure 6.10** |
 
 ## **Plot comparison with literature for $2\pi TD$**
 
-Create **Figure 8.1** at `${BASEPATH_PLOT}/2piTD.pdf`
+Create **Figure 7.1** at `${BASEPATH_PLOT}/2piTD.pdf`
 
 ```shell
 uv run ./spf_reconstruction/plotting/plot_2piTD.py --outputfolder ${BASEPATH_PLOT}
@@ -562,7 +562,7 @@ uv run ./spf_reconstruction/plotting/plot_2piTD.py --outputfolder ${BASEPATH_PLO
 
 ## Plot fit to $g^2$ and $g^4$
 
-Create **Figure 8.2** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/compare_kappa_g2.pdf`
+Create **Figure 7.2** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/compare_kappa_g2.pdf`
 
 ```shell
 uv run ./spf_reconstruction/plot_fits/publication_specific/2024-BB-paper/fit_kappa_to_g2_g4.py --outputpath ${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/
