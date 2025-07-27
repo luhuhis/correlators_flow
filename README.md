@@ -445,9 +445,10 @@ This creates the following files in
 
 ## **Sketch spectral function models and reconstruction process**
 
-Create **Figure 6.10** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling//UV_spf_EE_quenched_1.5Tc.pdf`.
+Create **Figure 6.10** at `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/UV_spf_EE_quenched_1.5Tc.pdf`.
 
 ```shell
+./spf_reconstruction/model_fitting/example_usage/EE_UV.sh ${BASEPATH_WORK_DATA}
 ./spf_reconstruction/plot_fits/example_usage/plot_g2.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ```
 
@@ -530,12 +531,6 @@ and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/relflow/`:
 | --- | --- |
 | `EE_relflow_0.25.dat`       | EE correlator at normalized flow time 0.25 |
 | `EE_relflow_0.30.dat`       | EE correlator at normalized flow time 0.30 |
-
-#### Optional: plot K-factors
-
-```shell
-./spf_reconstruction/plot_fits/example_usage/plot_kfactors.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
-```
 
 # Comparison to literature
 
