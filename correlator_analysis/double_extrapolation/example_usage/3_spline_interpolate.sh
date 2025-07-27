@@ -22,13 +22,13 @@ if [ "$qcdtype" == quenched_1.50Tc_zeuthenFlow ] ; then
     nsamples=10000
 elif [ "$qcdtype" == hisq_ms5_zeuthenFlow ] ; then
     nsamples=1000
-    arr_conftypes=(                                       "s096t20_b0824900_m002022_m01011"
+    arr_conftypes=(                                       #"s096t20_b0824900_m002022_m01011"
                     "s064t20_b0803600" "s064t22_b0814700" "s096t24_b0824900_m002022_m01011"
                     "s064t20_b0785700" "s064t24_b0806800" "s096t28_b0824900_m002022_m01011"
                     "s064t20_b0770400" "s064t24_b0791300" "s096t32_b0824900_m002022_m01011"
                     "s064t20_b0757000" "s064t24_b0777700" "s096t36_b0824900_m002022_m01011"
                   )
-    arr_int_Nt=(      20
+    arr_int_Nt=(      #20
                 24 24 24
                 28 28 28
                 32 32 32
