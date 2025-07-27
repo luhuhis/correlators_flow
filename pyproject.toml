@@ -15,6 +15,7 @@ dependencies = [
     "natsort==8.4.0",
     "beartype==0.21.0",
     "pandas==2.2.2",
+    "lmfit",
     "latqcdtools"
 ]
 

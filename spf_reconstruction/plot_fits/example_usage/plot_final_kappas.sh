@@ -10,7 +10,7 @@ plot_hisq_thesis(){
 
         suffix=""
 
-        ../plot_final_kappas.py \
+        uv run ../plot_final_kappas.py \
             --input_kappa_files \
             $basepath_work_data/quenched_1.50Tc_zeuthenFlow/EE/EE_kappa_quenched_1.5Tc.txt \
             ${basepath}/T195/EE_kappa_T195${suffix}.txt \

@@ -212,7 +212,7 @@ submit_hisq_finite_a_and_tf() {
     elif [ "$qcdtype" == "hisq_ms5_zeuthenFlow" ]; then
         if [ "$corr" == "EE" ] ; then
             submit_hisq
-            submit_hisq_finite_a_and_tf
+            # submit_hisq_finite_a_and_tf
         elif [ "$corr" == "BB" ] ; then
             echo "Error: not implemented"
         else
