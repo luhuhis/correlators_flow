@@ -13,8 +13,7 @@ dependencies = [
     "colorama==0.4.6",
     "rundec==0.6",
     "natsort==8.4.0",
-    "nptyping==2.5.0",
-    "beartype==0.18.5",
+    "beartype==0.21.0",
     "pandas==2.2.2",
     "latqcdtools"
 ]

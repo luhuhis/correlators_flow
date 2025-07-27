@@ -4,17 +4,15 @@ from scipy import integrate, interpolate
 import argparse
 import lib_process_data as lpd
 import matplotlib.pyplot
-from correlator_analysis.double_extrapolation.BB_renormalization.extrapolate_coupling import ScaleFunctions
+from correlator_analysis.double_extrapolation.BB_renormalization.extrapolate_coupling import (
+    ScaleFunctions,
+)
 from itertools import cycle
 
 
-# Type hints
-from nptyping import NDArray, Float64
-from typing import Literal as Shape
-
-gamma_0 = 3 / (8 * np.pi ** 2)
+gamma_0 = 3 / (8 * np.pi**2)
 use_pgf_backend = True
-backend = 'pgf'
+backend = "pgf"
 
 
 class ZIndividualPlotter:
@@ -25,14 +23,24 @@ class ZIndividualPlotter:
         self.scale_choice = scale_choice
 
     def __setup_plot(self):
-        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$',
-                                                 ylabel=r'$ Z$', use_pgf_backend=use_pgf_backend)
+        self.fig, self.ax, _ = lpd.create_figure(
+            xlabel=r"$\mu_\mathrm{F}/T$",
+            ylabel=r"$ Z$",
+            use_pgf_backend=use_pgf_backend,
+        )
         self.ax.set_ylim((0.5, 2))
         self.ax.set_xlim((0, 21))
 
     def __plot_Z(self):
-        self.ax.errorbar(self.Z_container.mu_By_T, self.Z_container.Z_K, fmt='--', label="$Z_K$")
-        self.ax.errorbar(self.Z_container.mu_By_T, self.Z_container.Z_run, fmt=':', label=r'$Z_\text{run}$')
+        self.ax.errorbar(
+            self.Z_container.mu_By_T, self.Z_container.Z_K, fmt="--", label="$Z_K$"
+        )
+        self.ax.errorbar(
+            self.Z_container.mu_By_T,
+            self.Z_container.Z_run,
+            fmt=":",
+            label=r"$Z_\text{run}$",
+        )
         # Retrieve the current x-axis limits
         xlim = self.ax.get_xlim()
         axis_range = xlim[1] - xlim[0]
@@ -41,9 +49,21 @@ class ZIndividualPlotter:
         xmin_fraction = (self.Z_container.mu_By_T[0] - xlim[0]) / axis_range
         xmax_fraction = (self.Z_container.mu_By_T[-1] - xlim[0]) / axis_range
 
-        self.ax.axhline(y=self.Z_container.Z_phys, xmin=xmin_fraction, xmax=xmax_fraction,
-                        dashes=(1, 1), color='C4', label=r'$Z_\text{phys}$')
-        self.ax.errorbar(self.Z_container.mu_By_T, self.Z_container.Z_total, fmt='-', label=r'$Z$', zorder=-1)
+        self.ax.axhline(
+            y=self.Z_container.Z_phys,
+            xmin=xmin_fraction,
+            xmax=xmax_fraction,
+            dashes=(1, 1),
+            color="C4",
+            label=r"$Z_\text{phys}$",
+        )
+        self.ax.errorbar(
+            self.Z_container.mu_By_T,
+            self.Z_container.Z_total,
+            fmt="-",
+            label=r"$Z$",
+            zorder=-1,
+        )
 
     def _plot(self):
         self.__setup_plot()
@@ -51,8 +71,13 @@ class ZIndividualPlotter:
         self.__finalize_plot()
 
     def __finalize_plot(self):
-        self.ax.legend(fontsize=self.fontsize, title_fontsize=self.fontsize, framealpha=0, handlelength=4)
-        file = self.outputpath_plot+"/Z"+self.scale_choice.choice_label+".pdf"
+        self.ax.legend(
+            fontsize=self.fontsize,
+            title_fontsize=self.fontsize,
+            framealpha=0,
+            handlelength=4,
+        )
+        file = self.outputpath_plot + "/Z" + self.scale_choice.choice_label + ".pdf"
         self.fig.savefig(file, backend=backend)
         print("saved", file)
         matplotlib.pyplot.close(self.fig)
@@ -73,30 +98,66 @@ class ZTotalPlotter:
         self.output_suffix = output_suffix
         self.xlims_flow_extr_band = [6.666, 16]
         self.ylims = (0.86, 1.075)
-        self.line_styles = ['-', '--']
+        self.line_styles = ["-", "--"]
         self.legend_loc = "lower right"
         self.legend_bbox_to_anchor = (1, 0.15)
         self.xlims = (5, 22.5)
-        self.ylabel = r'$ Z_\mathrm{match}$'
+        self.ylabel = r"$ Z_\mathrm{match}$"
 
     def _create_legend_title(self):
         # Aligned legend title (dummy entry)
-        self.ax.errorbar(0, 0, markersize=0, lw=0, alpha=0, label=r'$\bar{\mu}_T/T, \ \ \bar{\mu}_{\tau_\mathrm{F}}/\mu_\mathrm{F}$')
+        self.ax.errorbar(
+            0,
+            0,
+            markersize=0,
+            lw=0,
+            alpha=0,
+            label=r"$\bar{\mu}_T/T, \ \ \bar{\mu}_{\tau_\mathrm{F}}/\mu_\mathrm{F}$",
+        )
         self.ax.set_prop_cycle(None)
 
     def _setup_plot(self):
-        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$', ylabel=self.ylabel, use_pgf_backend=use_pgf_backend, ylims=self.ylims, xlims=self.xlims)
+        self.fig, self.ax, self.ax_twiny = lpd.create_figure(
+            xlabel=r"$\mu_\mathrm{F}/T$",
+            ylabel=self.ylabel,
+            use_pgf_backend=use_pgf_backend,
+            ylims=self.ylims,
+            xlims=self.xlims,
+        )
         self.ax.set_xticks([5, 10, 15, 20])
 
     def _plot_grey_flow_extr_band(self):
-        self.ax.axvline(x=self.xlims_flow_extr_band[0], ymax=1, color='k', linestyle=':', lw=0.5, alpha=1, zorder=-1000)
-        self.ax.axvline(x=self.xlims_flow_extr_band[1], ymax=1, color='k', linestyle=':', lw=0.5, alpha=1, zorder=-1000)
+        self.ax.axvline(
+            x=self.xlims_flow_extr_band[0],
+            ymax=1,
+            color="k",
+            linestyle=":",
+            lw=0.5,
+            alpha=1,
+            zorder=-1000,
+        )
+        self.ax.axvline(
+            x=self.xlims_flow_extr_band[1],
+            ymax=1,
+            color="k",
+            linestyle=":",
+            lw=0.5,
+            alpha=1,
+            zorder=-1000,
+        )
         # self.ax.axhline(y=1, color='k', linestyle=':', lw=0.5, alpha=1, zorder=-1000)
         # self.ax.fill_between([6.66, 16], [-1, -1], [100, 100], facecolor='k', alpha=0.1, zorder=-1000)
 
     def _plot_Z(self):
-        for Z_container, scale_choice, line_style in zip(self.Z_containers, self.scale_choices, cycle(self.line_styles)):
-            self.ax.errorbar(Z_container.mu_By_T, Z_container.Z_total, label=scale_choice.choice_label_for_plot, linestyle=line_style)
+        for Z_container, scale_choice, line_style in zip(
+            self.Z_containers, self.scale_choices, cycle(self.line_styles)
+        ):
+            self.ax.errorbar(
+                Z_container.mu_By_T,
+                Z_container.Z_total,
+                label=scale_choice.choice_label_for_plot,
+                linestyle=line_style,
+            )
 
     def _plot(self):
         self._setup_plot()
@@ -106,7 +167,12 @@ class ZTotalPlotter:
         self._finalize_plot()
 
     def _finalize_plot(self):
-        self.ax.legend(handlelength=1.5, framealpha=1, loc=self.legend_loc, bbox_to_anchor=self.legend_bbox_to_anchor).set_zorder(-1)
+        self.ax.legend(
+            handlelength=1.5,
+            framealpha=1,
+            loc=self.legend_loc,
+            bbox_to_anchor=self.legend_bbox_to_anchor,
+        ).set_zorder(-1)
         file = self.outputpath_plot + "/Z_total" + self.output_suffix + ".pdf"
         self.fig.savefig(file, backend=backend)
         print("saved", file)
@@ -120,20 +186,35 @@ class ZTotalPlotter:
 
 
 class ZTotalPlotterFlowtime(ZTotalPlotter):
-
     def _setup_plot(self):
-        self.xlims = (1/self.xlims[1], 1/self.xlims[0])
-        self.fig, self.ax, self.ax_twiny = lpd.create_figure(xlabel=r'$\sqrt{8 \tau_\mathrm{F}}T$', ylabel=self.ylabel, use_pgf_backend=use_pgf_backend, ylims=self.ylims, xlims=self.xlims)
+        self.xlims = (1 / self.xlims[1], 1 / self.xlims[0])
+        self.fig, self.ax, self.ax_twiny = lpd.create_figure(
+            xlabel=r"$\sqrt{8 \tau_\mathrm{F}}T$",
+            ylabel=self.ylabel,
+            use_pgf_backend=use_pgf_backend,
+            ylims=self.ylims,
+            xlims=self.xlims,
+        )
 
         # Overwrite some options
-        self.xlims_flow_extr_band = [1/self.xlims_flow_extr_band[1], 1/self.xlims_flow_extr_band[0]]
+        self.xlims_flow_extr_band = [
+            1 / self.xlims_flow_extr_band[1],
+            1 / self.xlims_flow_extr_band[0],
+        ]
         self.legend_loc = "upper right"
         self.legend_bbox_to_anchor = None
         self.ax.set_xticks([0.05, 0.1, 0.15])
 
     def _plot_Z(self):
-        for Z_container, scale_choice, line_style in zip(self.Z_containers, self.scale_choices, cycle(self.line_styles)):
-            self.ax.errorbar(np.flip(1/Z_container.mu_By_T), np.flip(Z_container.Z_total), label=scale_choice.choice_label_for_plot, linestyle=line_style)
+        for Z_container, scale_choice, line_style in zip(
+            self.Z_containers, self.scale_choices, cycle(self.line_styles)
+        ):
+            self.ax.errorbar(
+                np.flip(1 / Z_container.mu_By_T),
+                np.flip(Z_container.Z_total),
+                label=scale_choice.choice_label_for_plot,
+                linestyle=line_style,
+            )
 
 
 class IntegrandPlotter:
@@ -141,22 +222,29 @@ class IntegrandPlotter:
         self.data: CouplingContainer = data
         self.outputpath_plot = args.outputpath_plot
         self.fontsize = fontsize
-        self.fmts = ['-', '-', '--', ':']
+        self.fmts = ["-", "-", "--", ":"]
 
     def __setup_plot(self):
-        self.fig, self.ax, _ = lpd.create_figure(xlabel=r'$\mu_\mathrm{F}/T$',
-                                                 ylabel=r'$ \frac{T}{\mu_\mathrm{F}} \displaystyle\gamma_0 g^2$', use_pgf_backend=use_pgf_backend)
+        self.fig, self.ax, _ = lpd.create_figure(
+            xlabel=r"$\mu_\mathrm{F}/T$",
+            ylabel=r"$ \frac{T}{\mu_\mathrm{F}} \displaystyle\gamma_0 g^2$",
+            use_pgf_backend=use_pgf_backend,
+        )
 
     def __plot_integrand(self):
         counter = 0
-        self.ax.errorbar(self.data.mu_by_T, self.data.integrand_spline(self.data.mu_by_T), fmt=self.fmts[counter % 4],
-                         zorder=counter)
+        self.ax.errorbar(
+            self.data.mu_by_T,
+            self.data.integrand_spline(self.data.mu_by_T),
+            fmt=self.fmts[counter % 4],
+            zorder=counter,
+        )
         counter += 1
         # ax.axvline(x=reference_muF_by_T, **lpd.verticallinestyle)
         # ax.fill_between(flow_extr_window, [-250, -250], [400, 400], facecolor='grey', alpha=0.25, zorder=-1000)
 
     def __finalize_plot(self):
-        file = self.outputpath_plot+"/integrand.pdf"
+        file = self.outputpath_plot + "/integrand.pdf"
         self.fig.savefig(file, backend=backend)
         print("saved", file)
         matplotlib.pyplot.close(self.fig)
@@ -175,20 +263,20 @@ class IntegrandPlotter:
 
 @lpd.typed_frozen_data
 class CouplingContainer:
-    mu_by_T: NDArray[Shape["*"], Float64]
-    g2: NDArray[Shape["*"], Float64]
+    mu_by_T: np.ndarray
+    g2: np.ndarray
     g2_spline: interpolate._fitpack2.InterpolatedUnivariateSpline
     integrand_spline: interpolate._fitpack2.InterpolatedUnivariateSpline
-    input_mu_by_T: NDArray[Shape["*"], Float64]
+    input_mu_by_T: np.ndarray
 
 
 @lpd.typed_frozen_data
 class ZContainer:
-    mu_By_T: NDArray[Shape["*"], Float64]
-    Z_K: NDArray[Shape["*"], Float64]
+    mu_By_T: np.ndarray
+    Z_K: np.ndarray
     Z_phys: float
-    Z_run: NDArray[Shape["*"], Float64]
-    Z_total: NDArray[Shape["*"], Float64]
+    Z_run: np.ndarray
+    Z_total: np.ndarray
 
 
 @lpd.typed_frozen_data
@@ -204,7 +292,9 @@ class ScaleChoice:
 def load_data(args: argparse.Namespace) -> CouplingContainer:
     muF_by_T, g2 = np.loadtxt(args.g2_file, unpack=True)[:2]
     g2_spline = interpolate.InterpolatedUnivariateSpline(muF_by_T, g2, k=3, ext=2)
-    integrand_spline = interpolate.InterpolatedUnivariateSpline(muF_by_T, 2*gamma_0 * g2 / muF_by_T, k=3, ext=2)  # The factor 2 here is essential as we write the integral measure as dmu and not dmu^2
+    integrand_spline = interpolate.InterpolatedUnivariateSpline(
+        muF_by_T, 2 * gamma_0 * g2 / muF_by_T, k=3, ext=2
+    )  # The factor 2 here is essential as we write the integral measure as dmu and not dmu^2
     input_mu_by_T = ScaleFunctions.get_muF_by_T_where_we_measure()
     return CouplingContainer(muF_by_T, g2, g2_spline, integrand_spline, input_mu_by_T)
 
@@ -218,28 +308,49 @@ class ZFactorComputer:
         muF_by_T = self.coupling_container.input_mu_by_T
         muBarUV_by_T = self.scale_choice.muBarUV_by_muF * muF_by_T
         g2_MSBar = self.coupling_container.g2_spline(muBarUV_by_T)
-        inner_bracket = np.log(muBarUV_by_T ** 2 / (4*self.coupling_container.input_mu_by_T ** 2)) + np.euler_gamma
-        Zk = np.exp(- gamma_0 * g2_MSBar * inner_bracket)
+        inner_bracket = (
+            np.log(muBarUV_by_T**2 / (4 * self.coupling_container.input_mu_by_T**2))
+            + np.euler_gamma
+        )
+        Zk = np.exp(-gamma_0 * g2_MSBar * inner_bracket)
         return Zk
 
     def compute_Z_run(self):
-
         def compute_Z_run(muF_by_T):
             muBarUV_By_T = self.scale_choice.muBarUV_by_muF * muF_by_T
             muBarIR_By_T = self.scale_choice.muBarIR_by_T
             # print("integrate", self.scale_choice.choice_label, lpd.format_float(muBarIR_By_T), lpd.format_float(muBarUV_By_T))
-            this_Z_run = integrate.quad(self.coupling_container.integrand_spline, muBarIR_By_T, muBarUV_By_T, limit=300,
-                                        epsabs=1e-5, epsrel=1e-5)[0]
+            this_Z_run = integrate.quad(
+                self.coupling_container.integrand_spline,
+                muBarIR_By_T,
+                muBarUV_By_T,
+                limit=300,
+                epsabs=1e-5,
+                epsrel=1e-5,
+            )[0]
             return this_Z_run
 
-        integral = np.asarray([compute_Z_run(muF_by_T) for muF_by_T in self.coupling_container.input_mu_by_T])
+        integral = np.asarray(
+            [
+                compute_Z_run(muF_by_T)
+                for muF_by_T in self.coupling_container.input_mu_by_T
+            ]
+        )
         Z_run = np.exp(integral)
 
         return Z_run
 
     def compute_Z_phys(self):
-        inner_bracket = np.log(self.scale_choice.muBarIR_by_T**2 / ((np.pi*4)**2)) - 2 + 2*np.euler_gamma
-        Z_phys = np.exp(gamma_0 * self.coupling_container.g2_spline(self.scale_choice.muBarIR_by_T) * inner_bracket)
+        inner_bracket = (
+            np.log(self.scale_choice.muBarIR_by_T**2 / ((np.pi * 4) ** 2))
+            - 2
+            + 2 * np.euler_gamma
+        )
+        Z_phys = np.exp(
+            gamma_0
+            * self.coupling_container.g2_spline(self.scale_choice.muBarIR_by_T)
+            * inner_bracket
+        )
         return Z_phys
 
     @classmethod
@@ -250,15 +361,21 @@ class ZFactorComputer:
         Z_phys = instance.compute_Z_phys()
         Z_run = instance.compute_Z_run()
         Z_total = Z_k * Z_phys * Z_run
-        return ZContainer(instance.coupling_container.input_mu_by_T, Z_k, Z_phys, Z_run, Z_total)
+        return ZContainer(
+            instance.coupling_container.input_mu_by_T, Z_k, Z_phys, Z_run, Z_total
+        )
 
 
 def parse_args():
-
     parser = argparse.ArgumentParser()
-    parser.add_argument('--g2_file', type=str, required=True, help="path to file containing g^2 in flow scheme")
-    parser.add_argument('--outputpath_plot')
-    parser.add_argument('--outputpath_data')
+    parser.add_argument(
+        "--g2_file",
+        type=str,
+        required=True,
+        help="path to file containing g^2 in flow scheme",
+    )
+    parser.add_argument("--outputpath_plot")
+    parser.add_argument("--outputpath_data")
 
     args = parser.parse_args()
 
@@ -269,34 +386,58 @@ def get_scale_choices():
     scale_choices = []
 
     muBarIR_by_T_choices = [4 * np.pi * np.exp(1 - np.euler_gamma), 2 * np.pi]
-    muBarUV_by_muF_choices = [1., np.sqrt(4 * np.exp(-np.euler_gamma))]
+    muBarUV_by_muF_choices = [1.0, np.sqrt(4 * np.exp(-np.euler_gamma))]
     order_string_UV = ["LO", "NLO"]
     order_string_IR = ["NLO", "LO"]
-    muRef_by_T_choices = [6.28, ]
+    muRef_by_T_choices = [
+        6.28,
+    ]
 
     for IR in range(len(muBarIR_by_T_choices)):
         for UV in range(len(muBarUV_by_muF_choices)):
             for ref in range(1):
-                choice_label = "ref" + str(muRef_by_T_choices[ref])+"_UV"+order_string_UV[UV] + "_IR" + order_string_IR[IR]
+                choice_label = (
+                    "ref"
+                    + str(muRef_by_T_choices[ref])
+                    + "_UV"
+                    + order_string_UV[UV]
+                    + "_IR"
+                    + order_string_IR[IR]
+                )
                 muBarUV_by_muF_choice = muBarUV_by_muF_choices[UV]
                 muBarIR_by_T_choice = muBarIR_by_T_choices[IR]
                 muRef_by_T = muRef_by_T_choices[ref]
-                choice_label_for_plot = (r'\scalebox{0.01}{\textcolor{white}{.}}$ '
-                                         + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)
-                                         + r',\ \ \ '
-                                         + lpd.format_float_latex(muBarUV_by_muF_choice, 2, 4)
-                                         + r'$')
+                choice_label_for_plot = (
+                    r"\scalebox{0.01}{\textcolor{white}{.}}$ "
+                    + lpd.format_float_latex(muBarIR_by_T_choice, 2, 5)
+                    + r",\ \ \ "
+                    + lpd.format_float_latex(muBarUV_by_muF_choice, 2, 4)
+                    + r"$"
+                )
                 # r'$\mu_\text{ref}/T='+lpd.format_float(muRef_by_T,1)
-                choice_label_for_plot_short = lpd.format_float_latex(muBarIR_by_T_choice, 2, 6) + r',\ ' + lpd.format_float_latex(muBarUV_by_muF_choice, 2, 4)
-                scale_choices.append(ScaleChoice(muRef_by_T, muBarUV_by_muF_choice, muBarIR_by_T_choice, choice_label, choice_label_for_plot, choice_label_for_plot_short))
+                choice_label_for_plot_short = (
+                    lpd.format_float_latex(muBarIR_by_T_choice, 2, 6)
+                    + r",\ "
+                    + lpd.format_float_latex(muBarUV_by_muF_choice, 2, 4)
+                )
+                scale_choices.append(
+                    ScaleChoice(
+                        muRef_by_T,
+                        muBarUV_by_muF_choice,
+                        muBarIR_by_T_choice,
+                        choice_label,
+                        choice_label_for_plot,
+                        choice_label_for_plot_short,
+                    )
+                )
     return scale_choices
 
 
 def save_Z_to_file(args, Z_container, scale_choice):
     outputfolder = args.outputpath_data
-    file = "Z_match_"+scale_choice.choice_label+".dat"
-    filename = outputfolder+file
-    sqrt8taufT = np.flip(1/Z_container.mu_By_T)
+    file = "Z_match_" + scale_choice.choice_label + ".dat"
+    filename = outputfolder + file
+    sqrt8taufT = np.flip(1 / Z_container.mu_By_T)
     Z = np.flip(Z_container.Z_total)
     lpd.save_columns_to_file(filename, (sqrt8taufT, Z), ("sqrt(8tauF)T", "Z"))
 
@@ -310,7 +451,10 @@ def main():
 
     IntegrandPlotter.plot(args, coupling_container, fontsize)
 
-    Z_containers = [ZFactorComputer.compute(coupling_container, scale_choice) for scale_choice in scale_choices]
+    Z_containers = [
+        ZFactorComputer.compute(coupling_container, scale_choice)
+        for scale_choice in scale_choices
+    ]
     for Z_container, scale_choice in zip(Z_containers, scale_choices):
         ZIndividualPlotter.plot(args, Z_container, fontsize, scale_choice)
         save_Z_to_file(args, Z_container, scale_choice)
@@ -319,7 +463,7 @@ def main():
     ZTotalPlotterFlowtime.plot(args, Z_containers, fontsize, scale_choices, "_flowtime")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     lpd.print_script_call()
     main()
     lpd.save_script_call()
