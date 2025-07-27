@@ -31,7 +31,7 @@ mkdir 2025_altenkort
 cd 2025_altenkort  # Download the corresponding files into this folder
 tar -xzf correlators_flow.tar.gz
 tar -xzf AnalysisToolbox.tar.gz
-tar -xzf data.tar.gz
+tar -xzf input_data.tar.gz
 ```
 
 For convenience, the final results and figures can also be extracted from `output_data.tar.gz` and `figures.tar.gz`, respectively.
