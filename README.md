@@ -16,7 +16,7 @@ This publication contains the raw measurement data and a set of python and bash 
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install additional LaTeX packages (skip if already installed via texlive-full etc. or manually install the packages listed above)
-sudo apt install texlive-latex-extra cm-super dvipng
+sudo apt install texlive-latex-extra texlive-xetex cm-super dvipng
 
 # Install gnuplot
 sudo apt install gnuplot 
@@ -115,7 +115,7 @@ Metadata is saved to text files. **This may take some time (up to multiple hours
 ./correlator_analysis/double_extrapolation/example_usage/1_merge_data.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_RAW_DATA} ${BASEPATH_WORK_DATA} ${BASEPATH_RAW_DATA}/hisq_ms5_zeuthenFlow/reference_flowtimes
 ```
 
-Afterward, the following files have been created in
+This creates the following files in 
 `$BASEPATH_WORK_DATA/<qcdtype>/<corr>/<conftype>/`:
 
 | File | Comment |
@@ -142,7 +142,7 @@ Then bin configurations according to the integrated autocorrelation time, then p
 ./correlator_analysis/double_extrapolation/example_usage/2_reduce_data.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
 ```
 
-Afterward, the following files have been created in
+This creates the following files in 
 `$BASEPATH_WORK_DATA/<qcdtype>/<corr>/<conftype>/`
 
 | File | Comment |
@@ -190,7 +190,7 @@ is available across all lattices and temperatures.
 ./correlator_analysis/double_extrapolation/example_usage/3_spline_interpolate.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
 ```
 
-Afterward, the following files have been created in
+This creates the following files in 
 `$BASEPATH_WORK_DATA/<qcdtype>/<corr>/<conftype>/`:
 
 | File | Comment |
@@ -216,7 +216,7 @@ Take the continuum limit of the correlators using a fit on each sample
 ./correlator_analysis/double_extrapolation/example_usage/4_continuum_extr.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
 ```
 
-Afterward, the following files have been created in
+This creates the following files in
 `$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/<corr>/cont_extr/` and
 `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/<corr>/<T-in-MeV>/cont_extr/`:
 
@@ -227,7 +227,7 @@ Afterward, the following files have been created in
 | `<corr>_cont_relflow_err.dat`     | Std dev of continuum-extrapolated correlator at corresponding normalized flow times |
 | `<corr>_cont_relflow_samples.npy` | Continuum extrapolations of the correlator on each individual bootstrap sample |
 
-and, in `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/` and
+This also creates the following files in `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/` and
 `${BASEPATH_PLOT}/hisq_ms5_zeuthenFlow/<corr>/<T-in-MeV>`:
 
 | File | Comment |
@@ -263,7 +263,7 @@ Optional: create the same figures for the 2+1-flavor cases at `${BASEPATH_PLOT}/
 ./correlator_analysis/double_extrapolation/example_usage/5_flowtime_extr.sh hisq_ms5_zeuthenFlow EE ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
 ```
 
-Afterward, the following files have been created inside
+This creates the following files in 
 `$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/EE/` and
 `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/T<Temp-in-MeV>/`:
 
@@ -272,7 +272,7 @@ Afterward, the following files have been created inside
 | `EE_flow_extr_relflow.npy` | Flow-time-to-zero extrapolated continuum EE correlator for each bootstrap sample |
 | `EE_flow_extr_relflow.txt` | Median and std dev of flow-time-to-zero extrapolated continuum EE correlator |
 
-and inside
+and in
 `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/EE/` and
 `$BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/T<Temp-in-MeV>/`
 
@@ -327,7 +327,7 @@ and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/`:
 ./correlator_analysis/double_extrapolation/BB_renormalization/example_usage/compute_Z.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ```
 
-Afterward, the following files have been created in
+This creates the following files in 
 `$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/coupling/`
 
 | File | Comment |
@@ -351,7 +351,7 @@ and, in `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/coupling/`:
 ./correlator_analysis/double_extrapolation/example_usage/5_flowtime_extr.sh quenched_1.50Tc_zeuthenFlow BB ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} ${NPROC}
 ```
 
-Afterward, the following files have been created in
+This creates the following files in 
 `$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/BB/`:
 
 | File | Comment |
@@ -398,7 +398,7 @@ uv run ./correlator_analysis/plotting/plot_EEvsBB.py --inputfolder ${BASEPATH_WO
  ./correlator_analysis/relative_flow/example_usage/Nf0.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ```
 
-Afterward, the following files have been created in
+This creates the following files in 
 `${BASEPATH_PLOT}/quenched_1.50Tc_zeuthenFlow/<corr>/`:
 
 | File | Comment |
@@ -413,31 +413,33 @@ and, in `${BASEPATH_WORK_DATA}/quenched_1.50Tc_zeuthenFlow/EE/<conftype>/relflow
 | `<corr>_relflow_0.25.dat`       | Correlator at normalized flow time 0.25 |
 | `<corr>_relflow_0.30.dat`       | Correlator at normalized flow time 0.30 |
 
-### 2+1-flavor
-
-```shell
-./correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
-```
-
-Afterward, the following files have been created in
-`$BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/`:
-
-| File | Comment |
-| --- | --- |
-| `EE_relflow_hisq_0.25.pdf`  | **Figure 7.2** |
-| `EE_relflow_hisq_0.30.pdf`  | **Figure 7.2** |
-| `EE_relflow_hisq_final.pdf` | **Figure 7.6** |
-
-and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/relflow/`:
-
-| File | Comment |
-| --- | --- |
-| `EE_relflow_0.25.dat`       | EE correlator at normalized flow time 0.25 |
-| `EE_relflow_0.30.dat`       | EE correlator at normalized flow time 0.30 |
-
 # Spectral function analysis 
 
 Make sure you are still in the top-level folder of the code repository `correlators_flow`.
+
+
+
+## **Perform spectral function reconstruction**
+
+Note: this takes a lot of computing time. The output files can alternatively be obtained from `output_data.tar.gz`.
+
+```shell
+./spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh quenched_1.50Tc_zeuthenFlow EE  ${BASEPATH_WORK_DATA} NO ${NPROC}
+./spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh quenched_1.50Tc_zeuthenFlow BB  ${BASEPATH_WORK_DATA} NO ${NPROC}
+./spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh hisq_ms5_zeuthenFlow EE  ${BASEPATH_WORK_DATA} NO ${NPROC}
+```
+
+This creates the following files in 
+`$BASEPATH_WORK_DATA/<qcdtype>/<corr>/spf/<model>_<rho-UV-order>_Nf<nf>_T<T-in-MeV>_<min_scale>_<running-scale-coefficient>_tauTgtr0.24_<suffix>`
+
+| File | Comment |
+| --- | --- |
+| `corrfit.dat`            | Median final correlator and fitted model correlator |
+| `params_samples.npy`     | Model spectral function fit parameters for each bootstrap sample, as well as chisq/dof |
+| `params.dat`             | Median spectral function fit parameters and 34th percentiles |
+| `phIUV.npy`              | UV part of fitted model spectral function as function of $\omega/T$ (numpy format) |
+| `samples.npy`            | Copy of the input correlator bootstrap samples but multiplied by $G_\text{norm}$ (= actual fit input) |
+| `spffit.npy`             | Median spectral function with left/right 34th percentiles as function of $\omega/T$ |
 
 ## **Sketch spectral function models and reconstruction process**
 
@@ -453,28 +455,6 @@ Create **Figure 6.11a** and **Figure 6.11b** at `$BASEPATH_PLOT/model_corrs.pdf`
 uv run ./spf_reconstruction/plotting/plot_integrand.py --outputpath ${BASEPATH_PLOT} --Nf 0 --min_scale eff --T_in_GeV 0.472 --omega_prefactor "1" --order LO --corr EE --mu_IR_by_T 1
 ```
 
-## **Perform spectral function reconstruction**
-
-Note: this takes a lot of computing time, so the output files are already included.
-
-```shell
-./spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh quenched_1.50Tc_zeuthenFlow EE  ${BASEPATH_WORK_DATA} NO ${NPROC}
-./spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh quenched_1.50Tc_zeuthenFlow BB  ${BASEPATH_WORK_DATA} NO ${NPROC}
-./spf_reconstruction/model_fitting/example_usage/spf_reconstruct.sh hisq_ms5_zeuthenFlow EE  ${BASEPATH_WORK_DATA} NO ${NPROC}
-```
-
-Afterward, the following files have been created in
-`$BASEPATH_WORK_DATA/<qcdtype>/<corr>/spf/<model>_<rho-UV-order>_Nf<nf>_T<T-in-MeV>_<min_scale>_<running-scale-coefficient>_tauTgtr0.24_<suffix>`
-
-| File | Comment |
-| --- | --- |
-| `corrfit.dat`            | Median final correlator and fitted model correlator |
-| `params_samples.npy`     | Model spectral function fit parameters for each bootstrap sample, as well as chisq/dof |
-| `params.dat`             | Median spectral function fit parameters and 34th percentiles |
-| `phIUV.npy`              | UV part of fitted model spectral function as function of $\omega/T$ (numpy format) |
-| `samples.npy`            | Copy of the input correlator bootstrap samples but multiplied by $G_\text{norm}$ (= actual fit input) |
-| `spffit.npy`             | Median spectral function with left/right 34th percentiles as function of $\omega/T$ |
-
 ## Plot spectral reconstruction results
 
 ### Quenched case
@@ -487,7 +467,7 @@ Afterward, the following files have been created in
 ./spf_reconstruction/plot_fits/example_usage/plot_fits_quenched.sh BB ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} no
 ```
 
-Afterward, the following files have been created in:
+This creates the following files in 
 `$BASEPATH_PLOT/quenched_1.50Tc_zeuthenFlow/<corr>/`
 
 | File | Comment |
@@ -508,7 +488,7 @@ and, in `$BASEPATH_WORK_DATA/quenched_1.50Tc_zeuthenFlow/<corr>`:
 ./spf_reconstruction/plot_fits/example_usage/plot_fits_hisq.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
 ```
 
-Afterward, the following files have been created in:
+This creates the following files in 
 `$BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/T<T-in-MeV>/`
 
 | File | Comment |
@@ -522,6 +502,29 @@ and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<T-in-MeV>/`:
 | File | Comment |
 | --- | --- |
 | `EE_kappa_T<T-in-MeV>.txt`  |  Final $\kappa$ result |
+
+### **Compare correlator at fixed normalized flow times**
+### 2+1-flavor
+
+```shell
+./correlator_analysis/relative_flow/example_usage/Nf3TemperatureComparison_Paper.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT}
+```
+
+This creates the following files in
+`$BASEPATH_PLOT/hisq_ms5_zeuthenFlow/EE/`:
+
+| File | Comment |
+| --- | --- |
+| `EE_relflow_hisq_0.25.pdf`  | **Figure 7.2** |
+| `EE_relflow_hisq_0.30.pdf`  | **Figure 7.2** |
+| `EE_relflow_hisq_final.pdf` | **Figure 7.6** |
+
+and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<conftype>/relflow/`:
+
+| File | Comment |
+| --- | --- |
+| `EE_relflow_0.25.dat`       | EE correlator at normalized flow time 0.25 |
+| `EE_relflow_0.30.dat`       | EE correlator at normalized flow time 0.30 |
 
 #### Optional: plot K-factors
 
@@ -542,7 +545,7 @@ Create plots that compare the results with existing literature.
 ./spf_reconstruction/plot_fits/example_usage/plot_final_kappas.sh ${BASEPATH_WORK_DATA} ${BASEPATH_PLOT} hisq_thesis
 ```
 
-Afterward, the following files have been created:
+This creates the following files:
 
 | Folder | File | Comment |
 | --- | --- | --- |
