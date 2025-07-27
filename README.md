@@ -392,6 +392,8 @@ uv run ./correlator_analysis/plotting/plot_EEvsBB.py --inputfolder ${BASEPATH_WO
 
 ### **Compare correlator at fixed normalized flow times**
 
+In the 2+1-flavor case, this is done after the spectral reconstruction (see below) since we use some of the results for comparison.
+
 ### Quenched
 
 ```shell
@@ -504,6 +506,9 @@ and, in `$BASEPATH_WORK_DATA/hisq_ms5_zeuthenFlow/EE/<T-in-MeV>/`:
 | `EE_kappa_T<T-in-MeV>.txt`  |  Final $\kappa$ result |
 
 ### **Compare correlator at fixed normalized flow times**
+
+This is done after the spectral function analysis since we use some of the results for comparison.
+
 ### 2+1-flavor
 
 ```shell
