@@ -1,4 +1,4 @@
-# Data publication for "The diffusion of heavy quarks from lattice QCD"
+# Data publication for "The diffusion of heavy quarks in a quark-gluon plasma from lattice QCD"
 
 This publication contains the raw measurement data and a set of python and bash scripts to reproduce all results and figures presented in "The diffusion of heavy quarks from lattice QCD" (PhD thesis by Luis Altenkort, 2025, Bielefeld University).
 
