@@ -38,6 +38,8 @@ For convenience, the final results and figures can also be extracted from `outpu
 
 Note that the bundled [AnalysisToolbox](https://github.com/LatticeQCD/AnalysisToolbox/commit/f9eee73d45d7b981153db75cfaf2efa2b4cefa9c) is based on commit f9eee73d, with the only change being the addition of `latqcdtools/pyproject.toml`.
 
+\[Optional\] A set of scripts for the convenient submission of multi-GPU multi-node gauge configuration generation jobs on large slurm clusters can be extracted from `conf-production-scripts.tar.gz`.
+
 ### **Make scripts executable**
 
 ```bash
