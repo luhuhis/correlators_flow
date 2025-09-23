@@ -300,7 +300,7 @@ This creates the files
 
 ### **Coupling calculations**
 
-Peform the continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices,
+Perform the continuum extrapolation of the flow-scheme coupling measured on zero temperature lattices,
 and convert it from flow scheme to the MSBAR scheme coupling at one scale, then use perturbative 5-loop running to move to other relevant scales.
 
 ```shell
